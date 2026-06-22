@@ -2,7 +2,10 @@
  * CellChat-style Cell-Cell Communication Analysis
  *
  * Ligand-receptor interaction inference from single-cell expression data.
- * Reference: Jin et al. (2021) Nat Commun 12:1088
+ * For each cluster pair and L-R pair, computes communication probability as
+ * the product of ligand and receptor expression, optionally scaled by
+ * cluster size via a Hill function. Includes permutation testing with
+ * Benjamini-Hochberg FDR correction for statistical significance.
  *
  * Algorithm:
  *   For each cluster pair (i, j) and each L-R pair:
@@ -10,6 +13,28 @@
  *     2. P(R in receiver) = mean expression of receptor in cluster j
  *     3. Communication probability = P(L) * P(R) * Hill(n_cells)
  *     4. Aggregate by pathway for network-level summary
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Cell-cell communication inference via ligand-receptor
+ *     co-expression scoring. Communication probability for each cluster
+ *     pair is the product of mean ligand expression in the sender and mean
+ *     receptor expression in the receiver, scaled by a Hill function of
+ *     cell counts. Statistical significance is assessed by permutation
+ *     testing (shuffled cluster labels) with Benjamini-Hochberg FDR
+ *     correction.
+ *   REFERENCE: Jin S, Guerrero-Juarez CF, Zhang L, Chang I, Ramos R,
+ *     Kuan CH, Myung P, Plikus MV, Nie Q. "Inference and analysis of
+ *     cell-cell communication using CellChat." Nat Commun. 2021;12:1088.
+ *   KNOWN_LIMITATIONS:
+ *     - Uses mean expression per cluster; does not model the distribution
+ *       of expression across individual cells or zero-inflation.
+ *     - Communication probability is a simple product of expression levels;
+ *       does not account for spatial proximity, secretion kinetics, or
+ *       competitive inhibition.
+ *     - Permutation test shuffles cluster labels rather than gene labels,
+ *       which controls for cluster structure but not gene-gene correlations.
+ *     - Hill-function cell-count scaling uses K=100 as a fixed reference;
+ *       this is not calibrated to specific tissue types or assay platforms.
  */
 
 import ligandReceptorDB from '../data/ligandReceptorDB.json';

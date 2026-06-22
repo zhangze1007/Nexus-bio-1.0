@@ -4,6 +4,24 @@
  * Implements exact GP regression with Cholesky decomposition for numerical stability.
  * Used in ProEvol to predict protein fitness landscapes and suggest high-value
  * mutations via Expected Improvement acquisition.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Exact Gaussian Process regression with squared-exponential (RBF)
+ *     kernel. Fits by Cholesky decomposition of K + σ²I, predicts posterior
+ *     mean and variance via k-star matrix solve. Acquisition via Expected
+ *     Improvement (EI) with normal CDF/PDF from Abramowitz & Stegun rational
+ *     approximation (7.1.26).
+ *   REFERENCE: Rasmussen CE, Williams CKI. "Gaussian Processes for Machine
+ *     Learning." MIT Press, 2006. ISBN 0-262-18253-X.
+ *   KNOWN_LIMITATIONS:
+ *     - Exact GP scales as O(n³) in training size due to Cholesky decomposition;
+ *       impractical for more than ~1000 training points.
+ *     - Single RBF kernel; does not support ARD (automatic relevance
+ *       determination) or composite kernels without modification.
+ *     - Cholesky fallback adds fixed jitter (1e-8) on non-positive-definite
+ *       diagonals rather than adaptively adjusting.
+ *     - EI acquisition assumes a stationary landscape; may under-explore
+ *       in regions of high non-stationarity.
  */
 
 export interface GPConfig {

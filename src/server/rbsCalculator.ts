@@ -9,9 +9,23 @@
  *
  *   ΔG_total = ΔG_mRNA_rRNA + ΔG_spacing + ΔG_start_codon
  *
- * References:
- *   - Salis HM, Mirsky EA, Voigt CA. Automated design of synthetic ribosome
- *     binding sites to control protein expression. Nat Biotechnol. 2009;27(10):946-50.
+ * @scientific_provenance
+ *   ALGORITHM: Thermodynamic model of translation initiation. Computes free
+ *     energy of mRNA-16S rRNA hybridization via nearest-neighbor parameters,
+ *     spacing penalty (quadratic around 5 nt optimum), and start codon energy.
+ *     Translation rate is proportional to exp(-ΔG_total / RT).
+ *   REFERENCE: Salis HM, Mirsky EA, Voigt CA. "Automated design of synthetic
+ *     ribosome binding sites to control protein expression." Nat Biotechnol.
+ *     2009;27(10):946-950.
+ *   KNOWN_LIMITATIONS:
+ *     - Searches only for contiguous Shine-Dalgarno subsequences (AGGAGG);
+ *       does not handle non-contiguous or shifted SD matches.
+ *     - Nearest-neighbor parameters are from RNA duplex data (Freier et al.
+ *       1986) and may not fully capture in vivo mRNA-rRNA interactions.
+ *     - Does not model mRNA secondary structure occluding the RBS, which can
+ *       dominate initiation rate in practice.
+ *     - Spacing penalty is a simplified quadratic; the original Salis model
+ *       uses a more detailed empirical fit.
  */
 
 /* -------------------------------------------------------------------------- */

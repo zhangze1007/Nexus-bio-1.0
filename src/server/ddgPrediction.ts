@@ -1,7 +1,7 @@
 /**
  * FoldX-style ddG Stability Prediction
  *
- * Empirical force field for predicting the change in protein stability (ΔΔG)
+ * Empirical force field for predicting the change in protein stability (ddG)
  * upon point mutation. Negative ddG = stabilizing, positive = destabilizing.
  *
  * Components modeled:
@@ -11,7 +11,28 @@
  *   - Backbone strain (Ramachandran penalty for helix/sheet propensity)
  *   - Entropy (side-chain rotamer entropy loss)
  *
- * Reference: Schymkowitz et al., Nucleic Acids Res 2005 (FoldX)
+ * @scientific_provenance
+ *   ALGORITHM: FoldX-style empirical force field for protein stability change
+ *     prediction (ddG). Decomposes the free energy change into five terms:
+ *     (1) van der Waals via LJ 6-12 with Lorentz-Berthelot combining rules,
+ *     (2) implicit solvation via Lazaridis-Karplus with burial estimated from
+ *     neighbor count, (3) hydrogen bond scoring by polar atom proximity,
+ *     (4) backbone strain from Chou-Fasman helix/sheet propensities, and
+ *     (5) rotamer entropy loss scaled by volume change and burial.
+ *   REFERENCE: Schymkowitz J, Borg J, Stricher F, Nys R, Rousseau F,
+ *     Serrano L. "The FoldX web server: an online force field." Nucleic
+ *     Acids Res. 2005;33(Web Server issue):W382-W388.
+ *   KNOWN_LIMITATIONS:
+ *     - VdW uses unified-atom LJ parameters rather than all-atom; loses
+ *       accuracy for aromatic and polar hydrogen interactions.
+ *     - Burial estimation is heuristic (non-polar neighbor count within 6A)
+ *       rather than from SASA calculation as in the real FoldX.
+ *     - H-bond scoring is geometry-proximity based, not angular; real H-bonds
+ *       require donor-H-acceptor angle checks.
+ *     - Backbone strain uses static Chou-Fasman propensities; does not
+ *       consider actual Ramachandran angles from the structure.
+ *     - Multi-mutant prediction uses additive single-mutant summation,
+ *       ignoring epistatic (non-additive) effects between mutations.
  */
 
 import { parsePDB, PDBAtom, PDBStructure } from '../utils/pdbParser';

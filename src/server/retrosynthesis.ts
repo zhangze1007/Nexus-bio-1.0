@@ -13,6 +13,25 @@
  *   4. If all molecules in a state are central metabolites, record the path.
  *   5. Continue BFS until maxSteps depth or no new states.
  *   6. Rank pathways by: 1/(length+1) + enzyme_availability + thermodynamic_feasibility.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Backward breadth-first search (BFS) retrosynthesis over a rule
+ *     database. At each depth, rules whose products match a frontier molecule
+ *     are applied in reverse, replacing the target with reactant precursors.
+ *     Pathways are scored by length, enzyme class availability (EC first-digit
+ *     heuristic), and step reversibility.
+ *   REFERENCE: Moriya Y, Shigemizu D, Hattori M, Tokimatsu T, Kotera M,
+ *     Goto S, Kanehisa M. "PathPred: an enzyme-catalyzed metabolic pathway
+ *     prediction server." Nucleic Acids Res. 2010;38(Web Server issue):W157-W162.
+ *   KNOWN_LIMITATIONS:
+ *     - Relies on exact normalized-SMILES matching; does not handle
+ *       substructure or fingerprint-based similarity.
+ *     - The reaction rule database is static and finite; novel or rare
+ *       reactions not in the database are invisible to the search.
+ *     - SMILES normalization is naive (strips stereo markers); different
+ *       valid SMILES for the same molecule may not match.
+ *     - Scoring heuristics (enzyme class, reversibility) are coarse
+ *       approximations and do not replace thermodynamic or flux analysis.
  */
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires

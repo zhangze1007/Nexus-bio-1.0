@@ -5,9 +5,26 @@
  * optionally avoiding restriction enzyme recognition sites and tuning GC content.
  * Computes the Codon Adaptation Index (CAI) as a measure of expression likelihood.
  *
- * References:
- *   - Sharp & Li, Nucleic Acids Res 1987 — CAI definition
- *   - ikamura et al., Nucleic Acids Res 2008 — codon usage tables
+ * The algorithm proceeds in three phases: (1) greedy codon selection by descending
+ * frequency while avoiding forbidden restriction sites, (2) GC-content refinement
+ * via synonymous codon swaps, and (3) CAI computation as the geometric mean of
+ * relative adaptiveness values across all codons.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Codon Adaptation Index (CAI) with greedy frequency-based selection
+ *     and iterative GC-content refinement via synonymous codon substitution.
+ *   REFERENCE: Sharp PM, Li WH. "The Codon Adaptation Index — a measure of
+ *     directional synonymous codon usage bias, and its potential applications."
+ *     Nucleic Acids Res. 1987;15(3):1281-1295.
+ *   KNOWN_LIMITATIONS:
+ *     - CAI is a codon-level proxy and does not account for mRNA secondary
+ *       structure, which significantly affects translation efficiency.
+ *     - Restriction-site avoidance is greedy and may not find the global optimum
+ *       when many sites must be removed simultaneously.
+ *     - GC refinement is a local search; it can get stuck at local optima and
+ *       may not reach the target GC range for highly constrained sequences.
+ *     - Uses static codon usage tables; does not adapt to gene-specific context
+ *       or operon position effects.
  */
 
 import codonTables from '../data/codonUsageTables.json';

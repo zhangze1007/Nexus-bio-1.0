@@ -8,10 +8,30 @@
  *   3. Apply the first control signal and advance the state
  *
  * The QP is solved with a projected gradient-descent loop so the module has
- * zero external dependencies (no BLAS, no IPOPT).  Adequate for the small
- * state/control dimensions typical of bioreactor models (n_state ≤ 6).
+ * zero external dependencies (no BLAS, no IPOPT). Adequate for the small
+ * state/control dimensions typical of bioreactor models (n_state <= 6).
  *
  * All arithmetic is plain Float64 arrays — no matrix libraries required.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Receding-horizon Model Predictive Control (MPC). At each
+ *     timestep the nonlinear model is linearised via finite-difference
+ *     Jacobians, and a quadratic cost over the prediction horizon is minimised
+ *     by projected gradient descent with adjoint-based gradient computation.
+ *     Soft state-constraint penalties handle infeasible setpoints.
+ *   REFERENCE: Garcia CE, Prett DM, Morari M. "Model predictive control:
+ *     theory and practice — a survey." Automatica. 1989;25(3):335-348.
+ *   KNOWN_LIMITATIONS:
+ *     - QP solver is projected gradient descent, not a proper active-set or
+ *       interior-point method; may not converge to the true optimum for
+ *       tightly constrained problems.
+ *     - Linearisation via finite differences is first-order accurate and
+ *       requires the model function to be smooth; discontinuous models
+ *       will produce poor Jacobians.
+ *     - Soft state constraints use a fixed penalty weight (1000) and
+ *       dead-zone margin (0.01); these are not tuned per-application.
+ *     - Only the first control signal is applied (receding horizon);
+ *       does not support multi-rate or cascaded control architectures.
  */
 
 /* ═══════════════════════════════════════════════════════════════

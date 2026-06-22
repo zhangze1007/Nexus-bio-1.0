@@ -7,9 +7,28 @@
  *   2. Fuzzy simplicial set (Gaussian kernel + symmetrization)
  *   3. SGD embedding optimization (cross-entropy loss + negative sampling)
  *
- * Reference: McInnes, L., Healy, J., & Melville, J. (2018).
- *   UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.
- *   arXiv:1802.03426
+ * @scientific_provenance
+ *   ALGORITHM: Uniform Manifold Approximation and Projection (UMAP).
+ *     Constructs a k-nearest-neighbor graph via KD-tree, converts it to a
+ *     fuzzy simplicial set using per-point Gaussian kernels (sigma found by
+ *     binary search to match target sum = log2(k)), symmetrized via
+ *     w_ij = w_i + w_j - w_i*w_j. The 2D embedding is optimized by SGD
+ *     with attractive forces on positive edges and repulsive negative
+ *     sampling, using UMAP's a/b smooth curve parameterization.
+ *   REFERENCE: McInnes L, Healy J, Melville J. "UMAP: Uniform Manifold
+ *     Approximation and Projection for Dimension Reduction." arXiv preprint
+ *     arXiv:1802.03426. 2018.
+ *   KNOWN_LIMITATIONS:
+ *     - Embedding initialization uses first-2-dimension projection (or random
+ *       for small datasets) rather than spectral/Laplacian eigenmap as in
+ *       the reference implementation; may converge to poorer local minima.
+ *     - The a/b parameter is hardcoded to the default (minDist=0.1, spread=1)
+ *       rather than fitted per-invocation via least-squares to the smooth
+ *       curve as in the original UMAP.
+ *     - Negative sampling is uniformly random; the reference implementation
+ *       uses a more efficient edge-sampling strategy.
+ *     - KD-tree k-NN is approximate for high-dimensional data; the reference
+ *       uses NN-descent for scalability beyond ~10K points.
  */
 
 import { KDTreeIndex, euclideanDistance } from '../utils/knnIndex';

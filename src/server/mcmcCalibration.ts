@@ -2,10 +2,31 @@
  * Metropolis-Hastings MCMC sampler for kinetic parameter calibration.
  *
  * Fits model parameters to experimental time-series data by sampling from
- * the posterior distribution.  Uses Gaussian proposals with reflecting
- * boundaries enforced by the prior ranges.
+ * the posterior distribution. Uses Gaussian proposals with reflecting
+ * boundaries enforced by the prior ranges. Includes a grid-search plus
+ * hill-climbing warm-up to find a good starting point before sampling.
  *
- * Algorithm reference: Metropolis et al. (1953); Hastings (1970).
+ * @scientific_provenance
+ *   ALGORITHM: Metropolis-Hastings MCMC with Gaussian random-walk proposals,
+ *     reflecting boundary enforcement, and uniform priors. Uses xoshiro128**
+ *     PRNG with Box-Muller normal variates. Warm-up via coarse grid search
+ *     (first 2 parameters) plus iterative hill-climbing refinement. Posterior
+ *     statistics include mean, std, and 95% credible intervals.
+ *   REFERENCE: Metropolis N, Rosenbluth AW, Rosenbluth MN, Teller AH,
+ *     Teller E. "Equation of State Calculations by Fast Computing Machines."
+ *     J Chem Phys. 1953;21(6):1087-1092. Hastings WK. "Monte Carlo sampling
+ *     methods using Markov chains and their applications." Biometrika.
+ *     1970;57(1):97-109.
+ *   KNOWN_LIMITATIONS:
+ *     - Proposal standard deviation defaults to 10% of prior range; may be
+ *       suboptimal for highly correlated posteriors or multi-modal landscapes.
+ *     - Grid search is limited to first 2 parameters; higher-dimensional
+ *       problems may start from poor initial points.
+ *     - Convergence check (posterior std < 30% of prior range) is heuristic
+ *       and does not replace formal diagnostics like R-hat or effective
+ *       sample size.
+ *     - Reflecting boundaries can cause artifacts near constraint edges;
+ *       truncated proposals would be more principled.
  */
 
 // ── public interfaces ───────────────────────────────────────────────────────

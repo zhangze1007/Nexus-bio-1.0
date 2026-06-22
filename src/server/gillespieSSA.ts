@@ -1,11 +1,28 @@
 /**
  * Gillespie Stochastic Simulation Algorithm (SSA)
  *
- * Reference: Gillespie (1977) J Phys Chem 81(25):2340-2361
- *
  * Exact stochastic simulation of chemical reaction networks.
  * Uses the Direct Method: compute propensities, draw exponential
  * time to next reaction, select reaction proportional to propensity.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Gillespie Direct Method (Stochastic Simulation Algorithm).
+ *     At each step: (1) compute reaction propensities from current species
+ *     counts using mass-action kinetics with falling-factorial combinatorics,
+ *     (2) draw time-to-next-event from exponential distribution with rate
+ *     = total propensity, (3) select which reaction fires proportional to
+ *     individual propensities. Supports Hill-function modulation for
+ *     gene-regulatory reactions.
+ *   REFERENCE: Gillespie DT. "Exact stochastic simulation of coupled chemical
+ *     reactions." J Phys Chem. 1977;81(25):2340-2361.
+ *   KNOWN_LIMITATIONS:
+ *     - Scales poorly with many reactions: O(R) propensity computation per
+ *       step where R is the number of reactions (no sorting or dependency graph).
+ *     - Uses Xorshift128+ PRNG, not a cryptographic or high-quality PRNG;
+ *       fine for simulation but not for formal statistical guarantees.
+ *     - Hill-function modulation applies to entire reaction propensity rather
+ *       than individual molecular species, which is a simplification.
+ *     - Does not support delay reactions, compartments, or spatial diffusion.
  */
 
 export interface StochasticSpecies {

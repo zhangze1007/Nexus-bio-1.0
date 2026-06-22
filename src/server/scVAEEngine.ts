@@ -5,16 +5,34 @@
  * Uses ONNX Runtime Web to run a pre-trained scVI-style model.
  *
  * Architecture:
- *   Encoder: Input(2000) → Linear(512) → ReLU → Linear(256) → ReLU → μ(32), σ(32)
- *   Sampling: z = μ + σ × ε, ε ~ N(0,1)
- *   Decoder: z(32) → Linear(256) → ReLU → Linear(512) → ReLU → Linear(2000) → Sigmoid
+ *   Encoder: Input(2000) -> Linear(512) -> ReLU -> Linear(256) -> ReLU -> mu(32), sigma(32)
+ *   Sampling: z = mu + sigma * eps, eps ~ N(0,1)
+ *   Decoder: z(32) -> Linear(256) -> ReLU -> Linear(512) -> ReLU -> Linear(2000) -> Sigmoid
  *
  * The model is pre-trained in Python (scripts/train_scVAE.py) and exported to ONNX.
  * Browser inference uses ONNX Runtime Web (WASM backend).
  *
- * Reference: Lopez, R., Regier, J., Cole, M.B., Jordan, M.I., & Yosef, N. (2018).
- *   Deep generative modeling for single-cell transcriptomics.
- *   Nature Methods, 15(12), 1053-1058.
+ * @scientific_provenance
+ *   ALGORITHM: Single-cell Variational Autoencoder (scVI). A deep generative
+ *     model for single-cell transcriptomics that learns a low-dimensional
+ *     latent representation via a variational autoencoder. The encoder maps
+ *     normalized gene expression to a Gaussian posterior N(mu, sigma^2) in
+ *     latent space; the reparameterization trick (z = mu + sigma * eps)
+ *     enables backpropagation through sampling. The decoder reconstructs
+ *     gene expression from latent codes via a sigmoid output layer.
+ *   REFERENCE: Lopez R, Regier J, Cole MB, Jordan MI, Yosef N. "Deep
+ *     generative modeling for single-cell transcriptomics." Nat Methods.
+ *     2018;15(12):1053-1058.
+ *   KNOWN_LIMITATIONS:
+ *     - Requires pre-trained ONNX model files; the browser engine does not
+ *       perform training or fine-tuning.
+ *     - Fixed architecture (2000 input genes, 32 latent dims); does not
+ *       adapt to datasets with different gene panels without retraining.
+ *     - Uses a simple Gaussian prior and sigmoid decoder; the real scVI
+ *       uses negative binomial or zero-inflated distributions for
+ *       count data, which better captures dropout and overdispersion.
+ *     - WASM inference is significantly slower than native/GPU execution;
+ *       practical for hundreds of cells but not tens of thousands.
  */
 
 import { SeededRNG } from '../utils/seededRng';

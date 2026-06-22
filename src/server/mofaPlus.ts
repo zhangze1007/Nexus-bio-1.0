@@ -3,8 +3,9 @@ import { SeededRNG } from '../utils/seededRng';
 /**
  * MOFA+ Multi-Omics Factor Analysis
  *
- * Variational Bayes inference with ARD priors.
- * Reference: Argelaguet et al. (2020) Mol Syst Biol 16:e9918
+ * Variational Bayes inference with ARD priors for multi-omics integration.
+ * Decomposes multi-view data into shared latent factors and view-specific
+ * loadings via coordinate ascent variational inference.
  *
  * Model: Y_vm = Z * W_v^T + E_vm
  *   Z: shared factor matrix [samples x factors]
@@ -17,6 +18,29 @@ import { SeededRNG } from '../utils/seededRng';
  *   3. Update noise precision
  *   4. Update ARD prior (sparsity on W)
  *   5. Compute variance explained
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Multi-Omics Factor Analysis (MOFA+) via coordinate ascent
+ *     variational Bayes. Factor matrix Z and view loadings W_v are
+ *     iteratively updated by ridge regression, noise precision tau_v is
+ *     estimated from residuals, and ARD (Automatic Relevance Determination)
+ *     priors alpha_k induce sparsity on factors. Convergence is checked via
+ *     approximate ELBO change.
+ *   REFERENCE: Argelaguet R, Velten B, Arnol D, Dietrich S, Zenz T,
+ *     Marioni JC, Buettner F, Huber W, Stegle O. "Multi-Omics Factor
+ *     Analysis — a framework for unsupervised integration of multi-omics
+ *     data sets." Mol Syst Biol. 2020;16:e9918.
+ *   KNOWN_LIMITATIONS:
+ *     - ARD update uses a damped heuristic with fixed cap (100) and damping
+ *       factor (0.5) to prevent factor collapse; this is more conservative
+ *       than the standard VB update and may retain spurious factors.
+ *     - Ridge solve uses a diagonal fallback when Cholesky fails, which
+ *       ignores off-diagonal correlations in Z^T Z.
+ *     - NaN handling replaces missing values with 0 and masks them; this
+ *       is a rough approximation that does not model missing-not-at-random
+ *       mechanisms common in single-cell data.
+ *     - Variance explained is computed per-factor independently (not
+ *       cumulative), so R^2 values across factors do not sum to total R^2.
  */
 
 export interface MOFAInput {
