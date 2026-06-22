@@ -289,6 +289,7 @@ export default function ProEvolPage() {
   const [gpPredictions, setGpPredictions] = useState<Array<{ mean: number; variance: number }>>([]);
   const [eiScores, setEiScores] = useState<number[]>([]);
   const [suggestedVariantId, setSuggestedVariantId] = useState<string | null>(null);
+  const [gpError, setGpError] = useState<string | null>(null);
 
   // ── CSV upload handler ──────────────────────────────────────────────────
   const handleCSVUpload = useCallback((file: File) => {
@@ -500,8 +501,10 @@ export default function ProEvolPage() {
         }
       }
       setSuggestedVariantId(mlVariants[bestIdx]?.id ?? null);
-    } catch (gpError) {
-      console.warn('GP analysis failed:', gpError);
+      setGpError(null);
+    } catch (gpErr) {
+      console.warn('GP analysis failed:', gpErr);
+      setGpError(gpErr instanceof Error ? gpErr.message : 'GP analysis failed');
       setGpPredictions([]);
       setEiScores([]);
       setSuggestedVariantId(null);
@@ -516,6 +519,7 @@ export default function ProEvolPage() {
       setGpPredictions([]);
       setEiScores([]);
       setSuggestedVariantId(null);
+      setGpError(null);
     }
   }, [mlMode, runGPAnalysis]);
 
@@ -1210,6 +1214,17 @@ export default function ProEvolPage() {
               RBF kernel, lengthScale=10, signalVar=1, noiseVar=0.1
             </span>
           </div>
+
+          {gpError && (
+            <div style={{
+              fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.coral,
+              padding: '6px 10px', borderRadius: 'var(--nb-radius-sm)',
+              background: 'rgba(232,163,161,0.08)', border: `1px solid ${PROEVOL_THEME.coral}33`,
+              lineHeight: 1.5,
+            }}>
+              GP analysis failed: {gpError}
+            </div>
+          )}
 
           {/* Feature encoding info */}
           {mlMode && (

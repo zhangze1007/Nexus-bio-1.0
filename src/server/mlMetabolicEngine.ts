@@ -276,7 +276,7 @@ export async function predictEnzymeFunction(sequence: string): Promise<MLPredict
         alternativeECs,
       };
     }
-  } catch (e) { console.warn("[Engine] Error:", e);
+  } catch (e) { console.warn('[mlMetabolic] ESM-2 unavailable, falling back to rule-based classification:', e instanceof Error ? e.message : e);
     // API unavailable — fall back to rule-based
   }
 

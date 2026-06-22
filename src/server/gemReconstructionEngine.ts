@@ -669,6 +669,16 @@ export function findEssentialGenes(model: GEMReconstruction): EssentialityResult
   // Compute wild-type growth via FBA
   const wtGrowth = solveFBA(S, model.reactions, biomassIdx, nMets, nRxns);
 
+  // If solver failed (NaN), mark all genes as essential with 0 growth
+  if (isNaN(wtGrowth)) {
+    return model.genes.map(geneId => ({
+      geneId,
+      essential: true,
+      growthWithout: 0,
+      affectedReactions: [],
+    }));
+  }
+
   for (const geneId of model.genes) {
     // Find reactions associated with this gene via GPR
     const affectedReactions: string[] = [];
@@ -694,10 +704,10 @@ export function findEssentialGenes(model: GEMReconstruction): EssentialityResult
     // Essential if growth drops below 1% of wild-type
     // If wtGrowth is 0, all genes are considered essential (model can't grow)
     const essential = wtGrowth > 0
-      ? growthWithout < 0.01 * wtGrowth
+      ? (isNaN(growthWithout) ? true : growthWithout < 0.01 * wtGrowth)
       : true;
     const growthFraction = wtGrowth > 0
-      ? Math.round((growthWithout / wtGrowth) * 1000) / 1000
+      ? (isNaN(growthWithout) ? 0 : Math.round((growthWithout / wtGrowth) * 1000) / 1000)
       : 0;
 
     results.push({
@@ -743,9 +753,8 @@ function solveFBA(
 
     return result.status === 'optimal' ? result.objective : 0;
   } catch (e) {
-    // LP solver unavailable or failed — return 0 (no growth)
-    console.warn('[GEM] FBA solver error:', e);
-    return 0;
+    console.warn('[GEM] FBA solver error:', e instanceof Error ? e.message : e);
+    return NaN; // Sentinel: caller should check for NaN
   }
 }
 
@@ -781,8 +790,8 @@ function solveFBAWithKnockout(
 
     return result.status === 'optimal' ? result.objective : 0;
   } catch (e) {
-    console.warn('[GEM] FBA knockout solver error:', e);
-    return 0;
+    console.warn('[GEM] FBA knockout solver error:', e instanceof Error ? e.message : e);
+    return NaN; // Sentinel: caller should check for NaN
   }
 }
 
@@ -828,6 +837,11 @@ export function computeEpistasis(
     const affectedB = geneMap.get(geneB)?.affectedReactions ?? [];
     const allAffected = new Set([...affectedA, ...affectedB]);
     const doubleGrowth = solveFBAWithKnockout(S, model.reactions, biomassIdx, nMets, nRxns, allAffected);
+
+    // If solver failed (NaN), return neutral epistasis with 0 double growth
+    if (isNaN(wtGrowth) || isNaN(doubleGrowth)) {
+      return { geneA, geneB, singleA, singleB, double: 0, epistasis: 0, type: 'neutral' as const };
+    }
 
     const double = wtGrowth > 0 ? doubleGrowth / wtGrowth : 0;
     const epistasis = Math.round((double - singleA - singleB + 1) * 1000) / 1000;

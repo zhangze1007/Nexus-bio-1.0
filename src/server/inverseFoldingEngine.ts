@@ -869,7 +869,7 @@ function fetchESM2Embeddings(backbone: BackboneAtom[]): Map<number, number[]> | 
       data.embeddings.forEach((emb: number[], i: number) => embMap.set(i, emb));
       return embMap;
     }
-  } catch (e) { console.warn("[Engine] Error:", e);
+  } catch (e) { console.warn('[InverseFolding] ESM-2 unavailable, using local computation only:', e instanceof Error ? e.message : e);
     // API unavailable — fall back to local
   }
   return null;
@@ -987,7 +987,7 @@ export function runInverseFolding(input: InverseFoldingInput): InverseFoldingRes
       if (esm2Result) {
         return runInverseFoldingWithEmbeddings(input, esm2Result);
       }
-    } catch (e) { console.warn("[Engine] Error:", e);
+    } catch (e) { console.warn('[InverseFolding] ESM-2 fetch failed, falling back to local computation:', e instanceof Error ? e.message : e);
       // Fallback to local computation if API unavailable
     }
   }

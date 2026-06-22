@@ -1221,7 +1221,7 @@ export function checkPathwayFeasibility(
       estimatedSteps: best?.metrics.pathwayLength || -1,
       confidence: best?.metrics.overallScore || 0,
     };
-  } catch (e) { console.warn("[Engine] Error:", e);
+  } catch (e) { console.warn('[PathwayDiscovery] Feasibility check failed:', e instanceof Error ? e.message : e);
     return { feasible: false, estimatedSteps: -1, confidence: 0 };
   }
 }

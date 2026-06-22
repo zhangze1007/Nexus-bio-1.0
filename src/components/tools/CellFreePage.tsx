@@ -812,7 +812,12 @@ export default React.memo(function CellFreePage() {
       try { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg }; }
       catch (fallbackErr) {
         console.warn('CFS fallback also failed:', fallbackErr);
-        return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg };
+        try {
+          return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg };
+        } catch (finalErr) {
+          console.error('CFS all fallbacks failed:', finalErr);
+          return { data: null as CFSFullResult | null, error: errMsg };
+        }
       }
     }
   }, [constructs, params, userData]);
@@ -840,6 +845,14 @@ export default React.memo(function CellFreePage() {
     };
     reader.readAsText(file);
   }, []);
+
+  if (!result) {
+    return (
+      <ToolShell moduleId="cellfree" title="Cell-Free Prototyping" formula="dP/dt = k_tl · [mRNA] · R_free / (K_tl + R_free)">
+        <div style={{ padding: '16px' }}><SimErrorBanner message={simError ?? 'CFS pipeline failed completely'} /></div>
+      </ToolShell>
+    );
+  }
 
   const sim = result.simulation;
   const fit = result.fitting;

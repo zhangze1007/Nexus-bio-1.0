@@ -310,7 +310,7 @@ class FBAStreamClient {
               } else if (currentEvent === 'fba-error') {
                 this.onResult?.(data);
               }
-            } catch { /* ignore parse errors */ }
+            } catch (parseErr) { console.warn('[FBAWorker] SSE event parse error:', parseErr); }
             currentEvent = '';
           }
         }

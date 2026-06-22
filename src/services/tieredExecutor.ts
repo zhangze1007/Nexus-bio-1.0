@@ -277,8 +277,8 @@ export async function executeQuery(
       try {
         solverResult = await executor({});
         solverCalls = (solverResult as Record<string, unknown>)?.allSolverCalls as Array<{ solver: string; description: string }> ?? [];
-      } catch {
-        // Solver failed — proceed with LLM only
+      } catch (solverErr) {
+        console.warn('[TieredExecutor] Solver failed in explain tier, proceeding with LLM only:', solverErr instanceof Error ? solverErr.message : solverErr);
       }
     }
 
