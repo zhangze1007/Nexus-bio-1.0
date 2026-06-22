@@ -44,6 +44,7 @@ export default function Hero() {
   const inputRef     = useRef<HTMLInputElement>(null);
   const fluidRef     = useRef<HeroFluidHandle>(null);
   const [query, setQuery]       = useState('');
+  const [heroInput, setHeroInput] = useState('');
   const [focused, setFocused]   = useState(false);
   const [preview, setPreview]   = useState<PreviewResult[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -264,6 +265,50 @@ export default function Hero() {
             </motion.div>
           )}
         </motion.div>
+
+        {/* Smart Entry Input */}
+        <div style={{ width: '100%', maxWidth: '560px', margin: '0 auto', marginTop: '32px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              value={heroInput}
+              onChange={(e) => setHeroInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && heroInput.trim()) {
+                  router.push(`/start?q=${encodeURIComponent(heroInput.trim())}`);
+                }
+              }}
+              placeholder="输入目标分子、菌株、DOI 或生产指标..."
+              style={{
+                flex: 1, padding: '12px 16px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                color: '#fff', fontSize: '0.875rem',
+                outline: 'none', fontFamily: SANS,
+              }}
+            />
+            <button
+              onClick={() => {
+                if (heroInput.trim()) {
+                  router.push(`/start?q=${encodeURIComponent(heroInput.trim())}`);
+                }
+              }}
+              style={{
+                padding: '12px 24px',
+                background: 'rgba(147,203,82,0.9)',
+                border: 'none', borderRadius: '8px',
+                color: '#000', fontSize: '0.875rem', fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              开始 →
+            </button>
+          </div>
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', marginTop: '8px', textAlign: 'center' }}>
+            支持：分子名 · 菌株 · DOI · 生产指标
+          </p>
+        </div>
 
         {/* Sub-label */}
         <motion.p
