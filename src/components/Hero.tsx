@@ -59,23 +59,89 @@ export default function Hero() {
   const titleY       = useTransform(scrollY, [0, 300], [0, -60]);
   const titleOpacity = useTransform(scrollY, [0, 280], [1, 0]);
 
-  // Debounced OpenAlex preview
+  // Debounced multi-source paper preview (OpenAlex + Semantic Scholar + PubMed)
   useEffect(() => {
     if (!focused || query.length < 3) { setPreview([]); return; }
     const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       setPreviewLoading(true);
+      const allResults: PreviewResult[] = [];
+
+      // Source 1: OpenAlex
       try {
         const res = await fetch(
-          `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=4&select=id,title,publication_year,primary_location`,
+          `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=3&select=id,title,publication_year,primary_location`,
           { signal: ctrl.signal },
         );
-        if (!res.ok) return;
-        const data = await res.json();
-        startTransition(() => setPreview(data.results ?? []));
+        if (res.ok) {
+          const data = await res.json();
+          allResults.push(...(data.results ?? []));
+        }
       } catch { /* aborted */ }
-      finally { setPreviewLoading(false); }
-    }, 300);
+
+      // Source 2: Semantic Scholar
+      try {
+        const res = await fetch(
+          `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,year,externalIds&limit=3`,
+          { signal: ctrl.signal },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          for (const p of (data.data ?? [])) {
+            allResults.push({
+              id: p.paperId ?? `ss-${Math.random()}`,
+              title: p.title ?? '',
+              publication_year: p.year ?? null,
+              primary_location: { source: { display_name: 'Semantic Scholar' } },
+            });
+          }
+        }
+      } catch { /* aborted */ }
+
+      // Source 3: PubMed
+      try {
+        const searchRes = await fetch(
+          `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=3&retmode=json`,
+          { signal: ctrl.signal },
+        );
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          const ids = searchData.esearchresult?.idlist ?? [];
+          if (ids.length > 0) {
+            const summaryRes = await fetch(
+              `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`,
+              { signal: ctrl.signal },
+            );
+            if (summaryRes.ok) {
+              const summaryData = await summaryRes.json();
+              for (const uid of ids) {
+                const item = summaryData.result?.[uid];
+                if (item) {
+                  allResults.push({
+                    id: `pmid-${uid}`,
+                    title: item.title ?? '',
+                    publication_year: item.pubdate ? parseInt(item.pubdate) : null,
+                    primary_location: { source: { display_name: item.fulljournalname ?? 'PubMed' } },
+                  });
+                }
+              }
+            }
+          }
+        }
+      } catch { /* aborted */ }
+
+      // Deduplicate by title similarity and take top 6
+      const seen = new Set<string>();
+      const deduped = allResults.filter(r => {
+        const key = r.title.toLowerCase().slice(0, 50);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, 6);
+
+      startTransition(() => setPreview(deduped));
+      setPreviewLoading(false);
+    }, 400);
     return () => { clearTimeout(timer); ctrl.abort(); };
   }, [query, focused]);
 
