@@ -1,14 +1,25 @@
 /**
  * Gene-Protein-Reaction (GPR) rule parser and knockout engine.
  *
- * GPR rules are boolean expressions like:
- *   "((b0001 AND b0002) OR b0003)"
+ * GPR associations encode the mapping from genes to proteins to metabolic
+ * reactions using boolean logic: AND represents protein complexes (all genes
+ * required), OR represents isozymes (any gene sufficient). This module parses
+ * GPR rule strings into an abstract syntax tree via recursive descent, evaluates
+ * them against knockout gene sets, and applies resulting reaction knockouts to
+ * metabolic models by zeroing flux bounds. GPR rules are a foundational component
+ * of constraint-based metabolic reconstructions.
  *
- * - AND = protein complex (all genes required)
- * - OR = isozymes (any gene sufficient)
+ * Reference: Reed, J.L., Vo, T.D., Schilling, C.H. & Palsson, B.O. (2003)
+ * "An expanded genome-scale model of Escherichia coli K-12 (iJR904 GSM/GPR)"
+ * Genome Biology 4(9):R54
  *
- * Gene knockout: if a gene is knocked out, evaluate the GPR rule.
- * If the rule evaluates to false, the reaction is knocked out (bounds set to 0).
+ * @scientific_provenance
+ *   ALGORITHM: Gene-Protein-Reaction (GPR) Boolean rule evaluation
+ *   REFERENCE: Reed, J.L., Vo, T.D., Schilling, C.H. & Palsson, B.O. (2003) Genome Biology 4(9):R54
+ *   KNOWN_LIMITATIONS:
+ *     - Only supports AND/OR boolean logic; cannot represent complex regulatory relationships such as transcription factor modulation or conditional expression
+ *     - Treats GPR rules as static; does not account for context-dependent gene expression or enzyme regulation
+ *     - Binary knockout model (gene is either fully active or fully knocked out); does not model partial knockdown or expression levels
  */
 
 export type GPRTreeNode =

@@ -1,11 +1,27 @@
 /**
  * Parsimonious Flux Balance Analysis (pFBA).
  *
- * After finding the optimal objective value, minimize the total
- * flux (sum of absolute fluxes) to find the most efficient
- * flux distribution.
+ * pFBA is a two-stage linear programming approach that first identifies the
+ * optimal objective value (e.g., maximal growth rate), then selects the flux
+ * distribution that minimizes the total sum of absolute fluxes while maintaining
+ * that optimum. This yields the most thermodynamically and enzymatically efficient
+ * solution among all optima, reflecting the biological principle that cells tend
+ * to minimize unnecessary metabolic activity. Absolute values are linearized by
+ * splitting each flux variable into positive and negative components.
  *
- * Reference: Lewis et al. (2010) Mol Syst Biol 6:390
+ * Reference: Lewis, N.E., Hixson, K.K., Conrad, T.M., Lerman, J.A., Charusanti, P.,
+ * Polpitiya, A.D., Adkins, J.N., Schramm, G., Purvine, S.O., Lopez-Ferrer, D.,
+ * Weitz, K.K., Eils, R., Konig, R., Smith, R.D. & Palsson, B.O. (2010)
+ * "Omic data from evolved E. coli are consistent with computed optimal growth
+ * from genome-scale models" Molecular Systems Biology 6:390
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Parsimonious Flux Balance Analysis (pFBA)
+ *   REFERENCE: Lewis, N.E. et al. (2010) Molecular Systems Biology 6:390
+ *   KNOWN_LIMITATIONS:
+ *     - The LP relaxation of absolute value minimization does not guarantee a unique solution when multiple flux distributions achieve the same minimal total flux
+ *     - Assumes the objective function (e.g., biomass) is correctly defined; results are sensitive to the choice of objective
+ *     - Does not account for enzyme expression costs or metabolite concentrations; only minimizes total flux magnitude
  */
 import { solveLP, type LPModel, type LPSolution } from './highsSolver';
 
