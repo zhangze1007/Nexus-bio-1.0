@@ -46,6 +46,20 @@ import { THEME } from '../../theme';
 import { PAPER_THEME } from '../charts/chartTheme';
 import { routeQuery, formatSolverResult, setCachedResponse } from '../../services/cognitiveRouter';
 import { computeConfidenceFromResult } from '../../services/confidenceEngine';
+import WorkflowStepper from './shared/WorkflowStepper';
+import ConfidenceBadge from './shared/ConfidenceBadge';
+import ResultSummaryPanel from './shared/ResultSummaryPanel';
+
+// ── Named constants ──
+const MAX_MESSAGES = 50;
+const MAX_HISTORY = 20;
+const MAX_ANSWER_LENGTH = 1200;
+const MAX_PREVIEW_LENGTH = 180;
+const SEMANTIC_SCHOLAR_LIMIT = 5;
+const AUTO_VERIFY_COUNT = 3;
+const PATHWAY_WIDTH = 600;
+const PATHWAY_HEIGHT = 420;
+const MAX_PATHWAY_NODES = 14;
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -62,11 +76,11 @@ function extractYear(citation?: string, structuredYear?: number | null): number 
 }
 
 function pathwayToResult(pathway: GeneratedPathway, query: string, provider: string): NEXAIResult {
-  const nodes = (pathway.nodes || []).slice(0, 14);
+  const nodes = (pathway.nodes || []).slice(0, MAX_PATHWAY_NODES);
   const bottlenecks = pathway.bottleneck_enzymes ?? [];
   const axon = pathway.axon_interaction;
 
-  const W = 600, H = 420;
+  const W = PATHWAY_WIDTH, H = PATHWAY_HEIGHT;
   const citations: CitationNode[] = nodes.map((n, i) => {
     const rawX = n.position ? n.position[0] * 45 + W / 2 : 60 + ((i * 115) % (W - 120));
     const rawY = n.position ? n.position[1] * 30 + H / 2 : 50 + Math.floor(i / 5) * 110 + (i % 2) * 28;
@@ -123,6 +137,8 @@ export default React.memo(function NEXAIPage() {
   const [surfaceView, setSurfaceView] = useState<SurfaceView>('answer');
   const [history, setHistory] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [routingTier, setRoutingTier] = useState<string | null>(null);
+  const [workflowStep, setWorkflowStep] = useState<'idle' | 'classify' | 'route' | 'execute' | 'synthesize'>('idle');
 
   // ── Conversation state for chat-style interface ──
   const [messages, setMessages] = useState<Array<{
@@ -196,7 +212,7 @@ export default React.memo(function NEXAIPage() {
   useEffect(() => {
     if (result?.citations && result.citations.length > 0 && !verified) {
       const controller = new AbortController();
-      const toVerify = result.citations.slice(0, 3);
+      const toVerify = result.citations.slice(0, AUTO_VERIFY_COUNT);
       verifyCitationsBatch(toVerify, controller.signal).then(batchResults => {
         const merged = mergeVerificationResults(result.citations, batchResults);
         setResult(prev => prev ? { ...prev, citations: merged } : prev);
@@ -257,7 +273,7 @@ export default React.memo(function NEXAIPage() {
       result: {
         confidence: result?.confidence ?? 0,
         citations: result?.citations.length ?? 0,
-        answerPreview: result?.answer.slice(0, 180) ?? '',
+        answerPreview: result?.answer.slice(0, MAX_PREVIEW_LENGTH) ?? '',
         mode: result ? resultMode : 'idle',
       },
       updatedAt: Date.now(),
@@ -277,8 +293,8 @@ export default React.memo(function NEXAIPage() {
     const activeQuery = query.trim();
     if (!activeQuery) return;
 
-    // Add user message to conversation
-    setMessages(prev => [...prev, {
+    // Add user message to conversation (cap at MAX_MESSAGES)
+    setMessages(prev => [...prev.slice(-(MAX_MESSAGES - 1)), {
       role: 'user',
       content: activeQuery,
       timestamp: Date.now(),
@@ -289,7 +305,7 @@ export default React.memo(function NEXAIPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
+    setHistory(prev => [activeQuery, ...prev.slice(0, MAX_HISTORY - 1)]);
 
     // Agentic mode: route + plan
     if (agenticMode) {
@@ -306,17 +322,21 @@ export default React.memo(function NEXAIPage() {
     setApiError(null);
     setParseError(null);
     setVerified(false);
+    setWorkflowStep('classify');
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${activeQuery.slice(0, 60)}${activeQuery.length > 60 ? '…' : ''}"` });
 
     // ── Cognitive Kernel: tier routing ──
     const routing = routeQuery(activeQuery, typeof copilotContext === 'string' ? copilotContext : JSON.stringify(copilotContext).substring(0, 200));
+    setRoutingTier(routing.tier);
+    setWorkflowStep('route');
     appendConsole({ level: 'info', module: 'nexai', message: `Router: ${routing.tier} — ${routing.reason}` });
 
     const contextualQuery = composeCopilotQuery(activeQuery, copilotContext);
 
+    let resolvedProvider = 'cognitive-kernel';
     try {
+      setWorkflowStep('execute');
       let answerText = '';
-      let resolvedProvider = 'cognitive-kernel';
       let solverResult: unknown = null;
       let solverName = '';
 
@@ -415,27 +435,31 @@ export default React.memo(function NEXAIPage() {
         answerText,
       );
 
+      // Build the result once and reuse for both state and conversation
+      setWorkflowStep('synthesize');
+      const pathwayResult = pathway ? pathwayToResult(pathway, activeQuery, resolvedProvider) : null;
+      const textResult: NEXAIResult = {
+        query: activeQuery,
+        answer: answerText.slice(0, MAX_ANSWER_LENGTH),
+        citations: [],
+        confidence: confidenceResult.overall,
+        generatedAt: Date.now(),
+      };
+      const activeResult = pathwayResult ?? textResult;
+
+      setResult(activeResult);
+      setResultMode(pathway ? 'pathway' : 'text');
+      setSurfaceView('answer');
+
       if (pathway) {
-        setResult(pathwayToResult(pathway, activeQuery, resolvedProvider));
-        setResultMode('pathway');
-        setSurfaceView('answer');
         const bottlenecks = pathway.bottleneck_enzymes?.length ?? 0;
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${resolvedProvider}` });
       } else {
-        setResult({
-          query: activeQuery,
-          answer: answerText.slice(0, 1200),
-          citations: [],
-          confidence: confidenceResult.overall,
-          generatedAt: Date.now(),
-        });
-        setResultMode('text');
-        setSurfaceView('answer');
         appendConsole({ level: 'success', module: 'nexai', message: `Response: ${confidenceResult.badge} confidence (${confidenceResult.level}) · ${routing.tier}` });
       }
 
       try {
-        const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(activeQuery.slice(0, 100))}&fields=title,authors,year,citationCount&limit=5`;
+        const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(activeQuery.slice(0, 100))}&fields=title,authors,year,citationCount&limit=${SEMANTIC_SCHOLAR_LIMIT}`;
         const ssRes = await fetch(ssUrl, { signal: controller.signal });
         if (ssRes.ok) {
           const ssData = await ssRes.json();
@@ -458,18 +482,18 @@ export default React.memo(function NEXAIPage() {
             appendConsole({ level: 'info', module: 'nexai', message: `Semantic Scholar: ${ssCitations.length} real citation(s) loaded` });
           }
         }
-      } catch { /* Semantic Scholar optional — abort or network error */ }
+      } catch (ssErr) {
+        // Surface a subtle warning when Semantic Scholar enrichment fails
+        appendConsole({ level: 'warn', module: 'nexai', message: `Semantic Scholar enrichment unavailable: ${ssErr instanceof Error ? ssErr.message.slice(0, 80) : 'network error'}` });
+      }
 
-      // Add assistant message to conversation
-      const finalResult = pathway
-        ? pathwayToResult(pathway, activeQuery, resolvedProvider)
-        : { answer: answerText.slice(0, 1200), confidence: confidenceResult.overall, citations: [] as CitationNode[] };
-      setMessages(prev => [...prev, {
+      // Add assistant message to conversation (reuse activeResult, cap at MAX_MESSAGES)
+      setMessages(prev => [...prev.slice(-(MAX_MESSAGES - 1)), {
         role: 'assistant',
-        content: finalResult.answer,
+        content: activeResult.answer,
         timestamp: Date.now(),
-        confidence: finalResult.confidence,
-        citations: finalResult.citations?.length ?? 0,
+        confidence: activeResult.confidence,
+        citations: activeResult.citations?.length ?? 0,
         actions: [], // Will be populated by next_steps in future
       }]);
 
@@ -479,14 +503,16 @@ export default React.memo(function NEXAIPage() {
       if (controller.signal.aborted) return;
 
       const errMsg = e instanceof Error ? e.message : String(e);
-      appendConsole({ level: 'error', module: 'nexai', message: `Groq API unavailable — ${errMsg.slice(0, 120)}` });
-      setApiError(`Groq API unavailable — ${errMsg}. Please verify GROQ_API_KEY is configured and try again.`);
+      const providerLabel = resolvedProvider ?? 'AI';
+      appendConsole({ level: 'error', module: 'nexai', message: `${providerLabel} API unavailable — ${errMsg.slice(0, 120)}` });
+      setApiError(`${providerLabel} API unavailable — ${errMsg}. Please verify your API key is configured and try again.`);
       setResult(null);
       setResultMode('idle');
       setSurfaceView('answer');
+      setWorkflowStep('idle');
 
-      // Add error message to conversation
-      setMessages(prev => [...prev, {
+      // Add error message to conversation (cap at MAX_MESSAGES)
+      setMessages(prev => [...prev.slice(-(MAX_MESSAGES - 1)), {
         role: 'system',
         content: `Error: ${errMsg.slice(0, 200)}`,
         timestamp: Date.now(),
@@ -575,23 +601,23 @@ export default React.memo(function NEXAIPage() {
                 label: 'Answer Mode',
                 value: result ? resultMode.toUpperCase() : 'IDLE',
                 detail: resultMode === 'pathway'
-                  ? 'Structured pathway JSON from the analysis route.'
+                  ? 'Pathway JSON analysis'
                   : resultMode === 'text'
-                    ? (malformedParse ? 'Model returned malformed structured output; raw fallback shown.' : 'Plain-language research synthesis.')
-                    : 'No active answer yet.',
+                    ? (malformedParse ? 'Malformed output; raw fallback.' : 'Research synthesis')
+                    : 'No active answer.',
                 tone: malformedParse ? 'alert' : resultMode === 'pathway' ? 'cool' : resultMode === 'text' ? 'warm' : 'neutral',
               },
               {
                 label: 'Quality Index',
                 value: result ? `${(result.confidence * 100).toFixed(0)}` : '—',
-                detail: `${selectedEvidenceIds.length} selected evidence item(s) · ${nextRecommendations.length} queued next-step recommendation(s)`,
+                detail: `${selectedEvidenceIds.length} evidence · ${nextRecommendations.length} queued`,
                 tone: result && result.confidence > 0.75 ? 'cool' : 'neutral',
               },
               {
                 label: 'Workflow',
                 value: workflowControl.status.toUpperCase(),
                 detail: workflowControl.nextRecommendedNode
-                  ? `Next node: ${workflowControl.nextRecommendedNode.toUpperCase()}${workflowControl.humanGateRequired ? ' · human gate' : ''}`
+                  ? `Next: ${workflowControl.nextRecommendedNode.toUpperCase()}${workflowControl.humanGateRequired ? ' · gate' : ''}`
                   : workflowControl.explanation,
                 tone: workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly' ? 'alert' : 'neutral',
               },
@@ -599,21 +625,21 @@ export default React.memo(function NEXAIPage() {
                 label: 'Citations',
                 value: `${result?.citations.length ?? 0}`,
                 detail: result && result.citations.length === 0
-                  ? 'No visible citations are attached to this answer yet. Treat it as ungrounded synthesis until Research evidence is attached.'
+                  ? 'No citations attached.'
                   : verified
                     ? (() => {
                         const summary = computeVerificationSummary(result!.citations);
-                        return `PubMed: ${summary.verified} verified, ${summary.unverified} partial, ${summary.notFound} not found`;
+                        return `PubMed: ${summary.verified} verified, ${summary.unverified} partial`;
                       })()
                     : evidenceItems.length
-                      ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).`
-                      : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
+                      ? `${evidenceItems.length} saved item(s).`
+                      : 'No saved evidence yet.',
                 tone: result && result.citations.length === 0 ? 'alert' : 'neutral',
               },
               {
                 label: 'Recent Query',
                 value: (query || history[0] || contextPrompt || 'Pending').slice(0, 44),
-                detail: loading ? 'Axon is currently synthesising a response.' : 'Recent query state remains part of the canonical workbench object graph.',
+                detail: loading ? 'Synthesising response.' : 'Query state tracked.',
                 tone: loading ? 'alert' : 'neutral',
               },
             ]}
@@ -767,9 +793,7 @@ export default React.memo(function NEXAIPage() {
                             {statusLabel}
                           </span>
                         )}
-                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
-                          {(c.relevance * 100).toFixed(0)}%
-                        </span>
+                        <ConfidenceBadge value={c.relevance} />
                       </div>
                     </div>
                     {c.pmid && (
@@ -876,7 +900,7 @@ export default React.memo(function NEXAIPage() {
             <div style={{ height: '1px', background: PAPER_THEME.border, margin: '2px 0' }} />
 
             {/* ── Conversation messages ── */}
-            {messages.length > 0 && (
+            {messages.length > 0 ? (
               <div style={{
                 display: 'flex', flexDirection: 'column', gap: '10px',
                 maxHeight: '280px', overflowY: 'auto',
@@ -889,6 +913,29 @@ export default React.memo(function NEXAIPage() {
                   <ChatMessage role="assistant" content="" isLoading timestamp={Date.now()} />
                 )}
                 <div ref={messagesEndRef} />
+              </div>
+            ) : (
+              <div
+                data-testid="nexai-conversation-empty"
+                style={{
+                  display: 'grid',
+                  placeItems: 'center',
+                  minHeight: '100px',
+                  padding: '16px',
+                  borderRadius: 'var(--nb-radius-md)',
+                  border: `1px dashed ${THEME.BORDER}`,
+                  background: 'rgba(255,255,255,0.015)',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ display: 'grid', gap: '4px' }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    No messages yet
+                  </div>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.DIM, lineHeight: 1.5 }}>
+                    Ask Axon a question to start the conversation.
+                  </div>
+                </div>
               </div>
             )}
 
@@ -950,6 +997,31 @@ export default React.memo(function NEXAIPage() {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* ── Workflow stepper: Cognitive Router tier progression ── */}
+            {(loading || result) && (
+              <WorkflowStepper
+                steps={[
+                  { id: 'classify', label: 'Classify', status: workflowStep === 'classify' ? 'active' : loading || result ? 'done' : 'pending' },
+                  { id: 'route', label: 'Route', status: workflowStep === 'route' ? 'active' : ['execute', 'synthesize'].includes(workflowStep) || result ? 'done' : 'pending' },
+                  { id: 'execute', label: 'Execute', status: workflowStep === 'execute' ? 'active' : workflowStep === 'synthesize' || result ? 'done' : 'pending' },
+                  { id: 'synthesize', label: 'Synthesize', status: workflowStep === 'synthesize' ? 'active' : result ? 'done' : 'pending' },
+                ]}
+                activeIndex={workflowStep === 'classify' ? 0 : workflowStep === 'route' ? 1 : workflowStep === 'execute' ? 2 : 3}
+              />
+            )}
+
+            {/* ── Result summary: compact metrics above detail view ── */}
+            {result && surfaceView === 'answer' && (
+              <ResultSummaryPanel
+                metrics={[
+                  { label: 'Confidence', value: `${(result.confidence * 100).toFixed(0)}%`, accent: result.confidence > 0.7 ? THEME.MINT : result.confidence > 0.4 ? THEME.APRICOT : THEME.CORAL },
+                  { label: 'Citations', value: result.citations.length },
+                  { label: 'Provider', value: provider ?? 'groq' },
+                  { label: 'Tier', value: routingTier ?? '—' },
+                ]}
+              />
             )}
 
             <div style={{ minHeight: 0, overflowY: 'auto' }}>
@@ -1173,28 +1245,6 @@ export default React.memo(function NEXAIPage() {
               ))}
             </div>
           )}
-
-          <div style={{
-            padding: '12px',
-            borderRadius: 'var(--nb-radius-md)',
-            border: `1px solid ${THEME.BORDER}`,
-            background: THEME.PANEL_INSET,
-            display: 'grid',
-            gap: '6px',
-          }}>
-            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Axon posture
-            </div>
-            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.55 }}>
-              {result
-                ? malformedParse
-                  ? 'Model returned malformed structured output — the raw response is preserved in the drawer for manual inspection.'
-                  : isUngrounded
-                    ? 'Axon returned a synthesis, but it is not yet citation-backed in the visible evidence graph.'
-                    : 'Axon is framed as a synthesis desk that turns literature structure into route-level scientific guidance.'
-                : 'This panel will become an evidence-backed routing summary once a query is run.'}
-            </div>
-          </div>
         </div>
       </ModuleCard>}
     </ToolShell>
