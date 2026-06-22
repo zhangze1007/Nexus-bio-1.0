@@ -63,6 +63,7 @@ export interface CatalystViewer3DProps {
   onResidueClick?: (data: ResidueClickData) => void;
   selectedResidue?: number | null;
   bindingQuality?: number;  // 0-1 from Kd, drives interaction line colors
+  pdbText?: string | null;  // uploaded PDB text — overrides AlphaFold/PDB fetch
   style?: React.CSSProperties;
 }
 
@@ -82,6 +83,7 @@ export default function CatalystViewer3D({
   onResidueClick,
   selectedResidue,
   bindingQuality = 0.3,
+  pdbText,
   style,
 }: CatalystViewer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,7 +92,9 @@ export default function CatalystViewer3D({
   const [useAlphaFold, setUseAlphaFold] = useState(false);
   const substrateAtomsRef = useRef<Record<string, unknown>[]>([]);
 
-  const sourceLabel = useAlphaFold
+  const sourceLabel = pdbText && pdbText.length > 100
+    ? 'Uploaded PDB'
+    : useAlphaFold
     ? `AlphaFold · ${enzyme.uniprotId}`
     : enzyme.pdbId ? `PDB · ${enzyme.pdbId}` : `AlphaFold · ${enzyme.uniprotId}`;
 
@@ -118,7 +122,10 @@ export default function CatalystViewer3D({
         const shouldUseAF = useAlphaFold || !enzyme.pdbId;
 
         // ── Load enzyme structure ──
-        if (shouldUseAF) {
+        if (pdbText && pdbText.length > 100) {
+          // Use uploaded PDB text directly
+          viewer.addModel(pdbText, 'pdb');
+        } else if (shouldUseAF) {
           const res = await fetch(`/api/alphafold?id=${enzyme.uniprotId}`);
           if (!res.ok) throw new Error(`AlphaFold ${res.status}`);
           const pdb = await res.text();
@@ -235,7 +242,7 @@ export default function CatalystViewer3D({
     init();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enzyme.id, enzyme.pdbId, enzyme.uniprotId, renderMode, useAlphaFold, spinEnabled]);
+  }, [enzyme.id, enzyme.pdbId, enzyme.uniprotId, renderMode, useAlphaFold, spinEnabled, pdbText]);
 
   /* ── Update highlight + interaction lines when selection or binding quality changes ── */
   useEffect(() => {

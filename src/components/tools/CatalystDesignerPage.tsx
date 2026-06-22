@@ -728,6 +728,10 @@ export default React.memo(function CatalystDesignerPage() {
   const [alphafoldSource, setAlphafoldSource] = useState<'live' | 'mock'>('mock');
   const [alphafoldPdbLength, setAlphafoldPdbLength] = useState(0);
 
+  // Uploaded PDB state
+  const [uploadedPdb, setUploadedPdb] = useState<string | null>(null);
+  const [uploadedPdbName, setUploadedPdbName] = useState<string | null>(null);
+
   // Molecular docking state
   const [dockingResult, setDockingResult] = useState<DockingResult | null>(null);
   const [dockingLoading, setDockingLoading] = useState(false);
@@ -1522,6 +1526,64 @@ export default React.memo(function CatalystDesignerPage() {
                 )}
               </div>
             </div>
+            {/* Upload PDB Section */}
+            <div style={{ marginBottom: '12px' }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Upload PDB</span>
+              <div
+                style={{
+                  marginTop: 4, padding: '10px 12px', borderRadius: 8,
+                  border: `2px dashed ${uploadedPdb ? THEME.MINT : INPUT_BORDER}`,
+                  background: uploadedPdb ? 'rgba(147,203,82,0.06)' : 'transparent',
+                  cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
+                }}
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.pdb';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (!file) return;
+                    try {
+                      const text = await file.text();
+                      if (text.length < 100) throw new Error('File too small to be a valid PDB');
+                      setUploadedPdb(text);
+                      setUploadedPdbName(file.name);
+                      setCatdesError(null);
+                    } catch (err) {
+                      setCatdesError(err instanceof Error ? err.message : 'Failed to read PDB file');
+                    }
+                  };
+                  input.click();
+                }}
+              >
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: uploadedPdb ? THEME.MINT : LABEL }}>
+                  {uploadedPdbName ?? 'Drag & drop or click to upload .pdb'}
+                </div>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: LABEL, marginTop: 2, opacity: 0.6 }}>
+                  PDB format (plain text)
+                </div>
+              </div>
+              {uploadedPdb && (
+                <div style={{ marginTop: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Size</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{(uploadedPdb.length / 1000).toFixed(1)}k chars</span>
+                  </div>
+                  <button
+                    onClick={() => { setUploadedPdb(null); setUploadedPdbName(null); }}
+                    style={{
+                      width: '100%', marginTop: 4,
+                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
+                      color: THEME.CORAL, background: 'rgba(250,128,114,0.08)',
+                      border: `1px solid rgba(250,128,114,0.2)`,
+                      borderRadius: 6, padding: '3px 6px', cursor: 'pointer',
+                    }}
+                  >
+                    Clear uploaded PDB
+                  </button>
+                </div>
+              )}
+            </div>
             <div style={{ marginBottom: '12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
               <span>{enzyme.substrate}</span>
               <span style={{ color: VALUE, margin: '0 4px' }}>→</span>
@@ -1601,7 +1663,7 @@ export default React.memo(function CatalystDesignerPage() {
             )}
           </FloatingControlRail>
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-            <CatalystViewer3D enzyme={enzyme} renderMode={renderMode} spinEnabled={spinEnabled} onResidueClick={handleResidueClick} selectedResidue={selectedResidue} bindingQuality={binding.overallScore} style={{ height: '100%' }} />
+            <CatalystViewer3D enzyme={enzyme} renderMode={renderMode} spinEnabled={spinEnabled} onResidueClick={handleResidueClick} selectedResidue={selectedResidue} bindingQuality={binding.overallScore} pdbText={uploadedPdb} style={{ height: '100%' }} />
             <InlineMetricOverlay
               position="top-right"
               metrics={[

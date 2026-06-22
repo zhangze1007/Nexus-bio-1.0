@@ -11,6 +11,8 @@ import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore } from 
 import { designgRNAs, type CasProtein } from '../../server/grnaDesigner';
 import type { CRISPRiTarget } from '../../types';
 import { getToolValidity } from '../../config/toolValidity';
+import DataUpload from '../shared/DataUpload';
+import DataPreview from '../shared/DataPreview';
 
 /**
  * Generate a deterministic pseudo-sequence from a numeric seed.
@@ -280,6 +282,12 @@ export default React.memo(function GenMIMPage() {
   const [efficiency, setEfficiency] = useState(0.8);
   const [maxTargets, setMaxTargets] = useState(5);
   const [protectEssential, setProtectEssential] = useState(true);
+
+  // Custom gene targets upload
+  const [customTargets, setCustomTargets] = useState<Array<{ geneId: string; geneName: string; essentiality: number; flux: number }> | null>(null);
+  const [customTargetHeaders, setCustomTargetHeaders] = useState<string[]>([]);
+  const [customTargetRows, setCustomTargetRows] = useState<Record<string, string>[]>([]);
+  const [customTargetError, setCustomTargetError] = useState<string | null>(null);
   const recommendedEfficiency = useMemo(() => {
     const value = 0.72
       + (fbaPayload?.result.feasible ? 0.08 : 0)
@@ -301,8 +309,26 @@ export default React.memo(function GenMIMPage() {
 
   // Flux-boosted CRISPRi targets: boost knockdown_efficiency for genes
   // whose corresponding FBA reactions carry high flux (bottleneck candidates)
+  // Merges custom uploaded targets with default CRISPRI_TARGETS
   const fluxBoostedTargets = useMemo(() => {
-    if (!fbaPayload?.result.topFluxes?.length) return CRISPRI_TARGETS;
+    // Build base targets: merge custom + default
+    let baseTargets: CRISPRiTarget[] = [...CRISPRI_TARGETS];
+    if (customTargets && customTargets.length > 0) {
+      const defaultGeneIds = new Set(CRISPRI_TARGETS.map(t => t.gene));
+      const customAsTargets: CRISPRiTarget[] = customTargets.map(ct => ({
+        gene: ct.geneId,
+        position: 0,
+        essential: ct.essentiality > 0.5,
+        knockdown_efficiency: 0.8,
+        phenotype: ct.geneName || ct.geneId,
+        growth_impact: -0.05,
+      }));
+      // Add custom targets that don't already exist in defaults
+      const newCustom = customAsTargets.filter(t => !defaultGeneIds.has(t.gene));
+      baseTargets = [...CRISPRI_TARGETS, ...newCustom];
+    }
+
+    if (!fbaPayload?.result.topFluxes?.length) return baseTargets;
     const geneFluxBoost = new Map<string, number>();
     for (const { reactionId, flux } of fbaPayload.result.topFluxes) {
       const genes = REACTION_TO_GENES[reactionId];
@@ -312,16 +338,16 @@ export default React.memo(function GenMIMPage() {
         }
       }
     }
-    if (geneFluxBoost.size === 0) return CRISPRI_TARGETS;
+    if (geneFluxBoost.size === 0) return baseTargets;
     const maxFlux = Math.max(...geneFluxBoost.values(), 1);
-    return CRISPRI_TARGETS.map((t) => {
+    return baseTargets.map((t) => {
       const boost = geneFluxBoost.get(t.gene);
       if (boost === undefined) return t;
       // Boost knockdown_efficiency by up to 0.08 for high-flux genes
       const normalizedBoost = (boost / maxFlux) * 0.08;
       return { ...t, knockdown_efficiency: Math.min(1, t.knockdown_efficiency + normalizedBoost) };
     });
-  }, [fbaPayload?.result.topFluxes]);
+  }, [fbaPayload?.result.topFluxes, customTargets]);
 
   const { data: schedule, error: simError } = useMemo(() => {
     try {
@@ -519,6 +545,75 @@ export default React.memo(function GenMIMPage() {
       {/* ── Targets Tab ── */}
       <ToolTabPanel tabId="targets" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+          {/* Upload Gene Targets Section */}
+          <div style={{
+            padding: '12px', marginBottom: '16px', borderRadius: 'var(--nb-radius-md)',
+            border: `1px solid ${THEME.BORDER}`, background: THEME.PANEL_INSET,
+          }}>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+              Upload Gene Targets
+            </div>
+            <DataUpload
+              accept=".csv,.tsv"
+              label="Upload custom gene targets"
+              onUpload={(rows, headers) => {
+                const lowerHeaders = headers.map(h => h.toLowerCase());
+                const geneIdCol = lowerHeaders.findIndex(h => h === 'gene_id' || h === 'geneid' || h === 'gene');
+                const geneNameCol = lowerHeaders.findIndex(h => h === 'gene_name' || h === 'genename' || h === 'name');
+                const essentialityCol = lowerHeaders.findIndex(h => h === 'essentiality' || h === 'essential');
+                const fluxCol = lowerHeaders.findIndex(h => h === 'flux');
+                if (geneIdCol === -1) {
+                  setCustomTargetError('CSV must have a gene_id column');
+                  return;
+                }
+                const parsed = rows.map(row => {
+                  const vals = Object.values(row);
+                  return {
+                    geneId: vals[geneIdCol],
+                    geneName: geneNameCol >= 0 ? vals[geneNameCol] : vals[geneIdCol],
+                    essentiality: essentialityCol >= 0 ? parseFloat(vals[essentialityCol]) || 0 : 0,
+                    flux: fluxCol >= 0 ? parseFloat(vals[fluxCol]) || 0 : 0,
+                  };
+                }).filter(d => d.geneId);
+                if (parsed.length === 0) {
+                  setCustomTargetError('No valid gene targets found');
+                  return;
+                }
+                setCustomTargets(parsed);
+                setCustomTargetHeaders(headers);
+                setCustomTargetRows(rows);
+                setCustomTargetError(null);
+              }}
+              onError={(err) => setCustomTargetError(err)}
+            />
+            {customTargetError && (
+              <p style={{ margin: '6px 0 0', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.CORAL }}>
+                {customTargetError}
+              </p>
+            )}
+            {customTargets && customTargets.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.MINT }}>
+                    {customTargets.length} custom gene targets loaded — merged with {CRISPRI_TARGETS.length} defaults
+                  </span>
+                  <button
+                    onClick={() => { setCustomTargets(null); setCustomTargetHeaders([]); setCustomTargetRows([]); }}
+                    style={{
+                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
+                      color: THEME.CORAL, background: 'rgba(250,128,114,0.08)',
+                      border: `1px solid rgba(250,128,114,0.2)`,
+                      borderRadius: 4, padding: '2px 6px', cursor: 'pointer',
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                <DataPreview headers={customTargetHeaders} rows={customTargetRows} maxRows={5} />
+              </div>
+            )}
+          </div>
+
           <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: THEME.LABEL, marginBottom: '10px' }}>
             All CRISPRi Targets
           </div>
