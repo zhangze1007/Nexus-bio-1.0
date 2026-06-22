@@ -30,6 +30,8 @@ import { searchPubChemCompound } from '../../services/database/pubchemClient';
 import type { PubChemCompound } from '../../services/database/pubchemClient';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
+import DataUpload from '../shared/DataUpload';
+import DataPreview from '../shared/DataPreview';
 
 // ── Per-step proton stoichiometry for Alberty transform ──────────────────
 // Estimated nH (net H+ absorbed) and Δz² (charge change squared) per step.
@@ -367,6 +369,12 @@ export default React.memo(function CETHXPage() {
   const [pubchemSource, setPubchemSource] = useState<'live' | 'mock'>('mock');
   const [pubchemLoading, setPubchemLoading] = useState(false);
 
+  // Custom thermodynamic data upload
+  const [customThermoData, setCustomThermoData] = useState<Array<{ reaction: string; deltaG: number; keq?: number }> | null>(null);
+  const [customThermoHeaders, setCustomThermoHeaders] = useState<string[]>([]);
+  const [customThermoRows, setCustomThermoRows] = useState<Record<string, string>[]>([]);
+  const [customThermoError, setCustomThermoError] = useState<string | null>(null);
+
   const recommendedSeed = useMemo(
     () => buildCETHXSeed(project, analyzeArtifact, fbaPayload, pathdPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, fbaPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
@@ -461,6 +469,9 @@ export default React.memo(function CETHXPage() {
     const T = tempC + 273.15;
     const ionicStrength = 0.25; // physiological ionic strength (M)
 
+    let stepsWithCumulative: ReturnType<typeof computeThermo>['steps'];
+    let totalDeltaG: number;
+
     // Source 1: eQuilibrator API data (best)
     if (isRealData && equilibratorData.size > 0) {
       const baseThermo = computeThermo(PATHWAY_STEPS[pathway], tempC, pH);
@@ -472,35 +483,47 @@ export default React.memo(function CETHXPage() {
         return step;
       });
 
+      // Apply custom thermo data overrides
+      const customOverrides = customThermoData
+        ? new Map(customThermoData.map(d => [d.reaction, d]))
+        : null;
+      const overriddenSteps = customOverrides
+        ? mergedSteps.map(step => {
+            const custom = customOverrides.get(step.step);
+            return custom ? { ...step, deltaG: custom.deltaG } : step;
+          })
+        : mergedSteps;
+
       let cum = 0;
-      const stepsWithCumulative = mergedSteps.map(step => { cum += step.deltaG; return { ...step, cumulative: cum }; });
-      const totalDeltaG = cum;
-      const atpNet = stepsWithCumulative.reduce((a, s) => a + s.atpYield, 0);
-      const nadhYield = stepsWithCumulative.reduce((a, s) => a + (s.nadhYield ?? 0), 0);
-      const dissipationKJ = -totalDeltaG;
-      const entropyChange = dissipationKJ / T;
-      const efficiency = Math.max(0, Math.min(100, (-totalDeltaG / 2870) * 100));
-      return {
-        steps: stepsWithCumulative,
-        atp_yield: atpNet, nadh_yield: nadhYield,
-        entropy_production: entropyChange, dissipation_kJ_per_mol: dissipationKJ,
-        gibbs_free_energy: totalDeltaG, efficiency,
-      };
+      stepsWithCumulative = overriddenSteps.map(step => { cum += step.deltaG; return { ...step, cumulative: cum }; });
+      totalDeltaG = cum;
+    } else {
+      // Source 2: Alberty-transformed reference ΔG° via calcTransformedGibbs (local real calculation)
+      const refSteps = PATHWAY_STEPS[pathway];
+      const stoich = STEP_PROTON_STOICH[pathway];
+
+      const transformedSteps = refSteps.map((refStep, i) => {
+        const { nH, dz2 } = stoich?.[i] ?? { nH: 0, dz2: 0 };
+        const transformedDG = calcTransformedGibbs(refStep.deltaG, pH, ionicStrength, T, nH, dz2);
+        return { ...refStep, deltaG: transformedDG, uncertainty: Math.abs(transformedDG) * 0.15 };
+      });
+
+      // Apply custom thermo data overrides
+      const customOverrides = customThermoData
+        ? new Map(customThermoData.map(d => [d.reaction, d]))
+        : null;
+      const overriddenSteps = customOverrides
+        ? transformedSteps.map(step => {
+            const custom = customOverrides.get(step.step);
+            return custom ? { ...step, deltaG: custom.deltaG } : step;
+          })
+        : transformedSteps;
+
+      let cum = 0;
+      stepsWithCumulative = overriddenSteps.map(step => { cum += step.deltaG; return { ...step, cumulative: cum }; });
+      totalDeltaG = cum;
     }
 
-    // Source 2: Alberty-transformed reference ΔG° via calcTransformedGibbs (local real calculation)
-    const refSteps = PATHWAY_STEPS[pathway];
-    const stoich = STEP_PROTON_STOICH[pathway];
-
-    const transformedSteps = refSteps.map((refStep, i) => {
-      const { nH, dz2 } = stoich?.[i] ?? { nH: 0, dz2: 0 };
-      const transformedDG = calcTransformedGibbs(refStep.deltaG, pH, ionicStrength, T, nH, dz2);
-      return { ...refStep, deltaG: transformedDG, uncertainty: Math.abs(transformedDG) * 0.15 };
-    });
-
-    let cum = 0;
-    const stepsWithCumulative = transformedSteps.map(step => { cum += step.deltaG; return { ...step, cumulative: cum }; });
-    const totalDeltaG = cum;
     const atpNet = stepsWithCumulative.reduce((a, s) => a + s.atpYield, 0);
     const nadhYield = stepsWithCumulative.reduce((a, s) => a + (s.nadhYield ?? 0), 0);
     const dissipationKJ = -totalDeltaG;
@@ -512,7 +535,7 @@ export default React.memo(function CETHXPage() {
       entropy_production: entropyChange, dissipation_kJ_per_mol: dissipationKJ,
       gibbs_free_energy: totalDeltaG, efficiency,
     };
-  }, [pathway, tempC, pH, isRealData, equilibratorData]);
+  }, [pathway, tempC, pH, isRealData, equilibratorData, customThermoData]);
 
   const limitingStep = useMemo(
     () => [...thermo.steps].sort((left, right) => right.deltaG - left.deltaG)[0]?.step ?? null,
@@ -708,6 +731,7 @@ export default React.memo(function CETHXPage() {
       }
       footer={
         <>
+          <DataSourceBadge source={isRealData ? 'live' : 'mock'} label={isRealData ? 'eQuilibrator Live' : 'eQuilibrator Demo'} />
           {fba && (
             <div role="status" style={{ padding: '6px 14px', background: `${THEME.SKY}24`, border: `1px solid ${THEME.SKY}47`, borderRadius: 'var(--nb-radius-md)', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
               <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: `${THEME.SKY}38`, border: `1px solid ${THEME.SKY}57`, color: THEME.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
@@ -726,6 +750,45 @@ export default React.memo(function CETHXPage() {
         </>
       }
     >
+      {/* ── Demo data warning ── */}
+      {!isRealData && !isLoadingEquilibrator && (
+        <div style={{ padding: '4px 16px' }}>
+          <div style={{ padding: '4px 8px', background: 'rgba(232,220,200,0.12)', borderRadius: '4px', fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
+            Using demo data — eQuilibrator API unavailable.{' '}
+            <button
+              onClick={() => {
+                const reactions = KEGG_REACTIONS[pathway];
+                if (reactions) {
+                  setIsLoadingEquilibrator(true);
+                  const newData = new Map<string, { dG_prime: number; dG_prime_uncertainty: number }>();
+                  Promise.allSettled(Object.entries(reactions).map(async ([stepName, formula]) => {
+                    try {
+                      const response = await fetch('/api/equilibrator', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reaction: formula, pH, temperature: tempC + 273.15, ionic_strength: 0.25 }),
+                      });
+                      if (response.ok) {
+                        const result = await response.json();
+                        if (!result.error && result.dG_prime !== undefined) {
+                          newData.set(stepName, { dG_prime: result.dG_prime, dG_prime_uncertainty: result.dG_prime_uncertainty || 0 });
+                        }
+                      }
+                    } catch { /* skip */ }
+                  })).then(() => {
+                    if (newData.size > 0) { setEquilibratorData(newData); setIsRealData(true); }
+                    setIsLoadingEquilibrator(false);
+                  });
+                }
+              }}
+              style={{ background: 'none', border: 'none', color: THEME.SKY, cursor: 'pointer', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textDecoration: 'underline' }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Algorithm Transparency ── */}
       <div style={{ padding: '8px 16px' }}>
         <AlgorithmPanel
@@ -850,6 +913,73 @@ export default React.memo(function CETHXPage() {
                 <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, opacity: 0.7 }}>
                   No compound found for "{compoundQuery}"
                 </p>
+              )}
+            </div>
+
+            {/* ── Custom Thermodynamic Data Upload ── */}
+            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${THEME.BORDER}` }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Upload Thermodynamic Data
+              </span>
+              <div style={{ marginTop: 6 }}>
+                <DataUpload
+                  accept=".csv,.tsv"
+                  label="Upload custom ΔG data"
+                  onUpload={(rows, headers) => {
+                    // Validate required columns
+                    const lowerHeaders = headers.map(h => h.toLowerCase());
+                    const reactionCol = lowerHeaders.findIndex(h => h === 'reaction_id' || h === 'reaction' || h === 'step');
+                    const deltaGCol = lowerHeaders.findIndex(h => h === 'deltag' || h === 'delta_g' || h === 'δg' || h === 'dg');
+                    if (reactionCol === -1 || deltaGCol === -1) {
+                      setCustomThermoError('CSV must have reaction_id and deltaG columns');
+                      return;
+                    }
+                    const keqCol = lowerHeaders.findIndex(h => h === 'keq' || h === 'k_eq');
+                    const parsed = rows.map(row => {
+                      const vals = Object.values(row);
+                      return {
+                        reaction: vals[reactionCol],
+                        deltaG: parseFloat(vals[deltaGCol]),
+                        keq: keqCol >= 0 ? parseFloat(vals[keqCol]) : undefined,
+                      };
+                    }).filter(d => d.reaction && !isNaN(d.deltaG));
+                    if (parsed.length === 0) {
+                      setCustomThermoError('No valid data rows found');
+                      return;
+                    }
+                    setCustomThermoData(parsed);
+                    setCustomThermoHeaders(headers);
+                    setCustomThermoRows(rows);
+                    setCustomThermoError(null);
+                  }}
+                  onError={(err) => setCustomThermoError(err)}
+                />
+              </div>
+              {customThermoError && (
+                <p style={{ margin: '6px 0 0', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.CORAL }}>
+                  {customThermoError}
+                </p>
+              )}
+              {customThermoData && customThermoData.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.MINT }}>
+                      {customThermoData.length} custom reactions loaded
+                    </span>
+                    <button
+                      onClick={() => { setCustomThermoData(null); setCustomThermoHeaders([]); setCustomThermoRows([]); }}
+                      style={{
+                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
+                        color: THEME.CORAL, background: 'rgba(250,128,114,0.08)',
+                        border: `1px solid rgba(250,128,114,0.2)`,
+                        borderRadius: 4, padding: '2px 6px', cursor: 'pointer',
+                      }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <DataPreview headers={customThermoHeaders} rows={customThermoRows} maxRows={3} />
+                </div>
               )}
             </div>
 

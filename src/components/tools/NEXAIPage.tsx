@@ -47,6 +47,7 @@ import { computeConfidenceFromResult } from '../../services/confidenceEngine';
 import WorkflowStepper from './shared/WorkflowStepper';
 import ConfidenceBadge from './shared/ConfidenceBadge';
 import ResultSummaryPanel from './shared/ResultSummaryPanel';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 // ── Named constants ──
 const MAX_MESSAGES = 50;
@@ -186,6 +187,7 @@ export default React.memo(function NEXAIPage() {
   } = axon;
   const [routeHint, setRouteHint] = useState<IntentRoute | null>(null);
   const [secondaryOpen, setSecondaryOpen] = useState(false);
+  const [ssSource, setSsSource] = useState<'live' | 'mock'>('mock');
 
   // PR-5: when agentic mode flips on and a session already has activity,
   // default the reading surface to 'session' so the viewer is the first
@@ -461,6 +463,7 @@ export default React.memo(function NEXAIPage() {
         const ssRes = await fetch(ssUrl, { signal: controller.signal });
         if (ssRes.ok) {
           const ssData = await ssRes.json();
+          setSsSource('live');
           // Normalize relevance from citationCount rather than positional rank
           const maxCitations = Math.max(1, ...((ssData.data ?? []) as Record<string, unknown>[]).map(
             (p) => (p.citationCount as number) ?? 0,
@@ -479,8 +482,11 @@ export default React.memo(function NEXAIPage() {
             } : prev);
             appendConsole({ level: 'info', module: 'nexai', message: `Semantic Scholar: ${ssCitations.length} real citation(s) loaded` });
           }
+        } else {
+          setSsSource('mock');
         }
       } catch (ssErr) {
+        setSsSource('mock');
         // Surface a subtle warning when Semantic Scholar enrichment fails
         appendConsole({ level: 'warn', module: 'nexai', message: `Semantic Scholar enrichment unavailable: ${ssErr instanceof Error ? ssErr.message.slice(0, 80) : 'network error'}` });
       }
@@ -1133,6 +1139,18 @@ export default React.memo(function NEXAIPage() {
       {/* ── Right rail: stats + posture (hidden on mobile, collapsed when no result) ── */}
       {!isMobile && <ModuleCard area="stats" title="Query Stats">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+          {/* Semantic Scholar data source indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Semantic Scholar
+            </span>
+            <DataSourceBadge source={ssSource} label={ssSource === 'live' ? 'SS Live' : 'SS Demo'} />
+          </div>
+          {ssSource === 'mock' && result && (
+            <div style={{ padding: '4px 8px', background: 'rgba(232,220,200,0.12)', borderRadius: '4px', fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
+              Using demo data — Semantic Scholar unavailable.
+            </div>
+          )}
           {result ? (
             <>
               <MetricCard label="Quality Index" value={`${(result.confidence * 100).toFixed(0)}`} highlight />
