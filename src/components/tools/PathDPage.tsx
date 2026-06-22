@@ -6,6 +6,7 @@ import type { KEGGPathwayResult } from '../../services/database/keggClient';
 import type { FallbackResult } from '../../services/database/fetchWithFallback';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
 import { useUIStore } from '../../store/uiStore';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 import { keggToPathway } from '../../utils/keggToPathway';
 import { findPathways } from '../../server/retrosynthesis';
 import type { RetrosynthesisResult } from '../../server/retrosynthesis';
@@ -33,6 +34,7 @@ export default React.memo(function PathDPage() {
 
   const setAiPathway = useUIStore(s => s.setAiPathway);
   const resetPathway = useUIStore(s => s.resetPathway);
+  const setToolPayload = useWorkbenchStore(s => s.setToolPayload);
 
   const handleKeggSearch = useCallback(async () => {
     if (!keggQuery.trim()) return;
@@ -40,10 +42,31 @@ export default React.memo(function PathDPage() {
     try {
       const result = await searchKEGGPathway(keggQuery.trim());
       setKeggResult(result);
+      if (result.data.compounds.length > 0) {
+        setToolPayload('pathd', {
+          validity: result.source === 'live' ? 'partial' : 'demo',
+          toolId: 'pathd',
+          targetProduct: result.data.name,
+          activeRouteLabel: result.data.name,
+          nodeCount: result.data.compounds.length,
+          edgeCount: result.data.reactions.length,
+          selectedNodeId: null,
+          result: {
+            pathwayCandidates: 1,
+            bottleneckCount: 0,
+            enzymeCandidates: 0,
+            thermodynamicConcerns: 0,
+            highlightedNode: null,
+            recommendedNextTool: 'fbasim',
+            evidenceLinked: result.source === 'live',
+          },
+          updatedAt: Date.now(),
+        });
+      }
     } finally {
       setKeggLoading(false);
     }
-  }, [keggQuery]);
+  }, [keggQuery, setToolPayload]);
 
   const handleClear = useCallback(() => {
     setKeggQuery('');
@@ -61,10 +84,29 @@ export default React.memo(function PathDPage() {
         maxPathways: 10,
       });
       setRetroResult(result);
+      setToolPayload('pathd', {
+        validity: 'demo',
+        toolId: 'pathd',
+        targetProduct: retroTarget,
+        activeRouteLabel: `Retrosynthesis: ${retroTarget}`,
+        nodeCount: result.pathways[0]?.steps.length ?? 0,
+        edgeCount: Math.max(0, (result.pathways[0]?.steps.length ?? 0) - 1),
+        selectedNodeId: null,
+        result: {
+          pathwayCandidates: result.pathways.length,
+          bottleneckCount: 0,
+          enzymeCandidates: 0,
+          thermodynamicConcerns: 0,
+          highlightedNode: null,
+          recommendedNextTool: 'catdes',
+          evidenceLinked: false,
+        },
+        updatedAt: Date.now(),
+      });
     } finally {
       setRetroLoading(false);
     }
-  }, [retroTarget]);
+  }, [retroTarget, setToolPayload]);
 
   const handlePathwayDiscovery = useCallback(async () => {
     if (!discoverTarget.trim()) return;
@@ -80,10 +122,32 @@ export default React.memo(function PathDPage() {
         preferredOrganism: discoverOrganism,
       });
       setDiscoverResult(result);
+      if (result.pathways.length > 0) {
+        const best = result.pathways[0];
+        setToolPayload('pathd', {
+          validity: 'partial',
+          toolId: 'pathd',
+          targetProduct: discoverTarget,
+          activeRouteLabel: `Discovery: ${discoverTarget}`,
+          nodeCount: best.metrics.pathwayLength,
+          edgeCount: Math.max(0, best.metrics.pathwayLength - 1),
+          selectedNodeId: null,
+          result: {
+            pathwayCandidates: result.pathways.length,
+            bottleneckCount: best.bottlenecks.length,
+            enzymeCandidates: 0,
+            thermodynamicConcerns: best.metrics.totalDeltaG > 0 ? 1 : 0,
+            highlightedNode: null,
+            recommendedNextTool: 'fbasim',
+            evidenceLinked: false,
+          },
+          updatedAt: Date.now(),
+        });
+      }
     } finally {
       setDiscoverLoading(false);
     }
-  }, [discoverTarget, discoverPrecursors, discoverOrganism]);
+  }, [discoverTarget, discoverPrecursors, discoverOrganism, setToolPayload]);
 
   // Inject KEGG pathway into uiStore when live data arrives.
   // MetabolicEngPage picks it up via tier 4 (uiGraph) of its resolution cascade.
