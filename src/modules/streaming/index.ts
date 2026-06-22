@@ -110,14 +110,24 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
     // Check for anomalies if data has metric and value
     if (data && typeof data.metric === 'string' && typeof data.value === 'number') {
       const anomalies = detector.check({ metric: data.metric, value: data.value });
-      if (anomalies.length > 0) {
-        // Publish anomalies to server
-        for (const anomaly of anomalies) {
-          server.publish('anomalies', anomaly);
-        }
+      for (const anomaly of anomalies) {
+        server.publish('anomalies', anomaly);
       }
     }
 
+    return result;
+  };
+
+  // Also wire processNext() — it calls this.processItem() directly, bypassing process()
+  const originalProcessNext = pipeline.processNext.bind(pipeline);
+  pipeline.processNext = async () => {
+    const result = await originalProcessNext();
+    if (result !== undefined && result && typeof result.metric === 'string' && typeof result.value === 'number') {
+      const anomalies = detector.check({ metric: result.metric, value: result.value });
+      for (const anomaly of anomalies) {
+        server.publish('anomalies', anomaly);
+      }
+    }
     return result;
   };
 
@@ -125,17 +135,14 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
 }
 
 /**
- * Create a streaming stack with sensible default configuration.
+ * Create a fully configured streaming stack with default stages and anomaly rules.
  *
- * Equivalent to calling `createStreamingStack()` with no arguments.
- * Returns a ready-to-use stack where:
- * - Server listens on port 8080 with 30s heartbeat
- * - Pipeline has a 100-item buffer queue
- * - Detector uses a 100-sample sliding window with z-score threshold of 3
+ * Includes:
+ *   - Pipeline stages: 'validate' (rejects non-objects), 'timestamp' (adds missing timestamps)
+ *   - Anomaly rules: CPU > 90% (high), Memory > 85% (medium)
+ *   - Wiring: pipeline → detector → server auto-publish
  *
- * The caller should add pipeline stages and threshold rules before starting.
- *
- * @returns A StreamingStack with default configuration
+ * @returns A StreamingStack with default configuration, ready to start
  *
  * @example
  * ```ts
