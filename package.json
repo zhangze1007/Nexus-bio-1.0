@@ -69,7 +69,7 @@
     "protobufjs": ">=7.4.0",
     "handlebars": ">=4.7.8",
     "brace-expansion": ">=2.0.1",
-    "ws": ">=8.17.1",
+    "ws": "$ws",
     "postcss": ">=8.4.31"
   }
 }
