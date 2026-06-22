@@ -333,7 +333,7 @@ export async function POST(request: Request) {
     // stack traces and internal paths are not).
     const clientMessage = errorMsg.includes('solve') || errorMsg.includes('infeasible') || errorMsg.includes('unbounded')
       ? `FBA solve failed: ${errorMsg}`
-      : 'Authoritative FBA solve failed';
+      : `FBA engine error: ${errorMsg}`;
     return NextResponse.json(
       {
         ok: false,

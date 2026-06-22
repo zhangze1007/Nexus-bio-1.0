@@ -257,8 +257,13 @@ function mapStatus(
       return 'infeasible';
     case 'Unbounded':
       return 'unbounded';
+    case 'Time limit reached':
+    case 'Iteration limit reached':
+    case 'Bound on objective reached':
+    case 'Target for objective reached':
+      return 'infeasible'; // treat as non-optimal
     default:
-      return 'error';
+      return 'error'; // Load error, Model error, Presolve error, etc.
   }
 }
 
@@ -286,6 +291,7 @@ export async function solveLP(model: LPModel): Promise<LPSolution> {
     });
   } catch (err) {
     const solveTime = performance.now() - startTime;
+    console.error('[HiGHS] solve() threw:', err instanceof Error ? err.message : err);
     return {
       status: 'error',
       objectiveValue: 0,

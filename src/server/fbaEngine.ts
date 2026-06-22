@@ -245,6 +245,9 @@ async function buildAndSolve(
   }
 
   // status 2 = optimal (mirrors GLPK GLP_OPT), 4 = infeasible
+  if (result.status === 'error') {
+    console.warn('[FBA] Solver error — returning zeroed fluxes. This usually indicates a HiGHS WASM issue.');
+  }
   const status = result.status === 'optimal' ? 2 : 4;
   return { vars, status, z: result.objectiveValue, duals: result.duals };
 }

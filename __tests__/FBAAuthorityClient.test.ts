@@ -164,7 +164,7 @@ describe('solveAuthorityFBA', () => {
         glucoseUptake: 10,
         oxygenUptake: 20,
       }),
-    ).rejects.toThrow('Authoritative FBA service failed');
+    ).rejects.toThrow('Response parse failed');
   });
 
   it('passes abort signal', async () => {

@@ -1017,7 +1017,7 @@ export default React.memo(function FBASimPage() {
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>}
+            {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} onRetry={() => setSingleError(null)} /></div>}
             {singleLoading && (
               <div style={{ padding: '0 16px 8px' }}>
                 <div style={{ padding: '6px 10px', borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', marginBottom: '8px' }}>
@@ -1093,7 +1093,7 @@ export default React.memo(function FBASimPage() {
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>}
+            {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} onRetry={() => setSingleError(null)} /></div>}
 
             <ScientificFigureFrame
               eyebrow="Knockout Analysis"

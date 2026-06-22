@@ -43,9 +43,9 @@ async function requestAuthorityResponse<T>(body: Record<string, unknown>, signal
     body: JSON.stringify(body),
   });
 
-  const payload = await response.json().catch(() => {
-    console.warn(`[FBA] Failed to parse JSON response (status ${response.status})`);
-    return {};
+  const payload = await response.json().catch((parseErr: Error) => {
+    console.warn(`[FBA] Failed to parse JSON response (status ${response.status}): ${parseErr.message}`);
+    return { error: `Response parse failed (status ${response.status})` };
   });
   if (!response.ok || !payload?.ok) {
     throw new Error(payload?.error ?? 'Authoritative FBA service failed');
