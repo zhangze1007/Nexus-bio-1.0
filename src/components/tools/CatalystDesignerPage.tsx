@@ -732,6 +732,11 @@ export default React.memo(function CatalystDesignerPage() {
   const [uploadedPdb, setUploadedPdb] = useState<string | null>(null);
   const [uploadedPdbName, setUploadedPdbName] = useState<string | null>(null);
 
+  // ESMFold prediction state
+  const [esmfoldPdb, setEsmfoldPdb] = useState<string | null>(null);
+  const [esmfoldLoading, setEsmfoldLoading] = useState(false);
+  const [esmfoldError, setEsmfoldError] = useState<string | null>(null);
+
   // Molecular docking state
   const [dockingResult, setDockingResult] = useState<DockingResult | null>(null);
   const [dockingLoading, setDockingLoading] = useState(false);
@@ -764,6 +769,13 @@ export default React.memo(function CatalystDesignerPage() {
   useEffect(() => {
     setBrendaAppliedKm(null);
     setBrendaAppliedKcat(null);
+  }, [selectedEnzyme]);
+
+  // Reset ESMFold state when enzyme changes
+  useEffect(() => {
+    setEsmfoldPdb(null);
+    setEsmfoldError(null);
+    setEsmfoldLoading(false);
   }, [selectedEnzyme]);
 
   useEffect(() => {
@@ -856,6 +868,22 @@ export default React.memo(function CatalystDesignerPage() {
     setAlphafoldPdbLength(0);
     handleAlphaFoldLookup();
   }, [handleAlphaFoldLookup]);
+
+  // ESMFold structure prediction handler
+  const handleESMFoldPredict = useCallback(async () => {
+    if (!activeEnzyme?.sequence) return;
+    setEsmfoldLoading(true);
+    setEsmfoldError(null);
+    try {
+      const { predictStructure } = await import('../../services/esmfoldClient');
+      const result = await predictStructure(activeEnzyme.sequence);
+      setEsmfoldPdb(result.pdb);
+    } catch (err) {
+      setEsmfoldError(err instanceof Error ? err.message : 'ESMFold prediction failed');
+    } finally {
+      setEsmfoldLoading(false);
+    }
+  }, [activeEnzyme?.sequence]);
 
   const { data: binding, error: simError } = useMemo(() => {
     try { return { data: predictBindingAffinity(enzyme), error: null as string | null }; }
@@ -1526,6 +1554,50 @@ export default React.memo(function CatalystDesignerPage() {
                 )}
               </div>
             </div>
+            {/* ESMFold Structure Prediction */}
+            <div style={{ marginBottom: '12px' }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>ESMFold Prediction</span>
+              <div style={{
+                marginTop: 4, padding: '6px 8px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
+              }}>
+                <div style={{ marginBottom: 4 }}>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Sequence</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: VALUE, marginLeft: 4 }}>
+                    {activeEnzyme?.sequence ? `${activeEnzyme.sequence.slice(0, 20)}... (${activeEnzyme.sequence.length} aa)` : 'N/A'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleESMFoldPredict}
+                  disabled={esmfoldLoading || !activeEnzyme?.sequence}
+                  style={{
+                    width: '100%', marginTop: 4,
+                    fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
+                    color: esmfoldLoading ? LABEL : THEME.SKY,
+                    background: esmfoldLoading ? 'rgba(255,255,255,0.03)' : 'rgba(175,195,214,0.12)',
+                    border: `1px solid ${esmfoldLoading ? BORDER : 'rgba(175,195,214,0.3)'}`,
+                    borderRadius: 6, padding: '4px 8px',
+                    cursor: esmfoldLoading ? 'wait' : 'pointer',
+                    opacity: esmfoldLoading ? 0.6 : 1,
+                  }}
+                >
+                  {esmfoldLoading ? 'Predicting...' : 'Predict with ESMFold'}
+                </button>
+                {esmfoldPdb && (
+                  <div style={{ marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Result</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.MINT }}>
+                      {(esmfoldPdb.length / 1000).toFixed(0)}k chars
+                    </span>
+                  </div>
+                )}
+              </div>
+              {esmfoldError && (
+                <div style={{ marginTop: 4 }}>
+                  <SimErrorBanner message={esmfoldError} onRetry={() => setEsmfoldError(null)} />
+                </div>
+              )}
+            </div>
             {/* Upload PDB Section */}
             <div style={{ marginBottom: '12px' }}>
               <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Upload PDB</span>
@@ -1663,7 +1735,7 @@ export default React.memo(function CatalystDesignerPage() {
             )}
           </FloatingControlRail>
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-            <CatalystViewer3D enzyme={enzyme} renderMode={renderMode} spinEnabled={spinEnabled} onResidueClick={handleResidueClick} selectedResidue={selectedResidue} bindingQuality={binding.overallScore} pdbText={uploadedPdb} style={{ height: '100%' }} />
+            <CatalystViewer3D enzyme={enzyme} renderMode={renderMode} spinEnabled={spinEnabled} onResidueClick={handleResidueClick} selectedResidue={selectedResidue} bindingQuality={binding.overallScore} pdbText={uploadedPdb || esmfoldPdb} style={{ height: '100%' }} />
             <InlineMetricOverlay
               position="top-right"
               metrics={[
