@@ -121,3 +121,37 @@ export interface PipelineOptions {
   /** Threshold at which backpressure is applied (default: bufferSize) */
   backpressureThreshold?: number;
 }
+
+// ── Streaming Stack Types ────────────────────────────────────────────────────
+
+/**
+ * Configuration options for creating a streaming stack.
+ * All fields are optional; sensible defaults are applied where omitted.
+ */
+export interface StreamingStackOptions {
+  /** Port number for the WebSocket server (default: 8080) */
+  serverPort?: number;
+  /** Maximum items in the pipeline buffer queue (default: 100) */
+  bufferSize?: number;
+  /** Sliding window size for anomaly detection (default: 100) */
+  windowSize?: number;
+  /** |z-score| threshold for anomaly flagging (default: 3) */
+  zScoreThreshold?: number;
+}
+
+/**
+ * A fully wired streaming stack combining server, pipeline, and anomaly detector.
+ *
+ * All three components are pre-configured and connected:
+ * - The pipeline processes incoming data
+ * - The detector evaluates processed data for anomalies
+ * - The server broadcasts results to subscribed clients
+ */
+export interface StreamingStack {
+  /** The WebSocket streaming server */
+  server: import('./server').StreamingServer;
+  /** The multi-stage data processing pipeline */
+  pipeline: import('./pipeline').StreamingPipeline;
+  /** The composite anomaly detector */
+  detector: import('./anomaly').AnomalyDetector;
+}
