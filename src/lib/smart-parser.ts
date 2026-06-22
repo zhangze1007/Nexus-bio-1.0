@@ -80,8 +80,35 @@ const MOLECULE_PATTERNS: RegExp[] = [
 ];
 
 const DOI_PATTERN = /^10\.\d{4,9}\/\S+/;
-const METRIC_PATTERN = /(\d+(\.\d+)?)\s*(%|fold|g\/[lL]|mg\/[lL]|倍|percent)/i;
-const METRIC_KEYWORDS = /(提升|增加|优化|improve|increase|boost|yield|产量|titer)/i;
+const METRIC_PATTERN = /(\d+(\.\d+)?)\s*(%|fold|g\/[lL]|mg\/[lL]|x|percent)/i;
+const METRIC_KEYWORDS = /(improve|increase|boost|yield|titer|optimize|production|enhance)/i;
+
+/**
+ * Get autocomplete suggestions for a partial input.
+ * Returns matching molecules and strains from the known lists.
+ */
+export function getSmartSuggestions(partial: string): string[] {
+  const lower = partial.toLowerCase().trim();
+  if (lower.length < 2) return [];
+
+  const suggestions: string[] = [];
+
+  // Match molecules
+  for (const m of KNOWN_MOLECULES) {
+    if (m.toLowerCase().startsWith(lower) || m.toLowerCase().includes(lower)) {
+      suggestions.push(m.charAt(0).toUpperCase() + m.slice(1));
+    }
+  }
+
+  // Match strains
+  for (const [, displayName] of Object.entries(KNOWN_STRAINS)) {
+    if (displayName.toLowerCase().startsWith(lower) || displayName.toLowerCase().includes(lower)) {
+      if (!suggestions.includes(displayName)) suggestions.push(displayName);
+    }
+  }
+
+  return suggestions.slice(0, 8); // max 8 suggestions
+}
 
 export function parseSmartInput(raw: string): ParseResult {
   const input = raw.trim();
@@ -95,9 +122,9 @@ export function parseSmartInput(raw: string): ParseResult {
     return {
       type: 'DOI',
       confidence: 'HIGH',
-      displayLabel: '学术论文 DOI',
+      displayLabel: 'Academic Paper DOI',
       routeTo: `/analyze?mode=paper&doi=${encodeURIComponent(cleaned)}`,
-      toolChainDescription: '论文解析 → 路径提取 → 关键酶识别',
+      toolChainDescription: 'Paper analysis → Pathway extraction → Enzyme identification',
       validityClass: 'AI_ASSISTED',
       rawInput: input,
     };
@@ -110,9 +137,9 @@ export function parseSmartInput(raw: string): ParseResult {
       return {
         type: 'STRAIN',
         confidence: 'HIGH',
-        displayLabel: `宿主菌株：${displayName}`,
+        displayLabel: `Host Strain: ${displayName}`,
         routeTo: `/tools/fbasim?organism=${encodeURIComponent(key)}`,
-        toolChainDescription: '代谢模型加载 → 通量平衡分析 → 改造靶点识别',
+        toolChainDescription: 'Metabolic model → Flux balance analysis → Target identification',
         validityClass: 'COMPUTATIONAL',
         rawInput: input,
       };
@@ -125,9 +152,9 @@ export function parseSmartInput(raw: string): ParseResult {
       return {
         type: 'MOLECULE',
         confidence: 'HIGH',
-        displayLabel: `目标分子：${molecule.charAt(0).toUpperCase() + molecule.slice(1)}`,
+        displayLabel: `Target Molecule: ${molecule.charAt(0).toUpperCase() + molecule.slice(1)}`,
         routeTo: `/tools/pathd?target=${encodeURIComponent(molecule)}`,
-        toolChainDescription: '路径搜索 → FBA验证 → 关键酶设计',
+        toolChainDescription: 'Pathway search → FBA validation → Enzyme design',
         validityClass: 'COMPUTATIONAL',
         rawInput: input,
       };
@@ -140,9 +167,9 @@ export function parseSmartInput(raw: string): ParseResult {
       return {
         type: 'MOLECULE',
         confidence: 'MEDIUM',
-        displayLabel: `目标分子（推断）`,
+        displayLabel: 'Target Molecule (inferred)',
         routeTo: `/tools/pathd?target=${encodeURIComponent(input)}`,
-        toolChainDescription: '路径搜索 → FBA验证 → 关键酶设计',
+        toolChainDescription: 'Pathway search → FBA validation → Enzyme design',
         validityClass: 'AI_ASSISTED',
         rawInput: input,
       };
@@ -154,9 +181,9 @@ export function parseSmartInput(raw: string): ParseResult {
     return {
       type: 'METRIC',
       confidence: 'MEDIUM',
-      displayLabel: '生产指标目标',
+      displayLabel: 'Production Target',
       routeTo: `/tools/fbasim?goal=metric&q=${encodeURIComponent(input)}`,
-      toolChainDescription: '目标反推 → 改造策略生成 → 可行性评估',
+      toolChainDescription: 'Reverse engineering → Strain design → Feasibility assessment',
       validityClass: 'AI_ASSISTED',
       rawInput: input,
     };
@@ -166,9 +193,9 @@ export function parseSmartInput(raw: string): ParseResult {
   return {
     type: 'FREEFORM',
     confidence: 'LOW',
-    displayLabel: '自由描述',
+    displayLabel: 'Free Query',
     routeTo: `/analyze?mode=freeform&q=${encodeURIComponent(input)}`,
-    toolChainDescription: 'Axon AI 自由分析（AI辅助，仅供参考）',
+    toolChainDescription: 'Axon AI analysis (AI-assisted, for reference only)',
     validityClass: 'AI_ASSISTED',
     rawInput: input,
   };

@@ -25,7 +25,7 @@ import { useRouter } from 'next/navigation';
 import HeroFluidCanvas, { type HeroFluidHandle } from './HeroFluidCanvas';
 import styles from './Hero.module.css';
 import { THEME } from '../theme';
-import { parseSmartInput } from '../lib/smart-parser';
+import { parseSmartInput, getSmartSuggestions } from '../lib/smart-parser';
 
 const BRAND = THEME.BRAND;
 const SANS  = THEME.SANS;
@@ -50,6 +50,7 @@ export default function Hero() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [smartResult, setSmartResult] = useState<ReturnType<typeof parseSmartInput> | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [, startTransition] = useTransition();
 
   // Parallax
@@ -77,13 +78,15 @@ export default function Hero() {
     return () => { clearTimeout(timer); ctrl.abort(); };
   }, [query, focused]);
 
-  // Smart Entry detection (sync, no debounce needed)
+  // Smart Entry detection + autocomplete suggestions (sync, no debounce needed)
   useEffect(() => {
-    if (query.trim().length < 2) { setSmartResult(null); return; }
+    const q = query.trim();
+    if (q.length < 2) { setSmartResult(null); setSuggestions([]); return; }
     try {
-      const parsed = parseSmartInput(query);
+      const parsed = parseSmartInput(q);
       setSmartResult(parsed.type !== 'FREEFORM' ? parsed : null);
     } catch { setSmartResult(null); }
+    setSuggestions(getSmartSuggestions(q));
   }, [query]);
 
   const onFocus = useCallback(() => {
@@ -107,10 +110,11 @@ export default function Hero() {
   }, [router]);
 
   const hasSmartResult = smartResult !== null;
-  const showPopup = focused && query.length >= 3 && (preview.length > 0 || previewLoading || hasSmartResult);
+  const hasSuggestions = suggestions.length > 0;
+  const showPopup = focused && query.length >= 2 && (hasSuggestions || preview.length > 0 || previewLoading || hasSmartResult);
 
-  // Total dropdown items = smart result (if any) + preview results + "View all" footer
-  const totalItems = (hasSmartResult ? 1 : 0) + preview.length + 1;
+  // Total dropdown items = smart result (if any) + suggestions + preview results + "View all" footer
+  const totalItems = (hasSmartResult ? 1 : 0) + suggestions.length + preview.length + 1;
 
   const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
@@ -280,6 +284,33 @@ export default function Hero() {
                   </p>
                 </button>
               )}
+              {/* Autocomplete suggestions from known molecules/strains */}
+              {hasSuggestions && suggestions.map((s, i) => {
+                const idx = (hasSmartResult ? 1 : 0) + i;
+                return (
+                  <button
+                    key={`sug-${s}`}
+                    id={`hero-search-option-sug-${i}`}
+                    role="option"
+                    aria-selected={activeIndex === idx}
+                    onMouseDown={() => {
+                      setQuery(s);
+                      navigate(s);
+                    }}
+                    className={styles.previewItem}
+                    style={activeIndex === idx ? { background: 'rgba(255,255,255,0.08)' } : undefined}>
+                    <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                      {s}
+                    </span>
+                    <span style={{
+                      marginLeft: 'auto', fontSize: '10px', fontFamily: MONO,
+                      color: 'rgba(255,255,255,0.2)',
+                    }}>
+                      ↗
+                    </span>
+                  </button>
+                );
+              })}
               {previewLoading && preview.length === 0 ? (
                 <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Loader2 size={12} style={{ color: 'rgba(255,255,255,0.75)', animation: 'spin 1s linear infinite' }} />
