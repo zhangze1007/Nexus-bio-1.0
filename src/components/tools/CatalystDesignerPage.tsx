@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { getToolValidity } from '../../config/toolValidity';
@@ -31,7 +32,6 @@ import type {
   MutagenesisResult,
   EnzymeStructure,
 } from '../../services/CatalystDesignerEngine';
-import { PAPER_THEME } from '../charts/chartTheme';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
 import ToolShell from './shared/ToolShell';
@@ -44,6 +44,21 @@ import { getBRENDAKinetics } from '../../services/database/brendaClient';
 import type { BRENDAKinetics } from '../../services/database/brendaClient';
 import { runDocking } from '../../services/database/dockingClient';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
+import ParameterPanel from './shared/ParameterPanel';
+import HandoffCard from './shared/HandoffCard';
+import ResultSummaryPanel from './shared/ResultSummaryPanel';
+import ConfidenceBadge from './shared/ConfidenceBadge';
+import WorkflowStepper from './shared/WorkflowStepper';
+
+/* ── Docking Result Interface ─────────────────────────────────────── */
+
+interface DockingResult {
+  protein: string;
+  ligand: string;
+  dockingScore: number;
+  bindingEnergy: number;
+  source: string;
+}
 
 /* ── Design Tokens (shared via useToolTheme) ──────────────────────── */
 
@@ -95,10 +110,6 @@ function fitQuality(fit: number) {
   if (fit > 0.45) return { icon: '~', color: THEME.RISK_LOW, label: 'Moderate' };
   return { icon: '⊘', color: THEME.RISK_HIGH, label: 'Poor' };
 }
-
-const AA_MUTATIONS = [
-  'A','R','N','D','C','E','Q','G','H','I','L','K','M','F','P','S','T','W','Y','V',
-];
 
 /* ── Compact Shared Styles ─────────────────────────────────────────── */
 
@@ -580,7 +591,6 @@ export default React.memo(function CatalystDesignerPage() {
   const [renderMode, setRenderMode] = useState<'cartoon' | 'surface' | 'confidence'>('cartoon');
   const [spinEnabled, setSpinEnabled] = useState(true);
   const [selectedResidue, setSelectedResidue] = useState<number | null>(null);
-  const [selectedMutation, setSelectedMutation] = useState<string | null>(null);
   const [brendaEcInput, setBrendaEcInput] = useState('');
   const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
   const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
@@ -594,7 +604,7 @@ export default React.memo(function CatalystDesignerPage() {
   const [alphafoldPdbLength, setAlphafoldPdbLength] = useState(0);
 
   // Molecular docking state
-  const [dockingResult, setDockingResult] = useState<any>(null);
+  const [dockingResult, setDockingResult] = useState<DockingResult | null>(null);
   const [dockingLoading, setDockingLoading] = useState(false);
 
   const recommendedSeed = useMemo(
@@ -747,21 +757,7 @@ export default React.memo(function CatalystDesignerPage() {
 
   const handleResidueClick = useCallback((data: ResidueClickData) => {
     setSelectedResidue(data.position);
-    setSelectedMutation(null);
   }, []);
-
-  // Compute mutation impact when a mutation is selected
-  // NOTE: No quantitative prediction available — mutagenesis effects require
-  // external tools (FoldX, Rosetta ddg_monomer, protein design suites).
-  const mutationImpact = useMemo(() => {
-    if (!selectedResidue || !selectedMutation) return null;
-    return {
-      deltaKd: null,
-      deltaKcat: null,
-      newKd: null,
-      newKcat: null,
-    };
-  }, [selectedResidue, selectedMutation]);
 
   useEffect(() => {
     if (simError) return;
@@ -833,39 +829,44 @@ export default React.memo(function CatalystDesignerPage() {
   // Expression Prediction state
   const [exprResult, setExprResult] = useState<import('../../server/geneExpressionPredictor').ExpressionPrediction | null>(null);
   const [exprLoading, setExprLoading] = useState(false);
+  const [exprPromoter, setExprPromoter] = useState('TTGACATATACATTAAGAATTCGATATCAATGACA');
+  const [exprRbs, setExprRbs] = useState('AAGAAGGAGATATACAT');
+  const [exprTerminator, setExprTerminator] = useState('GCAAAAAACCCCTCAAGACCCGTTTAGAG');
 
   // Plasmid Design state
   const [plasmidResult, setPlasmidResult] = useState<import('../../server/plasmidDesignEngine').PlasmidDesignResult | null>(null);
   const [plasmidLoading, setPlasmidLoading] = useState(false);
   const [plasmidHost, setPlasmidHost] = useState<'ecoli' | 'yeast'>('ecoli');
+  const [expressionLevel, setExpressionLevel] = useState<'high_expression' | 'low_expression' | 'tunable' | 'knockdown' | 'reporter'>('high_expression');
+  const [assemblyMethod, setAssemblyMethod] = useState<'gibson' | 'golden_gate' | 'restriction_ligation' | 'infusion'>('gibson');
+  const [copyNumber, setCopyNumber] = useState(2);
+
+  // Router for handoff navigation
+  const router = useRouter();
 
   const handleExpressionPrediction = useCallback(async () => {
     setExprLoading(true);
     try {
       const { predictGeneExpression } = await import('../../server/geneExpressionPredictor');
-      // Use current enzyme's sequence for prediction
       const cds = enzyme.sequence || 'ATGAAACGCACCAGCAACAGCAACTAA';
-      const promoter = 'TTGACATATACATTAAGAATTCGATATCAATGACA';
-      const rbs = 'AAGAAGGAGATATACAT';
-      const terminator = 'GCAAAAAACCCCTCAAGACCCGTTTAGAG';
-      const result = predictGeneExpression(promoter, rbs, cds, terminator, 'ecoli');
+      const result = predictGeneExpression(exprPromoter, exprRbs, cds, exprTerminator, 'ecoli');
       setExprResult(result);
     } finally {
       setExprLoading(false);
     }
-  }, [enzyme.sequence]);
+  }, [enzyme.sequence, exprPromoter, exprRbs, exprTerminator]);
 
   const handlePlasmidDesign = useCallback(async () => {
     setPlasmidLoading(true);
     try {
       const { designPlasmid } = await import('../../server/plasmidDesignEngine');
       const cds = enzyme.sequence || 'ATGAAACGCACCAGCAACAGCAACTAA';
-      const result = designPlasmid(cds, plasmidHost, 'high_expression', 'gibson', 2);
+      const result = designPlasmid(cds, plasmidHost, expressionLevel, assemblyMethod, copyNumber);
       setPlasmidResult(result);
     } finally {
       setPlasmidLoading(false);
     }
-  }, [enzyme.sequence, plasmidHost]);
+  }, [enzyme.sequence, plasmidHost, expressionLevel, assemblyMethod, copyNumber]);
 
   const CATDES_TABS: ToolTab[] = [
     { id: 'overview', label: 'Overview', accent: THEME.CORAL },
@@ -877,8 +878,8 @@ export default React.memo(function CatalystDesignerPage() {
     { id: 'plasmid', label: 'Plasmid', accent: THEME.APRICOT },
   ];
 
-  const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
-  const kcatQ = kcatQuality(mutationImpact?.newKcat ?? activeEnzyme.kcat);
+  const kdQ = kdQuality(binding.predictedKd);
+  const kcatQ = kcatQuality(activeEnzyme.kcat);
   const fitQ = fitQuality(binding.overallScore);
 
   return (
@@ -937,6 +938,32 @@ export default React.memo(function CatalystDesignerPage() {
       {/* ── Overview Tab: Bottleneck Analysis + ProEvol Handoff ── */}
       <ToolTabPanel tabId="overview" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+          {/* Workflow Stepper */}
+          <div style={{ marginBottom: 12 }}>
+            <WorkflowStepper
+              steps={[
+                { id: 'enzyme', label: 'Enzyme Select', status: 'done', detail: enzyme.name },
+                { id: 'binding', label: 'Binding', status: 'done', detail: `Kd ${binding.predictedKd.toFixed(1)} μM` },
+                { id: 'sequences', label: 'Sequences', status: 'done', detail: `${sequences.designs.length} designs` },
+                { id: 'drain', label: 'Drain', status: drain.isViable ? 'done' : 'error', detail: `${(drain.totalMetabolicDrain * 100).toFixed(1)}%` },
+                { id: 'balance', label: 'Balance', status: balance.isBalanced ? 'done' : 'active', detail: `${balance.iterations} iter` },
+              ]}
+              activeIndex={4}
+            />
+          </div>
+
+          {/* Result Summary Panel */}
+          <div style={{ marginBottom: 12 }}>
+            <ResultSummaryPanel
+              metrics={[
+                { label: 'Kd', value: binding.predictedKd.toFixed(2), unit: 'μM', accent: kdQ.color },
+                { label: 'Best Score', value: sequences.designs[0]?.score.toFixed(3) ?? 'N/A', accent: THEME.SKY },
+                { label: 'Drain', value: `${(drain.totalMetabolicDrain * 100).toFixed(1)}%`, accent: drain.isViable ? THEME.MINT : THEME.CORAL },
+                { label: 'Bottlenecks', value: bottlenecks.bottlenecks.length, accent: bottlenecks.bottlenecks.length > 0 ? THEME.RISK_LOW : THEME.MINT },
+              ]}
+              actions={<ConfidenceBadge value={binding.overallScore} label="Binding Fit" />}
+            />
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '16px' }}>
             {/* Bottleneck Analysis */}
             <div style={{ ...GLASS, borderRadius: 16, padding: '14px' }}>
@@ -1013,22 +1040,17 @@ export default React.memo(function CatalystDesignerPage() {
             </div>
           </div>
 
-          {/* Send to ProEvol Button */}
-          {bottlenecks.topBottleneck && (
-            <div style={{ ...GLASS, borderRadius: 16, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>
-                  {bottlenecks.topBottleneck.enzymeName} is the rate-limiting step
-                </span>
-                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '2px 0 0' }}>
-                  Send to ProEvol for protein engineering
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  const targetEnzyme = ENZYME_STRUCTURES.find(e => e.id === bottlenecks.topBottleneck?.enzymeId);
-                  if (targetEnzyme) {
-                    // Store ProEvol handoff data in localStorage (workaround for payload type constraints)
+          {/* Send to ProEvol via HandoffCard */}
+          {bottlenecks.topBottleneck && (() => {
+            const targetEnzyme = ENZYME_STRUCTURES.find(e => e.id === bottlenecks.topBottleneck?.enzymeId);
+            if (!targetEnzyme) return null;
+            return (
+              <div style={{ marginTop: 12 }}>
+                <HandoffCard
+                  fromTool="CatDes"
+                  toTool="ProEvol"
+                  payloadSummary={`${bottlenecks.topBottleneck.enzymeName} is the rate-limiting step. Best sequence score: ${sequences.designs[0]?.score.toFixed(3) ?? 'N/A'}`}
+                  onSend={() => {
                     localStorage.setItem('nexus-bio:catdes-to-proevol', JSON.stringify({
                       targetEnzyme: targetEnzyme.id,
                       targetEnzymeName: targetEnzyme.name,
@@ -1039,20 +1061,12 @@ export default React.memo(function CatalystDesignerPage() {
                       uniprotId: targetEnzyme.uniprotId,
                       sequence: targetEnzyme.sequence,
                     }));
-                    window.location.href = '/tools/proevol';
-                  }
-                }}
-                style={{
-                  padding: '8px 16px', borderRadius: 8,
-                  background: 'rgba(191,220,205,0.14)', border: '1px solid rgba(191,220,205,0.3)',
-                  color: 'rgba(191,220,205,0.9)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)',
-                  cursor: 'pointer',
-                }}
-              >
-                Send to ProEvol →
-              </button>
-            </div>
-          )}
+                    router.push('/tools/proevol');
+                  }}
+                />
+              </div>
+            );
+          })()}
         </div>
       </ToolTabPanel>
 
@@ -1092,7 +1106,7 @@ export default React.memo(function CatalystDesignerPage() {
               <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enzyme</span>
               <select
                 value={selectedEnzyme}
-                onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
+                onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); }}
                 style={{ width: '100%', marginTop: 4, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}
               >
                 {ENZYME_STRUCTURES.map((enz, i) => (
@@ -1308,6 +1322,35 @@ export default React.memo(function CatalystDesignerPage() {
               style={{ width: '100%', padding: '5px 0', borderRadius: 6, borderColor: spinEnabled ? THEME.MINT : undefined, background: spinEnabled ? 'rgba(191,220,205,0.15)' : undefined, color: spinEnabled ? THEME.MINT : undefined }}>
               {spinEnabled ? '● Spin On' : 'Spin Off'}
             </button>
+
+            {/* Molecular Docking */}
+            <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Molecular Docking</span>
+              <button
+                onClick={handleDocking}
+                disabled={dockingLoading || !enzyme.pdbId}
+                className="nb-tool-toggle"
+                style={{ width: '100%', marginTop: 4, padding: '5px 0', borderRadius: 6, opacity: dockingLoading ? 0.5 : 1 }}
+              >
+                {dockingLoading ? 'Docking...' : 'Run Docking'}
+              </button>
+              {dockingResult && (
+                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '8px 10px', marginTop: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Docking Score</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{dockingResult.dockingScore.toFixed(3)} kcal/mol</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Binding Energy</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{dockingResult.bindingEnergy.toFixed(2)} kcal/mol</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Source</span>
+                    <DataSourceBadge source={dockingResult.source === 'mock' ? 'mock' : 'live'} />
+                  </div>
+                </div>
+              )}
+            </div>
             {selectedResidue != null && selectedCatResidue && (
               <div style={{ marginTop: '16px' }}>
                 <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Selected Residue</span>
@@ -1326,21 +1369,11 @@ export default React.memo(function CatalystDesignerPage() {
                       <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, margin: 0 }}>{selectedCatResidue.orientationAngle.toFixed(0)}°</p>
                     </div>
                   </div>
-                  <div style={{ marginTop: 6 }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Mutate to</span>
-                    <select value={selectedMutation || ''} onChange={e => setSelectedMutation(e.target.value || null)}
-                      style={{ width: '100%', marginTop: 2, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}>
-                      <option value="">Select…</option>
-                      {AA_MUTATIONS.filter(aa => aa !== selectedCatResidue.residue).map(aa => (
-                        <option key={aa} value={aa}>{selectedCatResidue.residue} → {aa}</option>
-                      ))}
-                    </select>
+                  <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: 'rgba(250,128,114,0.06)', border: `1px solid rgba(250,128,114,0.15)` }}>
+                    <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', margin: 0, color: THEME.CORAL, lineHeight: 1.5 }}>
+                      Mutation impact prediction requires FoldX/Rosetta integration (not yet available).
+                    </p>
                   </div>
-                  {mutationImpact && (
-                    <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}` }}>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: LABEL }}>No prediction available — use FoldX or Rosetta</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -1350,8 +1383,8 @@ export default React.memo(function CatalystDesignerPage() {
             <InlineMetricOverlay
               position="top-right"
               metrics={[
-                { label: 'Kd', value: `${(mutationImpact?.newKd ?? binding.predictedKd).toFixed(1)} μM`, accent: kdQ.color },
-                { label: 'Kcat', value: `${(mutationImpact?.newKcat ?? activeEnzyme.kcat).toFixed(2)} s⁻¹`, accent: kcatQ.color },
+                { label: 'Kd', value: `${binding.predictedKd.toFixed(1)} μM`, accent: kdQ.color },
+                { label: 'Kcat', value: `${activeEnzyme.kcat.toFixed(2)} s⁻¹`, accent: kcatQ.color },
                 { label: 'Fit', value: binding.overallScore.toFixed(2), accent: fitQ.color },
                 { label: 'Tm', value: `${enzyme.meltingTemp.toFixed(0)}°C`, accent: THEME.APRICOT },
               ]}
@@ -1471,6 +1504,47 @@ export default React.memo(function CatalystDesignerPage() {
       {/* ── Expression Prediction Tab ──────────────────────────────────────── */}
       <ToolTabPanel tabId="expression" activeId={activeTab}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Editable expression parameters */}
+          <ParameterPanel
+            title="Expression Parameters"
+            defaultCollapsed={false}
+            onReset={() => {
+              setExprPromoter('TTGACATATACATTAAGAATTCGATATCAATGACA');
+              setExprRbs('AAGAAGGAGATATACAT');
+              setExprTerminator('GCAAAAAACCCCTCAAGACCCGTTTAGAG');
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div>
+                <span style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_XS, color: LABEL, display: 'block', marginBottom: 2 }}>Promoter Sequence</span>
+                <input
+                  type="text"
+                  value={exprPromoter}
+                  onChange={e => setExprPromoter(e.target.value)}
+                  style={{ width: '100%', fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: INPUT_TEXT, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '5px 8px', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <span style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_XS, color: LABEL, display: 'block', marginBottom: 2 }}>RBS Sequence</span>
+                <input
+                  type="text"
+                  value={exprRbs}
+                  onChange={e => setExprRbs(e.target.value)}
+                  style={{ width: '100%', fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: INPUT_TEXT, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '5px 8px', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <span style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_XS, color: LABEL, display: 'block', marginBottom: 2 }}>Terminator Sequence</span>
+                <input
+                  type="text"
+                  value={exprTerminator}
+                  onChange={e => setExprTerminator(e.target.value)}
+                  style={{ width: '100%', fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: INPUT_TEXT, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '5px 8px', outline: 'none' }}
+                />
+              </div>
+            </div>
+          </ParameterPanel>
+
           <div style={{
             ...GLASS,
             padding: 16,
@@ -1550,6 +1624,58 @@ export default React.memo(function CatalystDesignerPage() {
       {/* ── Plasmid Design Tab ──────────────────────────────────────────────── */}
       <ToolTabPanel tabId="plasmid" activeId={activeTab}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Plasmid design parameters */}
+          <ParameterPanel
+            title="Plasmid Parameters"
+            defaultCollapsed={false}
+            onReset={() => {
+              setExpressionLevel('high_expression' as const);
+              setAssemblyMethod('gibson');
+              setCopyNumber(2);
+            }}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              <div>
+                <span style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_XS, color: LABEL, display: 'block', marginBottom: 2 }}>Expression Level</span>
+                <select
+                  value={expressionLevel}
+                  onChange={e => setExpressionLevel(e.target.value as 'high_expression' | 'low_expression' | 'tunable' | 'knockdown' | 'reporter')}
+                  style={{ width: '100%', padding: '5px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, color: INPUT_TEXT, fontFamily: THEME.MONO, fontSize: THEME.FS_SM, outline: 'none' }}
+                >
+                  <option value="high_expression">High Expression</option>
+                  <option value="low_expression">Low Expression</option>
+                  <option value="tunable">Tunable</option>
+                  <option value="knockdown">Knockdown</option>
+                  <option value="reporter">Reporter</option>
+                </select>
+              </div>
+              <div>
+                <span style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_XS, color: LABEL, display: 'block', marginBottom: 2 }}>Assembly Method</span>
+                <select
+                  value={assemblyMethod}
+                  onChange={e => setAssemblyMethod(e.target.value as 'gibson' | 'golden_gate' | 'restriction_ligation' | 'infusion')}
+                  style={{ width: '100%', padding: '5px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, color: INPUT_TEXT, fontFamily: THEME.MONO, fontSize: THEME.FS_SM, outline: 'none' }}
+                >
+                  <option value="gibson">Gibson</option>
+                  <option value="golden_gate">Golden Gate</option>
+                  <option value="restriction_ligation">Restriction-Ligation</option>
+                  <option value="infusion">In-Fusion</option>
+                </select>
+              </div>
+              <div>
+                <span style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_XS, color: LABEL, display: 'block', marginBottom: 2 }}>Copy Number</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={copyNumber}
+                  onChange={e => setCopyNumber(Number(e.target.value))}
+                  style={{ width: '100%', padding: '5px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, color: INPUT_TEXT, fontFamily: THEME.MONO, fontSize: THEME.FS_SM, outline: 'none' }}
+                />
+              </div>
+            </div>
+          </ParameterPanel>
+
           <div style={{
             ...GLASS,
             padding: 16,
