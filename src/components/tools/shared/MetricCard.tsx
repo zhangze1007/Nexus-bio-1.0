@@ -24,6 +24,7 @@ interface MetricCardProps {
   size?: MetricSize;
   accent?: string;
   icon?: ReactNode;
+  trend?: 'up' | 'down' | 'flat';
 }
 
 const SIZE_MAP: Record<MetricSize, {
@@ -43,9 +44,13 @@ export default function MetricCard({
   size = 'md',
   accent,
   icon,
+  trend,
 }: MetricCardProps) {
   const s = SIZE_MAP[size];
   const accentColor = accent || THEME.MINT;
+
+  const trendSymbol = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+  const trendColor = trend === 'up' ? '#C8E0D0' : trend === 'down' ? '#FA8072' : 'rgba(255,255,255,0.35)';
 
   return (
     <div style={{
@@ -95,6 +100,16 @@ export default function MetricCard({
         }}>
           {value}
         </span>
+        {trend && (
+          <span style={{
+            fontFamily: THEME.MONO,
+            fontSize: s.labelSize,
+            color: trendColor,
+            marginLeft: '2px',
+          }}>
+            {trendSymbol}
+          </span>
+        )}
         {unit && (
           <span style={{
             fontFamily: THEME.MONO,

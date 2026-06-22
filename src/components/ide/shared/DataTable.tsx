@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import EmptyState from './EmptyState';
 import Pagination from './Pagination';
 import { THEME } from '../../../theme';
@@ -19,6 +20,8 @@ interface DataTableProps<T extends object> {
   pageSizeOptions?: number[];
   emptyTitle?: string;
   emptyMessage?: string;
+  expandable?: boolean;
+  renderExpand?: (row: T) => React.ReactNode;
 }
 
 export default function DataTable<T extends object>({
@@ -28,11 +31,14 @@ export default function DataTable<T extends object>({
   pageSizeOptions = [25, 50, 100],
   emptyTitle = 'No rows to display',
   emptyMessage = 'Adjust the current filters or parameters to populate this table.',
+  expandable = false,
+  renderExpand,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<keyof T | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(maxRows);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
@@ -74,6 +80,18 @@ export default function DataTable<T extends object>({
     setSortDir('asc');
   }
 
+  function toggleRow(rowIdx: number) {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowIdx)) {
+        next.delete(rowIdx);
+      } else {
+        next.add(rowIdx);
+      }
+      return next;
+    });
+  }
+
   return (
     <div
       style={{
@@ -87,6 +105,16 @@ export default function DataTable<T extends object>({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              {expandable && (
+                <th style={{
+                  padding: '8px 6px',
+                  width: '28px',
+                  background: 'rgba(0,0,0,0.94)',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 1,
+                }} />
+              )}
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
@@ -120,31 +148,78 @@ export default function DataTable<T extends object>({
 
           <tbody>
             {visible.length > 0 ? (
-              visible.map((row, rowIndex) => (
-                <tr
-                  key={rowIndex}
-                  style={{
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    background: rowIndex % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
-                  }}
-                >
-                  {columns.map((col) => (
-                    <td
-                      key={String(col.key)}
+              visible.map((row, rowIndex) => {
+                const isExpanded = expandedRows.has(rowIndex);
+                return (
+                  <Fragment key={rowIndex}>
+                    <tr
+                      onClick={expandable ? () => toggleRow(rowIndex) : undefined}
                       style={{
-                        padding: '7px 12px',
-                        fontFamily: THEME.SANS,
-                        fontSize: '11px',
-                        color: 'rgba(255,255,255,0.65)',
-                        whiteSpace: 'nowrap',
-                        width: col.width,
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        background: rowIndex % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
+                        cursor: expandable ? 'pointer' : 'default',
                       }}
                     >
-                      {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '')}
-                    </td>
-                  ))}
-                </tr>
-              ))
+                      {expandable && (
+                        <td style={{
+                          padding: '7px 6px',
+                          textAlign: 'center',
+                          width: '28px',
+                        }}>
+                          <span style={{
+                            display: 'inline-block',
+                            transition: 'transform 0.2s ease',
+                            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                            fontSize: '10px',
+                            color: 'rgba(255,255,255,0.4)',
+                          }}>
+                            ▶
+                          </span>
+                        </td>
+                      )}
+                      {columns.map((col) => (
+                        <td
+                          key={String(col.key)}
+                          style={{
+                            padding: '7px 12px',
+                            fontFamily: THEME.SANS,
+                            fontSize: '11px',
+                            color: 'rgba(255,255,255,0.65)',
+                            whiteSpace: 'nowrap',
+                            width: col.width,
+                          }}
+                        >
+                          {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '')}
+                        </td>
+                      ))}
+                    </tr>
+                    <AnimatePresence>
+                      {isExpanded && renderExpand && (
+                        <motion.tr
+                          key="expand"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        >
+                          <td
+                            colSpan={columns.length + 1}
+                            style={{
+                              padding: 0,
+                              background: 'rgba(255,255,255,0.02)',
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                          >
+                            <div style={{ padding: '12px 16px' }}>
+                              {renderExpand(row)}
+                            </div>
+                          </td>
+                        </motion.tr>
+                      )}
+                    </AnimatePresence>
+                  </Fragment>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan={columns.length} style={{ padding: 0, height: '260px' }}>

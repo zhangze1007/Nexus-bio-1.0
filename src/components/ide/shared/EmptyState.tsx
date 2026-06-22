@@ -7,12 +7,14 @@ interface EmptyStateProps {
   type?: 'empty' | 'loading' | 'error';
   title?: string;
   message?: string;
+  action?: { label: string; onClick: () => void };
 }
 
 export default function EmptyState({
   type = 'empty',
   title,
   message,
+  action,
 }: EmptyStateProps) {
   const defaultTitle = type === 'loading' ? 'Loading data' : type === 'error' ? 'Something went wrong' : 'No data';
   const defaultMsg = type === 'loading'
@@ -88,6 +90,29 @@ export default function EmptyState({
       >
         {message ?? defaultMsg}
       </p>
+
+      {action && (
+        <button
+          onClick={action.onClick}
+          style={{
+            marginTop: '8px',
+            padding: '8px 20px',
+            fontFamily: SANS,
+            fontSize: '13px',
+            fontWeight: 600,
+            color: '#050505',
+            background: THEME.MINT,
+            border: 'none',
+            borderRadius: THEME.R_MD,
+            cursor: 'pointer',
+            transition: 'opacity 0.15s ease',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+        >
+          {action.label}
+        </button>
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
