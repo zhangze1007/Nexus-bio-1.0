@@ -14,7 +14,6 @@
  * here — see PR-2b / PR-3 notes.
  */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
 import MetricCard from '../ide/shared/MetricCard';
@@ -24,7 +23,6 @@ import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { workflowStatusLabel } from '../workbench/workflowExperience';
 import ScientificHero from './shared/ScientificHero';
-import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import PromptInput from './nexai/PromptInput';
 import ResultPanel, { ParseErrorInfo } from './nexai/ResultPanel';

@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
-import { SVGChartContainer, ChartGrid, ChartAxisLabels, ChartLegend } from '../charts/primitives';
-import { PAPER_THEME, SCI_PASTEL_MUTED, SCI_SERIES } from '../charts/chartTheme';
+import { SVGChartContainer, ChartGrid, ChartAxisLabels } from '../charts/primitives';
+import { PAPER_THEME, SCI_SERIES } from '../charts/chartTheme';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import ActionButton from './shared/ActionButton';

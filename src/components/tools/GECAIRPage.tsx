@@ -1,6 +1,5 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation, runRepressilator, runToggleSwitch, runLogicCascade } from '../../data/mockGECAIR';

@@ -20,7 +20,6 @@ import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
 import type { ProvenanceEntry } from '../../types/assumptions';
 import { buildFBASeed } from './shared/workbenchDataflow';
 import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenance, solveDynamicModelFBA, solveFSEOF, solveOptKnock } from '../../services/FBAAuthorityClient';
-import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 
