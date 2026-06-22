@@ -102,6 +102,25 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
   const pipeline = new StreamingPipeline({ bufferSize });
   const detector = new AnomalyDetector({ windowSize, zScoreThreshold });
 
+  // Wire pipeline to detector: when pipeline processes data, check for anomalies
+  const originalProcess = pipeline.process.bind(pipeline);
+  pipeline.process = async (data: any) => {
+    const result = await originalProcess(data);
+
+    // Check for anomalies if data has metric and value
+    if (data && typeof data.metric === 'string' && typeof data.value === 'number') {
+      const anomalies = detector.check({ metric: data.metric, value: data.value });
+      if (anomalies.length > 0) {
+        // Publish anomalies to server
+        for (const anomaly of anomalies) {
+          server.publish('anomalies', anomaly);
+        }
+      }
+    }
+
+    return result;
+  };
+
   return { server, pipeline, detector };
 }
 
@@ -132,5 +151,41 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
  * ```
  */
 export function createDefaultStreamingStack(): StreamingStack {
-  return createStreamingStack();
+  const stack = createStreamingStack();
+
+  // Add default pipeline stages
+  stack.pipeline.addStage({
+    name: 'validate',
+    process: async (data) => {
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid data: must be an object');
+      }
+      return data;
+    },
+  });
+
+  stack.pipeline.addStage({
+    name: 'timestamp',
+    process: async (data) => ({
+      ...data,
+      timestamp: data.timestamp || Date.now(),
+    }),
+  });
+
+  // Add default anomaly rules
+  stack.detector.addRule({
+    metric: 'cpu',
+    max: 90,
+    severity: 'high',
+    message: 'CPU usage exceeded 90%',
+  });
+
+  stack.detector.addRule({
+    metric: 'memory',
+    max: 85,
+    severity: 'medium',
+    message: 'Memory usage exceeded 85%',
+  });
+
+  return stack;
 }

@@ -116,11 +116,13 @@ describe('Stack Creation', () => {
     expect(stack.pipeline).toBeInstanceOf(StreamingPipeline);
     expect(stack.detector).toBeInstanceOf(AnomalyDetector);
 
-    // Pipeline should have no stages initially
-    expect(stack.pipeline.getStages()).toEqual([]);
+    // Pipeline should have default stages
+    expect(stack.pipeline.getStages()).toEqual(['validate', 'timestamp']);
 
-    // Detector should have no rules initially
-    expect(stack.detector.getRules()).toEqual([]);
+    // Detector should have default rules
+    expect(stack.detector.getRules()).toHaveLength(2);
+    expect(stack.detector.getRules().some((r) => r.metric === 'cpu')).toBe(true);
+    expect(stack.detector.getRules().some((r) => r.metric === 'memory')).toBe(true);
   });
 
   it('creates stack with custom options', () => {
@@ -291,22 +293,17 @@ describe('Integration', () => {
     send(ws, { type: 'subscribe', topic: 'anomalies', timestamp: Date.now() });
     await sleep(50);
 
-    // Process data through pipeline
+    // Process data through pipeline — wiring auto-detects anomalies and publishes
     const data = { metric: 'temperature', value: 150 };
     const processed = await stack.pipeline.process(data);
     expect(processed).toEqual(data);
 
-    // Check for anomalies
-    const anomalies = stack.detector.check({ metric: processed.metric, value: processed.value });
-    expect(anomalies.length).toBeGreaterThanOrEqual(1);
-
-    // Broadcast anomalies
-    stack.server.publish('anomalies', { anomalies });
-
+    // The wiring auto-publishes individual AnomalyEvent objects to the 'anomalies' topic
     const msg = await nextMessage();
     expect(msg.type).toBe('publish');
     expect(msg.topic).toBe('anomalies');
-    expect((msg.data as any).anomalies.length).toBeGreaterThanOrEqual(1);
+    expect((msg.data as any).metric).toBe('temperature');
+    expect((msg.data as any).severity).toBe('critical');
   });
 
   it('z-score anomaly detection works in integrated stack', async () => {
@@ -479,7 +476,7 @@ describe('Edge Cases', () => {
     stack = null; // prevent double-stop
   });
 
-  it('pipeline buffer can be cleared', () => {
+  it('pipeline buffer can be cleared', async () => {
     stack = createStreamingStack({ serverPort: nextPort() });
 
     stack.pipeline.submit(1);
@@ -487,7 +484,10 @@ describe('Edge Cases', () => {
     stack.pipeline.submit(3);
 
     stack.pipeline.clear();
-    expect(stack.pipeline.getStages()).toEqual([]);
+
+    // Buffer should be empty — processNext returns undefined
+    const result = await stack.pipeline.processNext();
+    expect(result).toBeUndefined();
   });
 
   it('detector can be reset in stack', () => {

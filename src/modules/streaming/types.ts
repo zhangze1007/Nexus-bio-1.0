@@ -140,12 +140,10 @@ export interface StreamingStackOptions {
 }
 
 /**
- * A fully wired streaming stack combining server, pipeline, and anomaly detector.
+ * A streaming stack consisting of a server, pipeline, and anomaly detector.
  *
- * All three components are pre-configured and connected:
- * - The pipeline processes incoming data
- * - The detector evaluates processed data for anomalies
- * - The server broadcasts results to subscribed clients
+ * Use `createStreamingStack()` for a basic stack with wiring.
+ * Use `createDefaultStreamingStack()` for a pre-configured stack with default stages and rules.
  */
 export interface StreamingStack {
   /** The WebSocket streaming server */

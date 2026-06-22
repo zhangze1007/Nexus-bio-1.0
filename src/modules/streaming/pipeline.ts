@@ -245,6 +245,7 @@ export class StreamingPipeline {
    */
   clear(): void {
     this.stages.length = 0;
+    this.buffer.clear();
   }
 
   private async processItem(data: any): Promise<any> {
