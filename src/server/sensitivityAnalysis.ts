@@ -7,7 +7,17 @@
  * Morris elementary effects and Sobol indices are extensions that
  * can be built on top of this foundation.
  *
- * Reference: Saltelli et al. (2008) "Global Sensitivity Analysis"
+ * @scientific_provenance
+ *   ALGORITHM: Local sensitivity via central finite differences — normalized elasticity coefficient S_i = (dY/dθ_i) * (θ_i/Y)
+ *   REFERENCE:
+ *     Saltelli A, Ratto M, Andres T, et al. (2008) "Global Sensitivity Analysis: The Primer" Wiley, ISBN 978-0470059975
+ *     Hamby DM (1994) "A review of techniques for parameter sensitivity analysis of environmental models" Environ Monit Assess 32:135-154
+ *   KNOWN_LIMITATIONS:
+ *     - Local sensitivity only — captures first-order effects at the nominal point, not global interactions
+ *     - No Morris elementary effects or Sobol indices implemented (noted as future extensions)
+ *     - Fixed perturbation fraction (5%); does not adapt to parameter scale or stiffness
+ *     - Single-output only; multi-output sensitivity requires separate calls per output
+ *     - Central difference assumes smooth response; discontinuous simulators will produce noisy gradients
  */
 
 // ── Interfaces ──────────────────────────────────────────────────────────────

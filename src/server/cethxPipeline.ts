@@ -8,6 +8,15 @@
  * Agent C (Optimizer): Ranks pathway modifications by feasibility improvement
  *
  * Every numerical conclusion comes from real thermodynamic solver calls.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — Thermodynamic Flux Analysis (TFA) + feasibility classification + parameter sensitivity
+ *   REFERENCE: N/A — orchestration only; delegates to tfaEngine and sensitivityAnalysis
+ *   KNOWN_LIMITATIONS:
+ *     - Feasibility threshold (ΔG < 5 kJ/mol) is a simplification; real cellular feasibility depends on metabolite concentrations
+ *     - No concentration coupling or Max-min driving force (MDF) analysis
+ *     - Sensitivity covers only pH, temperature, and ionic strength — no enzyme kinetics coupling
+ *     - Overall feasibility heuristic (negative total ΔG with at most 1 bottleneck) is not thermodynamically rigorous
  */
 
 import { runTFA, type TFAReaction, type TFAResult } from './tfaEngine';

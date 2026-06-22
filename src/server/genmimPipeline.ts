@@ -3,11 +3,23 @@
  *
  * Unidirectional pipeline: Planner → Simulator → Optimizer
  *
- * Agent A (Planner): Proposes gene knockdown schedule
+ * Agent A (Planner): Identifies essential genes and proposes knockdown schedules
  * Agent B (Simulator): Runs FBA with knockdowns applied
- * Agent C (Optimizer): Maximize growth while minimizing genome
+ * Agent C (Optimizer): Pareto-optimal trade-off between genome reduction and growth
  *
  * Every numerical conclusion comes from real FBA solver calls.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — GPR-based essentiality testing + FBA knockout evaluation + Pareto optimization
+ *   REFERENCE:
+ *     N/A — orchestration only; delegates to fbaEngine and fbaGPR
+ *     Essentiality concept: Gerdes S et al. (2003) "Experimental determination and system level analysis of essential genes in Escherichia coli MG1655" J Bacteriol 185:5673-5684
+ *   KNOWN_LIMITATIONS:
+ *     - Essentiality test is binary (knock out single gene); no partial knockdown or CRISPRi dosage modeling
+ *     - No epistasis — gene-gene interactions not considered in combinatorial knockdowns
+ *     - Greedy gene selection (sequential non-essential genes) does not search combinatorial space
+ *     - GPR rules are parsed via regex; complex Boolean expressions may be misinterpreted
+ *     - Genome reduction metric is gene count fraction, not actual base-pair reduction
  */
 
 import { solveAuthorityFBA, type FBASpecies, type FBAObjective } from './fbaEngine';

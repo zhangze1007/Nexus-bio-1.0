@@ -3,11 +3,24 @@
  *
  * Unidirectional pipeline: Controller Designer → Simulator → Stability Analyzer
  *
- * Agent A (Designer): Proposes PID/MPC controller parameters
- * Agent B (Simulator): Runs ODE simulation with controller
- * Agent C (Analyzer): Evaluates settling time, overshoot, steady-state error
+ * Agent A (Designer): Proposes PID controller parameters via Ziegler-Nichols tuning
+ * Agent B (Simulator): Runs FOPDT ODE simulation with controller
+ * Agent C (Analyzer): Evaluates settling time, overshoot, steady-state error + Pareto front
  *
  * Every numerical conclusion comes from real ODE solver calls.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — Ziegler-Nichols PID tuning + FOPDT (First-Order Plus Dead Time) simulation + Pareto ranking
+ *   REFERENCE:
+ *     Ziegler JG, Nichols NB (1942) "Optimum settings for automatic controllers" Trans. ASME 64:759-768
+ *     Smith CA, Corripio AB (1997) "Principles and Practice of Automatic Process Control" 2nd ed., Wiley
+ *   KNOWN_LIMITATIONS:
+ *     - FOPDT model only; no second-order, integrating, or nonlinear process models
+ *     - Single-input single-output (SISO) only; no MIMO control
+ *     - Ziegler-Nichols tuning rules produce aggressive controllers; no Lambda or IMC tuning alternatives
+ *     - Dead time implemented via discrete buffer lookup; continuous delay approximation may miss dynamics
+ *     - Disturbance model is sinusoidal only; no step, ramp, or stochastic disturbances
+ *     - Pareto front uses only settling time and overshoot; ISE/IAE not included in multi-objective ranking
  */
 
 import { solveRK4, type ODESystem } from '../utils/odeSolver';

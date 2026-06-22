@@ -3,12 +3,23 @@
  *
  * Unidirectional pipeline: Designer → Predictor → Evaluator
  *
- * Agent A (Designer): Proposes mutation candidates using inverse folding
- * Agent B (Predictor): Runs ΔΔG + fitness + conservation analysis
- * Agent C (Evaluator): Ranks by Pareto (stability, fitness, diversity)
+ * Agent A (Designer): Proposes mutation candidates using inverse folding + conservation analysis
+ * Agent B (Predictor): Runs ΔΔG prediction + zero-shot fitness scoring
+ * Agent C (Evaluator): Ranks designed sequences by Pareto front (stability, fitness)
  *
  * Every numerical conclusion comes from real solver calls.
  * LLM role: explain results, not fabricate them.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — BLOSUM62 conservation + inverse folding + ΔΔG prediction + Pareto ranking
+ *   REFERENCE: N/A — orchestration only; delegates to ProEvolCampaignEngine and ddgPrediction
+ *     Conservation basis: Henikoff S, Henikoff JG (1992) "Amino acid substitution matrices from protein blocks" PNAS 89:10915-10919
+ *   KNOWN_LIMITATIONS:
+ *     - Single-point mutations only in ΔΔG prediction; multi-mutant epistasis not modeled
+ *     - Fitness prediction uses zero-shot scoring, not experimental DMS data
+ *     - Variable positions capped at 8 for library design; may miss important distant sites
+ *     - Inverse folding quality depends on PDB structure availability; no AlphaFold structure prediction
+ *     - Pareto front uses only stability and fitness; expression level not included as objective
  */
 
 import {

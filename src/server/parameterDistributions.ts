@@ -9,7 +9,17 @@
  * This noise distribution informs how much cell-free parameters should
  * vary in Monte Carlo simulations.
  *
- * Reference: Elowitz et al. (2002) Science — intrinsic vs extrinsic noise
+ * @scientific_provenance
+ *   ALGORITHM: Log-normal distribution fitting from coefficient of variation (CV) + Box-Muller transform sampling
+ *   REFERENCE:
+ *     Elowitz MB, Levine AJ, Siggia ED, Swain PS (2002) "Stochastic gene expression in a single cell" Science 297:1183-1186
+ *     Raser JM, O'Shea EK (2005) "Noise in gene expression: origins, consequences, and control" Science 309:2010-2013
+ *   KNOWN_LIMITATIONS:
+ *     - Assumes log-normal distribution for all parameters; some (e.g., temperature) are better modeled as uniform
+ *     - CV-to-parameter mapping ratios (k_tx:1.0, k_tl:0.5, d_mRNA:0.3) are heuristic, not experimentally calibrated
+ *     - No correlation structure between parameters (each sampled independently)
+ *     - Default CV (15%) is arbitrary when no single-cell data is provided
+ *     - Box-Muller transform can produce extreme tails for small CV values
  */
 
 import { SeededRNG } from '../utils/seededRng';

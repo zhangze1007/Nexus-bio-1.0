@@ -9,8 +9,19 @@
  *
  * Pipeline:
  *   1. Agent A (Designer): User spec → CircuitParameters
- *   2. Agent B (Physiologist): Parameters → ODE + burden + Jacobian
- *   3. Agent C (Judge): Grid search → Pareto front → recommendation
+ *   2. Agent B (Physiologist): Parameters → ODE simulation + burden model + Jacobian stability
+ *   3. Agent C (Judge): Latin Hypercube grid search → Pareto front → recommended design
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — circuit ODE simulation + ribosome burden model + Jacobian eigenvalue analysis + LHS grid search + Pareto optimization
+ *   REFERENCE: N/A — orchestration only; delegates to circuitBuilder, jacobianAnalysis, and gridSearch
+ *     Burden model basis: Ceroni F, Algar R, Stan G-B, Ellis T (2015) "Quantifying cellular capacity identifies gene expression designs with reduced burden" Nat Methods 12:415-418
+ *   KNOWN_LIMITATIONS:
+ *     - Burden model is simplified (total protein / 10000 nM capacity); no ribosome queueing or metabolic flux coupling
+ *     - Growth burden factor (0.8 * ribosomeBurden) is an arbitrary scaling, not from FBA
+ *     - Grid search uses Latin Hypercube Sampling with 50 samples; may miss optima in high-dimensional space
+ *     - Sensitivity metric for oscillatory circuits uses amplitude/500 normalization; not a standard sensitivity index
+ *     - No stochastic simulation (SSA) for circuits where noise matters (e.g., toggle switch switching probability)
  */
 
 import {

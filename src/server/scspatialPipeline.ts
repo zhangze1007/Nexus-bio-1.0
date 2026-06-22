@@ -3,11 +3,25 @@
  *
  * Unidirectional pipeline: Data Processor → Cluster Analyzer → Spatial Interpreter
  *
- * Agent A (Processor): QC filtering + normalization + HVG selection
- * Agent B (Analyzer): Clustering + spatial statistics
- * Agent C (Interpreter): Identify spatially variable genes + domains
+ * Agent A (Processor): QC filtering + library-size normalization + log1p transform
+ * Agent B (Analyzer): K-means clustering + spatial statistics
+ * Agent C (Interpreter): Moran's I spatial autocorrelation for spatially variable gene detection
  *
  * Every numerical conclusion comes from real solver calls.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — library-size normalization + K-means clustering + Moran's I spatial autocorrelation
+ *   REFERENCE:
+ *     Moran's I: Moran PAP (1950) "Notes on continuous stochastic phenomena" Biometrika 37:17-23
+ *     Normal CDF approximation: Abramowitz M, Stegun IA (1964) "Handbook of Mathematical Functions" NBS, formula 26.2.17
+ *     Spatial variance formula: Cliff AD, Ord JK (1981) "Spatial Processes: Models and Applications" Pion, London
+ *   KNOWN_LIMITATIONS:
+ *     - K-means only; no Leiden, Louvain, or graph-based clustering (e.g., Seurat/Scanpy workflow)
+ *     - Moran's I weight matrix uses inverse Euclidean distance; no k-nearest-neighbor or spatial kernel alternative
+ *     - No highly variable gene (HVG) selection; all genes pass to clustering
+ *     - Pseudotime trajectory is always null; no PAGA or diffusion pseudotime implementation
+ *     - QC parameters have defaults but no automatic threshold estimation (e.g., knee-point detection)
+ *     - No batch correction or multi-section integration
  */
 
 // ── Interfaces ──────────────────────────────────────────────────────────────

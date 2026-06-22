@@ -3,15 +3,25 @@
  *
  * Unidirectional pipeline: Designer → Simulator → Optimizer
  *
- * Agent A (Designer): Proposes knockout + overexpression strategies
- * Agent B (Simulator): Runs FBA/FVA/pFBA to evaluate each strategy
- * Agent C (Optimizer): Grid search over strategy space → Pareto front
+ * Agent A (Designer): Proposes knockout strategies (OptKnock) + overexpression targets (FSEOF)
+ * Agent B (Simulator): Runs FBA to evaluate each strain strategy
+ * Agent C (Optimizer): Pareto front of product flux vs. growth rate
  *
  * Every numerical conclusion comes from real FBA solver calls.
  * LLM role: explain results, not fabricate them.
  *
- * Reference: Burgard et al. (2003) Biotechnol Bioeng — OptKnock
- * Reference: Choi et al. (2010) BMC Bioinformatics — FSEOF
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — OptKnock bilevel knockout optimization + FSEOF flux scanning + FBA evaluation + Pareto ranking
+ *   REFERENCE:
+ *     Burgard AP, Pharkya P, Maranas CD (2003) "OptKnock: A bilevel programming framework for identifying gene knockout strategies for microbial strain optimization" Biotechnol Bioeng 84:647-657
+ *     Choi HS, Lee SY, Kim TY, Woo HM (2010) "In silico identification of gene amplification targets for improvement of lycopene production" Appl Environ Microbiol 76:3097-3105
+ *   KNOWN_LIMITATIONS:
+ *     - OptKnock implementation is simplified; true bilevel LP requires dedicated solver (not simplex)
+ *     - FSEOF overexpression targets filtered by monotonicity > 0.5; threshold is heuristic
+ *     - No thermodynamic feasibility (TFA) or protein burden constraints on strategies
+ *     - Grid search over strategy space is coarse; no evolutionary or MILP-based optimization
+ *     - Carbon efficiency metric is approximate; no atom-mapping or elemental balance verification
+ *     - Strategies limited to single-species; no community FBA or consortia design
  */
 
 import { solveAuthorityFBA, type FBASpecies, type FBAObjective } from './fbaEngine';

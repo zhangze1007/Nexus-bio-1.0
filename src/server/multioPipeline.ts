@@ -5,9 +5,20 @@
  *
  * Agent A (Loader): Prepares multi-omics data matrices
  * Agent B (Analyzer): Runs factorization (MOFA+) + dimensionality reduction
- * Agent C (Interpreter): Identifies significant factors + pathway enrichment
+ * Agent C (Interpreter): Identifies significant factors + top loading features
  *
  * Every numerical conclusion comes from real solver calls.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — MOFA+ multi-view factorization + loading-based feature interpretation
+ *   REFERENCE: N/A — orchestration only; delegates to mofaPlus engine
+ *     MOFA+: Argelaguet R, Velten B, Arnol D, et al. (2018) "Multi-Omics Factor Analysis—a framework for unsupervised integration of multi-omics data sets" Mol Syst Biol 14:e8124
+ *   KNOWN_LIMITATIONS:
+ *     - Pathway enrichment arrays are always empty; no KEGG/GO annotation integration
+ *     - Variance explained is computed as var(Z) * sum(W^2), a simplified proxy, not the full R² metric used by MOFA+
+ *     - Top features selected by absolute loading magnitude; no permutation testing for significance
+ *     - Factor count auto-capped at min(features/3, 10); no elbow or Bayesian information criterion
+ *     - No batch correction or confounder adjustment before factorization
  */
 
 import { runMOFA, type MOFAInput, type MOFAResult } from './mofaPlus';

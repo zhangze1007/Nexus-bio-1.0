@@ -10,6 +10,17 @@
  *   R_energy  = 1 - |dYield/dATP|
  *   R_resource = 1 - |dYield/dRibosome|
  *   R_total   = 0.4*R_yield + 0.3*R_timing + 0.15*R_energy + 0.15*R_resource
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Weighted composite robustness score from coefficient of variation (CV) and sensitivity-derived components
+ *   REFERENCE:
+ *     N/A — custom scoring heuristic; weights (0.4, 0.3, 0.15, 0.15) are engineering judgment, not empirically derived
+ *   KNOWN_LIMITATIONS:
+ *     - Weight assignment is arbitrary; no validation against experimental robustness data
+ *     - Energy and resource sensitivity components are optional and default to 0 when not provided
+ *     - CV-based metric assumes Gaussian-like distributions; heavy-tailed distributions may be misleading
+ *     - Scores are clamped to [0,1] but negative CV or high sensitivity can produce meaningless 0-floor results
+ *     - No confidence intervals on the robustness score itself
  */
 
 // ── Interfaces ──────────────────────────────────────────────────────────────

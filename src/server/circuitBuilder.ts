@@ -8,10 +8,18 @@
  * Every output is a deterministic function of the input parameters.
  * No LLM inference, no mock data.
  *
- * References:
- *   - Gardner et al. (2000) Nature — toggle switch
- *   - Elowitz & Leibler (2000) Nature — repressilator
- *   - Hooshangi et al. (2005) PNAS — logic cascade
+ * @scientific_provenance
+ *   ALGORITHM: Hill-function ODE system construction with RK4 (Runge-Kutta 4th-order) integration
+ *   REFERENCE:
+ *     Gardner TS, Cantor CR, Collins JJ (2000) "Construction of a genetic toggle switch in Escherichia coli" Nature 403:339-342
+ *     Elowitz MB, Leibler S (2000) "A synthetic oscillatory network of transcriptional regulators" Nature 403:335-338
+ *     Hooshangi S, Thiberge S, Weiss R (2005) "Ultrasensitivity and noise propagation in a synthetic transcriptional cascade" PNAS 102:3581-3586
+ *   KNOWN_LIMITATIONS:
+ *     - Only three fixed topologies (toggle switch, repressilator, logic cascade) — arbitrary graph wiring not supported
+ *     - No stochastic effects (Gillespie SSA); deterministic ODE only
+ *     - mRNA and protein lumped into single species per node; no spatial or compartmental modeling
+ *     - Hill coefficients and Kd values are uniform per edge rather than fitted to experimental data
+ *     - No resource competition or ribosome allocation coupling
  */
 
 import { hillInhibition, hillActivation } from '../data/mockGECAIR';

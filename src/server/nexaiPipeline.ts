@@ -4,11 +4,22 @@
  * Unidirectional pipeline: Search Planner → Paper Analyzer → Synthesizer
  *
  * Agent A (Planner): Generates search queries from user research question
- * Agent B (Analyzer): Scores papers by relevance + extracts key findings
- * Agent C (Synthesizer): Ranks papers + builds evidence map
+ * Agent B (Analyzer): Scores papers by relevance, citation impact, and recency
+ * Agent C (Synthesizer): Ranks papers + builds evidence map from subtopic claims
  *
  * Every numerical conclusion comes from real scoring algorithms.
  * LLM role: generate queries, explain findings.
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — TF-IDF-like keyword relevance + log-normalized citation impact + exponential recency decay + evidence map construction
+ *   REFERENCE: N/A — orchestration only; paper search/fetch delegated to UI-layer SemanticSearch component
+ *   KNOWN_LIMITATIONS:
+ *     - Relevance scoring is term-overlap fraction, not true TF-IDF (no inverse document frequency)
+ *     - Citation impact uses log-normalization against max in corpus; no field-normalized metrics (e.g., FWCI)
+ *     - Recency decay rate (0.1/year) is fixed; no discipline-specific half-life calibration
+ *     - Evidence map uses regex keyword matching for support/contradiction; no semantic entailment
+ *     - Key findings extraction is sentence-level regex filtering, not NLP-based summarization
+ *     - No deduplication of papers from different database sources
  */
 
 // ── Interfaces ──────────────────────────────────────────────────────────────

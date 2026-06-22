@@ -2,14 +2,24 @@
  * Jacobian Analysis
  *
  * Computes the Jacobian matrix of an ODE system at a given point using
- * finite differences, then finds eigenvalues via power iteration.
+ * finite differences, then finds eigenvalues via QR iteration.
  *
  * Used for stability analysis of gene circuit designs:
  *   - All eigenvalues < 0 → stable fixed point
  *   - Any eigenvalue > 0 → unstable
  *   - Complex eigenvalues → oscillatory behavior
  *
- * Reference: Strogatz (2015) "Nonlinear Dynamics and Chaos"
+ * @scientific_provenance
+ *   ALGORITHM: Central finite-difference Jacobian + QR iteration with Wilkinson shift (modified Gram-Schmidt)
+ *   REFERENCE:
+ *     Strogatz SH (2015) "Nonlinear Dynamics and Chaos" 2nd ed., Westview Press, ISBN 978-0813349107
+ *     Golub GH, Van Loan CF (2013) "Matrix Computations" 4th ed., Johns Hopkins University Press (QR algorithm)
+ *   KNOWN_LIMITATIONS:
+ *     - Returns only real parts of eigenvalues; complex eigenvalue pairs require separate tracking
+ *     - Oscillation detection is heuristic (Jacobian asymmetry threshold), not based on imaginary eigenvalue parts
+ *     - Finite-difference step size h=1e-6 is fixed; stiff systems may need adaptive stepping
+ *     - QR iteration may not converge for defective or nearly-defective matrices within 100 iterations
+ *     - Condition number estimate uses eigenvalue ratio only; ignores off-diagonal structure
  */
 
 // ── Interfaces ──────────────────────────────────────────────────────────────

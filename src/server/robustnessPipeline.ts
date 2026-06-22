@@ -10,6 +10,17 @@
  *   1. Agent A (Ideal): nominal parameters → ideal ODE trajectory
  *   2. Agent B (Inspector): single-cell data → parameter distributions → Monte Carlo
  *   3. Agent C (Optimizer): Monte Carlo results → robustness score + sensitivity
+ *
+ * @scientific_provenance
+ *   ALGORITHM: Pipeline orchestration — cell-free TX-TL ODE (RK4) + Monte Carlo perturbation + composite robustness scoring + finite-difference sensitivity
+ *   REFERENCE: N/A — orchestration only; delegates to parameterDistributions, robustnessScore, and sensitivityAnalysis
+ *     Cell-free TX-TL model basis: Stögbauer T, Windhager L, Zimmer R, Rädler JO (2012) "Experiment and mathematical modeling of gene expression dynamics in a cell-free system" Integr Biol 4:494-501
+ *   KNOWN_LIMITATIONS:
+ *     - Simplified 3-state ODE (mRNA, protein, ATP); no amino acid depletion, ribosome dynamics, or energy regeneration
+ *     - ATP pool initialized at fixed 1000 nM; no NTP/energy system coupling
+ *     - Monte Carlo assumes independent parameter perturbations; no correlated noise structure
+ *     - Fixed 500 trials; no convergence criterion or adaptive sample sizing
+ *     - Robustness score weights inherited from robustnessScore.ts (arbitrary, not validated)
  */
 
 import {
