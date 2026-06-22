@@ -51,6 +51,19 @@ import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 
 const GENE_COLORS = [THEME.MINT, THEME.SKY, THEME.CORAL, THEME.APRICOT, THEME.LILAC];
 
+/** IVIV expression range thresholds (nM) — heuristic bins for in-vivo expression classification */
+const EXPRESSION_LOW = 500;      // below this: "Low" expression
+const EXPRESSION_MEDIUM = 5000;  // below this: "Moderate" expression
+const EXPRESSION_HIGH = 20000;   // below this: "High" expression; above: "Very High"
+
+/** Classify in-vivo expression value into a human-readable range label */
+function getIvivExpressionLabel(expression: number): string {
+  if (expression < EXPRESSION_LOW) return 'Low';
+  if (expression < EXPRESSION_MEDIUM) return 'Moderate';
+  if (expression < EXPRESSION_HIGH) return 'High';
+  return 'Very High';
+}
+
 /* ── SVG Helpers ──────────────────────────────────────────────────── */
 /* GridLines is now ChartGrid from ../charts/primitives */
 
@@ -500,7 +513,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY + 14} textAnchor="middle"
         fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.labelColor}>In vivo (heuristic)</text>
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY - barH(invivo) - 6} textAnchor="middle"
-        fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.titleColor}>{invivo < 500 ? 'Low' : invivo < 5000 ? 'Moderate' : invivo < 20000 ? 'High' : 'Very High'}</text>
+        fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.titleColor}>{getIvivExpressionLabel(invivo)}</text>
 
       {/* Baseline */}
       <line x1={PAD + 20} y1={barBaseY} x2={PAD + 40 + barW * 2 + barGap + 20} y2={barBaseY}
@@ -624,7 +637,7 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         </text>
         <text x="264" y="122" fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
           {result.iviv
-            ? `Heuristic IVIV confidence ${(result.iviv.confidence * 100).toFixed(0)}% — expression range: ${result.iviv.invivo_expression < 500 ? 'Low' : result.iviv.invivo_expression < 5000 ? 'Moderate' : result.iviv.invivo_expression < 20000 ? 'High' : 'Very High'} (not a trained model)`
+            ? `Heuristic IVIV confidence ${(result.iviv.confidence * 100).toFixed(0)}% — expression range: ${getIvivExpressionLabel(result.iviv.invivo_expression)} (not a trained model)`
             : 'IVIV estimate unavailable until fitting converges.'}
         </text>
       </svg>
@@ -933,7 +946,7 @@ export default React.memo(function CellFreePage() {
           signals={[
             { label: 'Total Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, detail: `${invitroMaxProtein.toFixed(1)} nM max single-construct expression.`, tone: sim.totalProteinYield > 100 ? 'cool' : 'warm' },
             { label: 'Depletion Gate', value: `${sim.energyDepletionTime.toFixed(0)} min`, detail: sim.isResourceLimited ? 'Resource-limited run.' : 'Resources adequate.', tone: sim.isResourceLimited ? 'alert' : 'cool' },
-            { label: 'IVIV Confidence', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending', detail: iviv ? `${iviv.invivo_expression < 500 ? 'Low' : iviv.invivo_expression < 5000 ? 'Moderate' : iviv.invivo_expression < 20000 ? 'High' : 'Very High'} expression (heuristic)` : 'Fitting required.', tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral' },
+            { label: 'IVIV Confidence', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending', detail: iviv ? `${getIvivExpressionLabel(iviv.invivo_expression)} expression (heuristic)` : 'Fitting required.', tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral' },
             { label: 'Constructs', value: `${constructs.length}`, detail: `${params.temperature}°C · ${params.simulationTime} min`, tone: 'neutral' },
           ]}
         />
@@ -1472,7 +1485,7 @@ export default React.memo(function CellFreePage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Expression Range</span>
-                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.invivo_expression < 500 ? 'Low' : iviv.invivo_expression < 5000 ? 'Moderate' : iviv.invivo_expression < 20000 ? 'High' : 'Very High'}</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{getIvivExpressionLabel(iviv.invivo_expression)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Fold Change</span>

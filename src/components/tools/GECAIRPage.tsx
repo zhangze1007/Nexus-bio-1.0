@@ -22,6 +22,12 @@ import { SVGChartContainer } from '../charts/primitives';
 import { PAPER_THEME } from '../charts/chartTheme';
 
 
+/** mRNA/protein degradation rate (1/min) — Alon, An Introduction to Systems Biology (2007) */
+const PROTEIN_DEGRADATION_RATE = 0.0075;
+
+/** PRNG seed offset for Gillespie ensemble runs — ensures reproducible stochastic trajectories */
+const GILLESPIE_SEED_OFFSET = 42;
+
 const PART_COLORS: Record<string, string> = {
   promoter: THEME.lilac,
   rbs: THEME.sky,
@@ -449,9 +455,9 @@ export default function GECAIRPage() {
         { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
         { id: 'deg_mC', reactants: { mC: 1 }, products: {}, rate: 1.0 },
         // Protein degradation
-        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: 0.0075 },
-        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: 0.0075 },
-        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
       ],
     };
   }
@@ -473,8 +479,8 @@ export default function GECAIRPage() {
         { id: 'tlB', reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
         { id: 'deg_mA', reactants: { mA: 1 }, products: {}, rate: 1.0 },
         { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: 0.0075 },
-        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
       ],
     };
   }
@@ -506,9 +512,9 @@ export default function GECAIRPage() {
         { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
         { id: 'deg_mC', reactants: { mC: 1 }, products: {}, rate: 1.0 },
         // Protein degradation
-        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: 0.0075 },
-        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: 0.0075 },
-        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
       ],
     };
   }
@@ -526,7 +532,7 @@ export default function GECAIRPage() {
     const N = ensembleRuns;
     const runs: GillespieResult[] = [];
     for (let i = 0; i < N; i++) {
-      runs.push(runGillespie(model, { maxTime, seed: i * 1000 + 42 }));
+      runs.push(runGillespie(model, { maxTime, seed: i * 1000 + GILLESPIE_SEED_OFFSET }));
     }
 
     // Find common time grid by resampling each trajectory onto a uniform grid

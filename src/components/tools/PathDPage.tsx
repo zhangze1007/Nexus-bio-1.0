@@ -14,6 +14,13 @@ import type { PathwayDiscoveryResult, DiscoveredPathway } from '../../server/pat
 import { THEME } from '../../theme';
 import { getToolValidity } from '../../config/toolValidity';
 
+/** Tab bar / section divider border — subtle white edge */
+const BORDER_SUBTLE = 'rgba(255,255,255,0.06)';
+/** Hover / inactive background highlight for interactive elements */
+const BG_HOVER = 'rgba(255,255,255,0.04)';
+/** Input field border — slightly stronger than BORDER_SUBTLE */
+const INPUT_BORDER_PATHD = 'rgba(255,255,255,0.1)';
+
 export default React.memo(function PathDPage() {
   const [activeTab, setActiveTab] = useState<'kegg' | 'retro' | 'discover'>('kegg');
   const [keggQuery, setKeggQuery] = useState('');
@@ -171,7 +178,7 @@ export default React.memo(function PathDPage() {
         display: 'flex',
         gap: '2px',
         padding: '0 16px',
-        borderBottom: `1px solid rgba(255,255,255,0.06)`,
+        borderBottom: `1px solid ${BORDER_SUBTLE}`,
         background: 'rgba(10,12,16,0.72)',
         alignItems: 'center',
       }}>
@@ -194,7 +201,7 @@ export default React.memo(function PathDPage() {
           }}
           onMouseEnter={(e) => {
             if (activeTab !== 'kegg') {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              e.currentTarget.style.background = BG_HOVER;
               e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
             }
           }}
@@ -237,7 +244,7 @@ export default React.memo(function PathDPage() {
           }}
           onMouseEnter={(e) => {
             if (activeTab !== 'retro') {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              e.currentTarget.style.background = BG_HOVER;
               e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
             }
           }}
@@ -280,7 +287,7 @@ export default React.memo(function PathDPage() {
           }}
           onMouseEnter={(e) => {
             if (activeTab !== 'discover') {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              e.currentTarget.style.background = BG_HOVER;
               e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
             }
           }}
@@ -334,7 +341,7 @@ export default React.memo(function PathDPage() {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: `1px solid ${BORDER_SUBTLE}`,
         }}>
           <span style={{
             fontFamily: 'var(--nb-mono)',
@@ -356,8 +363,8 @@ export default React.memo(function PathDPage() {
               flex: 1,
               maxWidth: '280px',
               padding: '4px 8px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: BG_HOVER,
+              border: `1px solid ${INPUT_BORDER_PATHD}`,
               borderRadius: 'var(--nb-radius-sm)',
               color: 'rgba(255,255,255,0.85)',
               fontFamily: 'var(--nb-mono)',
@@ -413,7 +420,7 @@ export default React.memo(function PathDPage() {
       {activeTab === 'retro' && (
         <div style={{
           padding: '16px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: `1px solid ${BORDER_SUBTLE}`,
           background: 'rgba(10,12,16,0.72)',
         }}>
           {/* Search bar */}
@@ -443,8 +450,8 @@ export default React.memo(function PathDPage() {
                 flex: 1,
                 maxWidth: '360px',
                 padding: '6px 10px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: BG_HOVER,
+                border: `1px solid ${INPUT_BORDER_PATHD}`,
                 borderRadius: 'var(--nb-radius-sm)',
                 color: 'rgba(255,255,255,0.85)',
                 fontFamily: THEME.MONO,
@@ -606,7 +613,7 @@ export default React.memo(function PathDPage() {
       {activeTab === 'discover' && (
         <div style={{
           padding: '16px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: `1px solid ${BORDER_SUBTLE}`,
           background: 'rgba(10,12,16,0.72)',
         }}>
           {/* Input controls */}
@@ -636,8 +643,8 @@ export default React.memo(function PathDPage() {
               style={{
                 width: '180px',
                 padding: '6px 10px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: BG_HOVER,
+                border: `1px solid ${INPUT_BORDER_PATHD}`,
                 borderRadius: 'var(--nb-radius-sm)',
                 color: 'rgba(255,255,255,0.85)',
                 fontFamily: THEME.MONO,
@@ -665,8 +672,8 @@ export default React.memo(function PathDPage() {
                 minWidth: '200px',
                 maxWidth: '360px',
                 padding: '6px 10px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: BG_HOVER,
+                border: `1px solid ${INPUT_BORDER_PATHD}`,
                 borderRadius: 'var(--nb-radius-sm)',
                 color: 'rgba(255,255,255,0.85)',
                 fontFamily: THEME.MONO,
@@ -679,8 +686,8 @@ export default React.memo(function PathDPage() {
               onChange={(e) => setDiscoverOrganism(e.target.value)}
               style={{
                 padding: '6px 8px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: BG_HOVER,
+                border: `1px solid ${INPUT_BORDER_PATHD}`,
                 borderRadius: 'var(--nb-radius-sm)',
                 color: 'rgba(255,255,255,0.85)',
                 fontFamily: THEME.MONO,
