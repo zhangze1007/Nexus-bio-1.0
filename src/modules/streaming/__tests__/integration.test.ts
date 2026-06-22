@@ -264,6 +264,46 @@ describe('Integration', () => {
     expect(msg.data).toEqual({ flux: { R1: 1.5 }, anomalies: [] });
   });
 
+  it('end-to-end: processNext triggers anomaly detection and server publish', async () => {
+    const port = nextPort();
+    stack = createStreamingStack({ serverPort: port });
+
+    // Add CPU anomaly rule (createStreamingStack has no default rules)
+    stack.detector.addRule({
+      metric: 'cpu',
+      max: 90,
+      severity: 'high',
+      message: 'CPU usage exceeded 90%',
+    });
+
+    await stack.server.start();
+
+    // Subscribe to anomalies
+    const { ws, nextMessage } = await connectAndBuffer(port);
+    clientsToClose.push(ws);
+
+    // Consume welcome message
+    await nextMessage();
+
+    send(ws, { type: 'subscribe', topic: 'anomalies', timestamp: Date.now() });
+    await sleep(50);
+
+    // Submit data that will trigger anomaly (CPU > 90%)
+    stack.pipeline.submit({ metric: 'cpu', value: 95 });
+
+    // Process via buffered path (submit + processNext)
+    const result = await stack.pipeline.processNext();
+    expect(result).toEqual({ metric: 'cpu', value: 95 });
+
+    // Verify anomaly was published via the processNext wiring
+    const anomalyMsg = await nextMessage();
+    expect(anomalyMsg.type).toBe('publish');
+    expect(anomalyMsg.topic).toBe('anomalies');
+    expect(anomalyMsg.data).toBeDefined();
+    expect((anomalyMsg.data as any).metric).toBe('cpu');
+    expect((anomalyMsg.data as any).severity).toBeDefined();
+  });
+
   it('end-to-end: pipeline processes, detector checks, server broadcasts', async () => {
     const port = nextPort();
     stack = createStreamingStack({ serverPort: port });
