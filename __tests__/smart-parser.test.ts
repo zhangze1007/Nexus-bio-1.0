@@ -1,13 +1,24 @@
 import { parseSmartInput, type InputType, type ConfidenceLevel } from '../src/lib/smart-parser';
 
 const tests: Array<{ input: string; expectedType: InputType; expectedConfidence: ConfidenceLevel }> = [
+  // DOI
   { input: '10.1038/nature05113', expectedType: 'DOI', expectedConfidence: 'HIGH' },
+  // Strain
   { input: 'E. coli K-12', expectedType: 'STRAIN', expectedConfidence: 'HIGH' },
   { input: 'e.coli', expectedType: 'STRAIN', expectedConfidence: 'HIGH' },
+  // Molecule — exact match (HIGH)
   { input: 'artemisinin', expectedType: 'MOLECULE', expectedConfidence: 'HIGH' },
   { input: 'lycopene biosynthesis', expectedType: 'MOLECULE', expectedConfidence: 'HIGH' },
+  { input: 'erythromycin', expectedType: 'MOLECULE', expectedConfidence: 'HIGH' },
+  { input: 'rhamnolipid', expectedType: 'MOLECULE', expectedConfidence: 'HIGH' },
+  { input: 'glucaric acid', expectedType: 'MOLECULE', expectedConfidence: 'HIGH' },
+  // Molecule — pattern match (MEDIUM)
+  { input: 'some unknown terpenoid', expectedType: 'MOLECULE', expectedConfidence: 'MEDIUM' },
+  { input: 'hexanol', expectedType: 'MOLECULE', expectedConfidence: 'MEDIUM' },
+  // Metric
   { input: '产量提升50%', expectedType: 'METRIC', expectedConfidence: 'MEDIUM' },
   { input: '10 g/L titer', expectedType: 'METRIC', expectedConfidence: 'MEDIUM' },
+  // Freeform
   { input: 'optimize my pathway', expectedType: 'FREEFORM', expectedConfidence: 'LOW' },
   { input: 'how to increase yield', expectedType: 'FREEFORM', expectedConfidence: 'LOW' },
 ];

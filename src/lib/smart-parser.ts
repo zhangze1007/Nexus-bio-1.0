@@ -33,16 +33,50 @@ const KNOWN_STRAINS: Record<string, string> = {
 };
 
 const KNOWN_MOLECULES: string[] = [
+  // Terpenoids
   'artemisinin', 'lycopene', 'beta-carotene', 'taxol', 'limonene',
   'linalool', 'geraniol', 'farnesol', 'squalene', 'astaxanthin',
+  // Amino acids
   'lysine', 'threonine', 'valine', 'leucine', 'tryptophan',
   'phenylalanine', 'tyrosine', 'glutamate', 'glutamine',
+  // Organic acids
   'succinic acid', 'itaconic acid', 'lactic acid', 'gluconic acid',
   '3-hydroxypropionic acid', '3-hp', 'muconic acid',
+  'adipic acid', 'glucaric acid',
+  // Alcohols
   'ethanol', 'butanol', '1-butanol', '2,3-butanediol', 'isobutanol',
-  'isopropanol',
+  'isopropanol', 'xylitol', 'sorbitol', 'mannitol', 'erythritol',
+  '1,3-propanediol',
+  // Terpenes / platform chemicals
   'isoprene', 'farnesene', 'p-coumaric acid', 'naringenin',
-  'resveratrol', 'violacein', 'indigoidine',
+  'resveratrol', 'violacein', 'indigoidine', 'acetoin',
+  // Antibiotics
+  'erythromycin', 'FK506', 'rapamycin', 'tetracycline', 'avermectin',
+  // Vitamins / cofactors
+  'riboflavin', 'cobalamin', 'folic acid', 'menaquinone',
+  // Sugars
+  'trehalose',
+  // Biosurfactants
+  'rhamnolipid', 'surfactin', 'sophorolipid',
+  // Pigments
+  'prodigiosin', 'phycocyanin', 'phytoene', 'zeaxanthin',
+  // Fatty acids / lipids
+  'EPA', 'DHA', 'oleic acid', 'palmitic acid',
+  // Alkaloids
+  'berberine', 'caffeine', 'morphine', 'codeine', 'camptothecin',
+  // Biopolymers
+  'PHA', 'PHB', 'PHBV',
+];
+
+/** Pattern-based molecule inference (MEDIUM confidence — heuristic, not exact) */
+const MOLECULE_PATTERNS: RegExp[] = [
+  /\b\w{4,}ol\b/i,           // alcohols: hexanol, methanol, propanol
+  /\b\w{4,}ene\b/i,          // alkenes/terpenes: butene, myrcene
+  /\b\w{4,}in(e)?\b/i,       // alkaloids/compounds: caffeine, artemisinin
+  /\b\w+\s+acid\b/i,         // organic acids: adipic acid
+  /\b\w{4,}ose\b/i,          // sugars: glucose, fructose, xylose
+  /\b(terpene|terpenoid|flavonoid|alkaloid|polyketide|carotenoid|sterol|coenzyme|vitamin\s+[a-z0-9]+)\b/i,
+  /\b(PHA|PHB|PHBV|rhamnolipid|surfactin|sophorolipid)\b/i,
 ];
 
 const DOI_PATTERN = /^10\.\d{4,9}\/\S+/;
@@ -85,7 +119,7 @@ export function parseSmartInput(raw: string): ParseResult {
     }
   }
 
-  // Rule 3 — Known molecule
+  // Rule 3a — Known molecule (exact match)
   for (const molecule of KNOWN_MOLECULES) {
     if (lowerInput.includes(molecule)) {
       return {
@@ -95,6 +129,21 @@ export function parseSmartInput(raw: string): ParseResult {
         routeTo: `/tools/pathd?target=${encodeURIComponent(molecule)}`,
         toolChainDescription: '路径搜索 → FBA验证 → 关键酶设计',
         validityClass: 'COMPUTATIONAL',
+        rawInput: input,
+      };
+    }
+  }
+
+  // Rule 3b — Pattern-based molecule inference (MEDIUM confidence)
+  for (const pattern of MOLECULE_PATTERNS) {
+    if (pattern.test(input)) {
+      return {
+        type: 'MOLECULE',
+        confidence: 'MEDIUM',
+        displayLabel: `目标分子（推断）`,
+        routeTo: `/tools/pathd?target=${encodeURIComponent(input)}`,
+        toolChainDescription: '路径搜索 → FBA验证 → 关键酶设计',
+        validityClass: 'AI_ASSISTED',
         rawInput: input,
       };
     }
