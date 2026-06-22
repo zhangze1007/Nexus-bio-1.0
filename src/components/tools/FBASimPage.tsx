@@ -70,6 +70,9 @@ import { COLORS, ParamSlider, GlassContainer, SharedMetaboliteBus, StrainPanel }
 import { round, createEmptyFBAOutput, createEmptyCommunityOutput, type SimMode } from './fbasim/fbaHelpers';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 
+// ── Consortium panel (imported from fbasim/) ──
+import ConsortiumPanel from './fbasim/ConsortiumPanel';
+
 // ── FVA / GPR panels (imported from fba/) ──
 import FVAPanel from './fba/FVAPanel';
 import GPRPanel from './fba/GPRPanel';
@@ -86,6 +89,7 @@ const FBA_TABS: ToolTab[] = [
   { id: 'strain', label: 'Strain Design', accent: THEME.MINT },
   { id: 'shadows', label: 'Sensitivity', accent: THEME.LILAC },
   { id: 'community', label: 'Community', accent: THEME.MINT },
+  { id: 'consortium', label: 'Consortium', accent: THEME.LILAC },
 ];
 
 export default React.memo(function FBASimPage() {
@@ -611,7 +615,7 @@ export default React.memo(function FBASimPage() {
       tabs={FBA_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      advancedTabIds={['fva', 'gpr', 'knockout', 'strain', 'shadows', 'community']}
+      advancedTabIds={['fva', 'gpr', 'knockout', 'strain', 'shadows', 'community', 'consortium']}
       footer={
         <>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
@@ -1313,6 +1317,22 @@ export default React.memo(function FBASimPage() {
             />
           </div>
         </div>
+      </ToolTabPanel>
+
+      {/* ── Consortium Design Tab ── */}
+      <ToolTabPanel tabId="consortium" activeId={activeTab}>
+        <ScientificFigureFrame
+          eyebrow="Stage 2 · Multi-Strain Consortium Design"
+          title="SteadyCom Community FBA with Quorum Sensing"
+          caption="Consortium design uses SteadyCom balanced-growth LP (Zomorrodi & Segre 2016), cross-feeding interaction modeling, LuxI/LuxR quorum sensing ODE dynamics, and Jacobian eigenvalue stability analysis (May 1972) to optimize microbial community function."
+          legend={[
+            { label: 'Algorithm', value: 'SteadyCom LP + QS Hill ODE', accent: THEME.LILAC },
+            { label: 'Stability', value: 'QR Eigenvalue Decomposition', accent: THEME.SKY },
+          ]}
+          minHeight="100%"
+        >
+          <ConsortiumPanel />
+        </ScientificFigureFrame>
       </ToolTabPanel>
     </ToolShell>
   );
