@@ -317,9 +317,15 @@ export default function ConsortiumPanel({ onResult }: ConsortiumPanelProps) {
     setLoading(true);
     setError(null);
     try {
-      const { optimizeConsortium } = await import('../../../server/consortiumDesignEngine');
       const strains = PRESET_STRAINS.filter(s => selectedStrainIds.includes(s.id));
-      const result = await optimizeConsortium(strains, objective, maxStrains);
+      const res = await fetch('/api/pipeline/consortium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strains, objective, maxStrains }),
+      });
+      if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+      const data = await res.json();
+      const result = data.result as ConsortiumDesign;
       setDesign(result);
       onResult?.(result);
     } catch (err) {

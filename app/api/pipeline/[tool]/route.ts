@@ -19,6 +19,17 @@ export async function OPTIONS(req: Request) {
 }
 
 const PIPELINE_MAP: Record<string, () => Promise<(input: unknown) => unknown | Promise<unknown>>> = {
+  consortium: async () => {
+    const { optimizeConsortium } = await import('../../../../src/server/consortiumDesignEngine');
+    return (input: unknown) => {
+      const p = input as Record<string, unknown> ?? {};
+      return optimizeConsortium(
+        (p.strains as Parameters<typeof optimizeConsortium>[0]) ?? [],
+        (p.objective as Parameters<typeof optimizeConsortium>[1]) ?? 'max_biomass',
+        (p.maxStrains as number) ?? 3,
+      );
+    };
+  },
   fbasim: async () => {
     const { runStrainDesignPipeline } = await import('../../../../src/server/fbaStrainPipeline');
     return (input: unknown) => {
