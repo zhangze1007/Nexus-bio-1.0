@@ -39,6 +39,7 @@ import WorkflowStepper, { type StepDef } from './shared/WorkflowStepper';
 import ResultSummaryPanel from './shared/ResultSummaryPanel';
 import ParameterPanel from './shared/ParameterPanel';
 import type { ToolTab } from './shared/ToolTabBar';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 /* ── Design Tokens (shared via useToolTheme) ───────────────────────────────── */
 import { toolTokens } from '../../hooks/useToolTheme';
@@ -703,6 +704,7 @@ export default React.memo(function DynConPage() {
       advancedTabIds={['convergence', 'rbs']}
       footer={
         <>
+          <DataSourceBadge source={fbaPayload || cethxPayload ? 'live' : 'mock'} label={fbaPayload || cethxPayload ? 'Upstream Data' : 'Default Params'} />
           <ExportButton label="Export JSON" data={trajectory} filename="dyncon-trajectory" format="json" />
           <ExportButton label="Export CSV" data={trajectory} filename="dyncon-trajectory" format="csv" />
           <ExportButton label="Export SVG" data={null} filename="dyncon-chart" format="svg" svgRef={chartRef} />

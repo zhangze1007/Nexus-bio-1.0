@@ -13,6 +13,7 @@ import type { CRISPRiTarget } from '../../types';
 import { getToolValidity } from '../../config/toolValidity';
 import DataUpload from '../shared/DataUpload';
 import DataPreview from '../shared/DataPreview';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 /**
  * Generate a deterministic pseudo-sequence from a numeric seed.
@@ -450,6 +451,7 @@ export default React.memo(function GenMIMPage() {
       }
       footer={
         <>
+          <DataSourceBadge source={fbaPayload || dynconPayload ? 'live' : 'mock'} label={fbaPayload || dynconPayload ? 'Upstream Data' : 'Default Targets'} />
           <ExportButton label="Export Schedule JSON" data={schedule} filename="genmim-schedule" format="json" />
           <ExportButton label="Export All Targets CSV" data={fluxBoostedTargets} filename="genmim-targets" format="csv" />
         </>

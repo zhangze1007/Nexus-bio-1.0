@@ -16,6 +16,7 @@ import ToolShell from './shared/ToolShell';
 import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 import { THEME } from '../../theme';
 import { PAPER_THEME } from '../charts/chartTheme';
 import { analyzeCommunicationExpanded } from '../../server/cellChat';
@@ -293,6 +294,7 @@ export default React.memo(function ScSpatialPage() {
       advancedTabIds={['trajectory', 'table']}
       footer={
         <>
+          <DataSourceBadge source={validity === 'real' ? 'live' : 'mock'} label={validity === 'real' ? 'Live Data' : validity === 'partial' ? 'Partial Data' : 'Demo Data'} />
           <ExportButton
             label="Export Cluster CSV"
             data={query?.exportData.clusterAnnotations ?? []}

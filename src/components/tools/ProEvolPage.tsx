@@ -37,6 +37,7 @@ import ActivityLandscapePanel from './proevol/ActivityLandscapePanel';
 import ToolShell from './shared/ToolShell';
 import type { ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 import { PROEVOL_THEME, formatSigned, StatusPill, tableHeaderStyle, tableCellStyle } from './proevol/shared';
 
 import TruthHeader from './proevol/research/TruthHeader';
@@ -851,7 +852,7 @@ export default function ProEvolPage() {
           <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={kicker}>Protein Sequence Input</span>
-              {pdbText && <span style={{ fontFamily: THEME.MONO, fontSize: 10, color: PROEVOL_THEME.mint }}>✓ PDB loaded</span>}
+              <DataSourceBadge source={pdbText ? 'live' : 'mock'} label={pdbText ? 'AlphaFold Live' : 'AlphaFold'} />
             </div>
             <textarea
               placeholder="Paste protein sequence (one-letter amino acid codes)..."

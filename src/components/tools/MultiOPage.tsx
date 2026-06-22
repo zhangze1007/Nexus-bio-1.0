@@ -53,6 +53,7 @@ import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -1105,6 +1106,7 @@ export default React.memo(function MultiOPage() {
       }
       footer={
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <DataSourceBadge source={dataSource === 'uploaded' ? 'live' : 'mock'} label={dataSource === 'uploaded' ? 'User CSV' : 'Demo Data'} />
           <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleFileUpload} />
           <button
             onClick={() => fileInputRef.current?.click()}
