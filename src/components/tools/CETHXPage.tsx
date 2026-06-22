@@ -29,6 +29,7 @@ import { KEGG_REACTIONS } from '../../hooks/useEquilibrator';
 import { searchPubChemCompound } from '../../services/database/pubchemClient';
 import type { PubChemCompound } from '../../services/database/pubchemClient';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 
 // ── Per-step proton stoichiometry for Alberty transform ──────────────────
 // Estimated nH (net H+ absorbed) and Δz² (charge change squared) per step.

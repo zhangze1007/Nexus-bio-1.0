@@ -639,9 +639,11 @@ function MultiplexCRISPRPanel() {
   const [maxEdits, setMaxEdits] = useState(4);
   const [result, setResult] = useState<import('../../server/multiplexCRISPREngine').MultiplexCRISPRResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleRun = React.useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { runMultiplexCRISPR } = await import('../../server/multiplexCRISPREngine');
       // Use CRISPRI_TARGETS as gene pool
@@ -655,6 +657,9 @@ function MultiplexCRISPRPanel() {
       }));
       const res = runMultiplexCRISPR({ genes, maxEdits, minFitness: 0.2, topN: 5 });
       setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Simulation failed';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -686,6 +691,8 @@ function MultiplexCRISPRPanel() {
           </span>
         )}
       </div>
+
+      {error && <SimErrorBanner message={error} onRetry={() => setError(null)} />}
 
       {/* Gene ranking */}
       {result && result.geneRanking.length > 0 && (
@@ -764,14 +771,19 @@ function SyntheticGenomicsPanel() {
   const [caiResult, setCaiResult] = useState<{ cai: number; optimized: string } | null>(null);
   const [testSequence, setTestSequence] = useState('ATGAAACGCACCAGCAACAGCAACTAA');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOptimize = React.useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { optimizeCodonsForHost, computeCAI } = await import('../../server/syntheticGenomicsEngine');
       const optimized = optimizeCodonsForHost(testSequence, host);
       const cai = computeCAI(optimized, host);
       setCaiResult({ cai, optimized });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Simulation failed';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -802,6 +814,8 @@ function SyntheticGenomicsPanel() {
           {loading ? 'Optimizing...' : 'Optimize Codons'}
         </button>
       </div>
+
+      {error && <SimErrorBanner message={error} onRetry={() => setError(null)} />}
 
       {caiResult && (
         <div style={{
@@ -890,9 +904,11 @@ function BiosafetyPanel({ schedule }: { schedule: CRISPRiTarget[] }) {
   const [containmentType, setContainmentType] = useState<string>('standard');
   const [result, setResult] = useState<import('../../modules/biosafety').BiosafetyOutput | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAssess = React.useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { assessBiosafety } = await import('../../modules/biosafety');
       // Build a synthetic DNA sequence from scheduled gene targets
@@ -914,6 +930,9 @@ function BiosafetyPanel({ schedule }: { schedule: CRISPRiTarget[] }) {
         riskTolerance,
       });
       setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Simulation failed';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -924,6 +943,7 @@ function BiosafetyPanel({ schedule }: { schedule: CRISPRiTarget[] }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px', overflowY: 'auto', flex: 1 }}>
+      {error && <SimErrorBanner message={error} onRetry={() => setError(null)} />}
       {/* Parameters */}
       <ParameterPanel title="Biosafety Parameters">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>

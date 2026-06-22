@@ -5,6 +5,7 @@ import { searchKEGGPathway } from '../../services/database/keggClient';
 import type { KEGGPathwayResult } from '../../services/database/keggClient';
 import type { FallbackResult } from '../../services/database/fetchWithFallback';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { keggToPathway } from '../../utils/keggToPathway';
@@ -26,17 +27,20 @@ export default React.memo(function PathDPage() {
   const [keggQuery, setKeggQuery] = useState('');
   const [keggResult, setKeggResult] = useState<FallbackResult<KEGGPathwayResult> | null>(null);
   const [keggLoading, setKeggLoading] = useState(false);
+  const [keggError, setKeggError] = useState<string | null>(null);
 
   // Retrosynthesis state
   const [retroTarget, setRetroTarget] = useState('');
   const [retroResult, setRetroResult] = useState<RetrosynthesisResult | null>(null);
   const [retroLoading, setRetroLoading] = useState(false);
+  const [retroError, setRetroError] = useState<string | null>(null);
 
   // Pathway Discovery state
   const [discoverTarget, setDiscoverTarget] = useState('');
   const [discoverPrecursors, setDiscoverPrecursors] = useState('glucose,pyruvate,acetyl_coa');
   const [discoverResult, setDiscoverResult] = useState<PathwayDiscoveryResult | null>(null);
   const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [discoverError, setDiscoverError] = useState<string | null>(null);
   const [discoverOrganism, setDiscoverOrganism] = useState('ecoli');
 
   const setAiPathway = useUIStore(s => s.setAiPathway);
@@ -70,6 +74,9 @@ export default React.memo(function PathDPage() {
           updatedAt: Date.now(),
         });
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'KEGG search failed';
+      setKeggError(msg);
     } finally {
       setKeggLoading(false);
     }
@@ -110,6 +117,9 @@ export default React.memo(function PathDPage() {
         },
         updatedAt: Date.now(),
       });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Retrosynthesis failed';
+      setRetroError(msg);
     } finally {
       setRetroLoading(false);
     }
@@ -151,6 +161,9 @@ export default React.memo(function PathDPage() {
           updatedAt: Date.now(),
         });
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Pathway discovery failed';
+      setDiscoverError(msg);
     } finally {
       setDiscoverLoading(false);
     }
@@ -416,6 +429,10 @@ export default React.memo(function PathDPage() {
         </div>
       )}
 
+      {keggError && (
+        <div style={{ padding: '8px 16px' }}><SimErrorBanner message={keggError} onRetry={() => setKeggError(null)} /></div>
+      )}
+
       {/* ── Retrosynthesis ── */}
       {activeTab === 'retro' && (
         <div style={{
@@ -495,6 +512,10 @@ export default React.memo(function PathDPage() {
               </span>
             )}
           </div>
+
+          {retroError && (
+            <div style={{ marginBottom: '12px' }}><SimErrorBanner message={retroError} onRetry={() => setRetroError(null)} /></div>
+          )}
 
           {/* Results */}
           {retroResult && retroResult.pathways.length > 0 && (
@@ -735,6 +756,10 @@ export default React.memo(function PathDPage() {
               </span>
             )}
           </div>
+
+          {discoverError && (
+            <div style={{ marginBottom: '12px' }}><SimErrorBanner message={discoverError} onRetry={() => setDiscoverError(null)} /></div>
+          )}
 
           {/* Design notes */}
           {discoverResult && discoverResult.designNotes.length > 0 && (

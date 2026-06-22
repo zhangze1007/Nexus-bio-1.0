@@ -1,11 +1,12 @@
 'use client';
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation, runRepressilator, runToggleSwitch, runLogicCascade } from '../../data/mockGECAIR';
 import type { GateType, RepressilatorState, ToggleSwitchState, LogicCascadeState } from '../../data/mockGECAIR';
 import { runGillespie } from '../../server/gillespieSSA';
 import type { StochasticModel, GillespieResult } from '../../server/gillespieSSA';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { THEME } from '../../theme';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -393,6 +394,8 @@ export default function GECAIRPage() {
   const [activeTab, setActiveTab] = useState('circuit');
   const [stochasticMode, setStochasticMode] = useState(false);
   const [ensembleRuns, setEnsembleRuns] = useState(10);
+  const [simError, setSimError] = useState<string | null>(null);
+  const gillespieErrorRef = useRef<string | null>(null);
 
   // Pipeline state
   const [pipelineResult, setPipelineResult] = useState<{

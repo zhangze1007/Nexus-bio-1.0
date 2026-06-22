@@ -40,6 +40,7 @@ import DBTLIntegrationPanel from './metabolic-eng/DBTLIntegrationPanel';
 import FloatingTabBar from './metabolic-eng/FloatingTabBar';
 import IdleStartButton from './metabolic-eng/IdleStartButton';
 import { THEME } from '../../theme';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 
 const PATHD_TABS: ToolTab[] = [
   { id: 'lab', label: '3D Lab', accent: THEME.SKY },
@@ -519,6 +520,9 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
         }
       }
     };
+    w.onerror = (e: ErrorEvent) => {
+      console.error('[FBA Worker]', e.message);
+    };
     return () => w.terminate();
   }, []); // intentional — worker created once
 
@@ -787,6 +791,7 @@ function DigitalCellPanel() {
   const [glucose, setGlucose] = useState(10);
   const [result, setResult] = useState<import('../../server/digitalCellEngine').SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSimulate = React.useCallback(async () => {
     setLoading(true);
@@ -801,6 +806,9 @@ function DigitalCellPanel() {
       };
       const res = simulateDigitalCell(config);
       setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Digital cell simulation failed';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -838,6 +846,8 @@ function DigitalCellPanel() {
           {loading ? 'Simulating...' : 'Simulate Cell'}
         </button>
       </div>
+
+      {error && <SimErrorBanner message={error} onRetry={() => setError(null)} />}
 
       {result && (
         <div style={{
