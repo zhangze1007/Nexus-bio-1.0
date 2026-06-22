@@ -390,10 +390,11 @@ export function aggregateMetrics(metricsList: ModelMetrics[]): AggregatedMetrics
 
   const keys: (keyof ModelMetrics)[] = ['mae', 'rmse', 'r2', 'accuracy', 'f1'];
 
-  const meanMetrics: ModelMetrics = { mae: 0, rmse: 0, r2: 0 };
-  const stdMetrics: ModelMetrics = { mae: 0, rmse: 0, r2: 0 };
-  const minMetrics: ModelMetrics = { mae: Infinity, rmse: Infinity, r2: Infinity };
-  const maxMetrics: ModelMetrics = { mae: -Infinity, rmse: -Infinity, r2: -Infinity };
+  // Use Record<string, number> so we can dynamically index by metric key.
+  const meanMetrics = { mae: 0, rmse: 0, r2: 0 } as ModelMetrics & Record<string, number>;
+  const stdMetrics = { mae: 0, rmse: 0, r2: 0 } as ModelMetrics & Record<string, number>;
+  const minMetrics = { mae: Infinity, rmse: Infinity, r2: Infinity } as ModelMetrics & Record<string, number>;
+  const maxMetrics = { mae: -Infinity, rmse: -Infinity, r2: -Infinity } as ModelMetrics & Record<string, number>;
 
   for (const key of keys) {
     const values: number[] = [];
@@ -410,10 +411,10 @@ export function aggregateMetrics(metricsList: ModelMetrics[]): AggregatedMetrics
       const mn = Math.min(...values);
       const mx = Math.max(...values);
 
-      (meanMetrics as any)[key] = m;
-      (stdMetrics as any)[key] = s;
-      (minMetrics as any)[key] = mn;
-      (maxMetrics as any)[key] = mx;
+      meanMetrics[key] = m;
+      stdMetrics[key] = s;
+      minMetrics[key] = mn;
+      maxMetrics[key] = mx;
     }
   }
 

@@ -261,6 +261,16 @@ export class LinearRegression implements MLModel {
       nFeatures: this.nFeatures,
     });
   }
+
+  /**
+   * Reconstruct a LinearRegression from serialized data.
+   */
+  static hydrate(data: { weights: number[]; nFeatures: number }): LinearRegression {
+    const model = new LinearRegression();
+    model.weights = data.weights;
+    model.nFeatures = data.nFeatures;
+    return model;
+  }
 }
 
 // ── 2. Ridge Regression ─────────────────────────────────────────────────────
@@ -344,6 +354,16 @@ export class RidgeRegression implements MLModel {
       nFeatures: this.nFeatures,
       alpha: this.alpha,
     });
+  }
+
+  /**
+   * Reconstruct a RidgeRegression from serialized data.
+   */
+  static hydrate(data: { weights: number[]; nFeatures: number; alpha: number }): RidgeRegression {
+    const model = new RidgeRegression(data.alpha);
+    model.weights = data.weights;
+    model.nFeatures = data.nFeatures;
+    return model;
   }
 }
 
@@ -486,6 +506,22 @@ export class LassoRegression implements MLModel {
       tol: this.tol,
     });
   }
+
+  /**
+   * Reconstruct a LassoRegression from serialized data.
+   */
+  static hydrate(data: {
+    weights: number[];
+    nFeatures: number;
+    alpha: number;
+    maxIter: number;
+    tol: number;
+  }): LassoRegression {
+    const model = new LassoRegression(data.alpha, data.maxIter, data.tol);
+    model.weights = data.weights;
+    model.nFeatures = data.nFeatures;
+    return model;
+  }
 }
 
 // ── 4. Decision Tree (CART) ─────────────────────────────────────────────────
@@ -590,6 +626,24 @@ export class DecisionTree implements MLModel {
       minSamplesLeaf: this.minSamplesLeaf,
       featureImportances: this.featureImportances,
     });
+  }
+
+  /**
+   * Reconstruct a DecisionTree from serialized data.
+   */
+  static hydrate(data: {
+    tree: TreeNode | null;
+    nFeatures: number;
+    maxDepth: number;
+    minSamplesSplit: number;
+    minSamplesLeaf: number;
+    featureImportances: number[];
+  }): DecisionTree {
+    const model = new DecisionTree(data.maxDepth, data.minSamplesSplit, data.minSamplesLeaf);
+    model.tree = data.tree;
+    model.nFeatures = data.nFeatures;
+    model.featureImportances = data.featureImportances;
+    return model;
   }
 
   /**
@@ -864,6 +918,35 @@ export class RandomForest implements MLModel {
   }
 
   /**
+   * Reconstruct a RandomForest from serialized data.
+   */
+  static hydrate(data: {
+    forest: Array<{ treeData: Parameters<typeof DecisionTree.hydrate>[0]; featureIndices: number[] }>;
+    nFeatures: number;
+    nEstimators: number;
+    maxFeatures: number;
+    maxDepth: number;
+    minSamplesSplit: number;
+    minSamplesLeaf: number;
+    featureImportances: number[];
+  }): RandomForest {
+    const model = new RandomForest(
+      data.nEstimators,
+      data.maxFeatures,
+      data.maxDepth,
+      data.minSamplesSplit,
+      data.minSamplesLeaf,
+    );
+    model.nFeatures = data.nFeatures;
+    model.featureImportances = data.featureImportances;
+    model.forest = data.forest.map(entry => ({
+      tree: DecisionTree.hydrate(entry.treeData),
+      featureIndices: entry.featureIndices,
+    }));
+    return model;
+  }
+
+  /**
    * Generate a bootstrap sample (sampling with replacement).
    */
   private bootstrapSample(X: number[][], y: number[]): { sampleX: number[][]; sampleY: number[] } {
@@ -918,59 +1001,16 @@ export function deserializeModel(data: string): MLModel {
   const parsed = JSON.parse(data);
 
   switch (parsed.type) {
-    case 'linear': {
-      const model = new LinearRegression();
-      (model as any).weights = parsed.weights;
-      (model as any).nFeatures = parsed.nFeatures;
-      return model;
-    }
-    case 'ridge': {
-      const model = new RidgeRegression(parsed.alpha);
-      (model as any).weights = parsed.weights;
-      (model as any).nFeatures = parsed.nFeatures;
-      return model;
-    }
-    case 'lasso': {
-      const model = new LassoRegression(parsed.alpha, parsed.maxIter, parsed.tol);
-      (model as any).weights = parsed.weights;
-      (model as any).nFeatures = parsed.nFeatures;
-      return model;
-    }
-    case 'decision_tree': {
-      const model = new DecisionTree(
-        parsed.maxDepth,
-        parsed.minSamplesSplit,
-        parsed.minSamplesLeaf,
-      );
-      (model as any).tree = parsed.tree;
-      (model as any).nFeatures = parsed.nFeatures;
-      (model as any).featureImportances = parsed.featureImportances;
-      return model;
-    }
-    case 'random_forest': {
-      const model = new RandomForest(
-        parsed.nEstimators,
-        parsed.maxFeatures,
-        parsed.maxDepth,
-        parsed.minSamplesSplit,
-        parsed.minSamplesLeaf,
-      );
-      (model as any).nFeatures = parsed.nFeatures;
-      (model as any).featureImportances = parsed.featureImportances;
-      // Reconstruct forest
-      (model as any).forest = parsed.forest.map((entry: any) => {
-        const tree = new DecisionTree(
-          entry.treeData.maxDepth,
-          entry.treeData.minSamplesSplit,
-          entry.treeData.minSamplesLeaf,
-        );
-        (tree as any).tree = entry.treeData.tree;
-        (tree as any).nFeatures = entry.treeData.nFeatures;
-        (tree as any).featureImportances = entry.treeData.featureImportances;
-        return { tree, featureIndices: entry.featureIndices };
-      });
-      return model;
-    }
+    case 'linear':
+      return LinearRegression.hydrate(parsed);
+    case 'ridge':
+      return RidgeRegression.hydrate(parsed);
+    case 'lasso':
+      return LassoRegression.hydrate(parsed);
+    case 'decision_tree':
+      return DecisionTree.hydrate(parsed);
+    case 'random_forest':
+      return RandomForest.hydrate(parsed);
     default:
       throw new Error(`Unknown model type: ${parsed.type}`);
   }
