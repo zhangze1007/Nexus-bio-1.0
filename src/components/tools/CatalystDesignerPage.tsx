@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -36,12 +36,12 @@ import type {
 import type { RNADesignType, RNADesignResult } from '../../modules/rna-engine';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
-import ToolShell from './shared/ToolShell';
+import CatDesSidebar from './catdes/CatDesSidebar';
+import { useNavigation } from '../../contexts/NavigationContext';
 import AlgorithmPanel from '../shared/AlgorithmPanel';
 import ToolTabPanel from './shared/ToolTabPanel';
-import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
-import type { ToolTab } from './shared/ToolTabBar';
+import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
 import { getBRENDAKinetics } from '../../services/database/brendaClient';
 import type { BRENDAKinetics } from '../../services/database/brendaClient';
 import { runDocking } from '../../services/database/dockingClient';
@@ -708,6 +708,7 @@ function FrontierEngineBadge({ engineId }: { engineId: string }) {
    ══════════════════════════════════════════════════════════════════════ */
 
 export default React.memo(function CatalystDesignerPage() {
+  const { handleBack } = useNavigation();
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
@@ -1183,7 +1184,6 @@ export default React.memo(function CatalystDesignerPage() {
     { id: 'overview', label: 'Overview', accent: THEME.CORAL },
     { id: 'balance', label: 'Pathway Balance', accent: THEME.MINT },
     { id: 'pareto', label: 'Pareto', accent: THEME.LILAC },
-    { id: 'viewer', label: '3D Viewer', accent: THEME.SKY },
     { id: 'inversefold', label: 'Inverse Folding', accent: THEME.LILAC },
     { id: 'expression', label: 'Expression', accent: THEME.MINT },
     { id: 'plasmid', label: 'Plasmid', accent: THEME.APRICOT },
@@ -1197,38 +1197,181 @@ export default React.memo(function CatalystDesignerPage() {
   const fitQ = fitQuality(binding.overallScore);
 
   return (
-    <ToolShell
-      moduleId="catdes"
-      title="Catalyst Designer"
-      description="Enzyme engineering: binding affinity, sequence design, metabolic drain, Pareto optimization"
-      formula="ΔG_bind = Σ(group contributions) + solvation"
-      tabs={CATDES_TABS}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      advancedTabIds={['balance', 'pareto']}
-      hero={<FrontierEngineBadge engineId="inversefolding" />}
-      footer={
-        <>
-          <ExportButton label="Export JSON"
-            data={{ enzyme: enzyme.id, binding, sequences, drain, balance, pareto, mutagenesis, docking: dockingResult }}
-            filename="catalyst-design" format="json" />
-          <ExportButton label="Export CSV"
-            data={sequences.designs} filename="catalyst-sequences" format="csv" />
-        </>
-      }
-    >
+    <div style={{
+      position: 'relative', display: 'flex', flexDirection: 'column',
+      background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
+      fontFamily: THEME.SANS, flex: 1, minHeight: '100%',
+    }}>
+      {/* ── Custom Header ── */}
+      <motion.header
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        style={{
+          padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+          flexShrink: 0, borderBottom: `1px solid ${THEME.BORDER}`,
+          background: THEME.PANEL_MUTED, backdropFilter: 'blur(18px)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleBack}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 28,
+            padding: '0 7px', borderRadius: 'var(--nb-radius-md)',
+            border: `1px solid ${THEME.BORDER}`, background: THEME.PANEL_GLASS_STRONG,
+            color: THEME.LABEL, cursor: 'pointer', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', flexShrink: 0,
+          }}
+          title="Back to Tools"
+        >
+          &larr; Tools
+        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 28, padding: '0 8px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${THEME.BORDER}`, background: 'rgba(231, 199, 169, 0.24)', color: THEME.VALUE, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
+          CATDES
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, color: THEME.VALUE, letterSpacing: '-0.01em' }}>
+            Catalyst Designer
+          </div>
+          <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginTop: 2 }}>
+            Enzyme engineering: binding affinity, sequence design, metabolic drain, Pareto optimization
+          </div>
+        </div>
+        <FrontierEngineBadge engineId="inversefolding" />
+        <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE, padding: '5px 8px', background: THEME.PANEL_GLASS_STRONG, border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)' }}>
+          {'Δ'}G_bind = {'Σ'}(group contributions) + solvation
+        </div>
+      </motion.header>
+
+      {/* ── Error Banners ── */}
       {simError && (
-        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
+        <div style={{ padding: '4px 16px 0' }}><SimErrorBanner message={simError} /></div>
       )}
       {catdesError && (
-        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={catdesError} onRetry={() => setCatdesError(null)} /></div>
+        <div style={{ padding: '4px 16px 0' }}><SimErrorBanner message={catdesError} onRetry={() => setCatdesError(null)} /></div>
       )}
 
-      {/* ── Algorithm Transparency ── */}
-      <div style={{ padding: '8px 16px' }}>
+      {/* ── Main Split: 55% Left (3D Viewer + Controls) | 45% Right (Sidebar) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '55% 45%', flex: 1, minHeight: 0, borderBottom: `1px solid ${THEME.BORDER}` }}>
+
+        {/* ── LEFT COLUMN: Controls + 3D Viewer ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: `1px solid ${THEME.BORDER}` }}>
+          {/* Compact Controls Bar */}
+          <div style={{ padding: '8px 12px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, borderBottom: `1px solid ${THEME.BORDER}`, background: THEME.PANEL_MUTED, flexShrink: 0 }}>
+            {/* Enzyme selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Enzyme</span>
+              <select
+                value={selectedEnzyme}
+                onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
+                style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '3px 6px', cursor: 'pointer', outline: 'none' }}
+              >
+                {ENZYME_STRUCTURES.map((enz, i) => (
+                  <option key={enz.id} value={i}>{enz.name} · EC {enz.ecNumber}</option>
+                ))}
+              </select>
+              {enzyme.id === RATE_LIMITING_ENZYME.id && (
+                <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.RISK_LOW, background: 'rgba(255,251,31,0.12)', padding: '1px 6px', borderRadius: 6 }}>Rate-limiting</span>
+              )}
+            </div>
+            {/* Render mode */}
+            <div style={{ display: 'flex', gap: 2 }}>
+              {(['cartoon', 'surface', 'confidence'] as const).map(mode => (
+                <button key={mode} onClick={() => setRenderMode(mode)}
+                  className={`nb-tool-toggle ${renderMode === mode ? 'nb-tool-toggle--active' : ''}`}
+                  style={{ padding: '3px 8px', borderRadius: 4, fontSize: 'var(--nb-fs-xxs)', borderColor: renderMode === mode ? THEME.SKY : undefined, background: renderMode === mode ? 'rgba(175,195,214,0.15)' : undefined, color: renderMode === mode ? THEME.SKY : undefined }}>
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </button>
+              ))}
+            </div>
+            {/* Spin toggle */}
+            <button onClick={() => setSpinEnabled(!spinEnabled)}
+              className={`nb-tool-toggle ${spinEnabled ? 'nb-tool-toggle--active' : ''}`}
+              style={{ padding: '3px 8px', borderRadius: 4, fontSize: 'var(--nb-fs-xxs)', borderColor: spinEnabled ? THEME.MINT : undefined, background: spinEnabled ? 'rgba(191,220,205,0.15)' : undefined, color: spinEnabled ? THEME.MINT : undefined }}>
+              {spinEnabled ? 'Spin' : 'Spin Off'}
+            </button>
+            {/* PDB Upload */}
+            <div
+              style={{ padding: '3px 8px', borderRadius: 4, border: `1px dashed ${uploadedPdb ? THEME.MINT : INPUT_BORDER}`, background: uploadedPdb ? 'rgba(147,203,82,0.06)' : 'transparent', cursor: 'pointer', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: uploadedPdb ? THEME.MINT : LABEL }}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file'; input.accept = '.pdb';
+                input.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (!file) return;
+                  try {
+                    const text = await file.text();
+                    if (text.length < 100) throw new Error('File too small');
+                    setUploadedPdb(text); setUploadedPdbName(file.name); setCatdesError(null);
+                  } catch (err) { setCatdesError(err instanceof Error ? err.message : 'Failed to read PDB'); }
+                };
+                input.click();
+              }}
+            >
+              {uploadedPdbName ?? 'Upload PDB'}
+            </div>
+            {uploadedPdb && (
+              <button onClick={() => { setUploadedPdb(null); setUploadedPdbName(null); }}
+                style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: THEME.CORAL, background: 'rgba(250,128,114,0.08)', border: `1px solid rgba(250,128,114,0.2)`, borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}>
+                Clear
+              </button>
+            )}
+            {/* ESMFold */}
+            <button onClick={handleESMFoldPredict} disabled={esmfoldLoading || !activeEnzyme?.sequence}
+              className="nb-tool-toggle"
+              style={{ padding: '3px 8px', borderRadius: 4, fontSize: 'var(--nb-fs-xxs)', opacity: esmfoldLoading ? 0.5 : 1 }}>
+              {esmfoldLoading ? 'Folding...' : esmfoldPdb ? 'ESMFold Done' : 'ESMFold'}
+            </button>
+            {/* Docking */}
+            <button onClick={handleDocking} disabled={dockingLoading || !enzyme.pdbId}
+              className="nb-tool-toggle"
+              style={{ padding: '3px 8px', borderRadius: 4, fontSize: 'var(--nb-fs-xxs)', opacity: dockingLoading ? 0.5 : 1 }}>
+              {dockingLoading ? 'Docking...' : 'Dock'}
+            </button>
+          </div>
+
+          {/* 3D Viewer */}
+          <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+            <CatalystViewer3D enzyme={enzyme} renderMode={renderMode} spinEnabled={spinEnabled} onResidueClick={handleResidueClick} selectedResidue={selectedResidue} bindingQuality={binding.overallScore} pdbText={uploadedPdb || esmfoldPdb} style={{ height: '100%' }} />
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={[
+                { label: 'Kd', value: `${binding.predictedKd.toFixed(1)} uM`, accent: kdQ.color },
+                { label: 'Km', value: `${activeEnzyme.km.toFixed(2)} mM`, accent: THEME.SKY },
+                { label: 'Kcat', value: `${activeEnzyme.kcat.toFixed(2)} s-1`, accent: kcatQ.color },
+                ...(activeEnzyme.km > 0 && activeEnzyme.kcat > 0
+                  ? [{ label: 'kcat/Km', value: `${(activeEnzyme.kcat / activeEnzyme.km).toFixed(1)} mM-1s-1`, accent: THEME.MINT }]
+                  : []),
+                { label: 'Fit', value: binding.overallScore.toFixed(2), accent: fitQ.color },
+                { label: 'Tm', value: `${enzyme.meltingTemp.toFixed(0)}C`, accent: THEME.APRICOT },
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* ── RIGHT COLUMN: Sidebar ── */}
+        <div style={{ minHeight: 0, overflow: 'hidden' }}>
+          <CatDesSidebar
+            enzyme={enzyme}
+            activeEnzyme={activeEnzyme}
+            brendaData={brendaData}
+            brendaSource={brendaSource}
+            binding={binding}
+            dockingResult={dockingResult}
+            selectedResidue={selectedResidue}
+            selectedCatResidue={selectedCatResidue ?? null}
+            selectedMutation={selectedMutation}
+            onMutationChange={setSelectedMutation}
+            mutationImpact={mutationImpact ? { deltaG: mutationImpact.deltaG, newKd: mutationImpact.newKd, confidence: mutationImpact.confidence } : null}
+          />
+        </div>
+      </div>
+
+      {/* ── Algorithm Transparency (collapsible above tabs) ── */}
+      <div style={{ padding: '8px 16px', flexShrink: 0 }}>
         <AlgorithmPanel
           name="Enzyme Design Pipeline"
-          description="Combines binding affinity estimation (ΔG decomposition), sequence optimization (CAI + codon harmonization), and mutagenesis targeting. Uses BLOSUM62 substitution matrices and energy-based screening."
+          description="Combines binding affinity estimation (deltaG decomposition), sequence optimization (CAI + codon harmonization), and mutagenesis targeting. Uses BLOSUM62 substitution matrices and energy-based screening."
           assumptions={[
             'Lock-and-key binding model (rigid body)',
             'Additive free energy contributions per residue',
@@ -1251,6 +1394,9 @@ export default React.memo(function CatalystDesignerPage() {
           }}
         />
       </div>
+
+      {/* ── Tab Bar ── */}
+      <ToolTabBar tabs={CATDES_TABS} activeId={activeTab} onChange={setActiveTab} />
 
       {/* ── Overview Tab: Bottleneck Analysis + ProEvol Handoff ── */}
       <ToolTabPanel tabId="overview" activeId={activeTab}>
@@ -1415,468 +1561,6 @@ export default React.memo(function CatalystDesignerPage() {
         </div>
       </ToolTabPanel>
 
-      {/* ── 3D Viewer Tab ── */}
-      <ToolTabPanel tabId="viewer" activeId={activeTab}>
-        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          <FloatingControlRail label="Enzyme" defaultCollapsed={false}>
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enzyme</span>
-              <select
-                value={selectedEnzyme}
-                onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
-                style={{ width: '100%', marginTop: 4, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}
-              >
-                {ENZYME_STRUCTURES.map((enz, i) => (
-                  <option key={enz.id} value={i}>{enz.name} · EC {enz.ecNumber}</option>
-                ))}
-              </select>
-              {enzyme.id === RATE_LIMITING_ENZYME.id && (
-                <span style={{ display: 'inline-block', marginTop: 4, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.RISK_LOW, background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8 }}>Rate-limiting</span>
-              )}
-            </div>
-            {/* BRENDA Kinetics Lookup */}
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>BRENDA Lookup</span>
-                <DataSourceBadge source={brendaSource} />
-              </div>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <input
-                  value={brendaEcInput}
-                  onChange={e => setBrendaEcInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleBrendaLookup(); }}
-                  placeholder="EC number (e.g. 1.1.1.34)"
-                  style={{ flex: 1, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: INPUT_TEXT, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', outline: 'none' }}
-                />
-                <button
-                  onClick={handleBrendaLookup}
-                  disabled={brendaLoading}
-                  style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: VALUE, background: 'rgba(175,195,214,0.12)', border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 8px', cursor: brendaLoading ? 'wait' : 'pointer', opacity: brendaLoading ? 0.6 : 1 }}
-                >
-                  {brendaLoading ? '...' : 'Fetch'}
-                </button>
-              </div>
-              {brendaData && brendaData.km.length > 0 && (
-                <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
-                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, marginBottom: 4 }}>{brendaData.enzymeName}</div>
-                  {brendaData.km.map((k, i) => (
-                    <div key={`km-${i}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Km ({k.substrate})</span>
-                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{k.value} {k.unit}</span>
-                    </div>
-                  ))}
-                  {brendaData.kcat.map((k, i) => (
-                    <div key={`kcat-${i}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kcat ({k.substrate})</span>
-                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{k.value} {k.unit}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {brendaData && brendaData.km.length === 0 && (
-                <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, opacity: 0.7 }}>
-                  No kinetics data found for {brendaData.ecNumber}
-                </p>
-              )}
-              {/* BRENDA vs Model Comparison Panel */}
-              {brendaData && (brendaData.km.length > 0 || brendaData.kcat.length > 0) && (
-                <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
-                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-                    BRENDA vs Model
-                  </div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px' }}>Param</th>
-                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px', textAlign: 'right' }}>Model</th>
-                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px', textAlign: 'right' }}>BRENDA</th>
-                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px', textAlign: 'right' }}>Δ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {brendaData.km.length > 0 && (() => {
-                        const brendaKm = brendaData.km[0].value;
-                        const modelKm = enzyme.km;
-                        const delta = brendaKm - modelKm;
-                        const deltaColor = Math.abs(delta) > modelKm * 0.5 ? THEME.CORAL : THEME.MINT;
-                        return (
-                          <tr>
-                            <td style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, padding: '2px 4px' }}>Km</td>
-                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, padding: '2px 4px', textAlign: 'right', ...tn }}>{modelKm.toFixed(3)} mM</td>
-                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.SKY, padding: '2px 4px', textAlign: 'right', ...tn }}>
-                              {brendaKm} {brendaData.km[0].unit}
-                              <DataSourceBadge source={brendaSource} />
-                            </td>
-                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: deltaColor, padding: '2px 4px', textAlign: 'right', ...tn }}>
-                              {delta > 0 ? '+' : ''}{delta.toFixed(3)}
-                            </td>
-                          </tr>
-                        );
-                      })()}
-                      {brendaData.kcat.length > 0 && (() => {
-                        const brendaKcat = brendaData.kcat[0].value;
-                        const modelKcat = enzyme.kcat;
-                        const delta = brendaKcat - modelKcat;
-                        const deltaColor = Math.abs(delta) > modelKcat * 0.5 ? THEME.CORAL : THEME.MINT;
-                        return (
-                          <tr>
-                            <td style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, padding: '2px 4px' }}>Kcat</td>
-                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, padding: '2px 4px', textAlign: 'right', ...tn }}>{modelKcat.toFixed(3)} s⁻¹</td>
-                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.SKY, padding: '2px 4px', textAlign: 'right', ...tn }}>
-                              {brendaKcat} {brendaData.kcat[0].unit}
-                              <DataSourceBadge source={brendaSource} />
-                            </td>
-                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: deltaColor, padding: '2px 4px', textAlign: 'right', ...tn }}>
-                              {delta > 0 ? '+' : ''}{delta.toFixed(3)}
-                            </td>
-                          </tr>
-                        );
-                      })()}
-                    </tbody>
-                  </table>
-                  {/* Apply / Revert buttons */}
-                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                    <button
-                      onClick={handleApplyBrenda}
-                      disabled={hasBrendaApplied}
-                      style={{
-                        flex: 1, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
-                        color: hasBrendaApplied ? LABEL : THEME.MINT,
-                        background: hasBrendaApplied ? 'rgba(255,255,255,0.03)' : 'rgba(147,203,82,0.12)',
-                        border: `1px solid ${hasBrendaApplied ? BORDER : 'rgba(147,203,82,0.3)'}`,
-                        borderRadius: 6, padding: '4px 6px',
-                        cursor: hasBrendaApplied ? 'default' : 'pointer',
-                        opacity: hasBrendaApplied ? 0.5 : 1,
-                      }}
-                    >
-                      {hasBrendaApplied ? 'Applied' : 'Apply BRENDA Values'}
-                    </button>
-                    {hasBrendaApplied && (
-                      <button
-                        onClick={handleRevertBrenda}
-                        style={{
-                          fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
-                          color: THEME.CORAL, background: 'rgba(250,128,114,0.08)',
-                          border: `1px solid rgba(250,128,114,0.2)`,
-                          borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
-                        }}
-                      >
-                        Revert
-                      </button>
-                    )}
-                  </div>
-                  {hasBrendaApplied && (
-                    <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, opacity: 0.6 }}>
-                      BRENDA values applied to metabolic drain model.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            {/* AlphaFold Structure Lookup */}
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>AlphaFold</span>
-                <DataSourceBadge source={alphafoldSource} />
-              </div>
-              <div style={{
-                padding: '6px 8px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>UniProt</span>
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{enzyme.uniprotId}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Status</span>
-                  <span style={{
-                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                    color: alphafoldStatus === 'found' ? THEME.MINT :
-                           alphafoldStatus === 'loading' ? THEME.APRICOT :
-                           alphafoldStatus === 'not_found' ? THEME.CORAL : LABEL,
-                  }}>
-                    {alphafoldStatus === 'found' ? `Structure loaded (${(alphafoldPdbLength / 1000).toFixed(0)}k atoms)` :
-                     alphafoldStatus === 'loading' ? 'Fetching...' :
-                     alphafoldStatus === 'not_found' ? 'Not found' :
-                     alphafoldStatus === 'error' ? 'API unavailable' : 'Pending'}
-                  </span>
-                </div>
-                {alphafoldStatus !== 'loading' && (
-                  <button
-                    onClick={handleAlphaFoldLookup}
-                    style={{
-                      width: '100%', marginTop: 4,
-                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
-                      color: LABEL, background: 'rgba(175,195,214,0.08)',
-                      border: `1px solid ${BORDER}`, borderRadius: 4,
-                      padding: '3px 6px', cursor: 'pointer',
-                    }}
-                  >
-                    Re-fetch
-                  </button>
-                )}
-              </div>
-            </div>
-            {/* ESMFold Structure Prediction */}
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>ESMFold Prediction</span>
-              <div style={{
-                marginTop: 4, padding: '6px 8px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
-              }}>
-                <div style={{ marginBottom: 4 }}>
-                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Sequence</span>
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: VALUE, marginLeft: 4 }}>
-                    {activeEnzyme?.sequence ? `${activeEnzyme.sequence.slice(0, 20)}... (${activeEnzyme.sequence.length} aa)` : 'N/A'}
-                  </span>
-                </div>
-                <button
-                  onClick={handleESMFoldPredict}
-                  disabled={esmfoldLoading || !activeEnzyme?.sequence}
-                  style={{
-                    width: '100%', marginTop: 4,
-                    fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
-                    color: esmfoldLoading ? LABEL : THEME.SKY,
-                    background: esmfoldLoading ? 'rgba(255,255,255,0.03)' : 'rgba(175,195,214,0.12)',
-                    border: `1px solid ${esmfoldLoading ? BORDER : 'rgba(175,195,214,0.3)'}`,
-                    borderRadius: 6, padding: '4px 8px',
-                    cursor: esmfoldLoading ? 'wait' : 'pointer',
-                    opacity: esmfoldLoading ? 0.6 : 1,
-                  }}
-                >
-                  {esmfoldLoading ? 'Predicting...' : 'Predict with ESMFold'}
-                </button>
-                {esmfoldPdb && (
-                  <div style={{ marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Result</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.MINT }}>
-                      {(esmfoldPdb.length / 1000).toFixed(0)}k chars
-                    </span>
-                  </div>
-                )}
-              </div>
-              {esmfoldError && (
-                <div style={{ marginTop: 4 }}>
-                  <SimErrorBanner message={esmfoldError} onRetry={() => setEsmfoldError(null)} />
-                </div>
-              )}
-            </div>
-            {/* Upload PDB Section */}
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Upload PDB</span>
-              <div
-                style={{
-                  marginTop: 4, padding: '10px 12px', borderRadius: 8,
-                  border: `2px dashed ${uploadedPdb ? THEME.MINT : INPUT_BORDER}`,
-                  background: uploadedPdb ? 'rgba(147,203,82,0.06)' : 'transparent',
-                  cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
-                }}
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = '.pdb';
-                  input.onchange = async (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (!file) return;
-                    try {
-                      const text = await file.text();
-                      if (text.length < 100) throw new Error('File too small to be a valid PDB');
-                      setUploadedPdb(text);
-                      setUploadedPdbName(file.name);
-                      setCatdesError(null);
-                    } catch (err) {
-                      setCatdesError(err instanceof Error ? err.message : 'Failed to read PDB file');
-                    }
-                  };
-                  input.click();
-                }}
-              >
-                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: uploadedPdb ? THEME.MINT : LABEL }}>
-                  {uploadedPdbName ?? 'Drag & drop or click to upload .pdb'}
-                </div>
-                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: LABEL, marginTop: 2, opacity: 0.6 }}>
-                  PDB format (plain text)
-                </div>
-              </div>
-              {uploadedPdb && (
-                <div style={{ marginTop: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Size</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{(uploadedPdb.length / 1000).toFixed(1)}k chars</span>
-                  </div>
-                  <button
-                    onClick={() => { setUploadedPdb(null); setUploadedPdbName(null); }}
-                    style={{
-                      width: '100%', marginTop: 4,
-                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
-                      color: THEME.CORAL, background: 'rgba(250,128,114,0.08)',
-                      border: `1px solid rgba(250,128,114,0.2)`,
-                      borderRadius: 6, padding: '3px 6px', cursor: 'pointer',
-                    }}
-                  >
-                    Clear uploaded PDB
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ marginBottom: '12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
-              <span>{enzyme.substrate}</span>
-              <span style={{ color: VALUE, margin: '0 4px' }}>→</span>
-              <span>{enzyme.product}</span>
-            </div>
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Render Mode</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                {(['cartoon', 'surface', 'confidence'] as const).map(mode => (
-                  <button key={mode} onClick={() => setRenderMode(mode)}
-                    className={`nb-tool-toggle ${renderMode === mode ? 'nb-tool-toggle--active' : ''}`}
-                    style={{ flex: '1 1 0', padding: '4px 0', borderRadius: 6, borderColor: renderMode === mode ? THEME.SKY : undefined, background: renderMode === mode ? 'rgba(175,195,214,0.15)' : undefined, color: renderMode === mode ? THEME.SKY : undefined }}>
-                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button onClick={() => setSpinEnabled(!spinEnabled)}
-              className={`nb-tool-toggle ${spinEnabled ? 'nb-tool-toggle--active' : ''}`}
-              style={{ width: '100%', padding: '5px 0', borderRadius: 6, borderColor: spinEnabled ? THEME.MINT : undefined, background: spinEnabled ? 'rgba(191,220,205,0.15)' : undefined, color: spinEnabled ? THEME.MINT : undefined }}>
-              {spinEnabled ? '● Spin On' : 'Spin Off'}
-            </button>
-
-            {/* Molecular Docking */}
-            <div style={{ marginTop: '12px', marginBottom: '12px' }}>
-              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Molecular Docking</span>
-              <button
-                onClick={handleDocking}
-                disabled={dockingLoading || !enzyme.pdbId}
-                className="nb-tool-toggle"
-                style={{ width: '100%', marginTop: 4, padding: '5px 0', borderRadius: 6, opacity: dockingLoading ? 0.5 : 1 }}
-              >
-                {dockingLoading ? 'Docking...' : 'Run Docking'}
-              </button>
-              {dockingResult && (
-                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '8px 10px', marginTop: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Docking Score</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{dockingResult.dockingScore.toFixed(3)} kcal/mol</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Binding Energy</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{dockingResult.bindingEnergy.toFixed(2)} kcal/mol</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Contacts</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{dockingResult.contactsFound}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Source</span>
-                    <DataSourceBadge source={dockingResult.source === 'mock' ? 'mock' : 'live'} />
-                  </div>
-                  <span style={{ fontSize: '11px', color: THEME.LABEL, fontFamily: THEME.MONO }}>
-                    ±2 kcal/mol (empirical contact scoring)
-                  </span>
-                </div>
-              )}
-            </div>
-            {selectedResidue != null && selectedCatResidue && (
-              <div style={{ marginTop: '16px' }}>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Selected Residue</span>
-                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '8px 10px', marginTop: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: '#FFDB13', fontWeight: 700 }}>{selectedCatResidue.residue}{selectedResidue}</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PHASE_COLORS.binding, background: 'rgba(191,220,205,0.12)', padding: '2px 5px', borderRadius: 4 }}>{selectedCatResidue.role.replace('_', ' ')}</span>
-                  </div>
-                  {selectedCatResidue.role && (
-                    <div style={{ marginBottom: 4 }}>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Role: </span>
-                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{selectedCatResidue.role.replace('_', ' ')}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 8px' }}>
-                    <div>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Dist</span>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, margin: 0 }}>{selectedCatResidue.distanceToSubstrate.toFixed(1)} Å</p>
-                    </div>
-                    <div>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Angle</span>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, margin: 0 }}>{selectedCatResidue.orientationAngle.toFixed(0)}°</p>
-                    </div>
-                  </div>
-                  {/* Mutation selector */}
-                  <div style={{ marginTop: 8 }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Mutate to</span>
-                    <select
-                      value={selectedMutation ?? ''}
-                      onChange={e => setSelectedMutation(e.target.value || null)}
-                      style={{ width: '100%', marginTop: 3, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: 'none' }}
-                    >
-                      <option value="">-- select --</option>
-                      {('ACDEFGHIKLMNPQRSTVWY').split('').filter(aa => aa !== selectedCatResidue.residue).map(aa => (
-                        <option key={aa} value={aa}>{aa}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {/* ΔΔG prediction */}
-                  {mutationImpact ? (
-                    <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: mutationImpact.deltaG < 0 ? 'rgba(147,203,82,0.06)' : 'rgba(250,128,114,0.06)', border: `1px solid ${mutationImpact.deltaG < 0 ? 'rgba(147,203,82,0.15)' : 'rgba(250,128,114,0.15)'}` }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px' }}>
-                        <div>
-                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>ΔΔG</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: mutationImpact.deltaG < 0 ? THEME.MINT : THEME.CORAL, margin: 0, ...tn }}>
-                            {mutationImpact.deltaG > 0 ? '+' : ''}{mutationImpact.deltaG.toFixed(2)} <span style={{ fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>kcal/mol</span>
-                          </p>
-                        </div>
-                        <div>
-                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>New Kd</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE, margin: 0, ...tn }}>
-                            {mutationImpact.newKd.toFixed(2)} <span style={{ fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>μM</span>
-                          </p>
-                        </div>
-                        <div>
-                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>Kd Ratio</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE, margin: 0, ...tn }}>
-                            {mutationImpact.deltaKd.toFixed(2)}×
-                          </p>
-                        </div>
-                        <div>
-                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>Confidence</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: mutationImpact.confidence > 0.7 ? THEME.MINT : mutationImpact.confidence > 0.5 ? THEME.RISK_LOW : THEME.CORAL, margin: 0, ...tn }}>
-                            {(mutationImpact.confidence * 100).toFixed(0)}%
-                          </p>
-                        </div>
-                      </div>
-                      <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, opacity: 0.6, lineHeight: 1.4 }}>
-                        BLOSUM62-based ΔΔG estimate (±2 kcal/mol). Negative = stabilizing.
-                      </p>
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
-                      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', margin: 0, color: LABEL, lineHeight: 1.5 }}>
-                        Select a mutation to predict ΔΔG.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </FloatingControlRail>
-          <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-            <CatalystViewer3D enzyme={enzyme} renderMode={renderMode} spinEnabled={spinEnabled} onResidueClick={handleResidueClick} selectedResidue={selectedResidue} bindingQuality={binding.overallScore} pdbText={uploadedPdb || esmfoldPdb} style={{ height: '100%' }} />
-            <InlineMetricOverlay
-              position="top-right"
-              metrics={[
-                { label: 'Kd', value: `${binding.predictedKd.toFixed(1)} μM`, accent: kdQ.color },
-                { label: 'Km', value: `${activeEnzyme.km.toFixed(2)} mM`, accent: THEME.SKY },
-                { label: 'Kcat', value: `${activeEnzyme.kcat.toFixed(2)} s⁻¹`, accent: kcatQ.color },
-                ...(activeEnzyme.km > 0 && activeEnzyme.kcat > 0
-                  ? [{ label: 'kcat/Km', value: `${(activeEnzyme.kcat / activeEnzyme.km).toFixed(1)} mM⁻¹s⁻¹`, accent: THEME.MINT }]
-                  : []),
-                { label: 'Fit', value: binding.overallScore.toFixed(2), accent: fitQ.color },
-                { label: 'Tm', value: `${enzyme.meltingTemp.toFixed(0)}°C`, accent: THEME.APRICOT },
-              ]}
-            />
-          </div>
-        </div>
-      </ToolTabPanel>
 
       {/* ── Inverse Folding Tab ──────────────────────────────────────── */}
       <ToolTabPanel tabId="inversefold" activeId={activeTab}>
@@ -2807,7 +2491,16 @@ export default React.memo(function CatalystDesignerPage() {
         </div>
       </ToolTabPanel>
 
+      {/* ── Footer ── */}
+      <div style={{ padding: '8px 16px', display: 'flex', gap: 8, flexShrink: 0, borderTop: `1px solid ${THEME.BORDER}`, background: THEME.PANEL_MUTED }}>
+        <ExportButton label="Export JSON"
+          data={{ enzyme: enzyme.id, binding, sequences, drain, balance, pareto, mutagenesis, docking: dockingResult }}
+          filename="catalyst-design" format="json" />
+        <ExportButton label="Export CSV"
+          data={sequences.designs} filename="catalyst-sequences" format="csv" />
+      </div>
+
       <NextStepButton currentStepId="catdes" />
-    </ToolShell>
+    </div>
   );
 });
