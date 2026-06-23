@@ -68,6 +68,8 @@ function makeQueryResponse(overrides: Partial<ScSpatialQueryResponse> = {}): ScS
       selectedCell: null,
       hotspots: [],
       coexpression: [],
+      spatiallyVariableGenes: [],
+      niches: [],
       provenance: {
         source: 'upload',
         fileName: 'test.h5ad',

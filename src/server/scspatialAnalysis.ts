@@ -16,15 +16,18 @@ import {
   type SpatialNeighborResult,
   type GiStarGeneResult,
 } from '../services/ScSpatialEngine';
+import { benjaminiHochberg } from '../utils/statistics';
 import type {
   ScSpatialClusterSummary,
   ScSpatialCoexpressionSummary,
   ScSpatialDatasetMeta,
   ScSpatialHotspotSummary,
+  ScSpatialNiche,
   ScSpatialNormalizedArtifact,
   ScSpatialPointDatum,
   ScSpatialQueryRequest,
   ScSpatialQueryResponse,
+  ScSpatialSVGResult,
   ScSpatialTrajectoryEdge,
   ScSpatialTrajectoryNode,
   ScSpatialValidity,
@@ -45,6 +48,8 @@ interface PreparedAnalysis {
   clusterSummaries: ScSpatialClusterSummary[];
   umapPoints: number[][];
   spatialNeighborGraph: SpatialNeighborResult;
+  svgResults: ScSpatialSVGResult[];
+  niches: ScSpatialNiche[];
   warnings: string[];
   missingFields: string[];
 }
@@ -423,6 +428,39 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
     };
   });
 
+  // SVG detection: use spatial coords + expression matrix
+  let svgResults: ScSpatialSVGResult[] = [];
+  let niches: ScSpatialNiche[] = [];
+  if (artifact.metadata.hasSpatialCoords && artifact.obsm.spatial) {
+    const validCoords = cellsWithPseudotime
+      .map((cell, idx) => ({
+        x: cell.spatialX,
+        y: cell.spatialY,
+        valid: Number.isFinite(cell.spatialX) && Number.isFinite(cell.spatialY),
+        idx,
+      }))
+      .filter((c) => c.valid);
+
+    if (validCoords.length >= 3) {
+      const coords = validCoords.map((c) => ({ x: c.x, y: c.y }));
+      // Build per-gene expression vectors aligned with valid coords
+      const expressionMatrix: number[][] = genes.map((gene) =>
+        validCoords.map((c) => cellsWithPseudotime[c.idx]?.geneExpression[gene] ?? 0),
+      );
+      svgResults = detectSVGs(expressionMatrix, genes, coords);
+
+      // Niche analysis
+      const clusterLabelByIndex = clusterResult.clusterSizes.map((cs) => cs.label);
+      const nicheClusterLabels = validCoords.map(
+        (c) => clusterLabelByIndex[cellsWithPseudotime[c.idx]?.cluster ?? 0] ?? 'Unknown',
+      );
+      const nicheExpression: number[][] = genes.map((gene) =>
+        validCoords.map((c) => cellsWithPseudotime[c.idx]?.geneExpression[gene] ?? 0),
+      );
+      niches = identifyNiches(coords, nicheClusterLabels, nicheExpression, genes);
+    }
+  }
+
   return {
     validity,
     datasetMeta,
@@ -437,6 +475,8 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
     clusterSummaries,
     umapPoints,
     spatialNeighborGraph,
+    svgResults,
+    niches,
     warnings,
     missingFields,
   };
@@ -567,6 +607,353 @@ function buildCoexpressionSummaries(
     .slice(0, 6);
 }
 
+/**
+ * Detect Spatially Variable Genes (SVGs) using Moran's I with permutation
+ * p-values and Benjamini-Hochberg FDR correction.
+ *
+ * Classifies each gene as 'clustered' (I > 0, q < fdrThreshold),
+ * 'dispersed' (I < 0, q < fdrThreshold), or 'random'.
+ * Identifies genes with similar spatial patterns as hotspot co-members.
+ */
+function detectSVGs(
+  expression: number[][],
+  geneNames: string[],
+  spatialCoords: { x: number; y: number }[],
+  fdrThreshold = 0.05,
+): ScSpatialSVGResult[] {
+  const n = spatialCoords.length;
+  const nGenes = geneNames.length;
+  if (n < 3 || nGenes === 0) return [];
+
+  // Build KNN spatial neighbor graph (k = 6)
+  const k = Math.min(6, n - 1);
+  const adjacency: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const dists: { idx: number; d: number }[] = [];
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      const dx = spatialCoords[i].x - spatialCoords[j].x;
+      const dy = spatialCoords[i].y - spatialCoords[j].y;
+      dists.push({ idx: j, d: Math.sqrt(dx * dx + dy * dy) });
+    }
+    dists.sort((a, b) => a.d - b.d);
+    for (let t = 0; t < k; t++) {
+      adjacency.push([i, dists[t].idx]);
+    }
+  }
+
+  const W = adjacency.length;
+  if (W === 0) return [];
+
+  // Permutation count: adaptive based on dataset size
+  const nPermutations = n > 500 ? 199 : 999;
+  let rngState = 42;
+  const rngNext = () => {
+    rngState = (rngState * 1664525 + 1013904223) >>> 0;
+    return rngState / 0xffffffff;
+  };
+
+  // Per-gene Moran's I + permutation p-value
+  const rawResults: { gene: string; moranI: number; pValue: number }[] = [];
+  for (let g = 0; g < nGenes; g++) {
+    const x = expression[g];
+    if (!x || x.length === 0) {
+      rawResults.push({ gene: geneNames[g], moranI: 0, pValue: 1 });
+      continue;
+    }
+    const xMean = x.reduce((s, v) => s + v, 0) / n;
+    let denom = 0;
+    for (let i = 0; i < n; i++) denom += (x[i] - xMean) ** 2;
+    if (denom === 0) {
+      rawResults.push({ gene: geneNames[g], moranI: 0, pValue: 1 });
+      continue;
+    }
+
+    // Observed Moran's I
+    let numer = 0;
+    for (const [i, j] of adjacency) {
+      numer += (x[i] - xMean) * (x[j] - xMean);
+    }
+    const observedI = (n / W) * (numer / denom);
+
+    // Permutation test
+    let count = 0;
+    for (let p = 0; p < nPermutations; p++) {
+      const shuffled = [...x];
+      for (let i = n - 1; i > 0; i--) {
+        const j = Math.floor(rngNext() * (i + 1));
+        const tmp = shuffled[i];
+        shuffled[i] = shuffled[j];
+        shuffled[j] = tmp;
+      }
+      let pNumer = 0;
+      for (const [a, b] of adjacency) {
+        pNumer += (shuffled[a] - xMean) * (shuffled[b] - xMean);
+      }
+      const permI = (n / W) * (pNumer / denom);
+      if (permI >= observedI) count++;
+    }
+    const pValue = (count + 1) / (nPermutations + 1);
+    rawResults.push({ gene: geneNames[g], moranI: observedI, pValue });
+  }
+
+  // BH FDR correction
+  const pValues = rawResults.map((r) => r.pValue);
+  const qValues = benjaminiHochberg(pValues);
+
+  // Classify spatial patterns and find co-clustered genes
+  const results: ScSpatialSVGResult[] = rawResults.map((r, idx) => {
+    const qValue = qValues[idx];
+    let spatialPattern: 'clustered' | 'dispersed' | 'random' = 'random';
+    if (qValue < fdrThreshold) {
+      spatialPattern = r.moranI > 0 ? 'clustered' : 'dispersed';
+    }
+    return {
+      gene: r.gene,
+      moranI: round(r.moranI, 4),
+      pValue: round(r.pValue, 4),
+      qValue: round(qValue, 4),
+      spatialPattern,
+      hotspotGenes: [],
+    };
+  });
+
+  // Identify hotspot co-members: genes with similar Moran's I sign and significant q
+  const clusteredGenes = results
+    .filter((r) => r.spatialPattern === 'clustered')
+    .sort((a, b) => b.moranI - a.moranI);
+  const dispersedGenes = results
+    .filter((r) => r.spatialPattern === 'dispersed')
+    .sort((a, b) => a.moranI - b.moranI);
+
+  for (const result of results) {
+    if (result.spatialPattern === 'clustered') {
+      result.hotspotGenes = clusteredGenes
+        .filter((r) => r.gene !== result.gene)
+        .slice(0, 5)
+        .map((r) => r.gene);
+    } else if (result.spatialPattern === 'dispersed') {
+      result.hotspotGenes = dispersedGenes
+        .filter((r) => r.gene !== result.gene)
+        .slice(0, 5)
+        .map((r) => r.gene);
+    }
+  }
+
+  // Sort: significant clustered first, then dispersed, then random; within each by |I|
+  results.sort((a, b) => {
+    const orderA = a.spatialPattern === 'clustered' ? 0 : a.spatialPattern === 'dispersed' ? 1 : 2;
+    const orderB = b.spatialPattern === 'clustered' ? 0 : b.spatialPattern === 'dispersed' ? 1 : 2;
+    if (orderA !== orderB) return orderA - orderB;
+    return Math.abs(b.moranI) - Math.abs(a.moranI);
+  });
+
+  return results;
+}
+
+/**
+ * Identify spatial niches — recurring cellular neighborhoods — from
+ * cell positions and cluster labels.
+ *
+ * For each cell, defines its niche as all cells within `nicheRadius`.
+ * Clusters niches by composition similarity using k-means on composition
+ * vectors. Identifies marker genes for each niche via differential
+ * expression (fold-change ranking).
+ */
+function identifyNiches(
+  cellPositions: { x: number; y: number }[],
+  clusterLabels: string[],
+  expression: number[][],
+  geneNames: string[],
+  nicheRadius?: number,
+): ScSpatialNiche[] {
+  const n = cellPositions.length;
+  if (n < 3) return [];
+
+  // Auto-detect nicheRadius from median nearest-neighbor distance if not provided
+  let radius = nicheRadius;
+  if (radius == null || radius <= 0) {
+    const nnDists: number[] = [];
+    for (let i = 0; i < Math.min(n, 200); i++) {
+      let minDist = Infinity;
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue;
+        const dx = cellPositions[i].x - cellPositions[j].x;
+        const dy = cellPositions[i].y - cellPositions[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < minDist) minDist = d;
+      }
+      if (minDist < Infinity) nnDists.push(minDist);
+    }
+    nnDists.sort((a, b) => a - b);
+    const medianNN = nnDists.length > 0
+      ? nnDists[Math.floor(nnDists.length / 2)]
+      : 1;
+    radius = medianNN * 5;
+  }
+
+  // Unique cluster labels
+  const uniqueClusters = Array.from(new Set(clusterLabels)).sort();
+  const clusterIndex = new Map(uniqueClusters.map((c, i) => [c, i]));
+  const nClusters = uniqueClusters.length;
+
+  // Build composition vector for each cell's neighborhood
+  const compositions: number[][] = [];
+  for (let i = 0; i < n; i++) {
+    const comp = new Array(nClusters).fill(0);
+    let neighborCount = 0;
+    for (let j = 0; j < n; j++) {
+      const dx = cellPositions[i].x - cellPositions[j].x;
+      const dy = cellPositions[i].y - cellPositions[j].y;
+      if (Math.sqrt(dx * dx + dy * dy) <= radius) {
+        const ci = clusterIndex.get(clusterLabels[j]) ?? 0;
+        comp[ci]++;
+        neighborCount++;
+      }
+    }
+    // Normalize to proportions
+    if (neighborCount > 0) {
+      for (let c = 0; c < nClusters; c++) comp[c] /= neighborCount;
+    }
+    compositions.push(comp);
+  }
+
+  // k-means clustering on composition vectors
+  const kMax = Math.min(8, Math.max(2, Math.floor(Math.sqrt(n / 5))));
+  const maxIter = 50;
+  let rngState = 137;
+  const rngNext = () => {
+    rngState = (rngState * 1664525 + 1013904223) >>> 0;
+    return rngState / 0xffffffff;
+  };
+
+  // Initialize centroids via k-means++
+  const centroids: number[][] = [];
+  const firstIdx = Math.floor(rngNext() * n);
+  centroids.push([...compositions[firstIdx]]);
+
+  for (let c = 1; c < kMax; c++) {
+    // Distance to nearest existing centroid
+    const dists = compositions.map((comp) => {
+      let minD = Infinity;
+      for (const cent of centroids) {
+        let d = 0;
+        for (let f = 0; f < nClusters; f++) d += (comp[f] - cent[f]) ** 2;
+        if (d < minD) minD = d;
+      }
+      return minD;
+    });
+    const totalDist = dists.reduce((s, d) => s + d, 0);
+    if (totalDist === 0) break;
+    let r = rngNext() * totalDist;
+    let chosen = 0;
+    for (let i = 0; i < n; i++) {
+      r -= dists[i];
+      if (r <= 0) { chosen = i; break; }
+    }
+    centroids.push([...compositions[chosen]]);
+  }
+
+  const kActual = centroids.length;
+  const assignments = new Int32Array(n);
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    // Assign each cell to nearest centroid
+    let changed = false;
+    for (let i = 0; i < n; i++) {
+      let bestC = 0;
+      let bestD = Infinity;
+      for (let c = 0; c < kActual; c++) {
+        let d = 0;
+        for (let f = 0; f < nClusters; f++) {
+          d += (compositions[i][f] - centroids[c][f]) ** 2;
+        }
+        if (d < bestD) { bestD = d; bestC = c; }
+      }
+      if (assignments[i] !== bestC) {
+        assignments[i] = bestC;
+        changed = true;
+      }
+    }
+    if (!changed) break;
+
+    // Recompute centroids
+    for (let c = 0; c < kActual; c++) {
+      const members = compositions.filter((_, i) => assignments[i] === c);
+      if (members.length === 0) continue;
+      for (let f = 0; f < nClusters; f++) {
+        centroids[c][f] = members.reduce((s, m) => s + m[f], 0) / members.length;
+      }
+    }
+  }
+
+  // Build niche results
+  const nicheResults: ScSpatialNiche[] = [];
+  for (let c = 0; c < kActual; c++) {
+    const memberIndices: number[] = [];
+    for (let i = 0; i < n; i++) {
+      if (assignments[i] === c) memberIndices.push(i);
+    }
+    if (memberIndices.length === 0) continue;
+
+    // Composition: average proportion per cluster
+    const composition: Record<string, number> = {};
+    for (let ci = 0; ci < nClusters; ci++) {
+      const avg = memberIndices.reduce((s, i) => s + compositions[i][ci], 0) / memberIndices.length;
+      composition[uniqueClusters[ci]] = round(avg, 3);
+    }
+
+    // Dominant cluster
+    let dominantCluster = uniqueClusters[0];
+    let maxProp = 0;
+    for (const [cluster, prop] of Object.entries(composition)) {
+      if (prop > maxProp) { maxProp = prop; dominantCluster = cluster; }
+    }
+
+    // Centroid
+    const centroidX = round(memberIndices.reduce((s, i) => s + cellPositions[i].x, 0) / memberIndices.length);
+    const centroidY = round(memberIndices.reduce((s, i) => s + cellPositions[i].y, 0) / memberIndices.length);
+
+    // Marker genes: genes with highest fold-change inside vs outside niche
+    const insideMean = new Array(geneNames.length).fill(0);
+    const outsideMean = new Array(geneNames.length).fill(0);
+    const insideSet = new Set(memberIndices);
+    let insideCount = 0;
+    let outsideCount = 0;
+    for (let i = 0; i < n; i++) {
+      const target = insideSet.has(i) ? insideMean : outsideMean;
+      if (insideSet.has(i)) insideCount++; else outsideCount++;
+      for (let g = 0; g < geneNames.length; g++) {
+        target[g] += (expression[g]?.[i] ?? 0);
+      }
+    }
+    if (insideCount > 0) for (let g = 0; g < geneNames.length; g++) insideMean[g] /= insideCount;
+    if (outsideCount > 0) for (let g = 0; g < geneNames.length; g++) outsideMean[g] /= outsideCount;
+
+    const markerScores = geneNames.map((gene, g) => {
+      const pseudocount = 0.01;
+      const fc = (insideMean[g] + pseudocount) / (outsideMean[g] + pseudocount);
+      return { gene, fc };
+    });
+    markerScores.sort((a, b) => b.fc - a.fc);
+    const markerGenes = markerScores.slice(0, 5).map((m) => m.gene);
+
+    nicheResults.push({
+      id: `niche-${c + 1}`,
+      cellCount: memberIndices.length,
+      dominantCluster,
+      composition,
+      centroidX,
+      centroidY,
+      markerGenes,
+    });
+  }
+
+  // Sort by cell count descending
+  nicheResults.sort((a, b) => b.cellCount - a.cellCount);
+  return nicheResults;
+}
+
 function buildSelectedCellDetail(
   artifact: ScSpatialNormalizedArtifact,
   cells: CellRecord[],
@@ -674,6 +1061,8 @@ export function buildScSpatialQueryResponse(
       selectedCell,
       hotspots: analysis.hotspots,
       coexpression: buildCoexpressionSummaries(analysis.cells, analysis.availableGenes, selectedGene),
+      spatiallyVariableGenes: analysis.svgResults,
+      niches: analysis.niches,
       provenance: {
         source: analysis.validity === 'demo' ? 'bundled-demo' : 'upload',
         fileName: artifact.source.fileName,

@@ -212,6 +212,25 @@ export interface ScSpatialCoexpressionSummary {
   correlation: number;
 }
 
+export interface ScSpatialSVGResult {
+  gene: string;
+  moranI: number;
+  pValue: number;
+  qValue: number;
+  spatialPattern: 'clustered' | 'dispersed' | 'random';
+  hotspotGenes: string[];
+}
+
+export interface ScSpatialNiche {
+  id: string;
+  cellCount: number;
+  dominantCluster: string;
+  composition: Record<string, number>;
+  centroidX: number;
+  centroidY: number;
+  markerGenes: string[];
+}
+
 export interface ScSpatialQueryResponse {
   artifactId: string;
   validity: ScSpatialValidity;
@@ -226,6 +245,8 @@ export interface ScSpatialQueryResponse {
     selectedCell: ScSpatialCellDetail | null;
     hotspots: ScSpatialHotspotSummary[];
     coexpression: ScSpatialCoexpressionSummary[];
+    spatiallyVariableGenes: ScSpatialSVGResult[];
+    niches: ScSpatialNiche[];
     provenance: {
       source: 'upload' | 'bundled-demo';
       fileName: string;
