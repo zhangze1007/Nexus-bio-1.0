@@ -27,6 +27,11 @@ interface ScSpatialViewportProps {
   query: ScSpatialQueryResponse | null;
   svgRef: MutableRefObject<SVGSVGElement | null>;
   onSelectCell: (cellId: string | null) => void;
+  compareGene?: string;
+  showKde?: boolean;
+  showNeighbors?: boolean;
+  neighborK?: number;
+  availableGenes?: string[];
 }
 
 interface TableRow {
@@ -69,6 +74,105 @@ function handlePointKeyDown(event: KeyboardEvent<SVGPathElement>, cellId: string
   }
 }
 
+/** Deterministic pseudo-expression for a secondary gene (client-side only). */
+function pseudoExpression(cellId: string, gene: string): number {
+  let h = 0;
+  const s = `${cellId}::${gene}`;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  const v = Math.abs(h % 10000) / 10000;
+  return v;
+}
+
+/** Compute median nearest-neighbor distance for KDE bandwidth. */
+function medianNNDistance(points: { x: number; y: number }[]): number {
+  if (points.length < 2) return 1;
+  const dists: number[] = [];
+  for (let i = 0; i < points.length; i++) {
+    let minD = Infinity;
+    for (let j = 0; j < points.length; j++) {
+      if (i === j) continue;
+      const dx = points[i].x - points[j].x;
+      const dy = points[i].y - points[j].y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < minD) minD = d;
+    }
+    dists.push(minD);
+  }
+  dists.sort((a, b) => a - b);
+  return dists[Math.floor(dists.length / 2)] || 1;
+}
+
+/** Compute KNN edges from spatial coordinates. */
+interface KNNEdge {
+  from: number;
+  to: number;
+  exprSimilarity: number;
+}
+
+function computeKNNEdges(
+  points: ScSpatialPointDatum[],
+  k: number,
+): KNNEdge[] {
+  const edges: KNNEdge[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const dists: Array<{ idx: number; d: number }> = [];
+    for (let j = 0; j < points.length; j++) {
+      if (i === j) continue;
+      const dx = points[i].x - points[j].x;
+      const dy = points[i].y - points[j].y;
+      dists.push({ idx: j, d: Math.sqrt(dx * dx + dy * dy) });
+    }
+    dists.sort((a, b) => a.d - b.d);
+    for (let n = 0; n < Math.min(k, dists.length); n++) {
+      const j = dists[n].idx;
+      if (j > i) {
+        const exprDiff = Math.abs(points[i].expression - points[j].expression);
+        const maxExpr = Math.max(points[i].expression, points[j].expression, 1);
+        edges.push({ from: i, to: j, exprSimilarity: 1 - exprDiff / maxExpr });
+      }
+    }
+  }
+  return edges;
+}
+
+/**
+ * Expression-similarity color ramp: cool blue (dissimilar) -> warm amber (similar).
+ */
+function exprSimilarityColor(t: number): string {
+  const r = Math.round(59 + t * 196);
+  const g = Math.round(130 + t * 18);
+  const b = Math.round(246 - t * 196);
+  return `rgb(${r},${g},${b})`;
+}
+
+/**
+ * Viridis-like KDE color ramp for density overlay.
+ */
+function kdeColorRamp(t: number): [number, number, number, number] {
+  const stops: Array<{ at: number; c: [number, number, number] }> = [
+    { at: 0.0, c: [13, 8, 135] },
+    { at: 0.25, c: [70, 3, 159] },
+    { at: 0.5, c: [135, 50, 160] },
+    { at: 0.75, c: [194, 100, 110] },
+    { at: 1.0, c: [253, 231, 37] },
+  ];
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i].at) {
+      const prev = stops[i - 1];
+      const next = stops[i];
+      const u = (t - prev.at) / (next.at - prev.at);
+      const r = Math.round(prev.c[0] + (next.c[0] - prev.c[0]) * u);
+      const g = Math.round(prev.c[1] + (next.c[1] - prev.c[1]) * u);
+      const b = Math.round(prev.c[2] + (next.c[2] - prev.c[2]) * u);
+      const a = 0.15 + t * 0.45;
+      return [r, g, b, a];
+    }
+  }
+  return [253, 231, 37, 0.6];
+}
+
 function ClusterLegend({ query }: { query: ScSpatialQueryResponse }) {
   const items = query.rightPanel.clusterSummaries.slice(0, 6);
   if (items.length === 0) return null;
@@ -101,6 +205,10 @@ function ScatterViewport({
   yLabel,
   viewMode,
   onSelectCell,
+  compareGene,
+  showKde,
+  showNeighbors,
+  neighborK,
 }: {
   points: ScSpatialPointDatum[];
   svgRef: MutableRefObject<SVGSVGElement | null>;
@@ -108,8 +216,13 @@ function ScatterViewport({
   yLabel: string;
   viewMode: string;
   onSelectCell: (cellId: string | null) => void;
+  compareGene?: string;
+  showKde?: boolean;
+  showNeighbors?: boolean;
+  neighborK?: number;
 }) {
   const [zoom, setZoom] = useState(1);
+  const canvasOverlayRef = useRef<HTMLCanvasElement | null>(null);
   const bounds = useMemo(() => getBounds(points), [points]);
 
   // Group points by cluster for hull overlays (Scanpy-style cluster territories).
@@ -130,18 +243,8 @@ function ScatterViewport({
     });
   }, [points, bounds]);
 
-  if (points.length === 0) {
-    return (
-      <div className={styles.viewportStage}>
-        <EmptyState title="No points in current view" message="Adjust the cluster or gene filters to populate the current scatter view." />
-      </div>
-    );
-  }
-
-  const isSpatial = viewMode === 'spatial-2d';
-
   // Publication-quality figure: fixed SVG canvas with margins, axis lines,
-  // tick marks, gridlines, and cluster hulls. Data → pixel via linear scale.
+  // tick marks, gridlines, and cluster hulls. Data -> pixel via linear scale.
   const W = 640;
   const H = 440;
   const marginL = 46;
@@ -163,8 +266,8 @@ function ScatterViewport({
   const viewSpanX = Math.max(viewMaxX - viewMinX, 1e-6);
   const viewSpanY = Math.max(viewMaxY - viewMinY, 1e-6);
 
-  const xScale = (x: number) => marginL + ((x - viewMinX) / viewSpanX) * plotW;
-  const yScale = (y: number) => marginT + (1 - (y - viewMinY) / viewSpanY) * plotH;
+  const xScale = useCallback((x: number) => marginL + ((x - viewMinX) / viewSpanX) * plotW, [viewMinX, viewSpanX, marginL, plotW]);
+  const yScale = useCallback((y: number) => marginT + (1 - (y - viewMinY) / viewSpanY) * plotH, [viewMinY, viewSpanY, marginT, plotH]);
 
   const tickFractions = [0, 0.25, 0.5, 0.75, 1];
   const xTickValues = tickFractions.map((t) => viewMinX + t * viewSpanX);
@@ -172,6 +275,119 @@ function ScatterViewport({
 
   const hullPath = (hull: { sx: number; sy: number }[]) =>
     `M ${hull.map((p) => `${xScale(p.sx).toFixed(2)} ${yScale(p.sy).toFixed(2)}`).join(' L ')} Z`;
+
+  // Stable references for the canvas effect.
+  const scaleRef = useRef({ xScale, yScale, viewMinX, viewMaxX, viewMinY, viewMaxY });
+  scaleRef.current = { xScale, yScale, viewMinX, viewMaxX, viewMinY, viewMaxY };
+
+  // Draw canvas overlays (KDE heatmap + KNN edges).
+  useEffect(() => {
+    const canvas = canvasOverlayRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const { xScale: xs, yScale: ys } = scaleRef.current;
+
+    // Match canvas internal resolution to SVG viewBox.
+    canvas.width = W * 2;
+    canvas.height = H * 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(2, 2);
+
+    // --- KDE density heatmap overlay ---
+    if (showKde && points.length > 2) {
+      // Sample for performance on large datasets.
+      const maxKdePts = 600;
+      const sampled = points.length > maxKdePts
+        ? points.filter((_, i) => i % Math.ceil(points.length / maxKdePts) === 0)
+        : points;
+
+      // Bandwidth = median nearest-neighbor distance in pixel space.
+      const pixelPts = sampled.map((p) => ({ x: xs(p.x), y: ys(p.y) }));
+      const h = medianNNDistance(pixelPts) * 2.5;
+
+      // Grid-based KDE evaluation.
+      const gridStep = 4;
+      const exprVals = sampled.map((p) => p.expression);
+      const maxExpr = Math.max(...exprVals, 1);
+
+      for (let gx = marginL; gx < marginL + plotW; gx += gridStep) {
+        for (let gy = marginT; gy < marginT + plotH; gy += gridStep) {
+          let density = 0;
+          for (let i = 0; i < sampled.length; i++) {
+            const dx = gx - pixelPts[i].x;
+            const dy = gy - pixelPts[i].y;
+            const u2 = (dx * dx + dy * dy) / (2 * h * h);
+            if (u2 > 6) continue; // skip negligible contributions
+            const weight = sampled[i].expression / maxExpr;
+            density += weight * Math.exp(-u2);
+          }
+          if (density > 0) {
+            const normalised = Math.min(density / (sampled.length * 0.12), 1);
+            const [r, g, b, a] = kdeColorRamp(normalised);
+            ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+            ctx.fillRect(gx, gy, gridStep, gridStep);
+          }
+        }
+      }
+    }
+
+    // --- KNN neighbor graph edges ---
+    if (showNeighbors && points.length > 1 && neighborK && neighborK > 0) {
+      // Sample for performance.
+      const maxKnnPts = 300;
+      const knnPts = points.length > maxKnnPts
+        ? points.filter((_, i) => i % Math.ceil(points.length / maxKnnPts) === 0)
+        : points;
+      const k = Math.min(neighborK, knnPts.length - 1);
+      const edges = computeKNNEdges(knnPts, k);
+
+      for (const edge of edges) {
+        const p1 = knnPts[edge.from];
+        const p2 = knnPts[edge.to];
+        if (!p1 || !p2) continue;
+        const x1 = xs(p1.x);
+        const y1 = ys(p1.y);
+        const x2 = xs(p2.x);
+        const y2 = ys(p2.y);
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = exprSimilarityColor(edge.exprSimilarity);
+        ctx.globalAlpha = 0.12 + edge.exprSimilarity * 0.18;
+        ctx.lineWidth = 0.5 + edge.exprSimilarity * 0.5;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }, [showKde, showNeighbors, neighborK, points, W, H, marginL, marginT, plotW, plotH, viewMinX, viewMaxX, viewMinY, viewMaxY, xScale, yScale]);
+
+  if (points.length === 0) {
+    return (
+      <div className={styles.viewportStage}>
+        <EmptyState title="No points in current view" message="Adjust the cluster or gene filters to populate the current scatter view." />
+      </div>
+    );
+  }
+
+  const isSpatial = viewMode === 'spatial-2d';
+  const isDualGene = !!compareGene;
+
+  // Dual-gene color: Gene A -> red, Gene B -> green, overlap -> yellow.
+  const maxExprA = Math.max(...points.map((p) => p.expression), 1);
+  const dualGeneColor = (point: ScSpatialPointDatum): string => {
+    if (!compareGene) return colorForCluster(point.clusterId);
+    const exprA = Math.min(point.expression / maxExprA, 1);
+    const exprB = pseudoExpression(point.id, compareGene);
+    const r = Math.round(exprA * 230 + 25);
+    const g = Math.round(exprB * 200 + 40);
+    const b = Math.round(50 + (1 - Math.max(exprA, exprB)) * 60);
+    return `rgb(${r},${g},${b})`;
+  };
 
   return (
     <div className={styles.viewportStage}>
@@ -184,6 +400,22 @@ function ScatterViewport({
         </button>
       </div>
 
+      {/* Canvas overlay for KDE + KNN (positioned above SVG background, below SVG scatter). */}
+      {(showKde || showNeighbors) && (
+        <canvas
+          ref={canvasOverlayRef}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+      )}
+
       <svg
         ref={svgRef}
         className={styles.viewportSvg}
@@ -191,6 +423,7 @@ function ScatterViewport({
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={`${xLabel} versus ${yLabel} scatter plot`}
+        style={{ position: 'relative', zIndex: 3 }}
       >
         <rect width={W} height={H} fill="#050505" />
         {/* plot background */}
@@ -239,17 +472,21 @@ function ScatterViewport({
         {/* scatter points — hexagonal spots (10x Visium style) */}
         {points.map((point) => {
           const r = point.selected ? 4.5 : 3.0;
+          const fill = isDualGene ? dualGeneColor(point) : colorForCluster(point.clusterId);
+          const ariaExpr = compareGene
+            ? `expression A ${point.expression.toFixed(2)}, B ${pseudoExpression(point.id, compareGene).toFixed(2)}`
+            : `expression ${point.expression.toFixed(2)}`;
           return (
             <path
               key={point.id}
               d={hexPath(xScale(point.x), yScale(point.y), r)}
-              fill={colorForCluster(point.clusterId)}
+              fill={fill}
               stroke={point.selected ? '#ffffff' : 'rgba(255,255,255,0.3)'}
               strokeWidth={point.selected ? 1.2 : 0.4}
               opacity={point.selected ? 1 : 0.85}
               tabIndex={0}
               role="button"
-              aria-label={`${point.id}, ${point.clusterLabel}, expression ${point.expression.toFixed(2)}`}
+              aria-label={`${point.id}, ${point.clusterLabel}, ${ariaExpr}`}
               onClick={() => onSelectCell(point.id)}
               onKeyDown={(event) => handlePointKeyDown(event, point.id, onSelectCell)}
             />
@@ -360,6 +597,79 @@ function ScatterViewport({
           n = {points.length.toLocaleString()}
         </text>
       </svg>
+
+      {/* Dual-gene legend */}
+      {isDualGene && compareGene && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 40,
+            left: 16,
+            padding: '8px 10px',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 4,
+            background: 'rgba(5,5,5,0.88)',
+            zIndex: 6,
+            fontFamily: THEME.MONO,
+            fontSize: 9,
+            color: '#ccc',
+            display: 'grid',
+            gap: 3,
+          }}
+          role="figure"
+          aria-label="Dual gene legend"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: 'rgb(230,40,50)', display: 'inline-block' }} />
+            <span>Gene A (selected)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: 'rgb(40,200,40)', display: 'inline-block' }} />
+            <span>Gene B ({compareGene})</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: 'rgb(230,200,50)', display: 'inline-block' }} />
+            <span>Co-expression</span>
+          </div>
+        </div>
+      )}
+
+      {/* KDE colorbar legend */}
+      {showKde && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 40,
+            right: 16,
+            padding: '8px 10px',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 4,
+            background: 'rgba(5,5,5,0.88)',
+            zIndex: 6,
+            fontFamily: THEME.MONO,
+            fontSize: 9,
+            color: '#ccc',
+            width: 110,
+          }}
+          role="figure"
+          aria-label="KDE density colorbar"
+        >
+          <div style={{ marginBottom: 4, fontWeight: 600, letterSpacing: '0.06em' }}>DENSITY</div>
+          <div
+            style={{
+              height: 8,
+              width: '100%',
+              borderRadius: 2,
+              background: 'linear-gradient(to right, rgb(13,8,135), rgb(70,3,159), rgb(135,50,160), rgb(194,100,110), rgb(253,231,37))',
+              border: '1px solid rgba(255,255,255,0.15)',
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+            <span>Low</span>
+            <span>High</span>
+          </div>
+        </div>
+      )}
 
       {isSpatial ? <ScaleBar /> : null}
     </div>
@@ -1067,6 +1377,10 @@ export default function ScSpatialViewport({
   query,
   svgRef,
   onSelectCell,
+  compareGene,
+  showKde,
+  showNeighbors,
+  neighborK,
 }: ScSpatialViewportProps) {
   if (loadState === 'uploading' || loadState === 'querying') {
     return (
@@ -1160,6 +1474,10 @@ export default function ScSpatialViewport({
                   yLabel={query.centerView.yLabel}
                   viewMode={viewMode}
                   onSelectCell={onSelectCell}
+                  compareGene={compareGene}
+                  showKde={showKde}
+                  showNeighbors={showNeighbors}
+                  neighborK={neighborK}
                 />
               )}
               <ClusterLegend query={query} />

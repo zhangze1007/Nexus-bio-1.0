@@ -15,11 +15,15 @@ interface ScSpatialState {
   availableGenes: string[];
   availableClusters: string[];
   selectedGene: string;
+  compareGene: string;
   selectedCluster: string | null;
   selectedCellId: string | null;
   viewMode: ScSpatialViewMode;
   developerMode: boolean;
   helpOpen: boolean;
+  showKde: boolean;
+  showNeighbors: boolean;
+  neighborK: number;
   loadState: ScSpatialLoadState;
   error: string | null;
   query: ScSpatialQueryResponse | null;
@@ -28,11 +32,15 @@ interface ScSpatialState {
   fail: (message: string) => void;
   hydrateFromQuery: (query: ScSpatialQueryResponse) => void;
   setSelectedGene: (gene: string) => void;
+  setCompareGene: (gene: string) => void;
   setSelectedCluster: (cluster: string | null) => void;
   setSelectedCellId: (cellId: string | null) => void;
   setViewMode: (viewMode: ScSpatialViewMode) => void;
   toggleDeveloperMode: () => void;
   toggleHelp: () => void;
+  toggleKde: () => void;
+  toggleNeighbors: () => void;
+  setNeighborK: (k: number) => void;
   reset: () => void;
 }
 
@@ -43,11 +51,15 @@ const EMPTY_STATE = {
   availableGenes: [],
   availableClusters: [],
   selectedGene: '',
+  compareGene: '',
   selectedCluster: null,
   selectedCellId: null,
   viewMode: 'spatial-2d' as const,
   developerMode: false,
   helpOpen: false,
+  showKde: false,
+  showNeighbors: false,
+  neighborK: 6,
   loadState: 'idle' as const,
   error: null,
   query: null,
@@ -97,6 +109,11 @@ export const useScSpatialStore = create<ScSpatialState>((set) => ({
     selectedCellId: null,
   })),
 
+  setCompareGene: (compareGene) => set((state) => ({
+    ...state,
+    compareGene,
+  })),
+
   setSelectedCluster: (selectedCluster) => set((state) => ({
     ...state,
     selectedCluster,
@@ -121,6 +138,21 @@ export const useScSpatialStore = create<ScSpatialState>((set) => ({
   toggleHelp: () => set((state) => ({
     ...state,
     helpOpen: !state.helpOpen,
+  })),
+
+  toggleKde: () => set((state) => ({
+    ...state,
+    showKde: !state.showKde,
+  })),
+
+  toggleNeighbors: () => set((state) => ({
+    ...state,
+    showNeighbors: !state.showNeighbors,
+  })),
+
+  setNeighborK: (neighborK) => set((state) => ({
+    ...state,
+    neighborK,
   })),
 
   reset: () => set(() => ({

@@ -29,11 +29,19 @@ describe('ScSpatialControlRail', () => {
         loadState="ready"
         selectedCluster={null}
         selectedGene="GAPDH"
+        compareGene=""
+        showKde={false}
+        showNeighbors={false}
+        neighborK={6}
         onLoadDemo={jest.fn()}
         onPickFile={jest.fn()}
         onSelectCluster={jest.fn()}
         onSelectGene={jest.fn()}
+        onSetCompareGene={jest.fn()}
         onToggleDeveloperMode={jest.fn()}
+        onToggleKde={jest.fn()}
+        onToggleNeighbors={jest.fn()}
+        onSetNeighborK={jest.fn()}
       />,
     );
 

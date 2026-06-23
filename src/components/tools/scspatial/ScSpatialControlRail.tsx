@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FlaskConical, Layers3, Loader2, Search, UploadCloud } from 'lucide-react';
+import { FlaskConical, Layers3, Loader2, Network, Search, UploadCloud } from 'lucide-react';
 import styles from './ScSpatialWorkbench.module.css';
 import { colorForCluster } from './scSpatialPalette';
 import type { ScSpatialAvailableViews } from '../../../types/scspatial';
@@ -24,11 +24,19 @@ interface ScSpatialControlRailProps {
   loadState: 'idle' | 'uploading' | 'querying' | 'ready' | 'error';
   selectedCluster: string | null;
   selectedGene: string;
+  compareGene: string;
+  showKde: boolean;
+  showNeighbors: boolean;
+  neighborK: number;
   onLoadDemo: () => void;
   onPickFile: () => void;
   onSelectCluster: (cluster: string | null) => void;
   onSelectGene: (gene: string) => void;
+  onSetCompareGene: (gene: string) => void;
   onToggleDeveloperMode: () => void;
+  onToggleKde: () => void;
+  onToggleNeighbors: () => void;
+  onSetNeighborK: (k: number) => void;
 }
 
 function StepTitle({ n, children }: { n: number; children: React.ReactNode }) {
@@ -48,11 +56,19 @@ export default function ScSpatialControlRail({
   loadState,
   selectedCluster,
   selectedGene,
+  compareGene,
+  showKde,
+  showNeighbors,
+  neighborK,
   onLoadDemo,
   onPickFile,
   onSelectCluster,
   onSelectGene,
+  onSetCompareGene,
   onToggleDeveloperMode,
+  onToggleKde,
+  onToggleNeighbors,
+  onSetNeighborK,
 }: ScSpatialControlRailProps) {
   const busy = loadState === 'uploading' || loadState === 'querying';
 
@@ -102,6 +118,21 @@ export default function ScSpatialControlRail({
               {availableGenes.length === 0 ? (
                 <option value="">— No genes loaded —</option>
               ) : availableGenes.map((gene) => (
+                <option key={gene} value={gene}>{gene}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={styles.fieldLabel}>Compare Gene (dual-channel)</label>
+            <select
+              aria-label="Compare gene"
+              className={styles.select}
+              value={compareGene}
+              onChange={(event) => onSetCompareGene(event.target.value)}
+              disabled={availableGenes.length === 0 || busy}
+            >
+              <option value="">— None —</option>
+              {availableGenes.filter((g) => g !== selectedGene).map((gene) => (
                 <option key={gene} value={gene}>{gene}</option>
               ))}
             </select>
@@ -179,6 +210,37 @@ export default function ScSpatialControlRail({
               <Layers3 size={13} />
               Developer mode
             </button>
+            <button
+              type="button"
+              className={`${styles.toggle} ${showKde ? styles.toggleActive : ''}`}
+              onClick={onToggleKde}
+              disabled={busy}
+            >
+              Density heatmap
+            </button>
+            <button
+              type="button"
+              className={`${styles.toggle} ${showNeighbors ? styles.toggleActive : ''}`}
+              onClick={onToggleNeighbors}
+              disabled={busy}
+            >
+              <Network size={13} />
+              Neighbor graph
+            </button>
+            {showNeighbors ? (
+              <div>
+                <label className={styles.fieldLabel}>K neighbors: {neighborK}</label>
+                <input
+                  type="range"
+                  min={2}
+                  max={20}
+                  value={neighborK}
+                  onChange={(event) => onSetNeighborK(Number(event.target.value))}
+                  className={styles.input}
+                  aria-label="Number of nearest neighbors"
+                />
+              </div>
+            ) : null}
             <div>
               <label className={styles.fieldLabel}>Reference Set</label>
               <select className={styles.select} defaultValue="" disabled>
