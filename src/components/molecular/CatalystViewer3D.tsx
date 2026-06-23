@@ -54,6 +54,7 @@ export interface ResidueClickData {
   isCatalytic: boolean;
   catalyticResidue?: CatalyticResidue;
   distanceToSubstrate?: number;
+  role?: string;          // catalytic role (e.g. "acid-base", "catalytic nucleophile", "oxyanion hole")
 }
 
 export interface CatalystViewer3DProps {
@@ -226,6 +227,7 @@ export default function CatalystViewer3D({
               isCatalytic: !!catRes,
               catalyticResidue: catRes,
               distanceToSubstrate: catRes?.distanceToSubstrate,
+              role: catRes ? ROLE_LABELS[catRes.role] ?? catRes.role : undefined,
             });
           }
         });
