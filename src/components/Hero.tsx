@@ -22,9 +22,12 @@ import {
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Search, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import HeroFluidCanvas, { type HeroFluidHandle } from './HeroFluidCanvas';
+import dynamic from 'next/dynamic';
+import type { HeroFluidHandle } from './HeroFluidCanvas';
 import styles from './Hero.module.css';
 import { THEME } from '../theme';
+
+const HeroFluidCanvas = dynamic(() => import('./HeroFluidCanvas'), { ssr: false });
 import { parseSmartInput, getSmartSuggestions } from '../lib/smart-parser';
 
 const BRAND = THEME.BRAND;

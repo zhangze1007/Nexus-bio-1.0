@@ -8,11 +8,13 @@
 
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import Hero from './components/Hero';
 import TopNav from './components/TopNav';
-import DevModePanel from './components/DevModePanel';
-import FeaturesArchitecture from './components/FeaturesArchitecture';
 import HomeInteractiveCard from './components/HomeInteractiveCard';
+
+const FeaturesArchitecture = dynamic(() => import('./components/FeaturesArchitecture'), { ssr: false });
+const DevModePanel = dynamic(() => import('./components/DevModePanel'), { ssr: false });
 import { Linkedin, Dna, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
 import styles from './App.module.css';
 import { THEME } from './theme';

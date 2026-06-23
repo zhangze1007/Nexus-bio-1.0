@@ -25,8 +25,10 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         ? 'pLDDT mode maps AlphaFold confidence directly onto the fold so uncertain regions remain explicit.'
         : 'Cartoon mode keeps fold topology legible for presentation and residue-level orientation.';
 
+  // Main effect: fetch PDB and render — does NOT depend on spinEnabled
   useEffect(() => {
     let cancelled = false;
+    const abortCtrl = new AbortController();
     async function init() {
       if (!containerRef.current) return;
       setStatus('loading');
@@ -42,9 +44,12 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         viewerRef.current = viewer;
 
         if (useAF && alphafoldId) {
-          const res = await fetch(`/api/alphafold?id=${alphafoldId}`);
+          const fetchTimeout = setTimeout(() => abortCtrl.abort(), 15000);
+          const res = await fetch(`/api/alphafold?id=${alphafoldId}`, { signal: abortCtrl.signal });
+          clearTimeout(fetchTimeout);
           if (!res.ok) throw new Error(`AlphaFold ${res.status}`);
           const pdb = sanitizeMolData(await res.text());
+          if (cancelled) return;
           if (!pdb || pdb.length < 100) throw new Error('Empty AlphaFold response');
           viewer.addModel(pdb, 'pdb');
         } else {
@@ -54,6 +59,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
           });
         }
 
+        if (cancelled) return;
         viewer.setStyle({}, {});
         if (renderMode === 'surface') {
           viewer.setStyle({}, { cartoon: { color: useAF ? '#EAEAEA' : 'spectrum', thickness: 0.35 } });
@@ -84,7 +90,8 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         viewer.render();
         if (!cancelled) setStatus('ready');
       } catch (err) {
-        if (useAF && !cancelled) {
+        if (cancelled) return;
+        if (useAF) {
           try {
             if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} }
             containerRef.current!.innerHTML = '';
@@ -96,6 +103,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
               const timer = setTimeout(() => reject(new Error('PDB download timeout')), 15000);
               window.$3Dmol.download(`pdb:${pdbId}`, viewer2, {}, () => { clearTimeout(timer); resolve(); });
             });
+            if (cancelled) return;
             viewer2.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
             viewer2.zoomTo();
             viewer2.spin(spinEnabled ? 'y' : false, 0.5);
@@ -110,8 +118,18 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
       }
     }
     init();
-    return () => { cancelled = true; };
-  }, [pdbId, alphafoldId, useAF, renderMode, spinEnabled]);
+    return () => { cancelled = true; abortCtrl.abort(); };
+  }, [pdbId, alphafoldId, useAF, renderMode]);
+
+  // Separate spin toggle — does not re-fetch PDB
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || status !== 'ready') return;
+    try {
+      viewer.spin(spinEnabled ? 'y' : false, 0.5);
+      viewer.render();
+    } catch { /* viewer may be disposed */ }
+  }, [spinEnabled, status]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
