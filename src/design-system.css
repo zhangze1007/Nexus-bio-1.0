@@ -3,8 +3,7 @@
    Fonts: DM Serif Display (headings) + Public Sans (body/data)
    ═══════════════════════════════════════════════════════════════ */
 
-/* Font imports */
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+/* Font imports — self-hosted via src/styles/fonts.css (imported in app/layout.tsx) */
 
 /* ── CSS Variables ─────────────────────────────────────────── */
 :root {
