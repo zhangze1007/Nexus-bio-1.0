@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ArrowUp, Upload, Camera, Globe, Image as ImageIcon,
   X, ChevronUp, Plus, AlertCircle, CheckCircle2, Loader2,
@@ -267,6 +267,53 @@ function classifyError(message: string): string {
   return message || 'Something went wrong. Please try again.';
 }
 
+// ── Memoized style constants (avoids object recreation on every render) ──
+const SECTION_STYLE: React.CSSProperties = { background: '#0a0a0a' };
+const HEADER_CONTAINER_STYLE: React.CSSProperties = { textAlign: 'center', marginBottom: '32px' };
+const HEADER_LABEL_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' };
+const HEADER_TITLE_STYLE: React.CSSProperties = { color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' };
+const HEADER_SUBTITLE_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.55)', fontSize: '14px', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto' };
+const INPUT_CARD_STYLE: React.CSSProperties = { borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' };
+const TEXTAREA_STYLE: React.CSSProperties = { width: '100%', background: 'transparent', padding: '16px', color: '#ffffff', fontSize: '13px', lineHeight: 1.7, border: 'none', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
+const TOOLBAR_STYLE: React.CSSProperties = { padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.06)' };
+const TOOLBAR_LEFT_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '4px' };
+const MODE_BUTTON_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer' };
+const BACK_TEXT_BUTTON_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer' };
+const STATUS_CONTAINER_STYLE: React.CSSProperties = { marginTop: '10px', minHeight: '28px' };
+const ANALYZING_STATUS_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' };
+const IDLE_STATUS_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' };
+const ERROR_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.12)' };
+const SUCCESS_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' };
+const PATHD_LINK_STYLE: React.CSSProperties = { minHeight: '32px', padding: '0 12px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(147,203,82,0.10)', color: 'rgba(255,255,255,0.75)', display: 'inline-flex', alignItems: 'center', textDecoration: 'none', fontSize: '11px' };
+const PATHD_DISABLED_STYLE: React.CSSProperties = { minHeight: '32px', padding: '0 12px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.42)', display: 'inline-flex', alignItems: 'center', fontSize: '11px' };
+const TOOLS_LINK_STYLE: React.CSSProperties = { minHeight: '32px', padding: '0 12px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', textDecoration: 'none', fontSize: '11px' };
+const AXON_CONTAINER_STYLE: React.CSSProperties = { marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' };
+const AXON_BUBBLE_STYLE: React.CSSProperties = { borderRadius: '16px', padding: '18px 20px', background: 'linear-gradient(135deg, rgba(201,228,222,0.10) 0%, rgba(201,228,222,0.04) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(201,228,222,0.18)', boxShadow: '0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(201,228,222,0.08)' };
+const AXON_AVATAR_STYLE: React.CSSProperties = { width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg, #C9E4DE 0%, #95C8BC 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#1a2f2a' };
+const AXON_LABEL_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(201,228,222,0.6)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' };
+const AXON_QUESTION_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.85)', fontSize: '13.5px', lineHeight: 1.7, margin: 0, fontFamily: THEME.SANS };
+const AXON_OPTION_BASE_STYLE: React.CSSProperties = { padding: '7px 14px', borderRadius: '20px', border: '1px solid rgba(201,228,222,0.22)', background: 'rgba(201,228,222,0.06)', color: 'rgba(201,228,222,0.85)', fontSize: '12px', fontFamily: THEME.SANS, cursor: 'pointer', transition: 'all 0.15s' };
+const BOTTLENECK_CARD_STYLE: React.CSSProperties = { borderRadius: '12px', padding: '16px 18px', background: 'linear-gradient(135deg, rgba(250,237,203,0.08) 0%, rgba(250,237,203,0.03) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(250,237,203,0.15)', boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(250,237,203,0.06)' };
+const BOTTLENECK_LABEL_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(250,237,203,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' };
+const DESIGN_CARD_STYLE: React.CSSProperties = { borderRadius: '12px', overflow: 'hidden', background: 'linear-gradient(135deg, rgba(201,228,222,0.06) 0%, rgba(201,228,222,0.02) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,228,222,0.12)', boxShadow: '0 2px 20px rgba(0,0,0,0.15)' };
+const DESIGN_HEADER_STYLE: React.CSSProperties = { width: '100%', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer' };
+const DESIGN_LABEL_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(201,228,222,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' };
+const DESIGN_TARGET_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(201,228,222,0.5)', marginBottom: '10px', marginTop: '12px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.05em' };
+const DESIGN_FIELD_LABEL_STYLE: React.CSSProperties = { fontSize: '10.5px', color: 'rgba(201,228,222,0.45)', fontFamily: THEME.MONO, fontFeatureSettings: "'tnum' 1" };
+const DESIGN_FIELD_VALUE_STYLE: React.CSSProperties = { fontSize: '12px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, margin: '2px 0 0' };
+const DISMISS_ROW_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
+const DISMISS_BUTTON_STYLE: React.CSSProperties = { padding: '5px 12px', borderRadius: '12px', fontSize: '11px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', cursor: 'pointer' };
+const FILE_PREVIEW_CONTAINER_STYLE: React.CSSProperties = { padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '12px' };
+const FILE_PREVIEW_BOX_STYLE: React.CSSProperties = { height: '48px', width: '48px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const URL_CONTAINER_STYLE: React.CSSProperties = { padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '10px' };
+const URL_INPUT_STYLE: React.CSSProperties = { flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', fontFamily: 'inherit' };
+const OPTION_LABELS: Record<string, string> = {
+  enzyme_substrate_docking: 'Analyze Enzyme-Substrate Docking',
+  flux_balance_optimization: 'Optimize Flux Balance',
+  cofactor_optimization: 'Explore Cofactor Optimization',
+  dsp_analysis: 'Investigate DSP Constraints',
+};
+
 export default function PaperAnalyzer({
   onPathwayGenerated,
   onStructuredAnalysis,
@@ -366,7 +413,7 @@ export default function PaperAnalyzer({
     };
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     const hasContent =
       (mode === 'text' && text.trim().length >= 10) ||
       ((mode === 'image' || mode === 'camera' || mode === 'pdf') && imageBase64) ||
@@ -455,12 +502,14 @@ export default function PaperAnalyzer({
         setErrorMsg(classifyError(msg));
       }
     }
-  };
+  }, [mode, text, imageBase64, webUrl, onPathwayGenerated, onStructuredAnalysis, buildRequestBody]);
 
-  const canAnalyze =
+  const canAnalyze = useMemo(() =>
     (mode === 'text' && text.trim().length >= 10) ||
     ((mode === 'image' || mode === 'camera' || mode === 'pdf') && !!imageBase64) ||
-    (mode === 'web' && webUrl.trim().length > 0);
+    (mode === 'web' && webUrl.trim().length > 0),
+    [mode, text, imageBase64, webUrl]
+  );
 
   // Axon progressive disclosure: user selects an investigation path → reveal pathway
   const handleAxonOptionSelect = (option: string) => {
@@ -485,14 +534,6 @@ export default function PaperAnalyzer({
     setExpanded(false);
   };
 
-  // Option label mapping for display
-  const optionLabels: Record<string, string> = {
-    enzyme_substrate_docking: 'Analyze Enzyme-Substrate Docking',
-    flux_balance_optimization: 'Optimize Flux Balance',
-    cofactor_optimization: 'Explore Cofactor Optimization',
-    dsp_analysis: 'Investigate DSP Constraints',
-  };
-
   const extraModes = [
     { id: 'pdf' as InputMode, icon: <Upload size={13} />, label: 'PDF' },
     { id: 'image' as InputMode, icon: <ImageIcon size={13} />, label: 'Image' },
@@ -501,31 +542,31 @@ export default function PaperAnalyzer({
   ];
 
   return (
-    <section className="px-4 py-24" id="analyzer" style={{ background: '#0a0a0a' }}>
+    <section className="px-4 py-24" id="analyzer" style={SECTION_STYLE}>
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+        <div style={HEADER_CONTAINER_STYLE}>
+          <p style={HEADER_LABEL_STYLE}>
             Analysis
           </p>
-          <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' }}>
+          <h2 style={HEADER_TITLE_STYLE}>
             Decode any pathway.
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto' }}>
+          <p style={HEADER_SUBTITLE_STYLE}>
             Paste a paper, upload a PDF, or point your camera — AI extracts the metabolic architecture with evidence citations.
           </p>
         </div>
 
         {/* Input card */}
-        <div style={{ borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
+        <div style={INPUT_CARD_STYLE}>
 
           {/* File/image preview */}
           {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
-            <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={FILE_PREVIEW_CONTAINER_STYLE}>
               {imagePreview
                 ? <img src={imagePreview} alt="Preview" style={{ height: '48px', width: '48px', objectFit: 'cover', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                : <div style={{ height: '48px', width: '48px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                : <div style={FILE_PREVIEW_BOX_STYLE}>
                     {mode === 'pdf' ? <Upload size={16} style={{ color: 'rgba(255,255,255,0.3)' }} /> : <ImageIcon size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />}
                   </div>
               }
@@ -551,11 +592,11 @@ export default function PaperAnalyzer({
 
           {/* URL input */}
           {mode === 'web' && (
-            <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={URL_CONTAINER_STYLE}>
               <Globe size={14} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
               <input type="url" value={webUrl} onChange={e => { setWebUrl(e.target.value); setErrorMsg(null); }}
                 placeholder="https://pubmed.ncbi.nlm.nih.gov/... or https://doi.org/..."
-                style={{ flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', fontFamily: 'inherit' }} />
+                style={URL_INPUT_STYLE} />
               {webUrl && <button onClick={() => setWebUrl('')} style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer' }}><X size={13} /></button>}
             </div>
           )}
@@ -568,17 +609,17 @@ export default function PaperAnalyzer({
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAnalyze(); } }}
               placeholder="Paste an abstract, methods section, or any research text here..."
               rows={4}
-              style={{ width: '100%', background: 'transparent', padding: '16px', color: '#ffffff', fontSize: '13px', lineHeight: 1.7, border: 'none', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+              style={TEXTAREA_STYLE}
             />
           )}
 
           {/* Toolbar */}
-          <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={TOOLBAR_STYLE}>
+            <div style={TOOLBAR_LEFT_STYLE}>
 
               {mode !== 'text' && (
                 <button onClick={() => { setMode('text'); resetState(); setExpanded(false); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer' }}
+                  style={BACK_TEXT_BUTTON_STYLE}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
                   Text
@@ -589,7 +630,7 @@ export default function PaperAnalyzer({
                 type="button"
                 aria-label={expanded ? 'Collapse upload options' : 'Expand upload options'}
                 onClick={() => setExpanded(!expanded)}
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer' }}
+                style={MODE_BUTTON_STYLE}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'none'; }}>
                 {expanded ? <ChevronUp size={13} /> : <Plus size={13} />}
@@ -633,20 +674,20 @@ export default function PaperAnalyzer({
         </div>
 
         {/* Status messages */}
-        <div style={{ marginTop: '10px', minHeight: '28px' }}>
+        <div style={STATUS_CONTAINER_STYLE}>
           {analysisState === 'analyzing' && (
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
+            <p style={ANALYZING_STATUS_STYLE}>
               Extracting pathway structure from literature...
             </p>
           )}
           {analysisState === 'error' && errorMsg && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.12)' }}>
+            <div style={ERROR_CONTAINER_STYLE}>
               <AlertCircle size={13} style={{ color: 'rgba(255,120,120,0.8)', flexShrink: 0 }} />
               <p style={{ color: 'rgba(255,140,140,0.8)', fontSize: '12px', margin: 0 }}>{errorMsg}</p>
             </div>
           )}
           {analysisState === 'success' && !axonInteraction && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={SUCCESS_CONTAINER_STYLE}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
                 <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
@@ -657,52 +698,20 @@ export default function PaperAnalyzer({
                 {pathdEnabled && pathdHref ? (
                   <a
                     href={pathdHref}
-                    style={{
-                      minHeight: '32px',
-                      padding: '0 12px',
-                      borderRadius: '999px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(147,203,82,0.10)',
-                      color: 'rgba(255,255,255,0.75)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      textDecoration: 'none',
-                      fontSize: '11px',
-                    }}
+                    style={PATHD_LINK_STYLE}
                   >
                     Open PATHD workbench
                   </a>
                 ) : (
                   <span
-                    style={{
-                      minHeight: '32px',
-                      padding: '0 12px',
-                      borderRadius: '999px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(255,255,255,0.03)',
-                      color: 'rgba(255,255,255,0.42)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      fontSize: '11px',
-                    }}
+                    style={PATHD_DISABLED_STYLE}
                   >
                     Save compiled artifact to open PATHD
                   </span>
                 )}
                 <a
                   href="/tools"
-                  style={{
-                    minHeight: '32px',
-                    padding: '0 12px',
-                    borderRadius: '999px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: 'rgba(255,255,255,0.03)',
-                    color: 'rgba(255,255,255,0.55)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    textDecoration: 'none',
-                    fontSize: '11px',
-                  }}
+                  style={TOOLS_LINK_STYLE}
                 >
                   Browse tool directions
                 </a>
@@ -710,7 +719,7 @@ export default function PaperAnalyzer({
             </div>
           )}
           {analysisState === 'idle' && (
-            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
+            <p style={IDLE_STATUS_STYLE}>
               Press Enter to analyze · Shift+Enter for new line · Groq primary / Gemini fallback
             </p>
           )}
@@ -718,36 +727,17 @@ export default function PaperAnalyzer({
 
         {/* ── Axon Socratic Dialogue ── */}
         {axonInteraction && (
-          <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={AXON_CONTAINER_STYLE}>
 
             {/* Axon thought bubble — Glassmorphism 2.0 */}
-            <div style={{
-              borderRadius: '16px',
-              padding: '18px 20px',
-              background: 'linear-gradient(135deg, rgba(201,228,222,0.10) 0%, rgba(201,228,222,0.04) 100%)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(201,228,222,0.18)',
-              boxShadow: '0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(201,228,222,0.08)',
-            }}>
+            <div style={AXON_BUBBLE_STYLE}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <div style={{
-                  width: '22px', height: '22px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #C9E4DE 0%, #95C8BC 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '10px', fontWeight: 700, color: '#1a2f2a',
-                }}>A</div>
-                <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.6)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <div style={AXON_AVATAR_STYLE}>A</div>
+                <span style={AXON_LABEL_STYLE}>
                   Axon · Predictive Design
                 </span>
               </div>
-              <p style={{
-                color: 'rgba(255,255,255,0.85)',
-                fontSize: '13.5px',
-                lineHeight: 1.7,
-                margin: 0,
-                fontFamily: THEME.SANS,
-              }}>
+              <p style={AXON_QUESTION_STYLE}>
                 {axonInteraction.question}
               </p>
 
@@ -758,17 +748,7 @@ export default function PaperAnalyzer({
                     <button
                       key={opt}
                       onClick={() => handleAxonOptionSelect(opt)}
-                      style={{
-                        padding: '7px 14px',
-                        borderRadius: '20px',
-                        border: '1px solid rgba(201,228,222,0.22)',
-                        background: 'rgba(201,228,222,0.06)',
-                        color: 'rgba(201,228,222,0.85)',
-                        fontSize: '12px',
-                        fontFamily: THEME.SANS,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                      }}
+                      style={AXON_OPTION_BASE_STYLE}
                       onMouseEnter={e => {
                         (e.currentTarget as HTMLElement).style.background = 'rgba(201,228,222,0.15)';
                         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,228,222,0.35)';
@@ -780,7 +760,7 @@ export default function PaperAnalyzer({
                         (e.currentTarget as HTMLElement).style.color = 'rgba(201,228,222,0.85)';
                       }}
                     >
-                      {optionLabels[opt] || opt.replace(/_/g, ' ')}
+                      {OPTION_LABELS[opt] || opt.replace(/_/g, ' ')}
                     </button>
                   ))}
                 </div>
@@ -791,7 +771,7 @@ export default function PaperAnalyzer({
                 <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle2 size={12} style={{ color: '#95C8BC' }} />
                   <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.55)', fontFamily: THEME.MONO }}>
-                    Selected: {optionLabels[selectedOption] || selectedOption}
+                    Selected: {OPTION_LABELS[selectedOption] || selectedOption}
                   </span>
                 </div>
               )}
@@ -799,18 +779,10 @@ export default function PaperAnalyzer({
 
             {/* Bottleneck enzymes — kinetic warning cards */}
             {axonInteraction.disclosure_phase === 'revealed' && bottleneckEnzymes.length > 0 && (
-              <div style={{
-                borderRadius: '12px',
-                padding: '16px 18px',
-                background: 'linear-gradient(135deg, rgba(250,237,203,0.08) 0%, rgba(250,237,203,0.03) 100%)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(250,237,203,0.15)',
-                boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(250,237,203,0.06)',
-              }}>
+              <div style={BOTTLENECK_CARD_STYLE}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                   <Zap size={13} style={{ color: '#FAEDCB' }} />
-                  <span style={{ fontSize: '11px', color: 'rgba(250,237,203,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <span style={BOTTLENECK_LABEL_STYLE}>
                     Bottleneck Enzymes
                   </span>
                 </div>
@@ -843,26 +815,14 @@ export default function PaperAnalyzer({
 
             {/* De Novo Design Strategies — collapsible */}
             {axonInteraction.disclosure_phase === 'revealed' && designStrategies.length > 0 && (
-              <div style={{
-                borderRadius: '12px',
-                overflow: 'hidden',
-                background: 'linear-gradient(135deg, rgba(201,228,222,0.06) 0%, rgba(201,228,222,0.02) 100%)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(201,228,222,0.12)',
-                boxShadow: '0 2px 20px rgba(0,0,0,0.15)',
-              }}>
+              <div style={DESIGN_CARD_STYLE}>
                 <button
                   onClick={() => setDesignExpanded(!designExpanded)}
-                  style={{
-                    width: '100%', padding: '14px 18px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                  }}
+                  style={DESIGN_HEADER_STYLE}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <FlaskConical size={13} style={{ color: '#95C8BC' }} />
-                    <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    <span style={DESIGN_LABEL_STYLE}>
                       De Novo Design Strategies ({designStrategies.length})
                     </span>
                   </div>
@@ -878,11 +838,7 @@ export default function PaperAnalyzer({
                     padding: '0 18px 16px',
                     borderTop: '1px solid rgba(201,228,222,0.06)',
                   }}>
-                    <p style={{
-                      fontSize: '11px', color: 'rgba(201,228,222,0.5)', marginBottom: '10px', marginTop: '12px',
-                      fontFamily: THEME.MONO,
-                      textTransform: 'uppercase', letterSpacing: '0.05em',
-                    }}>
+                    <p style={DESIGN_TARGET_STYLE}>
                       Target: {s.node_id.replace(/_/g, ' ')}
                     </p>
                     {[
@@ -892,17 +848,10 @@ export default function PaperAnalyzer({
                       { label: 'Predicted Impact', value: s.de_novo_design_strategy.predicted_impact },
                     ].map(({ label, value }) => (
                       <div key={label} style={{ marginBottom: '8px' }}>
-                        <span style={{
-                          fontSize: '10.5px', color: 'rgba(201,228,222,0.45)',
-                          fontFamily: THEME.MONO,
-                          fontFeatureSettings: "'tnum' 1",
-                        }}>
+                        <span style={DESIGN_FIELD_LABEL_STYLE}>
                           {label}
                         </span>
-                        <p style={{
-                          fontSize: '12px', color: 'rgba(255,255,255,0.65)',
-                          lineHeight: 1.6, margin: '2px 0 0',
-                        }}>
+                        <p style={DESIGN_FIELD_VALUE_STYLE}>
                           {value}
                         </p>
                       </div>
@@ -914,7 +863,7 @@ export default function PaperAnalyzer({
 
             {/* Pathway revealed confirmation + dismiss */}
             {axonInteraction.disclosure_phase === 'revealed' && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={DISMISS_ROW_STYLE}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.4)' }} />
                   <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
@@ -923,11 +872,7 @@ export default function PaperAnalyzer({
                 </div>
                 <button
                   onClick={dismissAxonDialogue}
-                  style={{
-                    padding: '5px 12px', borderRadius: '12px', fontSize: '11px',
-                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.55)', cursor: 'pointer',
-                  }}
+                  style={DISMISS_BUTTON_STYLE}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
                 >
