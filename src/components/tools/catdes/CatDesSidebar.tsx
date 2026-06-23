@@ -5,10 +5,16 @@ import { toolTokens } from '../../../hooks/useToolTheme';
 import DataSourceBadge from '../../ide/shared/DataSourceBadge';
 import type { EnzymeStructure, BindingAffinityResult, CatalyticResidue } from '../../../services/CatalystDesignerEngine';
 import type { BRENDAKinetics } from '../../../services/database/brendaClient';
+import { PATHD_FLOATING_PANEL_SURFACE, PATHD_FLOATING_PANEL_SHEEN } from '../shared/pathdFloatingPanelStyles';
 
 const { border: BORDER, label: LABEL, value: VALUE, inputBg: INPUT_BG, inputBorder: INPUT_BORDER, inputText: INPUT_TEXT } = toolTokens;
-const GLASS: React.CSSProperties = { ...toolTokens.glass, borderRadius: 'var(--nb-radius-xl)' };
 const tn: React.CSSProperties = { fontFeatureSettings: "'tnum' 1" };
+
+// PathD-style glassmorphism for sections
+const GLASS: React.CSSProperties = {
+  ...PATHD_FLOATING_PANEL_SURFACE,
+  padding: '12px 14px',
+};
 
 /* ── Docking Result Interface (matches CatalystDesignerPage) ──────── */
 
@@ -40,32 +46,35 @@ export interface CatDesSidebarProps {
 /* ── Quality helpers ──────────────────────────────────────────────── */
 
 function kdQuality(kd: number) {
-  if (kd < 1) return { color: THEME.SUCCESS_HIGH, label: 'Excellent' };
-  if (kd < 10) return { color: THEME.SUCCESS_MEDIUM, label: 'Good' };
-  if (kd < 100) return { color: THEME.RISK_LOW, label: 'Moderate' };
-  if (kd < 1000) return { color: THEME.RISK_MEDIUM, label: 'Weak' };
-  return { color: THEME.RISK_HIGH, label: 'Very weak' };
+  if (kd < 1) return { color: '#93CB52', label: 'Excellent' };
+  if (kd < 10) return { color: '#BFDCCD', label: 'Good' };
+  if (kd < 100) return { color: '#E8DCC8', label: 'Moderate' };
+  if (kd < 1000) return { color: '#E8A3A1', label: 'Weak' };
+  return { color: '#FA8072', label: 'Very weak' };
 }
 
 function kcatQuality(kcat: number) {
-  if (kcat > 100) return { color: THEME.SUCCESS_HIGH, label: 'Excellent' };
-  if (kcat > 10) return { color: THEME.SUCCESS_MEDIUM, label: 'Good' };
-  if (kcat > 1) return { color: THEME.RISK_LOW, label: 'Moderate' };
-  return { color: THEME.RISK_HIGH, label: 'Slow' };
+  if (kcat > 100) return { color: '#93CB52', label: 'Excellent' };
+  if (kcat > 10) return { color: '#BFDCCD', label: 'Good' };
+  if (kcat > 1) return { color: '#E8DCC8', label: 'Moderate' };
+  return { color: '#E8A3A1', label: 'Slow' };
 }
 
 /* ── Section wrapper ──────────────────────────────────────────────── */
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ ...GLASS, padding: '12px 14px' }}>
-      <div style={{
-        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL,
-        textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8,
-      }}>
-        {title}
+    <div style={{ position: 'relative', ...GLASS }}>
+      <div style={{ ...PATHD_FLOATING_PANEL_SHEEN, borderRadius: 'inherit' }} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{
+          fontFamily: THEME.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.35)',
+          textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8,
+        }}>
+          {title}
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
@@ -75,9 +84,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function MetricRow({ label, value, unit, accent }: { label: string; value: string; unit?: string; accent?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{label}</span>
-      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: accent ?? VALUE, ...tn }}>
-        {value}{unit && <span style={{ fontSize: 'var(--nb-fs-xxs)', color: LABEL, marginLeft: 3 }}>{unit}</span>}
+      <span style={{ fontFamily: THEME.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
+      <span style={{ fontFamily: THEME.MONO, fontSize: '12px', color: accent ?? 'rgba(255,255,255,0.85)', ...tn }}>
+        {value}{unit && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginLeft: 3 }}>{unit}</span>}
       </span>
     </div>
   );
@@ -109,21 +118,21 @@ export default React.memo(function CatDesSidebar({
     }}>
       {/* ── 1. Enzyme Header ── */}
       <Section title="Enzyme">
-        <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: VALUE, marginBottom: 2 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: '14px', fontWeight: 700, color: 'rgba(255,255,255,0.9)', marginBottom: 2 }}>
           {enzyme.name}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <span style={{
-            fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.SKY,
+            fontFamily: THEME.MONO, fontSize: '11px', color: '#c4b8a8',
             padding: '1px 6px', borderRadius: 4,
-            background: 'rgba(175,195,214,0.1)', border: `1px solid rgba(175,195,214,0.2)`,
+            background: 'rgba(196,184,168,0.1)', border: '1px solid rgba(196,184,168,0.2)',
           }}>
             EC {enzyme.ecNumber}
           </span>
           <span style={{
-            fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LILAC,
+            fontFamily: THEME.MONO, fontSize: '11px', color: '#AFC3D6',
             padding: '1px 6px', borderRadius: 4,
-            background: 'rgba(207,196,227,0.1)', border: `1px solid rgba(207,196,227,0.2)`,
+            background: 'rgba(175,195,214,0.1)', border: '1px solid rgba(175,195,214,0.2)',
           }}>
             {enzyme.uniprotId}
           </span>
