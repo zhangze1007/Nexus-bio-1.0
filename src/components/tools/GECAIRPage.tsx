@@ -16,6 +16,7 @@ import type { ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import NextStepButton from '../NextStepButton';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
@@ -1524,7 +1525,8 @@ export default function GECAIRPage() {
       </ToolTabPanel>
 
       {/* ═══════ Footer ═══════ */}
-      <div style={{ borderTop: `1px solid ${THEME.BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: THEME.PANEL_MUTED }}>
+      <div style={{ borderTop: `1px solid ${THEME.BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, background: THEME.PANEL_MUTED }}>
+        <DataSourceBadge source={catalystPayload || dynconPayload ? 'live' : 'mock'} label={catalystPayload || dynconPayload ? 'Upstream Data' : 'Default Inputs'} />
         <ExportButton label="Export JSON" data={exportData} filename="gecair-circuit" format="json" />
       </div>
       <NextStepButton currentStepId="gecair" />

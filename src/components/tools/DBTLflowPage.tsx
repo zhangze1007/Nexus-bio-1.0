@@ -35,6 +35,7 @@ import ToolShell from './shared/ToolShell';
 import type { ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 /* ── Design Tokens ── */
 const PHASE_PASTEL: Record<string, string> = {
@@ -1717,8 +1718,9 @@ export default function DBTLflowPage() {
       {/* ═══════ Footer: Export ═══════ */}
       <div style={{
         borderTop: `1px solid ${THEME.BORDER}`, padding: '8px 16px',
-        display: 'flex', gap: '8px', flexShrink: 0, background: THEME.PANEL_MUTED,
+        display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, background: THEME.PANEL_MUTED,
       }}>
+        <DataSourceBadge source={iterations.length > INITIAL_ITERATIONS.length ? 'live' : 'mock'} label={iterations.length > INITIAL_ITERATIONS.length ? 'User Data' : 'Demo Data'} />
         <ExportButton label="Export JSON" data={displayIterations} filename="dbtlflow-iterations" format="json" />
         <ExportButton label="Export CSV" data={displayIterations} filename="dbtlflow-iterations" format="csv" />
       </div>

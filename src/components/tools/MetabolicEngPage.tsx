@@ -41,6 +41,7 @@ import FloatingTabBar from './metabolic-eng/FloatingTabBar';
 import IdleStartButton from './metabolic-eng/IdleStartButton';
 import { THEME } from '../../theme';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 const PATHD_TABS: ToolTab[] = [
   { id: 'lab', label: '3D Lab', accent: THEME.SKY },
@@ -658,6 +659,11 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
         onTabChange={setActiveTab}
         visible={!embedded}
       />
+
+      {/* ── Data source badge ── */}
+      <div style={{ position: 'absolute', bottom: 12, left: 14, zIndex: 15, pointerEvents: 'none' }}>
+        <DataSourceBadge source="mock" label="pathwayData.json" />
+      </div>
 
       {embedded ? (
         <EmbeddedSupportDock supportCards={supportCards} innerRef={supportFrameRef} />
