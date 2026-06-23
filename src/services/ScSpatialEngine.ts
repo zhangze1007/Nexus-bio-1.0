@@ -315,7 +315,22 @@ export interface MoranResult {
   expectedI: number;
   zScore: number;
   pValue: number;
+  qValue: number;
   isSpatiallyRestricted: boolean;
+  hotspot: 'high' | 'low' | 'ns';
+}
+
+export interface GiStarGeneResult {
+  gene: string;
+  giStar: number;
+  zScore: number;
+  hotspot: 'high' | 'low' | 'ns';
+}
+
+export interface GiStarResult {
+  results: GiStarGeneResult[];
+  nHotHigh: number;
+  nHotLow: number;
 }
 
 export interface SpatialAutocorrelationResult {
@@ -323,6 +338,7 @@ export interface SpatialAutocorrelationResult {
   nGenesTested: number;
   nSpatiallyRestricted: number;
   topSpatialGenes: string[];
+  giStarResults: GiStarResult;
 }
 
 export interface VAELatentCell {
@@ -397,6 +413,11 @@ function euclideanDistance(a: number[], b: number[]): number {
     sum += d * d;
   }
   return Math.sqrt(sum);
+}
+
+function round(value: number, digits = 3) {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
 }
 
 function median(arr: number[]): number {
@@ -1283,19 +1304,103 @@ export function computeSpatialNeighbors(cells: CellRecord[], k: number = 6): Spa
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  7. Moran's I Spatial Autocorrelation
+//  7. Moran's I Spatial Autocorrelation (enhanced)
 // ══════════════════════════════════════════════════════════════════════
 
 /**
- * Compute Moran's I spatial autocorrelation statistic for each gene.
+ * Compute a single Moran's I value for a given expression vector and weight structure.
+ * This is the inner kernel used by both the main computation and permutation testing.
+ */
+function moranICore(
+  x: number[],
+  xMean: number,
+  denom: number,
+  adjacency: [number, number][],
+  n: number,
+  W: number,
+): number {
+  if (denom === 0 || W === 0) return 0;
+  let numer = 0;
+  for (const [i, j] of adjacency) {
+    numer += (x[i] - xMean) * (x[j] - xMean);
+  }
+  return (n / W) * (numer / denom);
+}
+
+/**
+ * Compute permutation-based p-value for Moran's I.
  *
- * Moran's I measures the degree to which gene expression at one location
- * is similar to expression at nearby locations. The formula is:
+ * Shuffles the expression vector nPermutations times and counts how many
+ * permuted I values are >= the observed I. Uses a seeded PRNG for
+ * deterministic reproducibility.
  *
- *   I = (N / W) × Σ_ij w_ij (x_i − x̄)(x_j − x̄) / Σ_i (x_i − x̄)²
+ * @param x             Expression vector
+ * @param xMean         Precomputed mean
+ * @param denom         Precomputed denominator Σ(x_i - x̄)²
+ * @param adjacency     Spatial adjacency edge list
+ * @param n             Number of cells
+ * @param W             Total spatial weight
+ * @param observedI     The observed Moran's I
+ * @param nPermutations Number of Monte Carlo permutations
+ * @param rng           Seeded random number generator
+ * @returns             Permutation-based p-value
+ */
+function moranIPermutationPValue(
+  x: number[],
+  xMean: number,
+  denom: number,
+  adjacency: [number, number][],
+  n: number,
+  W: number,
+  observedI: number,
+  nPermutations: number,
+  rng: SeededRNG,
+): { pValue: number; permMean: number; permStd: number } {
+  let count = 0;
+  let permSum = 0;
+  let permSumSq = 0;
+
+  for (let p = 0; p < nPermutations; p++) {
+    // Fisher-Yates shuffle using seeded RNG
+    const shuffled = [...x];
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(rng.next() * (i + 1));
+      const tmp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = tmp;
+    }
+
+    const permI = moranICore(shuffled, xMean, denom, adjacency, n, W);
+    permSum += permI;
+    permSumSq += permI * permI;
+    if (permI >= observedI) count++;
+  }
+
+  const pValue = (count + 1) / (nPermutations + 1);
+  const permMean = permSum / nPermutations;
+  const permVariance = permSumSq / nPermutations - permMean * permMean;
+  const permStd = Math.sqrt(Math.max(permVariance, 1e-12));
+
+  return { pValue, permMean, permStd };
+}
+
+/**
+ * Compute Moran's I spatial autocorrelation statistic for each gene
+ * with permutation-based p-values, Benjamini-Hochberg FDR correction,
+ * and Getis-Ord Gi* hotspot classification.
  *
- * where w_ij = 1 if cells i,j are spatial neighbors. Z-scores and
- * p-values are computed under the normality assumption.
+ * Moran's I formula:
+ *   I = (N / W) * Σ_ij w_ij (x_i - x̄)(x_j - x̄) / Σ_i (x_i - x̄)²
+ *
+ * P-values are computed via Monte Carlo permutation testing (spatial
+ * randomisation). For datasets with >500 cells, 199 permutations are
+ * used for efficiency; otherwise 999 permutations are used. After
+ * per-gene testing, Benjamini-Hochberg FDR correction is applied across
+ * all genes. Each gene is also classified as a hotspot ('high' / 'low' /
+ * 'ns') based on its Moran's I sign and BH-adjusted significance.
+ *
+ * Additionally, Getis-Ord Gi* hotspot analysis is computed for each gene
+ * to identify local clusters of high or low expression.
  *
  * @param cells      Cells with gene expression and spatial coordinates
  * @param neighbors  Spatial neighbor graph
@@ -1309,16 +1414,16 @@ export function computeMoranI(
   const n = cells.length;
   const genesToTest = genes ?? allGenes(cells);
 
-  // Build adjacency lookup for fast neighbor check
-  const neighborSet = new Map<number, Set<number>>();
-  for (const [a, b] of neighbors.adjacency) {
-    if (!neighborSet.has(a)) neighborSet.set(a, new Set());
-    neighborSet.get(a)!.add(b);
-  }
   // Total spatial weights W
   const W = neighbors.adjacency.length;
 
-  const results: MoranResult[] = [];
+  // Adaptive permutation count: more cells → fewer permutations for speed
+  const nPermutations = n > 500 ? 199 : 999;
+  const rng = new SeededRNG(42);
+
+  // First pass: compute observed Moran's I and permutation p-values
+  const rawResults: { gene: string; moranI: number; expectedI: number; pValue: number; zScore: number }[] = [];
+
   for (const gene of genesToTest) {
     // Expression vector
     const x: number[] = cells.map(c => c.geneExpression[gene] ?? 0);
@@ -1327,56 +1432,169 @@ export function computeMoranI(
     // Denominator: Σ (x_i - x̄)²
     let denom = 0;
     for (let i = 0; i < n; i++) denom += (x[i] - xMean) ** 2;
+    const expectedI = n > 1 ? -1 / (n - 1) : 0;
+
     if (denom === 0) {
-      results.push({ gene, moranI: 0, expectedI: -1 / (n - 1), zScore: 0, pValue: 1, isSpatiallyRestricted: false });
+      rawResults.push({ gene, moranI: 0, expectedI, pValue: 1, zScore: 0 });
       continue;
     }
 
-    // Numerator: Σ_ij w_ij (x_i - x̄)(x_j - x̄)
-    let numer = 0;
-    for (const [i, j] of neighbors.adjacency) {
-      numer += (x[i] - xMean) * (x[j] - xMean);
-    }
+    // Compute observed Moran's I
+    const I = moranICore(x, xMean, denom, neighbors.adjacency, n, W);
 
-    const I = W > 0 ? (n / W) * (numer / denom) : 0;
-    const expectedI = n > 1 ? -1 / (n - 1) : 0;
+    // Permutation-based p-value and z-score
+    const { pValue, permMean, permStd } = moranIPermutationPValue(
+      x, xMean, denom, neighbors.adjacency, n, W, I, nPermutations, rng,
+    );
 
-    // Variance under normality: simplified formula
-    // Var(I) ≈ (n² * S1 − n * S2 + 3 * W²) / (W² * (n² − 1)) − E(I)²
-    // where S1 = 2W (binary weights), S2 ≈ sum of (row sums)²
-    const S1 = 2 * W;
-    let S2 = 0;
-    for (let i = 0; i < n; i++) {
-      const rowSum = (neighborSet.get(i)?.size ?? 0);
-      S2 += (rowSum * 2) ** 2; // (w_i. + w_.i)^2 for symmetric graph
-    }
-    const n2 = n * n;
-    const W2 = W * W || 1;
-    const varI = (n2 * S1 - n * S2 + 3 * W2) / (W2 * (n2 - 1) || 1) - expectedI * expectedI;
+    const zScore = (I - permMean) / Math.max(permStd, 1e-10);
 
-    const sd = Math.sqrt(Math.max(varI, 1e-12));
-    const zScore = (I - expectedI) / sd;
-    const pValue = zToPValue(zScore);
-
-    results.push({
-      gene,
-      moranI: I,
-      expectedI,
-      zScore,
-      pValue,
-      isSpatiallyRestricted: pValue < 0.05 && I > 0.2,
-    });
+    rawResults.push({ gene, moranI: I, expectedI, pValue, zScore });
   }
+
+  // Second pass: Benjamini-Hochberg FDR correction across all genes
+  const pValues = rawResults.map(r => r.pValue);
+  const qValues = benjaminiHochberg(pValues);
+
+  // Third pass: build final results with q-values and hotspot classification
+  const results: MoranResult[] = rawResults.map((r, idx) => {
+    const qValue = qValues[idx];
+    // Hotspot classification: high Moran's I + significant after FDR = high hotspot
+    // negative Moran's I + significant = low hotspot
+    let hotspot: 'high' | 'low' | 'ns' = 'ns';
+    if (qValue < 0.05) {
+      hotspot = r.moranI > 0 ? 'high' : 'low';
+    }
+    return {
+      gene: r.gene,
+      moranI: r.moranI,
+      expectedI: r.expectedI,
+      zScore: r.zScore,
+      pValue: r.pValue,
+      qValue,
+      isSpatiallyRestricted: qValue < 0.05 && r.moranI > 0.2,
+      hotspot,
+    };
+  });
 
   results.sort((a, b) => b.moranI - a.moranI);
   const spatiallyRestricted = results.filter(r => r.isSpatiallyRestricted);
+
+  // Compute Getis-Ord Gi* hotspot analysis
+  const giStarResults = computeGiStar(cells, neighbors, genesToTest);
 
   return {
     results,
     nGenesTested: results.length,
     nSpatiallyRestricted: spatiallyRestricted.length,
     topSpatialGenes: spatiallyRestricted.slice(0, 20).map(r => r.gene),
+    giStarResults,
   };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  7b. Getis-Ord Gi* Hotspot Analysis
+// ══════════════════════════════════════════════════════════════════════
+
+/**
+ * Compute Getis-Ord Gi* statistic for each gene across all cells.
+ *
+ * Gi* identifies local clusters of high values (hot spots) and low values
+ * (cold spots). For cell i and gene g:
+ *
+ *   Gi*(i) = Σ_j w_ij * x_j / Σ_j x_j    (includes self)
+ *
+ * The z-score is computed as:
+ *   z(i) = (Gi*(i) - E[Gi*]) / sqrt(Var[Gi*])
+ *
+ * where E[Gi*] and Var[Gi*] are derived from the global mean and variance.
+ *
+ * For efficiency, this computes the *global* Gi* (one value per gene,
+ * aggregated across all cells) rather than per-cell Gi*, which would be
+ * O(n² * nGenes). The global version summarizes whether a gene's
+ * expression forms spatial hotspots overall.
+ *
+ * @param cells     Cell records with expression and spatial data
+ * @param neighbors Spatial neighbor graph
+ * @param genes     Genes to analyze (default: all genes)
+ */
+export function computeGiStar(
+  cells: CellRecord[],
+  neighbors: SpatialNeighborResult,
+  genes?: string[],
+): GiStarResult {
+  const n = cells.length;
+  const genesToTest = genes ?? allGenes(cells);
+
+  // Build adjacency lookup: for each cell, the set of its neighbors
+  const neighborSet = new Map<number, Set<number>>();
+  for (const [a, b] of neighbors.adjacency) {
+    if (!neighborSet.has(a)) neighborSet.set(a, new Set());
+    if (!neighborSet.has(b)) neighborSet.set(b, new Set());
+    neighborSet.get(a)!.add(b);
+    neighborSet.get(b)!.add(a);
+  }
+
+  const results: GiStarGeneResult[] = [];
+
+  for (const gene of genesToTest) {
+    const x: number[] = cells.map(c => c.geneExpression[gene] ?? 0);
+    const mean = x.reduce((s, v) => s + v, 0) / n;
+    const variance = x.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+    const std = Math.sqrt(variance);
+
+    if (std < 1e-10) {
+      results.push({ gene, giStar: 0, zScore: 0, hotspot: 'ns' });
+      continue;
+    }
+
+    // Compute per-cell Gi* z-scores, then aggregate
+    // Global Gi*: sum of all cell-level Gi* z-scores, normalized
+    let giStarZSum = 0;
+    let validCells = 0;
+
+    for (let i = 0; i < n; i++) {
+      // Include self in the neighborhood sum
+      let sum = x[i];
+      let wSum = 1; // self-weight = 1
+
+      const neighbors_i = neighborSet.get(i);
+      if (neighbors_i) {
+        for (const j of neighbors_i) {
+          sum += x[j];
+          wSum += 1;
+        }
+      }
+
+      // Expected value and variance under spatial randomness
+      const S1 = wSum;
+      const expected = (S1 * mean);
+      const variance_i = (S1 * (n - S1) * variance) / (n - 1);
+
+      if (variance_i > 1e-10) {
+        const zi = (sum - expected) / Math.sqrt(variance_i);
+        giStarZSum += zi;
+        validCells++;
+      }
+    }
+
+    // Aggregate Gi* z-score (mean across cells)
+    const avgGiStarZ = validCells > 0 ? giStarZSum / validCells : 0;
+    // Scale by sqrt(n) for the aggregate test statistic
+    const giStarZ = avgGiStarZ * Math.sqrt(Math.max(validCells, 1));
+
+    let hotspot: 'high' | 'low' | 'ns' = 'ns';
+    if (giStarZ > 1.96) hotspot = 'high';
+    else if (giStarZ < -1.96) hotspot = 'low';
+
+    results.push({ gene, giStar: round(giStarZ, 4), zScore: round(giStarZ, 4), hotspot });
+  }
+
+  results.sort((a, b) => Math.abs(b.zScore) - Math.abs(a.zScore));
+  const nHotHigh = results.filter(r => r.hotspot === 'high').length;
+  const nHotLow = results.filter(r => r.hotspot === 'low').length;
+
+  return { results, nHotHigh, nHotLow };
 }
 
 // ══════════════════════════════════════════════════════════════════════

@@ -14,6 +14,7 @@ import {
   type PAGAResult,
   type SpatialAutocorrelationResult,
   type SpatialNeighborResult,
+  type GiStarGeneResult,
 } from '../services/ScSpatialEngine';
 import type {
   ScSpatialClusterSummary,
@@ -314,6 +315,7 @@ function createEmptySpatialAutocorrelation(): SpatialAutocorrelationResult {
     nGenesTested: 0,
     nSpatiallyRestricted: 0,
     topSpatialGenes: [],
+    giStarResults: { results: [], nHotHigh: 0, nHotLow: 0 },
   };
 }
 
@@ -377,7 +379,9 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
     moranI: round(result.moranI),
     zScore: round(result.zScore),
     pValue: round(result.pValue, 4),
+    qValue: round(result.qValue, 4),
     isSpatiallyRestricted: result.isSpatiallyRestricted,
+    hotspot: result.hotspot,
   }));
 
   const runtimeViewsBase = buildRuntimeViews(

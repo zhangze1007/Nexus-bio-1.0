@@ -177,7 +177,9 @@ export interface ScSpatialHotspotSummary {
   moranI: number;
   zScore: number;
   pValue: number;
+  qValue: number;
   isSpatiallyRestricted: boolean;
+  hotspot: 'high' | 'low' | 'ns';
 }
 
 export interface ScSpatialClusterSummary {
