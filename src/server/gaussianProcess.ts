@@ -1,32 +1,45 @@
 /**
- * Gaussian Process regression with RBF kernel for ML-guided directed evolution.
+ * Gaussian Process regression with RBF / Matérn-5/2 kernel for ML-guided
+ * directed evolution.
  *
- * Implements exact GP regression with Cholesky decomposition for numerical stability.
- * Used in ProEvol to predict protein fitness landscapes and suggest high-value
- * mutations via Expected Improvement acquisition.
+ * Implements exact GP regression with Cholesky decomposition for numerical
+ * stability.  Used in ProEvol to predict protein fitness landscapes and
+ * suggest high-value mutations via Expected Improvement acquisition.
+ *
+ * Enhancements over v1:
+ *   - ARD (Automatic Relevance Determination): per-dimension length scales so
+ *     the GP learns which sequence/feature dimensions matter most.
+ *   - Matérn 5/2 kernel option — less smooth than RBF, often a better default
+ *     for biological fitness landscapes.
+ *   - Hyperparameter optimisation via log marginal likelihood grid search.
+ *   - `fitOptimized()` convenience method that picks the best kernel and
+ *     hyperparameters automatically.
  *
  * @scientific_provenance
  *   ALGORITHM: Exact Gaussian Process regression with squared-exponential (RBF)
- *     kernel. Fits by Cholesky decomposition of K + σ²I, predicts posterior
- *     mean and variance via k-star matrix solve. Acquisition via Expected
- *     Improvement (EI) with normal CDF/PDF from Abramowitz & Stegun rational
- *     approximation (7.1.26).
+ *     or Matérn-5/2 kernel.  Fits by Cholesky decomposition of K + σ²I,
+ *     predicts posterior mean and variance via k-star matrix solve.
+ *     Acquisition via Expected Improvement (EI) with normal CDF/PDF from
+ *     Abramowitz & Stegun rational approximation (7.1.26).
  *   REFERENCE: Rasmussen CE, Williams CKI. "Gaussian Processes for Machine
  *     Learning." MIT Press, 2006. ISBN 0-262-18253-X.
  *   KNOWN_LIMITATIONS:
  *     - Exact GP scales as O(n³) in training size due to Cholesky decomposition;
  *       impractical for more than ~1000 training points.
- *     - Single RBF kernel; does not support ARD (automatic relevance
- *       determination) or composite kernels without modification.
  *     - Cholesky fallback adds fixed jitter (1e-8) on non-positive-definite
  *       diagonals rather than adaptively adjusting.
  *     - EI acquisition assumes a stationary landscape; may under-explore
  *       in regions of high non-stationarity.
+ *     - Hyperparameter optimisation uses grid search (not gradient-based);
+ *       for high-dimensional ARD the grid grows exponentially.
  */
 
+export type KernelType = 'rbf' | 'matern52';
+
 export interface GPConfig {
-  kernel: 'rbf';
-  lengthScale: number;
+  kernel: KernelType;
+  /** Single shared length scale or per-dimension array (ARD). */
+  lengthScale: number | number[];
   signalVariance: number;
   noiseVariance: number;
 }
@@ -103,6 +116,31 @@ export class GaussianProcess {
   }
 
   /**
+   * Fit with automatic hyperparameter optimisation.
+   *
+   * Runs a grid search over lengthScale, signalVariance, and noiseVariance
+   * to maximise the log marginal likelihood, then fits the GP with the best
+   * config found.
+   *
+   * @param X           Training inputs
+   * @param y           Training targets
+   * @param kernelType  'rbf' (default) or 'matern52'
+   * @param lsGrid      Optional custom lengthScale grid (default [1,5,10,20,50])
+   */
+  fitOptimized(
+    X: number[][],
+    y: number[],
+    kernelType: KernelType = 'rbf',
+    lsGrid?: number[],
+  ): void {
+    const bestConfig = GaussianProcess.optimizeHyperparameters(
+      X, y, kernelType, lsGrid,
+    );
+    this.config = bestConfig;
+    this.fit(X, y);
+  }
+
+  /**
    * Predict posterior mean and variance for new inputs.
    */
   predict(X: number[][]): GPPrediction[] {
@@ -112,7 +150,7 @@ export class GaussianProcess {
 
     for (const xNew of X) {
       // k_star: covariance between xNew and training points
-      const kStar = this.XTrain.map(xTrain => this.rbf(xNew, xTrain));
+      const kStar = this.XTrain.map(xTrain => this.kernelFn(xNew, xTrain));
 
       // Posterior mean: k_star^T * alpha
       let mean = 0;
@@ -124,7 +162,7 @@ export class GaussianProcess {
       const v = this.forwardSub(this.L, kStar);
 
       // Posterior variance: k(x_new, x_new) - v^T * v
-      const kSelf = this.rbf(xNew, xNew);
+      const kSelf = this.kernelFn(xNew, xNew);
       let vDotV = 0;
       for (let i = 0; i < v.length; i++) {
         vDotV += v[i] * v[i];
@@ -171,14 +209,67 @@ export class GaussianProcess {
 
   // ── Private helpers ──────────────────────────────────────────────────────
 
-  private rbf(x1: number[], x2: number[]): number {
-    let distSq = 0;
-    for (let i = 0; i < x1.length; i++) {
-      const diff = x1[i] - x2[i];
-      distSq += diff * diff;
+  /**
+   * Compute kernel value between two points using the current config.
+   * Dispatches to RBF or Matérn 5/2 based on config.kernel.
+   * Supports ARD (per-dimension length scales) for both kernel types.
+   */
+  private kernelFn(x1: number[], x2: number[]): number {
+    if (this.config.kernel === 'matern52') {
+      return GaussianProcess.matern52(
+        x1, x2, this.config.lengthScale, this.config.signalVariance,
+      );
     }
-    const { signalVariance, lengthScale } = this.config;
-    return signalVariance * Math.exp(-distSq / (2 * lengthScale * lengthScale));
+    return GaussianProcess.rbf(
+      x1, x2, this.config.lengthScale, this.config.signalVariance,
+    );
+  }
+
+  /**
+   * RBF (squared-exponential) kernel with ARD support.
+   * k(x, x') = σ² exp(-0.5 Σ_i ((x_i - x'_i) / l_i)²)
+   */
+  private static rbf(
+    x1: number[],
+    x2: number[],
+    ls: number | number[],
+    sv: number,
+  ): number {
+    let sqDist = 0;
+    for (let i = 0; i < x1.length; i++) {
+      const li = Array.isArray(ls) ? ls[i] : ls;
+      const diff = (x1[i] - x2[i]) / li;
+      sqDist += diff * diff;
+    }
+    return sv * Math.exp(-0.5 * sqDist);
+  }
+
+  /**
+   * Matérn 5/2 kernel with ARD support.
+   * k(x, x') = σ² (1 + √5 r + 5/3 r²) exp(-√5 r)
+   * where r = sqrt(Σ_i ((x_i - x'_i) / l_i)²)
+   *
+   * Less smooth than RBF — often a better fit for biological fitness
+   * landscapes which are rarely infinitely differentiable.
+   *
+   * @scientific_provenance
+   *   REFERENCE: Rasmussen & Williams (2006) eq. 4.16, Table 4.1.
+   */
+  private static matern52(
+    x1: number[],
+    x2: number[],
+    ls: number | number[],
+    sv: number,
+  ): number {
+    let sqDist = 0;
+    for (let i = 0; i < x1.length; i++) {
+      const li = Array.isArray(ls) ? ls[i] : ls;
+      const diff = (x1[i] - x2[i]) / li;
+      sqDist += diff * diff;
+    }
+    const r = Math.sqrt(sqDist);
+    const sqrt5r = Math.sqrt(5) * r;
+    return sv * (1 + sqrt5r + (5 / 3) * r * r) * Math.exp(-sqrt5r);
   }
 
   private kernelMatrix(A: number[][], B: number[][]): number[][] {
@@ -187,10 +278,91 @@ export class GaussianProcess {
     const K: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
     for (let i = 0; i < m; i++) {
       for (let j = 0; j < n; j++) {
-        K[i][j] = this.rbf(A[i], B[j]);
+        K[i][j] = this.kernelFn(A[i], B[j]);
       }
     }
     return K;
+  }
+
+  /**
+   * Log marginal likelihood (LML) of the current model.
+   * LML = -0.5 y^T α - 0.5 log|K| - n/2 log(2π)
+   *
+   * Used for hyperparameter selection: the LML trades off data fit against
+   * model complexity automatically (the "Occam's razor" property of GPs).
+   *
+   * @scientific_provenance
+   *   REFERENCE: Rasmussen & Williams (2006) eq. 2.30.
+   */
+  logMarginalLikelihood(): number {
+    this.ensureFitted();
+    const n = this.yTrain.length;
+    const K = this.kernelMatrix(this.XTrain, this.XTrain);
+    for (let i = 0; i < n; i++) {
+      K[i][i] += this.config.noiseVariance + 1e-6;
+    }
+    const L = this.cholesky(K);
+    const alpha = this.backSub(L, this.forwardSub(L, this.yTrain));
+
+    let dataFit = 0;
+    for (let i = 0; i < n; i++) dataFit += this.yTrain[i] * alpha[i];
+
+    let logDet = 0;
+    for (let i = 0; i < n; i++) logDet += Math.log(Math.max(L[i][i], 1e-300));
+    logDet *= 2; // log|K| = 2 * Σ log(L_ii)
+
+    return -0.5 * dataFit - 0.5 * logDet - (n / 2) * Math.log(2 * Math.PI);
+  }
+
+  /**
+   * Grid-search hyperparameter optimisation via log marginal likelihood.
+   *
+   * Searches over:
+   *   - lengthScale grid (shared or per-dimension for ARD)
+   *   - signalVariance ∈ {0.5, 1.0, 2.0}
+   *   - noiseVariance  ∈ {0.01, 0.05, 0.1, 0.5}
+   *
+   * Returns the best GPConfig found.
+   */
+  static optimizeHyperparameters(
+    X: number[][],
+    y: number[],
+    kernelType: KernelType = 'rbf',
+    lengthScaleGrid?: number[],
+  ): GPConfig {
+    const lsGrid = lengthScaleGrid ?? [1, 5, 10, 20, 50];
+    const svGrid = [0.5, 1.0, 2.0];
+    const nvGrid = [0.01, 0.05, 0.1, 0.5];
+
+    let bestConfig: GPConfig = {
+      kernel: kernelType,
+      lengthScale: lsGrid[0],
+      signalVariance: svGrid[0],
+      noiseVariance: nvGrid[0],
+    };
+    let bestLML = -Infinity;
+
+    for (const ls of lsGrid) {
+      for (const sv of svGrid) {
+        for (const nv of nvGrid) {
+          const config: GPConfig = {
+            kernel: kernelType,
+            lengthScale: ls,
+            signalVariance: sv,
+            noiseVariance: nv,
+          };
+          const gp = new GaussianProcess(config);
+          gp.fit(X, y);
+          const lml = gp.logMarginalLikelihood();
+          if (lml > bestLML) {
+            bestLML = lml;
+            bestConfig = { ...config };
+          }
+        }
+      }
+    }
+
+    return bestConfig;
   }
 
   /**
