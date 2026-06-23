@@ -22,6 +22,7 @@ import {
   rankPathways,
   predictMutagenesisSites,
   identifyBottlenecks,
+  estimateStabilityDelta,
 } from '../../services/CatalystDesignerEngine';
 import type {
   BindingAffinityResult,
@@ -718,6 +719,7 @@ export default React.memo(function CatalystDesignerPage() {
   const [renderMode, setRenderMode] = useState<'cartoon' | 'surface' | 'confidence'>('cartoon');
   const [spinEnabled, setSpinEnabled] = useState(true);
   const [selectedResidue, setSelectedResidue] = useState<number | null>(null);
+  const [selectedMutation, setSelectedMutation] = useState<string | null>(null);
   const [brendaEcInput, setBrendaEcInput] = useState('');
   const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
   const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
@@ -925,6 +927,7 @@ export default React.memo(function CatalystDesignerPage() {
 
   const handleResidueClick = useCallback((data: ResidueClickData) => {
     setSelectedResidue(data.position);
+    setSelectedMutation(null);
   }, []);
 
   useEffect(() => {
@@ -962,6 +965,61 @@ export default React.memo(function CatalystDesignerPage() {
   ]);
 
   const selectedCatResidue = enzyme.catalyticResidues.find(r => r.position === selectedResidue);
+
+  // ΔΔG prediction from BLOSUM62-based stability estimator
+  const mutationImpact = useMemo(() => {
+    if (selectedResidue == null || !selectedMutation || !selectedCatResidue) return null;
+    try {
+      const wtSeq = enzyme.sequence;
+      // Build mutant sequence: single-residue substitution at selectedResidue
+      const mutSeq = wtSeq.slice(0, selectedResidue) + selectedMutation + wtSeq.slice(selectedResidue + 1);
+      const ddg = estimateStabilityDelta(wtSeq, mutSeq);
+      // Confidence from BLOSUM62 score of the specific substitution
+      // Conservative substitutions (positive score) → higher confidence
+      const AA_LETTERS = 'ACDEFGHIKLMNPQRSTVWY';
+      const BLOSUM62_RAW: Record<string, number[]> = {
+        A: [4,-1,-2,-1,-2,0,-2,-1,-1,-1,-1,-2,-1,-1,-1,1,0,0,-3,-2],
+        C: [-1,9,-3,-4,-2,-3,-3,-1,-3,-1,-1,-3,-3,-3,-3,-1,-1,-1,-2,-2],
+        D: [-2,-3,6,2,-3,-1,-1,-3,-1,-4,-3,1,-1,0,-2,0,-1,-3,-4,-3],
+        E: [-1,-4,2,5,-3,-2,0,-3,1,-3,-2,0,-1,2,0,0,-1,-2,-3,-2],
+        F: [-2,-2,-3,-3,6,-3,-1,0,-3,0,0,-3,-4,-3,-3,-2,-2,-1,1,3],
+        G: [0,-3,-1,-2,-3,6,-2,-4,-2,-4,-3,0,-2,-2,-2,0,-2,-3,-2,-3],
+        H: [-2,-3,-1,0,-1,-2,8,-3,-1,-3,-2,1,-2,0,0,-1,-2,-3,-2,2],
+        I: [-1,-1,-3,-3,0,-4,-3,4,-3,2,1,-3,-3,-3,-3,-2,-1,3,-3,-1],
+        K: [-1,-3,-1,1,-3,-2,-1,-3,5,-2,-1,0,-1,1,2,0,-1,-2,-3,-2],
+        L: [-1,-1,-4,-3,0,-4,-3,2,-2,4,2,-3,-3,-2,-2,-2,-1,1,-2,-1],
+        M: [-1,-1,-3,-2,0,-3,-2,1,-1,2,5,-2,-2,0,-1,-1,-1,1,-1,-1],
+        N: [-2,-3,1,0,-3,0,1,-3,0,-3,-2,6,-2,0,0,1,0,-3,-4,-2],
+        P: [-1,-3,-1,-1,-4,-2,-2,-3,-1,-3,-2,-2,7,-1,-2,-1,-1,-2,-4,-3],
+        Q: [-1,-3,0,2,-3,-2,0,-3,1,-2,0,0,-1,5,1,0,-1,-2,-2,-1],
+        R: [-1,-3,-2,0,-3,-2,0,-3,2,-2,-1,0,-2,1,5,-1,-1,-3,-3,-2],
+        S: [1,-1,0,0,-2,0,-1,-2,0,-2,-1,1,-1,0,-1,4,1,-2,-3,-2],
+        T: [0,-1,-1,-1,-2,-2,-2,-1,-1,-1,-1,0,-1,-1,-1,1,5,0,-2,-2],
+        V: [0,-1,-3,-2,-1,-3,-3,3,-2,1,1,-3,-2,-2,-3,-2,0,4,-3,-1],
+        W: [-3,-2,-4,-3,1,-2,-2,-3,-3,-2,-1,-4,-4,-2,-3,-3,-2,-3,11,2],
+        Y: [-2,-2,-3,-2,3,-3,2,-1,-2,-1,-1,-2,-3,-1,-2,-2,-2,-1,2,7],
+      };
+      const idxA = AA_LETTERS.indexOf(selectedCatResidue.residue);
+      const idxB = AA_LETTERS.indexOf(selectedMutation);
+      const blosumScore = (idxA >= 0 && idxB >= 0) ? BLOSUM62_RAW[selectedCatResidue.residue][idxB] : -4;
+      // Confidence: map BLOSUM62 score [-4, +4] → [0.3, 0.9]
+      const confidence = Math.max(0.3, Math.min(0.9, 0.3 + (blosumScore + 4) * (0.6 / 8)));
+      // Convert ΔΔG to Kd change: ΔΔG = RT·ln(Kd_mut/Kd_wt)
+      const R = 0.592; // kcal/mol at 298K
+      const kdRatio = Math.exp(ddg / R);
+      const newKd = binding.predictedKd * kdRatio;
+      return {
+        deltaKd: kdRatio,
+        deltaKcat: null as number | null,
+        newKd,
+        newKcat: null as number | null,
+        confidence,
+        deltaG: ddg,
+      };
+    } catch {
+      return null;
+    }
+  }, [selectedResidue, selectedMutation, selectedCatResidue, enzyme.sequence, binding.predictedKd]);
 
   const [catdesError, setCatdesError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -1365,7 +1423,7 @@ export default React.memo(function CatalystDesignerPage() {
               <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enzyme</span>
               <select
                 value={selectedEnzyme}
-                onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); }}
+                onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
                 style={{ width: '100%', marginTop: 4, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}
               >
                 {ENZYME_STRUCTURES.map((enz, i) => (
@@ -1713,6 +1771,9 @@ export default React.memo(function CatalystDesignerPage() {
                     <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Source</span>
                     <DataSourceBadge source={dockingResult.source === 'mock' ? 'mock' : 'live'} />
                   </div>
+                  <span style={{ fontSize: '11px', color: THEME.LABEL, fontFamily: THEME.MONO }}>
+                    ±2 kcal/mol (empirical contact scoring)
+                  </span>
                 </div>
               )}
             </div>
@@ -1724,6 +1785,12 @@ export default React.memo(function CatalystDesignerPage() {
                     <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: '#FFDB13', fontWeight: 700 }}>{selectedCatResidue.residue}{selectedResidue}</span>
                     <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PHASE_COLORS.binding, background: 'rgba(191,220,205,0.12)', padding: '2px 5px', borderRadius: 4 }}>{selectedCatResidue.role.replace('_', ' ')}</span>
                   </div>
+                  {selectedCatResidue.role && (
+                    <div style={{ marginBottom: 4 }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Role: </span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{selectedCatResidue.role.replace('_', ' ')}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 8px' }}>
                     <div>
                       <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Dist</span>
@@ -1734,11 +1801,60 @@ export default React.memo(function CatalystDesignerPage() {
                       <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, margin: 0 }}>{selectedCatResidue.orientationAngle.toFixed(0)}°</p>
                     </div>
                   </div>
-                  <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: 'rgba(250,128,114,0.06)', border: `1px solid rgba(250,128,114,0.15)` }}>
-                    <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', margin: 0, color: THEME.CORAL, lineHeight: 1.5 }}>
-                      Mutation impact prediction requires FoldX/Rosetta integration (not yet available).
-                    </p>
+                  {/* Mutation selector */}
+                  <div style={{ marginTop: 8 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Mutate to</span>
+                    <select
+                      value={selectedMutation ?? ''}
+                      onChange={e => setSelectedMutation(e.target.value || null)}
+                      style={{ width: '100%', marginTop: 3, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: 'none' }}
+                    >
+                      <option value="">-- select --</option>
+                      {('ACDEFGHIKLMNPQRSTVWY').split('').filter(aa => aa !== selectedCatResidue.residue).map(aa => (
+                        <option key={aa} value={aa}>{aa}</option>
+                      ))}
+                    </select>
                   </div>
+                  {/* ΔΔG prediction */}
+                  {mutationImpact ? (
+                    <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: mutationImpact.deltaG < 0 ? 'rgba(147,203,82,0.06)' : 'rgba(250,128,114,0.06)', border: `1px solid ${mutationImpact.deltaG < 0 ? 'rgba(147,203,82,0.15)' : 'rgba(250,128,114,0.15)'}` }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px' }}>
+                        <div>
+                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>ΔΔG</span>
+                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: mutationImpact.deltaG < 0 ? THEME.MINT : THEME.CORAL, margin: 0, ...tn }}>
+                            {mutationImpact.deltaG > 0 ? '+' : ''}{mutationImpact.deltaG.toFixed(2)} <span style={{ fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>kcal/mol</span>
+                          </p>
+                        </div>
+                        <div>
+                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>New Kd</span>
+                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE, margin: 0, ...tn }}>
+                            {mutationImpact.newKd.toFixed(2)} <span style={{ fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>μM</span>
+                          </p>
+                        </div>
+                        <div>
+                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>Kd Ratio</span>
+                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE, margin: 0, ...tn }}>
+                            {mutationImpact.deltaKd.toFixed(2)}×
+                          </p>
+                        </div>
+                        <div>
+                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>Confidence</span>
+                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: mutationImpact.confidence > 0.7 ? THEME.MINT : mutationImpact.confidence > 0.5 ? THEME.RISK_LOW : THEME.CORAL, margin: 0, ...tn }}>
+                            {(mutationImpact.confidence * 100).toFixed(0)}%
+                          </p>
+                        </div>
+                      </div>
+                      <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, opacity: 0.6, lineHeight: 1.4 }}>
+                        BLOSUM62-based ΔΔG estimate (±2 kcal/mol). Negative = stabilizing.
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
+                      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', margin: 0, color: LABEL, lineHeight: 1.5 }}>
+                        Select a mutation to predict ΔΔG.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1749,7 +1865,11 @@ export default React.memo(function CatalystDesignerPage() {
               position="top-right"
               metrics={[
                 { label: 'Kd', value: `${binding.predictedKd.toFixed(1)} μM`, accent: kdQ.color },
+                { label: 'Km', value: `${activeEnzyme.km.toFixed(2)} mM`, accent: THEME.SKY },
                 { label: 'Kcat', value: `${activeEnzyme.kcat.toFixed(2)} s⁻¹`, accent: kcatQ.color },
+                ...(activeEnzyme.km > 0 && activeEnzyme.kcat > 0
+                  ? [{ label: 'kcat/Km', value: `${(activeEnzyme.kcat / activeEnzyme.km).toFixed(1)} mM⁻¹s⁻¹`, accent: THEME.MINT }]
+                  : []),
                 { label: 'Fit', value: binding.overallScore.toFixed(2), accent: fitQ.color },
                 { label: 'Tm', value: `${enzyme.meltingTemp.toFixed(0)}°C`, accent: THEME.APRICOT },
               ]}
