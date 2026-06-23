@@ -8,7 +8,7 @@
  *    distance/orientation of catalytic residues)
  * 2. BLOSUM62-based sequence diversification with S. cerevisiae codon optimization
  * 3. Metabolic flux coupling with FBA for expression cost estimation
- * 4. Church-method pathway balancer for zero intermediate accumulation
+ * 4. Newton-Raphson pathway flux balancer for zero intermediate accumulation
  * 5. Pareto-front multi-objective pathway ranking
  * 6. Conservation-weighted mutagenesis site prediction
  *
@@ -128,7 +128,7 @@ export interface PathwayStep {
   expressionMultiplier: number; // fold change needed
 }
 
-/** Pathway balancing result (Church method). */
+/** Pathway balancing result (Newton-Raphson flux balancer). */
 export interface PathwayBalanceResult {
   steps: PathwayStep[];
   totalFlux: number;         // mmol/gDW/h
@@ -450,21 +450,21 @@ function sequenceIdentity(a: string, b: string): number {
 /**
  * Estimate ΔΔG from BLOSUM62 score of substitution (heuristic).
  *
- * Calibration: Linear fit ΔΔG = a × BLOSUM62 + b against SKEMPI 2.0
- * (Jankauskaitė et al. 2019, Bioinformatics 35:767).
+ * Empirical linear model: ΔΔG ≈ a × BLOSUM62(wt, mut) + b
+ * Coefficients: a = -0.25 kcal/mol per BLOSUM62 unit, b = -0.1 kcal/mol
  *
- * With a = -0.25, b = -0.1:
- *   - Conservative substitution (BLOSUM62 +4) → DDG ≈ -1.1 kcal/mol (stabilizing)
- *   - Disruptive substitution (BLOSUM62 -4) → DDG ≈ +0.9 kcal/mol (destabilizing)
+ * Physical rationale: negative BLOSUM62 scores indicate rare substitutions
+ * that typically destabilize proteins; a = -0.25 gives ~1 kcal/mol
+ * destabilization per -4 BLOSUM62 unit step, consistent with typical
+ * single-mutation ΔΔG magnitudes (Guerois et al. 2002, J Mol Biol 320:369).
  *
- * Expected R² ≈ 0.15-0.25 on SKEMPI 2.0 (low but above 0.1 threshold).
- * If R² < 0.1 on hold-out, remove numeric DDG entirely.
- *
- * Known limitation: No position-dependent weighting, no structural context.
- * For accurate DDG, use FoldX (r ≈ 0.7) or Rosetta ddg_monomer.
+ * Limitation: SKEMPI 2.0 (Jankauskaite et al. 2019) calibrated models
+ * achieve better accuracy (R ≈ 0.6-0.7) but require per-mutation structural
+ * features. This linear BLOSUM approximation gives only qualitative ΔΔG
+ * estimates (±2 kcal/mol typical error). Do not use for quantitative predictions.
  */
 export function estimateStabilityDelta(original: string, mutant: string): number {
-  // Coefficients calibrated against SKEMPI 2.0 dataset
+  // Empirical linear model coefficients
   // a = -0.25 kcal/mol per BLOSUM62 unit
   // b = -0.1 kcal/mol intercept (slight destabilizing baseline)
   const a = -0.25;
@@ -865,17 +865,22 @@ export function estimateMetabolicDrain(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 4. Pathway Balancing (Church Method)
+// 4. Pathway Balancing (Newton-Raphson)
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Balance a multi-step pathway for zero intermediate accumulation using
- * Church-method iterative optimisation.
+ * Balance a multi-enzyme pathway to eliminate intermediate accumulation
+ * using Newton-Raphson iteration over Michaelis-Menten flux equations.
  *
- * At steady state: v_{i-1} = v_i for all consecutive steps.
- * Uses Newton-Raphson to solve for intermediate concentrations, then
- * adjusts expression multipliers (kcat proxies) to minimise the maximum
- * intermediate concentration.
+ * Algorithm:
+ *  1. Forward pass: compute flux at each step with current [S]
+ *  2. Newton-Raphson update: adjust [S_i] to reduce flux residual (v_i - v_{i+1})
+ *     using Jacobian approximation ∂v/∂[S] = kcat·E·Km / (Km + [S])²
+ *  3. Expression update: smooth adjustment of expressionMultiplier to track targetFlux
+ *  4. Convergence: ||ΔS|| < 1e-4 or maxIter=100
+ *
+ * Note: This is a custom numerical method, not the Church lab's MAGE protocol.
+ * The "Church-method" label in earlier versions was incorrect.
  *
  * @param steps  Array of pathway steps with kinetic parameters
  * @returns      Balanced pathway with convergence history
@@ -1132,6 +1137,20 @@ export function rankPathways(candidates: PathwayCandidate[]): ParetoFrontResult 
  * surface accessibility are selected. For each, 3-5 mutations from
  * BLOSUM62 positive-scoring substitutions are suggested.
  *
+ * Known limitations:
+ * 1. Structural importance uses SEQUENCE distance to nearest catalytic residue
+ *    (Math.abs(i - cPos)) as a proxy for 3D distance. This can misidentify
+ *    residues that are distant in sequence but close in 3D structure.
+ *    A real implementation would use actual PDB Cα coordinates.
+ *
+ * 2. Surface accessibility uses a heuristic based on sequence position modulo 4
+ *    (approximating α-helix surface exposure) rather than real SASA calculation.
+ *    Real SASA would require 3D coordinates and a rolling-sphere algorithm.
+ *
+ * Validation status: Shannon entropy-based conservation is validated
+ *    (correlates with evolutionary conservation in MSA studies); structural
+ *    and surface approximations are engineering heuristics only.
+ *
  * @param enzyme  Target enzyme
  * @param nSites  Number of sites to return (default 8)
  * @returns       Mutagenesis predictions with audit trail
@@ -1379,7 +1398,7 @@ export function runFullDesignPipeline(
   auditTrail.push({
     step: ++stepCounter,
     phase: 'balancing',
-    description: 'Church-method zero-accumulation pathway balancing',
+    description: 'Newton-Raphson zero-accumulation pathway balancing',
     input: `${pathwaySteps.length} pathway steps`,
     output: '',
     confidence: 0.80,
@@ -1473,6 +1492,12 @@ export interface BottleneckResult {
  * - 0.4 × |shadow price| (FBA sensitivity — how much the objective changes per unit flux)
  * - 0.3 × max(0, ΔG) (thermodynamic barrier — positive ΔG = unfavorable)
  * - 0.3 × (1 - pass rate) (experimental difficulty)
+ *
+ * Note on composite weights (0.4 FBA / 0.3 thermo / 0.3 experimental):
+ * These weights are empirically chosen to emphasize metabolic data.
+ * No published calibration study supports these specific values.
+ * When only one data source is available, the other factors use
+ * conservative defaults (0.3/0.5) that should be interpreted qualitatively only.
  */
 export function identifyBottlenecks(input: BottleneckInput): {
   bottlenecks: BottleneckResult[];
