@@ -59,6 +59,7 @@ interface DockingResult {
   ligand: string;
   dockingScore: number;
   bindingEnergy: number;
+  contactsFound: number;
   source: string;
 }
 
@@ -825,7 +826,10 @@ export default React.memo(function CatalystDesignerPage() {
     if (!enzyme.pdbId || !enzyme.substrate) return;
     setDockingLoading(true);
     try {
-      const result = await runDocking(enzyme.pdbId, enzyme.substrate);
+      const result = await runDocking(enzyme.pdbId, enzyme.substrate, {
+        uniprotId: enzyme.uniprotId,
+        substrateSmiles: enzyme.substrate,
+      });
       setDockingResult(result.data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Docking failed';
@@ -833,7 +837,7 @@ export default React.memo(function CatalystDesignerPage() {
     } finally {
       setDockingLoading(false);
     }
-  }, [enzyme.pdbId, enzyme.substrate]);
+  }, [enzyme.pdbId, enzyme.substrate, enzyme.uniprotId]);
 
   // AlphaFold lookup when enzyme changes
   const handleAlphaFoldLookup = useCallback(async () => {
@@ -1700,6 +1704,10 @@ export default React.memo(function CatalystDesignerPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                     <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Binding Energy</span>
                     <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{dockingResult.bindingEnergy.toFixed(2)} kcal/mol</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Contacts</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{dockingResult.contactsFound}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Source</span>
