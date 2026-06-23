@@ -119,13 +119,15 @@ function jsonResponse(body: unknown, status = 200, req?: Request) {
   });
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number, controller: AbortController): Promise<T> {
+  const timeoutId = setTimeout(() => controller.abort(), ms);
+
   return Promise.race([
     promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error('TIMEOUT')), ms)
-    ),
-  ]);
+    new Promise<T>((_, reject) => {
+      controller.signal.addEventListener('abort', () => reject(new Error('TIMEOUT')));
+    }),
+  ]).finally(() => clearTimeout(timeoutId));
 }
 
 type ParseFailureCode = 'EMPTY' | 'NO_OBJECT' | 'INVALID_SYNTAX';
@@ -466,6 +468,7 @@ async function tryGroq(
         { role: 'user', content: prompt },
       ];
 
+      const controller = new AbortController();
       const res = await withTimeout(
         fetch(GROQ_BASE, {
           method: 'POST',
@@ -479,13 +482,20 @@ async function tryGroq(
             temperature: 0.1,
             max_tokens: 4096,
           }),
+          signal: controller.signal,
         }),
-        TIMEOUT_MS
+        TIMEOUT_MS,
+        controller,
       );
 
       const data = await res.json();
 
-      if (res.status === 429) continue; // rate limited, try next model
+      if (res.status === 429) {
+        const retryAfter = res.headers.get('Retry-After');
+        const delayMs = retryAfter ? Math.min(parseInt(retryAfter) * 1000, 5000) : 2000;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
       if (res.status === 503) continue; // unavailable
       if (!res.ok) continue;
 
@@ -535,6 +545,7 @@ async function tryGemini(
         },
       };
 
+      const controller = new AbortController();
       const res = await withTimeout(
         fetch(`${GEMINI_BASE}/${model}:generateContent`, {
           method: 'POST',
@@ -543,13 +554,20 @@ async function tryGemini(
             'x-goog-api-key': apiKey,
           },
           body: JSON.stringify(geminiBody),
+          signal: controller.signal,
         }),
-        TIMEOUT_MS
+        TIMEOUT_MS,
+        controller,
       );
 
       const data = await res.json();
 
-      if (res.status === 429) continue;
+      if (res.status === 429) {
+        const retryAfter = res.headers.get('Retry-After');
+        const delayMs = retryAfter ? Math.min(parseInt(retryAfter) * 1000, 5000) : 2000;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
       if (res.status === 503) continue;
       if (res.status === 404) continue;
       if (!res.ok) continue;
