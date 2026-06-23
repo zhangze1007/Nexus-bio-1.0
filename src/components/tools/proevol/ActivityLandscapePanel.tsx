@@ -14,6 +14,7 @@ import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../servic
 import { PROEVOL_THEME, StatusPill } from './shared';
 import { THEME } from '../../../theme';
 import CanvasErrorBoundary from '../../shared/CanvasErrorBoundary';
+import { GaussianProcess } from '../../../server/gaussianProcess';
 
 /* ── Constants ────────────────────────────────────────────────────────── */
 
@@ -156,7 +157,7 @@ function viridisColor(t: number): [number, number, number] {
 
 /* ── DMS Heatmap (2D canvas) ──────────────────────────────────────────── */
 
-function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, campaign, onSelectVariant, peakThreshold = 0.7 }: {
+function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, campaign, onSelectVariant, peakThreshold = 0.7, gpPredictions }: {
   cells: FitnessCell[];
   positions: number[];
   metric: FitnessMetricKey;
@@ -165,9 +166,11 @@ function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, ca
   campaign: ProteinEvolutionCampaign;
   onSelectVariant: (id: string) => void;
   peakThreshold?: number;
+  gpPredictions?: Array<{ mean: number; variance: number }>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hovered, setHovered] = useState<FitnessCell | null>(null);
+  const [clickedCell, setClickedCell] = useState<FitnessCell | null>(null);
 
   const fitnessRange = useMemo(() => {
     const vals = cells.filter(c => c.count > 0).map(c => c.fitness);
@@ -280,12 +283,20 @@ function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, ca
       }
     }
 
-    // Draw isocontours at 5 levels
-    const contourLevels = [0.2, 0.4, 0.6, 0.8, 0.95];
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth = 0.8;
+    // Draw isocontours at meaningful thresholds (top 50%, 25%, 10%)
+    const contourLevels = [
+      { level: 0.5, label: 'Top 50%', color: 'rgba(255,255,255,0.15)' },
+      { level: 0.75, label: 'Top 25%', color: 'rgba(255,255,255,0.25)' },
+      { level: 0.9, label: 'Top 10%', color: 'rgba(255,255,255,0.4)' },
+    ];
 
-    for (const level of contourLevels) {
+    // Track contour segment midpoints for labeling
+    const contourLabels: Array<{ x: number; y: number; label: string }> = [];
+
+    for (const { level, color } of contourLevels) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = level === 0.9 ? 1.2 : 0.8;
+
       // Simple marching squares: check each cell for contour crossing
       for (let yi = 0; yi < gridH - 1; yi++) {
         for (let xi = 0; xi < gridW - 1; xi++) {
@@ -325,6 +336,13 @@ function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, ca
             ctx.moveTo(ax, ay);
             ctx.lineTo(bx, by);
             ctx.stroke();
+
+            // Store midpoint for labeling
+            contourLabels.push({
+              x: (ax + bx) / 2,
+              y: (ay + by) / 2,
+              label: `${(level * range + fitnessRange.min).toFixed(0)}`,
+            });
           };
 
           // Edge midpoints (linear interpolation)
@@ -344,6 +362,30 @@ function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, ca
             case 10: drawSegment(top.x, top.y, left.x, left.y); drawSegment(right.x, right.y, bottom.x, bottom.y); break;
           }
         }
+      }
+    }
+
+    // Draw contour labels (sparse to avoid clutter)
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = '7px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    const labelSpacing = 80; // Minimum pixels between labels
+    const drawnLabels: Array<{ x: number; y: number }> = [];
+
+    for (const label of contourLabels) {
+      // Check if this label is far enough from existing labels
+      const tooClose = drawnLabels.some(d =>
+        Math.hypot(d.x - label.x, d.y - label.y) < labelSpacing
+      );
+      if (!tooClose) {
+        // Draw label with background
+        const metrics = ctx.measureText(label.label);
+        const labelW2 = metrics.width + 4;
+        ctx.fillStyle = 'rgba(8,7,6,0.7)';
+        ctx.fillRect(label.x - labelW2 / 2, label.y - 5, labelW2, 10);
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText(label.label, label.x, label.y + 2);
+        drawnLabels.push({ x: label.x, y: label.y });
       }
     }
 
@@ -409,6 +451,105 @@ function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, ca
       ctx.fillText(`★${peak.fitness.toFixed(0)}`, cx, cy - 8);
     }
 
+    // ── GP-predicted landscape overlay ─────────────────────────────────
+    if (gpPredictions && gpPredictions.length > 0) {
+      // Build GP prediction grid (50x50 fine grid)
+      const fineGridW = 50;
+      const fineGridH = 50;
+      const gpGrid: number[][] = Array.from({ length: fineGridH }, () => new Array(fineGridW).fill(0));
+      const uncertaintyGrid: number[][] = Array.from({ length: fineGridH }, () => new Array(fineGridW).fill(0));
+
+      // Map variant predictions to grid positions
+      const variantMap = new Map<string, { mean: number; variance: number }>();
+      const allVariants = Object.values(campaign.variantIndex);
+
+      // Match predictions to variants by index
+      allVariants.forEach((v, i) => {
+        if (i < gpPredictions.length) {
+          variantMap.set(`${v.mutations[0]?.position}-${v.mutations[0]?.to}`, gpPredictions[i]);
+        }
+      });
+
+      // Interpolate GP predictions onto fine grid using inverse distance weighting
+      for (let yi = 0; yi < fineGridH; yi++) {
+        for (let xi = 0; xi < fineGridW; xi++) {
+          // Map fine grid to original grid coordinates
+          const origX = (xi / fineGridW) * (positions.length - 1);
+          const origY = (yi / fineGridH) * (AMINO_ACIDS.length - 1);
+
+          let weightedSum = 0;
+          let weightSum = 0;
+          let uncertaintySum = 0;
+
+          // Find nearest variants and interpolate
+          for (const [key, pred] of variantMap.entries()) {
+            const [posStr, aa] = key.split('-');
+            const pos = parseInt(posStr);
+            const posIdx = positions.indexOf(pos);
+            const aaIdx = AMINO_ACIDS.indexOf(aa);
+
+            if (posIdx === -1 || aaIdx === -1) continue;
+
+            const dx = origX - posIdx;
+            const dy = origY - aaIdx;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 0.1) {
+              weightedSum = pred.mean;
+              uncertaintySum = pred.variance;
+              weightSum = 1;
+              break;
+            }
+
+            const weight = 1 / (dist * dist);
+            weightedSum += pred.mean * weight;
+            uncertaintySum += pred.variance * weight;
+            weightSum += weight;
+          }
+
+          if (weightSum > 0) {
+            gpGrid[yi][xi] = weightedSum / weightSum;
+            uncertaintyGrid[yi][xi] = uncertaintySum / weightSum;
+          }
+        }
+      }
+
+      // Draw GP overlay
+      const cellWFine = (positions.length * cellW) / fineGridW;
+      const cellHFine = (AMINO_ACIDS.length * cellH) / fineGridH;
+
+      for (let yi = 0; yi < fineGridH; yi++) {
+        for (let xi = 0; xi < fineGridW; xi++) {
+          const gpMean = gpGrid[yi][xi];
+          const uncertainty = uncertaintyGrid[yi][xi];
+
+          // Normalize GP mean to [0,1] range
+          const gpMin = Math.min(...gpGrid.flat());
+          const gpMax = Math.max(...gpGrid.flat());
+          const gpRange = gpMax - gpMin || 1;
+          const t = (gpMean - gpMin) / gpRange;
+
+          // Map uncertainty to opacity (high uncertainty = more transparent)
+          const maxUncertainty = Math.max(...uncertaintyGrid.flat()) || 1;
+          const normalizedUncertainty = uncertainty / maxUncertainty;
+          const opacity = 0.3 * (1 - normalizedUncertainty * 0.7);
+
+          const [r, g, b] = viridisColor(t);
+          const x = labelW + xi * cellWFine;
+          const y = labelH + yi * cellHFine;
+
+          ctx.fillStyle = `rgba(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)},${opacity})`;
+          ctx.fillRect(x, y, cellWFine, cellHFine);
+        }
+      }
+
+      // Add GP legend indicator
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = '7px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('GP predicted', w - 8, labelH - 5);
+    }
+
     // Cleanup function to prevent memory leaks
     return () => {
       if (canvas) {
@@ -441,12 +582,42 @@ function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, ca
     }
   };
 
+  // Handle click to select variant
+  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const labelW = 36;
+    const labelH = 20;
+    const cellW = 28;
+    const cellH = 22;
+    const xi = Math.floor((x - labelW) / cellW);
+    const yi = Math.floor((y - labelH) / cellH);
+    if (xi >= 0 && xi < positions.length && yi >= 0 && yi < AMINO_ACIDS.length) {
+      const cell = cells.find(c => c.position === positions[xi] && c.aa === AMINO_ACIDS[yi]);
+      if (cell) {
+        setClickedCell(cell);
+        // Find variant ID for this cell
+        const allVariants = Object.values(campaign.variantIndex);
+        const matchingVariant = allVariants.find(v =>
+          v.mutations.some(m => m.position === cell.position && m.to === cell.aa)
+        );
+        if (matchingVariant) {
+          onSelectVariant(matchingVariant.id);
+        }
+      }
+    }
+  };
+
   return (
     <div style={{ position: 'relative' }}>
       <canvas
         ref={canvasRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHovered(null)}
+        onClick={handleClick}
         style={{ cursor: 'crosshair', borderRadius: '6px' }}
       />
       {hovered && (
@@ -462,6 +633,73 @@ function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, ca
           <span style={{ color: effectColor(mutationEffect(hovered, fitnessRange, wtFitness)) }}>
             {effectLabel(mutationEffect(hovered, fitnessRange, wtFitness))} · predicted {metric}: {hovered.count > 0 ? hovered.fitness.toFixed(1) : '—'} · n={hovered.count}
           </span>
+          {gpPredictions && gpPredictions.length > 0 && (
+            <span style={{ color: PROEVOL_THEME.sky }}>
+              GP: {(() => {
+                const allVariants = Object.values(campaign.variantIndex);
+                const matchingVariant = allVariants.find(v =>
+                  v.mutations.some(m => m.position === hovered.position && m.to === hovered.aa)
+                );
+                if (matchingVariant) {
+                  const idx = allVariants.indexOf(matchingVariant);
+                  const pred = gpPredictions[idx];
+                  if (pred) {
+                    return `μ=${pred.mean.toFixed(1)} σ=${Math.sqrt(pred.variance).toFixed(1)}`;
+                  }
+                }
+                return '—';
+              })()}
+            </span>
+          )}
+        </div>
+      )}
+      {clickedCell && (
+        <div style={{
+          position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+          marginTop: '6px', padding: '8px 12px', borderRadius: 'var(--nb-radius-sm)',
+          background: 'rgba(0,0,0,0.9)', border: `1px solid ${PROEVOL_THEME.border}`,
+          backdropFilter: 'blur(8px)', whiteSpace: 'nowrap', zIndex: 10,
+          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value,
+          display: 'grid', gap: '4px',
+        }}>
+          <span style={{ fontWeight: 600 }}>
+            {clickedCell.wtResidue}{clickedCell.position}{clickedCell.aa === clickedCell.wtResidue ? '(WT)' : clickedCell.aa}
+          </span>
+          <span style={{ color: effectColor(mutationEffect(clickedCell, fitnessRange, wtFitness)) }}>
+            Effect: {effectLabel(mutationEffect(clickedCell, fitnessRange, wtFitness))}
+          </span>
+          <span>Observed {metric}: {clickedCell.count > 0 ? clickedCell.fitness.toFixed(2) : 'unobserved'}</span>
+          <span>Observations: {clickedCell.count}</span>
+          {gpPredictions && gpPredictions.length > 0 && (() => {
+            const allVariants = Object.values(campaign.variantIndex);
+            const matchingVariant = allVariants.find(v =>
+              v.mutations.some(m => m.position === clickedCell.position && m.to === clickedCell.aa)
+            );
+            if (matchingVariant) {
+              const idx = allVariants.indexOf(matchingVariant);
+              const pred = gpPredictions[idx];
+              if (pred) {
+                return (
+                  <>
+                    <span style={{ color: PROEVOL_THEME.sky }}>GP mean: {pred.mean.toFixed(2)}</span>
+                    <span style={{ color: PROEVOL_THEME.sky }}>GP uncertainty: ±{Math.sqrt(pred.variance).toFixed(2)}</span>
+                  </>
+                );
+              }
+            }
+            return null;
+          })()}
+          <button
+            type="button"
+            onClick={() => setClickedCell(null)}
+            style={{
+              background: 'transparent', border: `1px solid ${PROEVOL_THEME.border}`,
+              color: PROEVOL_THEME.label, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+              padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', marginTop: '4px',
+            }}
+          >
+            Close
+          </button>
         </div>
       )}
     </div>
@@ -631,10 +869,12 @@ export default function ActivityLandscapePanel({
   campaign,
   selectedVariantId,
   onSelectVariant,
+  gpPredictions,
 }: {
   campaign: ProteinEvolutionCampaign;
   selectedVariantId: string | null;
   onSelectVariant: (id: string) => void;
+  gpPredictions?: Array<{ mean: number; variance: number }>;
 }) {
   const [metric, setMetric] = useState<FitnessMetricKey>('activity');
   const [viewMode, setViewMode] = useState<'heatmap' | '3d'>('heatmap');
@@ -708,6 +948,7 @@ export default function ActivityLandscapePanel({
             selectedVariantId={selectedVariantId}
             campaign={campaign}
             onSelectVariant={onSelectVariant}
+            gpPredictions={gpPredictions}
           />
         </div>
       ) : (
@@ -729,12 +970,21 @@ export default function ActivityLandscapePanel({
         fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5,
         display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center',
       }}>
-        <span>Predicted fitness landscape. White outline = WT. Gray = unobserved. Hover for effect class.</span>
+        <span>Predicted fitness landscape. White outline = WT. Gray = unobserved. Hover for details, click to select.</span>
         <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
           <span style={{ color: PROEVOL_THEME.mint, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>GoF</span>
           <span style={{ color: PROEVOL_THEME.muted, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>TOL</span>
           <span style={{ color: PROEVOL_THEME.coral, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>DEL</span>
         </span>
+        <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>Contours:</span>
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>— 50%</span>
+          <span style={{ color: 'rgba(255,255,255,0.25)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>— 25%</span>
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>— 10%</span>
+        </span>
+        {gpPredictions && gpPredictions.length > 0 && (
+          <span style={{ color: PROEVOL_THEME.sky }}>GP overlay (opacity = confidence)</span>
+        )}
         {positions.length > 0 ? (
           <span style={{ marginLeft: 'auto', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
             {positions.length} pos × {AMINO_ACIDS.length} AA = {positions.length * AMINO_ACIDS.length} cells

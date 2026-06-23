@@ -873,7 +873,7 @@ export default function ProEvolPage() {
           <VariantLibraryTable roundResult={campaign.currentRoundResult} selectedVariantId={focusedVariant?.id ?? null} onSelectVariant={setSelectedVariantId} />
         </div>
 
-        <ActivityLandscapePanel campaign={campaign} selectedVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
+        <ActivityLandscapePanel campaign={campaign} selectedVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} gpPredictions={gpPredictions} />
 
         {/* ═══ 11. EXPORTS ═══ */}
         <div style={{
