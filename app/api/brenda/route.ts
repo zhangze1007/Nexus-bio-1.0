@@ -103,7 +103,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: 400 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: { 'Cache-Control': 'public, max-age=3600' },
+    });
 
   } catch (error) {
     if (error instanceof Error && error.name === 'TimeoutError') {

@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           durationMs: Date.now() - startTime,
           fallback: true,
         },
-        { headers: getCorsHeaders(req) },
+        { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
       );
     }
 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         requestId,
         durationMs: Date.now() - startTime,
       },
-      { headers: getCorsHeaders(req) },
+      { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
     );
   } catch (error) {
     // Fallback to local computation

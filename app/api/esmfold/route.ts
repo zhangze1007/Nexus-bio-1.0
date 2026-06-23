@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         requestId,
         durationMs,
       },
-      { headers: getCorsHeaders(req) },
+      { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
     );
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);

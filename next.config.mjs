@@ -12,7 +12,7 @@ const nextConfig = {
 
   /* Reduce barrel-import overhead for large packages */
   experimental: {
-    optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion'],
+    optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'three', '@react-three/drei', 'xstate', '@xstate/react'],
   },
 
   /* Prevent native modules from being bundled into client code */

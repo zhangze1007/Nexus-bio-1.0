@@ -3,9 +3,19 @@
  *
  * Provides a client-side Variational Autoencoder (VAE) using ONNX Runtime Web.
  * Supports encoding, sampling (reparameterization trick), decoding, and full forward pass.
+ *
+ * ONNX Runtime is dynamically imported (~10-20 MB) to keep it out of the main client bundle.
  */
-import * as ort from 'onnxruntime-web';
 import { SeededRNG } from '../utils/seededRng';
+
+/* ---- lazy-loaded ONNX Runtime (~10-20 MB, code-split from main bundle) ---- */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let ort: any = null;
+
+async function getOrt() {
+  if (!ort) ort = await import('onnxruntime-web');
+  return ort;
+}
 
 export interface EncodeResult {
   mu: Float32Array;
@@ -20,7 +30,8 @@ export interface ForwardResult {
 }
 
 export class VAEInference {
-  private session: ort.InferenceSession | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private session: any = null;
   private latentDim: number;
   private rng: SeededRNG;
 
@@ -33,10 +44,12 @@ export class VAEInference {
    * Initialize the ONNX session. Call before using encode/decode/forward.
    */
   async init(): Promise<void> {
-    // Configure WASM backend
-    ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
+    const _ort = await getOrt();
 
-    this.session = await ort.InferenceSession.create('/models/vae.onnx', {
+    // Configure WASM backend
+    _ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
+
+    this.session = await _ort.InferenceSession.create('/models/vae.onnx', {
       executionProviders: ['wasm'],
       graphOptimizationLevel: 'all',
     });
@@ -57,7 +70,8 @@ export class VAEInference {
       throw new Error('VAE session not initialized');
     }
 
-    const inputTensor = new ort.Tensor('float32', input, [1, input.length]);
+    const _ort = await getOrt();
+    const inputTensor = new _ort.Tensor('float32', input, [1, input.length]);
     const results = await this.session.run({ input: inputTensor });
 
     const mu = results.mu?.data as Float32Array;
@@ -88,7 +102,8 @@ export class VAEInference {
       throw new Error('VAE session not initialized');
     }
 
-    const zTensor = new ort.Tensor('float32', z, [1, z.length]);
+    const _ort = await getOrt();
+    const zTensor = new _ort.Tensor('float32', z, [1, z.length]);
     const results = await this.session.run({ z: zTensor });
 
     return results.output?.data as Float32Array;

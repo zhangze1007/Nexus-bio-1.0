@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
           source: 'colabfold',
           requestId,
           durationMs: Date.now() - startTime,
-        }, { headers: getCorsHeaders(req) });
+        }, { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } });
       }
     } catch {
       // ColabFold unavailable, try AlphaFold API
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
             source: 'alphafold',
             requestId,
             durationMs: Date.now() - startTime,
-          }, { headers: getCorsHeaders(req) });
+          }, { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } });
         }
       } catch {
         // AlphaFold also unavailable
