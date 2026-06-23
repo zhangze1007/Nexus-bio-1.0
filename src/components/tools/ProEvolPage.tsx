@@ -27,6 +27,8 @@ import type {
 } from '../../domain/proevolArtifact';
 import { buildProEvolResearchSummary } from '../../services/proevolAnalysis';
 import { GaussianProcess } from '../../server/gaussianProcess';
+import { runBOTrajectory } from '../../services/boTrajectory';
+import type { BOTrajectoryResult, AcquisitionType } from '../../services/boTrajectory';
 
 import EvolutionCampaignContextCard from './proevol/EvolutionCampaignContextCard';
 import NextRoundRecommendationCard from './proevol/NextRoundRecommendationCard';
@@ -294,6 +296,14 @@ export default function ProEvolPage() {
   const [suggestedVariantId, setSuggestedVariantId] = useState<string | null>(null);
   const [gpError, setGpError] = useState<string | null>(null);
 
+  // ── BO Trajectory simulation ────────────────────────────────────────
+  const [boResult, setBoResult] = useState<BOTrajectoryResult | null>(null);
+  const [boRunning, setBoRunning] = useState(false);
+  const [boError, setBoError] = useState<string | null>(null);
+  const [boAcqType, setBoAcqType] = useState<AcquisitionType>('EI');
+  const [boRounds, setBoRounds] = useState(5);
+  const [boBatchSize, setBoBatchSize] = useState(10);
+
   // ── CSV upload handler ──────────────────────────────────────────────────
   const handleCSVUpload = useCallback((file: File) => {
     setIsParsing(true);
@@ -525,6 +535,40 @@ export default function ProEvolPage() {
       setGpError(null);
     }
   }, [mlMode, runGPAnalysis]);
+
+  // ── BO Trajectory handler ───────────────────────────────────────────
+  const runBOSimulation = useCallback(() => {
+    if (mlVariants.length < 3) return;
+
+    setBoRunning(true);
+    setBoError(null);
+    setBoResult(null);
+
+    // Use the same feature encoding as the GP analysis
+    const X: number[][] = mlVariants.map((v) => [
+      v.predictedActivity,
+      v.predictedStability,
+      v.predictedExpression,
+      v.predictedSpecificity,
+      v.mutationBurden,
+    ]);
+    const y: number[] = mlVariants.map((v) => v.score.composite);
+
+    try {
+      const result = runBOTrajectory(X, y, {
+        nRounds: boRounds,
+        batchSize: boBatchSize,
+        acquisitionType: boAcqType,
+        stoppingThreshold: 0.01,
+        optimizeHyperparams: true,
+      });
+      setBoResult(result);
+    } catch (err) {
+      setBoError(err instanceof Error ? err.message : 'BO simulation failed');
+    } finally {
+      setBoRunning(false);
+    }
+  }, [mlVariants, boRounds, boBatchSize, boAcqType]);
 
   // Build GP data rows for the ML tab table
   const gpTableRows = useMemo(() => {
@@ -1410,6 +1454,231 @@ export default function ProEvolPage() {
             </div>
           )}
 
+          {/* ═══ BO TRAJECTORY SIMULATION ═══ */}
+          {mlMode && (
+            <div style={{
+              padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+              border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+              display: 'grid', gap: '10px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={kicker}>BO Trajectory Simulation</span>
+                <StatusPill tone="cool">{boAcqType}</StatusPill>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>
+                  Multi-round optimization loop — simulates iterative directed evolution
+                </span>
+              </div>
+
+              {/* BO Config Controls */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label }}>Rounds</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={boRounds}
+                    onChange={(e) => setBoRounds(Math.max(1, Math.min(20, Number(e.target.value) || 5)))}
+                    style={{
+                      width: 48, padding: '3px 6px', borderRadius: 'var(--nb-radius-sm)',
+                      background: PROEVOL_THEME.inset, border: `1px solid ${PROEVOL_THEME.border}`,
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value,
+                      textAlign: 'center',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label }}>Batch</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={boBatchSize}
+                    onChange={(e) => setBoBatchSize(Math.max(1, Math.min(50, Number(e.target.value) || 10)))}
+                    style={{
+                      width: 48, padding: '3px 6px', borderRadius: 'var(--nb-radius-sm)',
+                      background: PROEVOL_THEME.inset, border: `1px solid ${PROEVOL_THEME.border}`,
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value,
+                      textAlign: 'center',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label }}>Acquisition</span>
+                  <select
+                    value={boAcqType}
+                    onChange={(e) => setBoAcqType(e.target.value as AcquisitionType)}
+                    style={{
+                      padding: '3px 6px', borderRadius: 'var(--nb-radius-sm)',
+                      background: PROEVOL_THEME.inset, border: `1px solid ${PROEVOL_THEME.border}`,
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value,
+                    }}
+                  >
+                    <option value="EI">EI</option>
+                    <option value="UCB">UCB</option>
+                    <option value="EHVI">EHVI</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={runBOSimulation}
+                  disabled={boRunning || mlVariants.length < 3}
+                  style={{
+                    padding: '6px 14px', borderRadius: '999px',
+                    background: boRunning ? 'rgba(255,255,255,0.03)' : 'rgba(147,203,82,0.15)',
+                    color: boRunning ? PROEVOL_THEME.muted : '#93CB52',
+                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                    textTransform: 'uppercase', cursor: boRunning ? 'default' : 'pointer',
+                    border: `1px solid ${boRunning ? 'rgba(255,255,255,0.08)' : '#93CB52'}44`,
+                    opacity: boRunning || mlVariants.length < 3 ? 0.5 : 1,
+                  }}
+                >
+                  {boRunning ? 'Simulating...' : 'Run BO Simulation'}
+                </button>
+              </div>
+
+              {boError && (
+                <div style={{
+                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.coral,
+                  padding: '6px 10px', borderRadius: 'var(--nb-radius-sm)',
+                  background: 'rgba(232,163,161,0.08)', border: `1px solid ${PROEVOL_THEME.coral}33`,
+                }}>
+                  {boError}
+                </div>
+              )}
+
+              {/* BO Results */}
+              {boResult && (
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  {/* Convergence Summary */}
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                    gap: '6px',
+                  }}>
+                    <CompactMetric
+                      label="Convergence"
+                      value={boResult.convergenceRound > 0 ? `Round ${boResult.convergenceRound}` : 'Not reached'}
+                      delta={boResult.convergenceRound > 0 ? 'EI < threshold' : `max EI: ${Math.max(...boResult.acquisitionHistory).toFixed(4)}`}
+                      accent={boResult.convergenceRound > 0 ? PROEVOL_THEME.mint : PROEVOL_THEME.apricot}
+                    />
+                    <CompactMetric
+                      label="Best fitness"
+                      value={boResult.finalBest.predictedFitness.toFixed(2)}
+                      delta={`Round ${boResult.finalBest.round}`}
+                      accent={PROEVOL_THEME.mint}
+                    />
+                    <CompactMetric
+                      label="Uncertainty"
+                      value={`+/- ${boResult.finalBest.uncertainty.toFixed(3)}`}
+                      delta="std dev"
+                      accent={PROEVOL_THEME.sky}
+                    />
+                    <CompactMetric
+                      label="Total proposed"
+                      value={String(boResult.totalProposed)}
+                      delta={`${boResult.rounds.length} rounds`}
+                      accent={PROEVOL_THEME.lilac}
+                    />
+                  </div>
+
+                  {/* Improvement History Chart (SVG) */}
+                  <div style={{
+                    padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+                    border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.015)',
+                  }}>
+                    <div style={kicker}>Improvement Trajectory</div>
+                    <BOImprovementChart
+                      improvementHistory={boResult.improvementHistory}
+                      acquisitionHistory={boResult.acquisitionHistory}
+                      convergenceRound={boResult.convergenceRound}
+                      stoppingThreshold={boResult.config.stoppingThreshold ?? 0.01}
+                    />
+                  </div>
+
+                  {/* Proposed Variants per Round */}
+                  <div style={{
+                    padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+                    border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.015)',
+                    overflow: 'auto',
+                  }}>
+                    <div style={kicker}>Proposed Variants by Round</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px' }}>
+                      <thead>
+                        <tr>
+                          <th style={tableHeaderStyle()}>Round</th>
+                          <th style={tableHeaderStyle()}>Rank</th>
+                          <th style={tableHeaderStyle()}>Predicted Fitness</th>
+                          <th style={tableHeaderStyle()}>Uncertainty</th>
+                          <th style={tableHeaderStyle()}>Acquisition</th>
+                          <th style={tableHeaderStyle()}>Features</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {boResult.rounds.map((r) =>
+                          r.proposed.map((features, j) => (
+                            <tr
+                              key={`${r.round}-${j}`}
+                              style={{
+                                background: j === 0 ? 'rgba(147,203,82,0.06)' : undefined,
+                                borderBottom: `1px solid ${PROEVOL_THEME.border}`,
+                              }}
+                            >
+                              <td style={tableCellStyle()}>
+                                <span style={{
+                                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                                  color: r.round === boResult.finalBest.round ? '#93CB52' : PROEVOL_THEME.muted,
+                                }}>
+                                  R{r.round}
+                                </span>
+                              </td>
+                              <td style={tableCellStyle()}>
+                                <span style={{
+                                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                                  color: j === 0 ? PROEVOL_THEME.apricot : PROEVOL_THEME.muted,
+                                }}>
+                                  {j + 1}
+                                </span>
+                              </td>
+                              <td style={tableCellStyle()}>
+                                <span style={{
+                                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)',
+                                  color: PROEVOL_THEME.value, fontWeight: 600,
+                                }}>
+                                  {r.predicted[j].toFixed(3)}
+                                </span>
+                              </td>
+                              <td style={tableCellStyle()}>
+                                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.sky }}>
+                                  +/- {r.uncertainty[j].toFixed(3)}
+                                </span>
+                              </td>
+                              <td style={tableCellStyle()}>
+                                <span style={{
+                                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                                  color: r.acquisition[j] > 0 ? '#93CB52' : PROEVOL_THEME.muted,
+                                }}>
+                                  {r.acquisition[j].toFixed(4)}
+                                </span>
+                              </td>
+                              <td style={tableCellStyle()}>
+                                <span style={{
+                                  fontFamily: THEME.MONO, fontSize: '9px',
+                                  color: PROEVOL_THEME.muted,
+                                }}>
+                                  [{features.map((f) => f.toFixed(1)).join(', ')}]
+                                </span>
+                              </td>
+                            </tr>
+                          )),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Empty state */}
           {mlMode && gpPredictions.length === 0 && (
             <div style={{
@@ -1500,5 +1769,190 @@ function ChartShell({ title, children, footnote }: { title: string; children: Re
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * SVG line chart for BO improvement trajectory.
+ * Shows best fitness per round (left axis) and max acquisition value (right axis).
+ * Marks convergence round with a vertical dashed line.
+ */
+function BOImprovementChart({
+  improvementHistory,
+  acquisitionHistory,
+  convergenceRound,
+  stoppingThreshold,
+}: {
+  improvementHistory: number[];
+  acquisitionHistory: number[];
+  convergenceRound: number;
+  stoppingThreshold: number;
+}) {
+  const W = 480;
+  const H = 180;
+  const PAD = { top: 20, right: 50, bottom: 30, left: 45 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const nRounds = improvementHistory.length;
+  if (nRounds === 0) return null;
+
+  // Scales
+  const fitnessMin = Math.min(...improvementHistory) * 0.95;
+  const fitnessMax = Math.max(...improvementHistory) * 1.05;
+  const acqMax = Math.max(...acquisitionHistory, stoppingThreshold) * 1.1;
+
+  const xScale = (i: number) => PAD.left + (i / Math.max(nRounds - 1, 1)) * plotW;
+  const yFitnessScale = (v: number) => PAD.top + plotH - ((v - fitnessMin) / Math.max(fitnessMax - fitnessMin, 1e-6)) * plotH;
+  const yAcqScale = (v: number) => PAD.top + plotH - (v / Math.max(acqMax, 1e-6)) * plotH;
+
+  // Fitness line path
+  const fitnessPath = improvementHistory
+    .map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i).toFixed(1)} ${yFitnessScale(v).toFixed(1)}`)
+    .join(' ');
+
+  // Acquisition line path
+  const acqPath = acquisitionHistory
+    .map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i).toFixed(1)} ${yAcqScale(v).toFixed(1)}`)
+    .join(' ');
+
+  // Threshold line
+  const thresholdY = yAcqScale(stoppingThreshold);
+
+  // Fitness dots
+  const fitnessDots = improvementHistory.map((v, i) => ({
+    cx: xScale(i),
+    cy: yFitnessScale(v),
+  }));
+
+  // Y-axis ticks for fitness (left)
+  const nYTicks = 4;
+  const fitnessTicks = Array.from({ length: nYTicks + 1 }, (_, i) => {
+    const v = fitnessMin + (i / nYTicks) * (fitnessMax - fitnessMin);
+    return { v, y: yFitnessScale(v) };
+  });
+
+  // Y-axis ticks for acquisition (right)
+  const acqTicks = Array.from({ length: nYTicks + 1 }, (_, i) => {
+    const v = (i / nYTicks) * acqMax;
+    return { v, y: yAcqScale(v) };
+  });
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ marginTop: '6px' }}>
+      {/* Grid lines */}
+      {fitnessTicks.map((t, i) => (
+        <line key={`g-${i}`} x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y}
+          stroke={PROEVOL_THEME.border} strokeWidth={0.5} strokeDasharray="2 4" />
+      ))}
+
+      {/* X-axis labels */}
+      {improvementHistory.map((_, i) => (
+        <text key={`xl-${i}`} x={xScale(i)} y={H - 6}
+          textAnchor="middle" fill={PROEVOL_THEME.muted}
+          style={{ fontFamily: THEME.MONO, fontSize: '9px' }}>
+          {i + 1}
+        </text>
+      ))}
+
+      {/* Convergence marker */}
+      {convergenceRound > 0 && convergenceRound <= nRounds && (
+        <>
+          <line
+            x1={xScale(convergenceRound - 1)} y1={PAD.top}
+            x2={xScale(convergenceRound - 1)} y2={PAD.top + plotH}
+            stroke="#93CB52" strokeWidth={1} strokeDasharray="4 3" opacity={0.7}
+          />
+          <text
+            x={xScale(convergenceRound - 1)} y={PAD.top - 4}
+            textAnchor="middle" fill="#93CB52"
+            style={{ fontFamily: THEME.MONO, fontSize: '8px', textTransform: 'uppercase' }}
+          >
+            converged
+          </text>
+        </>
+      )}
+
+      {/* Threshold line (acquisition axis) */}
+      <line
+        x1={PAD.left} y1={thresholdY} x2={W - PAD.right} y2={thresholdY}
+        stroke={PROEVOL_THEME.coral} strokeWidth={0.8} strokeDasharray="3 3" opacity={0.5}
+      />
+      <text
+        x={W - PAD.right + 3} y={thresholdY + 3}
+        fill={PROEVOL_THEME.coral} style={{ fontFamily: THEME.MONO, fontSize: '7px' }}
+      >
+        EI={stoppingThreshold}
+      </text>
+
+      {/* Acquisition line (right axis) */}
+      <path d={acqPath} fill="none" stroke={PROEVOL_THEME.apricot} strokeWidth={1.5} opacity={0.6} />
+
+      {/* Fitness line (left axis) */}
+      <path d={fitnessPath} fill="none" stroke={PROEVOL_THEME.mint} strokeWidth={2} />
+
+      {/* Fitness dots */}
+      {fitnessDots.map((d, i) => (
+        <circle key={`fd-${i}`} cx={d.cx} cy={d.cy} r={3.5}
+          fill={PROEVOL_THEME.mint} stroke="#050505" strokeWidth={1} />
+      ))}
+
+      {/* Left Y-axis label */}
+      <text
+        x={8} y={PAD.top + plotH / 2}
+        fill={PROEVOL_THEME.mint}
+        style={{ fontFamily: THEME.MONO, fontSize: '8px', textTransform: 'uppercase' }}
+        transform={`rotate(-90, 8, ${PAD.top + plotH / 2})`}
+        textAnchor="middle"
+      >
+        Best Fitness
+      </text>
+
+      {/* Left Y-axis ticks */}
+      {fitnessTicks.map((t, i) => (
+        <text key={`yl-${i}`} x={PAD.left - 4} y={t.y + 3}
+          textAnchor="end" fill={PROEVOL_THEME.muted}
+          style={{ fontFamily: THEME.MONO, fontSize: '8px' }}>
+          {t.v.toFixed(1)}
+        </text>
+      ))}
+
+      {/* Right Y-axis label */}
+      <text
+        x={W - 6} y={PAD.top + plotH / 2}
+        fill={PROEVOL_THEME.apricot}
+        style={{ fontFamily: THEME.MONO, fontSize: '8px', textTransform: 'uppercase' }}
+        transform={`rotate(90, ${W - 6}, ${PAD.top + plotH / 2})`}
+        textAnchor="middle"
+      >
+        Max Acq
+      </text>
+
+      {/* Right Y-axis ticks */}
+      {acqTicks.map((t, i) => (
+        <text key={`yr-${i}`} x={W - PAD.right + 4} y={t.y + 3}
+          textAnchor="start" fill={PROEVOL_THEME.muted}
+          style={{ fontFamily: THEME.MONO, fontSize: '8px' }}>
+          {t.v.toFixed(3)}
+        </text>
+      ))}
+
+      {/* Legend */}
+      <circle cx={PAD.left + 8} cy={PAD.top - 10} r={3} fill={PROEVOL_THEME.mint} />
+      <text x={PAD.left + 15} y={PAD.top - 7} fill={PROEVOL_THEME.mint}
+        style={{ fontFamily: THEME.MONO, fontSize: '8px' }}>Fitness</text>
+      <circle cx={PAD.left + 68} cy={PAD.top - 10} r={3} fill={PROEVOL_THEME.apricot} />
+      <text x={PAD.left + 75} y={PAD.top - 7} fill={PROEVOL_THEME.apricot}
+        style={{ fontFamily: THEME.MONO, fontSize: '8px' }}>Acquisition</text>
+
+      {/* X-axis label */}
+      <text
+        x={PAD.left + plotW / 2} y={H - 2}
+        textAnchor="middle" fill={PROEVOL_THEME.label}
+        style={{ fontFamily: THEME.MONO, fontSize: '8px', textTransform: 'uppercase' }}
+      >
+        Round
+      </text>
+    </svg>
   );
 }
