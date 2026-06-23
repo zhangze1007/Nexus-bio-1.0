@@ -103,7 +103,7 @@ The search bar on the homepage recognizes molecules, strains, DOIs, and producti
 
 #### 2. FBASim — Flux Balance Analysis
 **Route:** `/tools/fbasim`
-**What it does:** Single-species simplex LP, community FBA, FVA, GPR knockout analysis, custom model upload, consortium design, and strain design pipeline.
+**What it does:** single-species simplex LP plus illustrative two-species demo mode. single-species FBA plus demo-only two-species comparison. Knockout, overexpression, and shadow price analysis. Community FBA mode — illustrative two-species demo, NOT a joint community LP.
 
 **Engines:** `fbaEngine` (simplex LP), `fbaFVA` (flux variability), `fbaPFBA` (parsimonious FBA), `fbaGPR` (gene-protein-reaction rules), `fbaOptKnock` (bilevel knockout), `fbaFSEOF` (flux scanning), `consortiumDesignEngine` (SteadyCom + quorum sensing)
 
@@ -203,7 +203,7 @@ The search bar on the homepage recognizes molecules, strains, DOIs, and producti
 
 #### 9. CellFree — Cell-Free Simulation
 **Route:** `/tools/cellfree`
-**What it does:** Simulate cell-free protein synthesis (TX-TL) with resource-aware ODE model. Plate-reader kinetic fitting and expression prediction.
+**What it does:** Simulate cell-free protein synthesis (TX-TL) with heuristic expression estimates. Resource-aware ODE model with transcription, translation, energy pools, and ribosome dynamics. Plate-reader kinetic fitting.
 
 **Key features:**
 - SABIO-RK reference kinetics display
@@ -224,7 +224,7 @@ The search bar on the homepage recognizes molecules, strains, DOIs, and producti
 
 #### 11. MultiO — Multi-Omics Integration
 **Route:** `/tools/multio`
-**What it does:** Integrate transcriptomics, proteomics, metabolomics, fluxomics, and 13C-MFA data.
+**What it does:** Integrate transcriptomics, proteomics, and metabolomics data with deterministic sensitivity sketches. PCA biplot, correlation heatmap, volcano plot, and layer signal scoring.
 
 **Engines:** `mlMetabolicEngine` (ML predictions), `fluxomicsEngine` (13C flux analysis), `mfa13CEngine` (EMU decomposition + Monte Carlo CI)
 
