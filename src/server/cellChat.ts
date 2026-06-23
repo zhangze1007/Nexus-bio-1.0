@@ -29,8 +29,10 @@
  *     - Uses mean expression per cluster; does not model the distribution
  *       of expression across individual cells or zero-inflation.
  *     - Communication probability is a simple product of expression levels;
- *       does not account for spatial proximity, secretion kinetics, or
- *       competitive inhibition.
+ *       does not account for secretion kinetics or competitive inhibition.
+ *     - Spatial distance weighting uses exponential decay with median
+ *       pairwise distance as the length scale; this assumes uniform tissue
+ *       geometry and may not capture anisotropic diffusion patterns.
  *     - Permutation test shuffles cluster labels rather than gene labels,
  *       which controls for cluster structure but not gene-gene correlations.
  *     - Hill-function cell-count scaling uses K=100 as a fixed reference;
@@ -104,6 +106,95 @@ function hill(x: number, n: number): number {
 /** Clamp a value to [0, 1] */
 function clamp01(x: number): number {
   return Math.max(0, Math.min(1, x));
+}
+
+/** Pathway names that indicate inhibitory interactions */
+const INHIBIT_PATHWAYS = new Set([
+  'Wnt-inhibitor', 'BMP-inhibitor', 'TGF-beta-inhibitor',
+  'Notch-inhibitor', 'Hedgehog-inhibitor', 'FGF-inhibitor',
+]);
+
+/**
+ * Determine interaction type from a pathway name.
+ * Returns 'inhibition' for known inhibitory pathways, 'signaling' otherwise.
+ */
+function interactionTypeForPathway(pathway: string): 'signaling' | 'inhibition' {
+  if (INHIBIT_PATHWAYS.has(pathway)) return 'inhibition';
+  if (pathway.toLowerCase().includes('inhibitor')) return 'inhibition';
+  if (pathway.toLowerCase().includes('antagonist')) return 'inhibition';
+  return 'signaling';
+}
+
+/**
+ * Compute spatial distance weights between cluster centroids.
+ *
+ * For each pair of clusters, computes the Euclidean distance between their
+ * spatial centroids, then converts to a weight via exponential decay:
+ *   weight(i,j) = exp(-distance(i,j) / medianDistance)
+ *
+ * Closer clusters receive higher weights (up to 1.0 for co-located clusters).
+ * The median pairwise distance serves as the characteristic length scale.
+ *
+ * @param cellPositions - Map from cluster label to array of {x, y} positions
+ * @param clusterLabels - Ordered list of cluster labels
+ * @returns 2D weight matrix [i][j] where i,j index into clusterLabels
+ */
+export function computeSpatialWeights(
+  cellPositions: Map<string, { x: number; y: number }[]>,
+  clusterLabels: string[],
+): number[][] {
+  const n = clusterLabels.length;
+
+  // Compute centroids
+  const centroids: { x: number; y: number }[] = [];
+  for (const label of clusterLabels) {
+    const positions = cellPositions.get(label);
+    if (!positions || positions.length === 0) {
+      centroids.push({ x: 0, y: 0 });
+    } else {
+      let sx = 0, sy = 0;
+      for (const p of positions) { sx += p.x; sy += p.y; }
+      centroids.push({ x: sx / positions.length, y: sy / positions.length });
+    }
+  }
+
+  // Compute pairwise distances
+  const distances: number[] = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const dx = centroids[i].x - centroids[j].x;
+      const dy = centroids[i].y - centroids[j].y;
+      distances.push(Math.sqrt(dx * dx + dy * dy));
+    }
+  }
+
+  // Median distance as characteristic length scale
+  let medianDistance = 1;
+  if (distances.length > 0) {
+    const sorted = [...distances].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    medianDistance = sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+    if (medianDistance <= 0) medianDistance = 1;
+  }
+
+  // Build weight matrix: exp(-d / medianDistance)
+  const weights: number[][] = Array.from({ length: n }, () => new Array(n).fill(1));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) {
+        weights[i][j] = 1;
+      } else {
+        const dx = centroids[i].x - centroids[j].x;
+        const dy = centroids[i].y - centroids[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        weights[i][j] = Math.exp(-d / medianDistance);
+      }
+    }
+  }
+
+  return weights;
 }
 
 /**
@@ -316,6 +407,19 @@ export interface ExpandedCommunicationInput {
   seed?: number;
   /** use expanded database (default true) */
   useExpandedDB?: boolean;
+  /**
+   * Optional precomputed spatial weight matrix [i][j] for cluster pairs.
+   * When provided, communication probabilities are multiplied by the
+   * corresponding weight, giving higher probability to spatially proximal
+   * clusters. Use computeSpatialWeights() to generate this matrix.
+   */
+  spatialWeightMatrix?: number[][];
+  /**
+   * Optional cell positions per cluster for computing spatial weights.
+   * If spatialWeightMatrix is not provided but cellPositions is, spatial
+   * weights will be computed automatically. Keys are cluster labels.
+   */
+  cellPositions?: Map<string, { x: number; y: number }[]>;
 }
 
 export interface ExpandedLRInteraction {
@@ -339,7 +443,13 @@ export interface ExpandedCommunicationResult {
   topInteractions: ExpandedLRInteraction[];
   network: {
     nodes: Array<{ id: string; cellType: string; nCells: number }>;
-    edges: Array<{ source: string; target: string; weight: number; significant: boolean }>;
+    edges: Array<{
+      source: string;
+      target: string;
+      weight: number;
+      significant: boolean;
+      interactionType: 'signaling' | 'inhibition';
+    }>;
   };
   stats: {
     totalInteractions: number;
@@ -393,7 +503,13 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
     nPermutations = 1000,
     seed = 42,
     useExpandedDB = true,
+    spatialWeightMatrix: inputSpatialWeights,
+    cellPositions,
   } = input;
+
+  // Compute spatial weights from cell positions if not provided directly
+  const spatialWeightMatrix = inputSpatialWeights
+    ?? (cellPositions ? computeSpatialWeights(cellPositions, clusters) : undefined);
 
   const rng = new SeededRNG(seed);
   const db: LRPairExpanded[] = useExpandedDB ? EXPANDED_LR_DB : (ligandReceptorDB as LRPair[]).map(lr => ({
@@ -411,8 +527,10 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
 
     if (!ligandExpr && !receptorExpr) continue;
 
-    for (const sender of clusters) {
-      for (const receiver of clusters) {
+    for (let si = 0; si < clusters.length; si++) {
+      for (let ri = 0; ri < clusters.length; ri++) {
+        const sender = clusters[si];
+        const receiver = clusters[ri];
         const lExpr = ligandExpr?.[sender] ?? 0;
         const rExpr = receptorExpr?.[receiver] ?? 0;
 
@@ -423,6 +541,11 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
           const nReceiver = cellCounts[receiver] ?? 1;
           const nAvg = (nSender + nReceiver) / 2;
           prob *= hill(nAvg / 100, hillCoef);
+        }
+
+        // Apply spatial distance weighting: closer clusters get higher probability
+        if (spatialWeightMatrix) {
+          prob *= spatialWeightMatrix[si][ri];
         }
 
         rawProbs.push(prob);
@@ -577,21 +700,30 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
     nCells: cellCounts?.[c] ?? 0,
   }));
 
-  const edgeMap = new Map<string, { weight: number; significant: boolean }>();
+  const edgeMap = new Map<string, { weight: number; significant: boolean; signaling: number; inhibition: number }>();
   for (const inter of interactions) {
     const key = `${inter.sender}->${inter.receiver}`;
+    const iType = interactionTypeForPathway(inter.pathway);
     const existing = edgeMap.get(key);
     if (existing) {
       existing.weight += inter.probability;
       existing.significant = existing.significant || inter.significant;
+      if (iType === 'inhibition') existing.inhibition += inter.probability;
+      else existing.signaling += inter.probability;
     } else {
-      edgeMap.set(key, { weight: inter.probability, significant: inter.significant });
+      edgeMap.set(key, {
+        weight: inter.probability,
+        significant: inter.significant,
+        signaling: iType === 'signaling' ? inter.probability : 0,
+        inhibition: iType === 'inhibition' ? inter.probability : 0,
+      });
     }
   }
 
   const networkEdges = Array.from(edgeMap.entries()).map(([key, val]) => {
     const [source, target] = key.split('->');
-    return { source, target, weight: round(val.weight), significant: val.significant };
+    const interactionType = val.inhibition > val.signaling ? 'inhibition' as const : 'signaling' as const;
+    return { source, target, weight: round(val.weight), significant: val.significant, interactionType };
   });
 
   const topInteractions = interactions.slice(0, 20);

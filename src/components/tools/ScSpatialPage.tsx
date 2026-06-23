@@ -19,7 +19,7 @@ import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
 import { THEME } from '../../theme';
 import { PAPER_THEME } from '../charts/chartTheme';
-import { analyzeCommunicationExpanded } from '../../server/cellChat';
+import { analyzeCommunicationExpanded, computeSpatialWeights } from '../../server/cellChat';
 import type { ExpandedCommunicationResult } from '../../server/cellChat';
 import { colorForCluster } from './scspatial/scSpatialPalette';
 
@@ -73,6 +73,10 @@ export default React.memo(function ScSpatialPage() {
   const selectedCellId = useScSpatialStore((state) => state.selectedCellId);
   const selectedCluster = useScSpatialStore((state) => state.selectedCluster);
   const selectedGene = useScSpatialStore((state) => state.selectedGene);
+  const compareGene = useScSpatialStore((state) => state.compareGene);
+  const showKde = useScSpatialStore((state) => state.showKde);
+  const showNeighbors = useScSpatialStore((state) => state.showNeighbors);
+  const neighborK = useScSpatialStore((state) => state.neighborK);
   const validity = useScSpatialStore((state) => state.validity);
   const viewMode = useScSpatialStore((state) => state.viewMode);
 
@@ -84,9 +88,13 @@ export default React.memo(function ScSpatialPage() {
   const setSelectedCellStore = useScSpatialStore((state) => state.setSelectedCellId);
   const setSelectedClusterStore = useScSpatialStore((state) => state.setSelectedCluster);
   const setSelectedGeneStore = useScSpatialStore((state) => state.setSelectedGene);
+  const setCompareGeneStore = useScSpatialStore((state) => state.setCompareGene);
   const setViewModeStore = useScSpatialStore((state) => state.setViewMode);
   const toggleDeveloperMode = useScSpatialStore((state) => state.toggleDeveloperMode);
   const toggleHelp = useScSpatialStore((state) => state.toggleHelp);
+  const toggleKde = useScSpatialStore((state) => state.toggleKde);
+  const toggleNeighbors = useScSpatialStore((state) => state.toggleNeighbors);
+  const setNeighborK = useScSpatialStore((state) => state.setNeighborK);
 
   const loadDemo = useCallback(async () => {
     beginUpload();
@@ -124,30 +132,39 @@ export default React.memo(function ScSpatialPage() {
     if (clusterNames.length === 0) return;
 
     try {
-      // Build expression matrix from spatial points (per-cell expression for selected gene)
+      // Build multi-gene expression matrix from spatial points.
+      // Primary: selected gene's per-cluster mean expression.
+      // Enrichment: coexpression-correlated genes scaled by correlation.
       const geneClusterExpr: Record<string, Record<string, number>> = {};
 
       if (query.centerView.points.length > 0) {
-        // Aggregate per-cell expression into per-cluster means
-        const geneAgg: Record<string, Record<string, { sum: number; count: number }>> = {};
         const selGene = query.selection.selectedGene;
         if (selGene) {
-          geneAgg[selGene] = {};
+          // Aggregate per-cell expression into per-cluster means for selected gene
+          const selAgg: Record<string, { sum: number; count: number }> = {};
           for (const pt of query.centerView.points) {
             const cid = pt.clusterId.toString();
-            if (!geneAgg[selGene][cid]) geneAgg[selGene][cid] = { sum: 0, count: 0 };
-            geneAgg[selGene][cid].sum += pt.expression;
-            geneAgg[selGene][cid].count += 1;
+            if (!selAgg[cid]) selAgg[cid] = { sum: 0, count: 0 };
+            selAgg[cid].sum += pt.expression;
+            selAgg[cid].count += 1;
           }
-        }
-
-        // Convert aggregated sums to mean expression matrix
-        for (const [gene, clusterAgg] of Object.entries(geneAgg)) {
-          geneClusterExpr[gene] = {};
+          geneClusterExpr[selGene] = {};
           for (const cid of clusterNames) {
-            const agg = clusterAgg[cid];
+            const agg = selAgg[cid];
             if (agg && agg.count > 0) {
-              geneClusterExpr[gene][cid] = agg.sum / agg.count;
+              geneClusterExpr[selGene][cid] = agg.sum / agg.count;
+            }
+          }
+
+          // Enrich with coexpression-correlated genes.
+          // For each coexpressed gene, estimate per-cluster expression by
+          // scaling the selected gene's cluster mean by the absolute correlation.
+          for (const coex of query.rightPanel.coexpression) {
+            if (geneClusterExpr[coex.geneSymbol]) continue;
+            geneClusterExpr[coex.geneSymbol] = {};
+            for (const cid of clusterNames) {
+              const baseExpr = geneClusterExpr[selGene][cid] ?? 0;
+              geneClusterExpr[coex.geneSymbol][cid] = Math.max(0, baseExpr * Math.abs(coex.correlation));
             }
           }
         }
@@ -159,12 +176,25 @@ export default React.memo(function ScSpatialPage() {
         cellCounts[cs.clusterId.toString()] = cs.cellCount;
       }
 
+      // Build spatial weight matrix from cell positions
+      const positionsByCluster = new Map<string, { x: number; y: number }[]>();
+      for (const pt of query.centerView.points) {
+        const label = pt.clusterId.toString();
+        let arr = positionsByCluster.get(label);
+        if (!arr) { arr = []; positionsByCluster.set(label, arr); }
+        arr.push({ x: pt.x, y: pt.y });
+      }
+      const spatialWeightMatrix = positionsByCluster.size > 0
+        ? computeSpatialWeights(positionsByCluster, clusterNames)
+        : undefined;
+
       const result = analyzeCommunicationExpanded({
         expressionMatrix: geneClusterExpr,
         clusters: clusterNames,
         cellCounts,
         nPermutations: 200,   // reduced from 1000 for client-side performance
         useExpandedDB: true,   // 2780 L-R pairs
+        spatialWeightMatrix,
       });
 
       setCommResult(result);
@@ -375,7 +405,7 @@ export default React.memo(function ScSpatialPage() {
                 padding: 32, textAlign: 'center', color: 'var(--sc-muted)',
                 fontFamily: THEME.SANS, fontSize: 13,
               }}>
-                Click "Analyze Communication" to infer ligand-receptor interactions between {availableClusters.length} clusters across 52 known L-R pairs.
+                Click "Analyze Communication" to infer ligand-receptor interactions between {availableClusters.length} clusters across 2780+ L-R pairs, using multi-gene expression and spatial distance weighting.
               </div>
             ) : (
               <>
@@ -433,54 +463,63 @@ export default React.memo(function ScSpatialPage() {
                         return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
                       });
 
-                      // Build aggregated edge weights (sender -> receiver)
-                      const edgeMap: Record<string, number> = {};
-                      for (const inter of commResult.interactions) {
-                        const key = `${inter.sender}->${inter.receiver}`;
-                        edgeMap[key] = (edgeMap[key] ?? 0) + inter.probability;
-                      }
-                      const maxEdge = Math.max(...Object.values(edgeMap), 1);
+                      // Use network edges from result (includes interactionType)
+                      const netEdges = commResult.network.edges;
+                      const maxEdge = Math.max(...netEdges.map(e => e.weight), 1);
+
+                      // Cell count range for node sizing
+                      const cellCountsArr = availableClusters.map(c => {
+                        const node = commResult.network.nodes.find(nd => nd.id === c);
+                        return node?.nCells ?? 0;
+                      });
+                      const maxCells = Math.max(...cellCountsArr, 1);
 
                       return (
                         <svg width="100%" viewBox="0 0 560 320" style={{ display: 'block' }}>
                           <defs>
-                            <marker id="comm-arrow" viewBox="0 0 10 6" refX="9" refY="3"
+                            <marker id="comm-arrow-signal" viewBox="0 0 10 6" refX="9" refY="3"
                               markerWidth="8" markerHeight="5" orient="auto-start-reverse">
-                              <path d="M0,0 L10,3 L0,6Z" fill="#9ca3af" />
+                              <path d="M0,0 L10,3 L0,6Z" fill="#60a5fa" />
+                            </marker>
+                            <marker id="comm-arrow-inhibit" viewBox="0 0 10 6" refX="9" refY="3"
+                              markerWidth="8" markerHeight="5" orient="auto-start-reverse">
+                              <path d="M0,0 L10,3 L0,6Z" fill="#f87171" />
                             </marker>
                           </defs>
-                          {/* Edges */}
-                          {Object.entries(edgeMap).map(([key, weight]) => {
-                            const [src, tgt] = key.split('->');
-                            const si = availableClusters.indexOf(src);
-                            const ti = availableClusters.indexOf(tgt);
+                          {/* Edges — thickness by strength, color by interaction type */}
+                          {netEdges.map((edge) => {
+                            const si = availableClusters.indexOf(edge.source);
+                            const ti = availableClusters.indexOf(edge.target);
                             if (si < 0 || ti < 0 || si === ti) return null;
                             const p1 = nodePos[si];
                             const p2 = nodePos[ti];
-                            const strength = weight / maxEdge;
-                            if (strength < 0.05) return null;
-                            // Slight curve via midpoint offset
+                            const strength = edge.weight / maxEdge;
+                            if (strength < 0.02) return null;
                             const mx = (p1.x + p2.x) / 2 + (p2.y - p1.y) * 0.1;
                             const my = (p1.y + p2.y) / 2 - (p2.x - p1.x) * 0.1;
-                            const strokeW = 0.5 + strength * 3.5;
-                            const opacity = 0.15 + strength * 0.7;
+                            const strokeW = 0.8 + strength * 5;
+                            const opacity = 0.2 + strength * 0.7;
+                            const isInhibition = edge.interactionType === 'inhibition';
+                            const strokeColor = isInhibition ? '#f87171' : '#60a5fa';
+                            const markerId = isInhibition ? 'comm-arrow-inhibit' : 'comm-arrow-signal';
                             return (
                               <path
-                                key={key}
+                                key={`${edge.source}->${edge.target}`}
                                 d={`M${p1.x},${p1.y} Q${mx},${my} ${p2.x},${p2.y}`}
                                 fill="none"
-                                stroke="#6b7280"
+                                stroke={strokeColor}
                                 strokeWidth={strokeW}
                                 strokeOpacity={opacity}
-                                markerEnd="url(#comm-arrow)"
+                                markerEnd={`url(#${markerId})`}
                               />
                             );
                           })}
-                          {/* Nodes */}
+                          {/* Nodes — size proportional to cell count */}
                           {availableClusters.map((cluster, i) => {
                             const pos = nodePos[i];
                             const c = commResult.centrality[cluster];
-                            const nodeR = 16 + (c ? c.totalStrength * 0.3 : 0);
+                            const cellFrac = cellCountsArr[i] / maxCells;
+                            const nodeR = 12 + cellFrac * 16 + (c ? c.totalStrength * 0.15 : 0);
                             const roleColor = c?.dominantRole === 'sender'
                               ? '#3b82f6'
                               : c?.dominantRole === 'receiver'
@@ -498,14 +537,18 @@ export default React.memo(function ScSpatialPage() {
                             );
                           })}
                           {/* Legend */}
-                          <g transform="translate(440, 20)" style={{ fontSize: 9, fontFamily: THEME.MONO }}>
-                            <rect x={0} y={0} width={110} height={70} rx={4} fill="var(--sc-surface-muted)" stroke="var(--sc-border)" />
+                          <g transform="translate(420, 10)" style={{ fontSize: 9, fontFamily: THEME.MONO }}>
+                            <rect x={0} y={0} width={130} height={90} rx={4} fill="var(--sc-surface-muted)" stroke="var(--sc-border)" />
                             <circle cx={12} cy={16} r={5} fill="#BFDCCD" stroke="#3b82f6" strokeWidth={1.5} />
                             <text x={22} y={19} fill="var(--sc-label)">Sender</text>
                             <circle cx={12} cy={34} r={5} fill="#BFDCCD" stroke="#ef4444" strokeWidth={1.5} />
                             <text x={22} y={37} fill="var(--sc-label)">Receiver</text>
                             <circle cx={12} cy={52} r={5} fill="#BFDCCD" stroke="#a855f7" strokeWidth={1.5} />
                             <text x={22} y={55} fill="var(--sc-label)">Mediator</text>
+                            <line x1={6} y1={70} x2={18} y2={70} stroke="#60a5fa" strokeWidth={2} />
+                            <text x={22} y={73} fill="var(--sc-label)">Signaling</text>
+                            <line x1={6} y1={84} x2={18} y2={84} stroke="#f87171" strokeWidth={2} />
+                            <text x={22} y={87} fill="var(--sc-label)">Inhibition</text>
                           </g>
                         </svg>
                       );
@@ -671,7 +714,7 @@ export default React.memo(function ScSpatialPage() {
                     margin: '8px 0 0', fontFamily: THEME.SANS,
                     fontSize: 11, fontStyle: 'italic', color: 'var(--sc-label)', lineHeight: 1.5,
                   }}>
-                    Communication probabilities inferred via CellChat-style ligand-receptor co-expression model (Jin et al., Nat Commun 2021). Significance = percentile rank among all nonzero interactions.
+                    Communication probabilities inferred via CellChat-style ligand-receptor co-expression model (Jin et al., Nat Commun 2021) with spatial distance weighting. Multi-gene expression matrix used for robust L-R inference. Edge colors: blue = signaling, red = inhibition. Node size reflects cluster cell count. Significance assessed via permutation testing with Benjamini-Hochberg FDR correction.
                   </p>
                 </div>
               </>
@@ -697,11 +740,19 @@ export default React.memo(function ScSpatialPage() {
               loadState={loadState}
               selectedCluster={selectedCluster}
               selectedGene={selectedGene}
+              compareGene={compareGene}
+              showKde={showKde}
+              showNeighbors={showNeighbors}
+              neighborK={neighborK}
               onLoadDemo={loadDemo}
               onPickFile={() => fileInputRef.current?.click()}
               onSelectCluster={setSelectedClusterStore}
               onSelectGene={setSelectedGeneStore}
+              onSetCompareGene={setCompareGeneStore}
               onToggleDeveloperMode={toggleDeveloperMode}
+              onToggleKde={toggleKde}
+              onToggleNeighbors={toggleNeighbors}
+              onSetNeighborK={setNeighborK}
             />
 
             <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
@@ -711,6 +762,10 @@ export default React.memo(function ScSpatialPage() {
                 query={query}
                 svgRef={svgRef}
                 onSelectCell={setSelectedCellStore}
+                compareGene={compareGene}
+                showKde={showKde}
+                showNeighbors={showNeighbors}
+                neighborK={neighborK}
               />
 
               {query && (
