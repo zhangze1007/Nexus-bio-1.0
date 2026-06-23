@@ -1638,51 +1638,154 @@ function residueName3(aa1: string): string {
   return map[aa1] ?? 'ALA';
 }
 
-/**
- * Conservation analysis using BLOSUM62 column entropy.
- * Positions with low entropy are evolutionarily conserved (do not mutate).
- * Positions with high entropy are variable (safe to mutate).
- */
-export function analyzeConservation(sequence: string): {
-  perPosition: Array<{
-    position: number;
-    residue: string;
-    entropy: number;
-    conservation: number;
-    classification: 'conserved' | 'moderate' | 'variable';
-  }>;
+export interface ConservationPosition {
+  position: number;
+  residue: string;
+  entropy: number;
+  conservation: number;
+  classification: 'conserved' | 'moderate' | 'variable';
+  /** Solvent-accessible surface area (normalized 0–1). Only available when PDB is provided. */
+  normalizedSASA: number | null;
+  /** conservation × (1 − normalizedSASA). Higher = more structurally constrained. */
+  structuralImportance: number | null;
+  /** True when conservation > 0.8 AND normalizedSASA < 0.25 (buried + conserved). */
+  doNotMutate: boolean;
+  /** Non-null when the position is within 5 Angstrom of a catalytic residue. */
+  functionalSiteWarning: string | null;
+}
+
+export interface ConservationResult {
+  perPosition: ConservationPosition[];
   conservedPositions: number[];
   variablePositions: number[];
-} {
-  const perPosition = sequence.split('').map((aa, i) => {
+  doNotMutatePositions: number[];
+  functionalSitePositions: number[];
+}
+
+/**
+ * Conservation analysis using BLOSUM62 column entropy, enhanced with optional
+ * structural context (SASA weighting) and functional-site protection.
+ *
+ * When `pdbText` is provided the function parses the structure to compute
+ * per-residue solvent accessibility and uses it to weight conservation scores.
+ * Positions that are both highly conserved AND buried are flagged "do not mutate".
+ *
+ * When `catalyticResidues` is provided (1-indexed positions), any position within
+ * 5 Angstrom of a catalytic residue is marked "functionally critical" regardless
+ * of its BLOSUM62 conservation score.
+ */
+export function analyzeConservation(
+  sequence: string,
+  pdbText?: string,
+  catalyticResidues?: number[],
+): ConservationResult {
+  // Pre-compute structural features if PDB is available
+  let sasaMap: Map<number, number> = new Map(); // residueNumber → relativeSASA (0–1)
+  let coordMap: Map<number, { x: number; y: number; z: number }> = new Map(); // residueNumber → CA coords
+  if (pdbText) {
+    try {
+      const structure = parsePDB(pdbText);
+      const sasa = computeSASA(structure);
+      for (const r of sasa) sasaMap.set(r.residueNumber, r.relativeSASA);
+
+      // Extract CA atom coordinates per residue for distance calculations
+      for (const atom of structure.atoms) {
+        if (atom.name === 'CA' && !atom.isHetero) {
+          coordMap.set(atom.residueNumber, { x: atom.x, y: atom.y, z: atom.z });
+        }
+      }
+    } catch { /* PDB parse failed — structural fields will be null */ }
+  }
+
+  // Build set of catalytic residue coordinates for proximity checks
+  const catalyticCoords: Array<{ pos: number; x: number; y: number; z: number }> = [];
+  if (catalyticResidues && catalyticResidues.length > 0) {
+    for (const catPos of catalyticResidues) {
+      const coord = coordMap.get(catPos);
+      if (coord) {
+        catalyticCoords.push({ pos: catPos, ...coord });
+      }
+    }
+  }
+
+  // Max SASA across the structure for normalization (if available)
+  const maxSASA = sasaMap.size > 0 ? Math.max(...sasaMap.values(), 0.01) : 1;
+
+  const perPosition: ConservationPosition[] = sequence.split('').map((aa, i) => {
+    const pos = i + 1;
     const upper = aa.toUpperCase();
     const row = BLOSUM62[upper];
-    if (!row) {
-      return { position: i + 1, residue: upper, entropy: 2.0, conservation: 0.5, classification: 'moderate' as const };
+
+    // ── BLOSUM62 conservation (existing logic) ──
+    let entropy = 2.0;
+    let conservation = 0.5;
+    let classification: ConservationPosition['classification'] = 'moderate';
+    if (row) {
+      const values = Object.values(row);
+      const maxVal = Math.max(...values);
+      const expValues = values.map(v => Math.exp((v - maxVal) / 3)); // temperature = 3
+      const sumExp = expValues.reduce((s, v) => s + v, 0);
+      const probs = expValues.map(v => v / sumExp);
+      entropy = -probs.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+      const maxEntropy = Math.log2(20);
+      conservation = 1 - entropy / maxEntropy;
+      classification = conservation > 0.8 ? 'conserved' : conservation > 0.5 ? 'moderate' : 'variable';
     }
 
-    // Convert BLOSUM62 row to probability distribution via softmax
-    const values = Object.values(row);
-    const maxVal = Math.max(...values);
-    const expValues = values.map(v => Math.exp((v - maxVal) / 3)); // temperature = 3
-    const sumExp = expValues.reduce((s, v) => s + v, 0);
-    const probs = expValues.map(v => v / sumExp);
+    // ── Structural SASA weighting (new) ──
+    let normalizedSASA: number | null = null;
+    let structuralImportance: number | null = null;
+    if (sasaMap.has(pos)) {
+      normalizedSASA = round(sasaMap.get(pos)! / maxSASA, 3);
+      structuralImportance = round(conservation * (1 - normalizedSASA), 3);
+    }
 
-    // Shannon entropy
-    const entropy = -probs.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
-    const maxEntropy = Math.log2(20); // max possible entropy for 20 AAs
-    const conservation = 1 - entropy / maxEntropy;
+    // ── Do-not-mutate flag: conserved AND buried ──
+    const doNotMutate =
+      classification === 'conserved' && normalizedSASA !== null && normalizedSASA < 0.25;
 
-    const classification: 'conserved' | 'moderate' | 'variable' =
-      conservation > 0.8 ? 'conserved' : conservation > 0.5 ? 'moderate' : 'variable';
+    // ── Functional site proximity (within 5 Angstrom of catalytic residue) ──
+    let functionalSiteWarning: string | null = null;
+    if (catalyticCoords.length > 0) {
+      const coord = coordMap.get(pos);
+      if (coord) {
+        for (const cat of catalyticCoords) {
+          if (cat.pos === pos) {
+            // This position IS a catalytic residue
+            functionalSiteWarning = `Catalytic residue (position ${cat.pos})`;
+            break;
+          }
+          const dx = coord.x - cat.x;
+          const dy = coord.y - cat.y;
+          const dz = coord.z - cat.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist <= 5.0) {
+            functionalSiteWarning = `Near catalytic residue ${cat.pos} (${dist.toFixed(1)} A)`;
+            break;
+          }
+        }
+      }
+    }
 
-    return { position: i + 1, residue: upper, entropy: round(entropy, 3), conservation: round(conservation, 3), classification };
+    return {
+      position: pos,
+      residue: upper,
+      entropy: round(entropy, 3),
+      conservation: round(conservation, 3),
+      classification,
+      normalizedSASA,
+      structuralImportance,
+      doNotMutate,
+      functionalSiteWarning,
+    };
   });
 
   return {
     perPosition,
     conservedPositions: perPosition.filter(p => p.classification === 'conserved').map(p => p.position),
     variablePositions: perPosition.filter(p => p.classification === 'variable').map(p => p.position),
+    doNotMutatePositions: perPosition.filter(p => p.doNotMutate).map(p => p.position),
+    functionalSitePositions: perPosition.filter(p => p.functionalSiteWarning !== null).map(p => p.position),
   };
 }
 
