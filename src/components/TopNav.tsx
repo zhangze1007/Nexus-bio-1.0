@@ -52,12 +52,12 @@ export default function TopNav() {
         })}
       </div>
 
-      {/* Auth */}
-      <LoginButton />
-
-      {/* Version tag */}
-      <div className={styles.versionTag} style={{ fontFamily: THEME.MONO }}>
-        v1.0
+      {/* Auth + Version — right-aligned */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifySelf: 'end' }}>
+        <LoginButton />
+        <div className={styles.versionTag} style={{ fontFamily: THEME.MONO }}>
+          v1.0
+        </div>
       </div>
     </nav>
   );
