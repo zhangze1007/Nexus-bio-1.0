@@ -736,6 +736,7 @@ export default React.memo(function CatalystDesignerPage() {
   // Uploaded PDB state
   const [uploadedPdb, setUploadedPdb] = useState<string | null>(null);
   const [uploadedPdbName, setUploadedPdbName] = useState<string | null>(null);
+  const [catdesError, setCatdesError] = useState<string | null>(null);
 
   // ESMFold prediction state
   const [esmfoldPdb, setEsmfoldPdb] = useState<string | null>(null);
@@ -1022,7 +1023,6 @@ export default React.memo(function CatalystDesignerPage() {
     }
   }, [selectedResidue, selectedMutation, selectedCatResidue, enzyme.sequence, binding.predictedKd]);
 
-  const [catdesError, setCatdesError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   // Inverse Folding state
