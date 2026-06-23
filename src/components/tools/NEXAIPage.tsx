@@ -1040,6 +1040,7 @@ export default React.memo(function NEXAIPage() {
                   parseError={parseError}
                   loading={loading}
                   apiError={apiError}
+                  onRetry={() => { setApiError(null); if (query.trim()) runQuery(); }}
                 />
               )}
             </div>

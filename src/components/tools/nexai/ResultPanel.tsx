@@ -28,6 +28,7 @@
 import type { NEXAIResult } from '../../../types';
 import { TOOL_TOKENS as T } from '../shared/ToolShell';
 import ResearchAnswerRenderer from '../shared/ResearchAnswerRenderer';
+import SimErrorBanner from '../../ide/shared/SimErrorBanner';
 import { THEME } from '../../../theme';
 
 export type ParseErrorCode = 'EMPTY' | 'NO_OBJECT' | 'INVALID_SYNTAX';
@@ -45,6 +46,8 @@ export interface ResultPanelProps {
   parseError?: ParseErrorInfo | null;
   loading?: boolean;
   apiError?: string | null;
+  /** Called when the user clicks the retry button on the error banner. */
+  onRetry?: () => void;
 }
 
 function isMalformed(parseError?: ParseErrorInfo | null): boolean {
@@ -60,44 +63,12 @@ export default function ResultPanel({
   parseError,
   loading,
   apiError,
+  onRetry,
 }: ResultPanelProps) {
   if (apiError) {
     return (
-      <div
-        data-testid="nexai-result-api-error"
-        role="alert"
-        style={{
-          borderRadius: 'var(--nb-radius-md)',
-          border: '1px solid rgba(250,128,114,0.42)',
-          background: 'rgba(250,128,114,0.12)',
-          padding: '14px 16px',
-          display: 'grid',
-          gap: '6px',
-        }}
-      >
-        <span
-          style={{
-            fontFamily: THEME.MONO,
-            fontSize: 'var(--nb-fs-xs)',
-            fontWeight: 700,
-            color: '#FA8072',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Axon unavailable
-        </span>
-        <p
-          style={{
-            fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-sm)',
-            color: THEME.VALUE,
-            lineHeight: 1.6,
-            margin: 0,
-          }}
-        >
-          {apiError}
-        </p>
+      <div data-testid="nexai-result-api-error">
+        <SimErrorBanner message={apiError} onRetry={onRetry} />
       </div>
     );
   }
