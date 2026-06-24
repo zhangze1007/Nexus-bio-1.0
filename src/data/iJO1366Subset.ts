@@ -1,5 +1,5 @@
 /**
- * iJO1366 Subset — 71 reactions from E. coli K-12 central metabolism
+ * iJO1366 Subset — ~83 reactions from E. coli K-12 central metabolism
  *
  * Source: Orth et al. (2011) Mol Syst Biol 7:535 — BiGG iJO1366 model.
  * This is a curated subset covering:
@@ -10,7 +10,7 @@
  *   - Anaplerotic reactions (4 reactions)
  *   - Pyruvate metabolism (4 reactions)
  *   - Fermentation products (4 reactions)
- *   - Key exchange reactions (8 reactions)
+ *   - Key exchange & ion reactions (21 reactions)
  *   - Amino acid precursor drains (8 reactions)
  *   - Biosynthetic drains & biomass (5 reactions)
  *   - Cofactor balances (auxiliary reactions) (12 reactions)
@@ -22,7 +22,7 @@
  * Bounds are from iJO1366 with glucose aerobic defaults.
  * Stoichiometry is exact from the genome-scale model.
  *
- * Total: ~95 reactions, ~78 metabolites, ~78 mass-balance constraints
+ * Total: ~83 reactions, ~90 metabolites, ~90 mass-balance constraints
  */
 
 export type Subsystem =
@@ -217,6 +217,31 @@ const EXCHANGE: IJO1366Reaction[] = [
     stoichiometry: { etoh: -1 } },
   { id: 'EX_for_e', name: 'Formate exchange', subsystem: 'Exchange', lb: 0, ub: 1000,
     stoichiometry: { for_e: -1 } },
+  // Ion / nutrient exchange reactions (essential for biomass synthesis)
+  { id: 'EX_nh4_e', name: 'NH4 exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { nh4_e: -1 } },
+  { id: 'EX_so4_e', name: 'SO4 exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { so4_e: -1 } },
+  { id: 'EX_mg2_e', name: 'Mg2+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { mg2_e: -1 } },
+  { id: 'EX_k_e', name: 'K+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { k_e: -1 } },
+  { id: 'EX_na1_e', name: 'Na+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { na1_e: -1 } },
+  { id: 'EX_fe2_e', name: 'Fe2+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { fe2_e: -1 } },
+  { id: 'EX_fe3_e', name: 'Fe3+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { fe3_e: -1 } },
+  { id: 'EX_ca2_e', name: 'Ca2+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { ca2_e: -1 } },
+  { id: 'EX_mn2_e', name: 'Mn2+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { mn2_e: -1 } },
+  { id: 'EX_zn2_e', name: 'Zn2+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { zn2_e: -1 } },
+  { id: 'EX_cu2_e', name: 'Cu2+ exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { cu2_e: -1 } },
+  { id: 'EX_cl_e', name: 'Cl- exchange', subsystem: 'Exchange', lb: -1000, ub: 1000,
+    stoichiometry: { cl_e: -1 } },
 ];
 
 // ── Amino Acid Precursor Drains ──────────────────────────────────────

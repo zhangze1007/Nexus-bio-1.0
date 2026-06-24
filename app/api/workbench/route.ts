@@ -181,6 +181,12 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  // ── Auth chain ──
+  // Requests reaching this handler have already passed middleware.ts authentication.
+  // middleware.ts checks: (1) Sec-Fetch-Site: same-origin, (2) X-API-Key header,
+  // (3) Authorization: Bearer token. Unauthenticated requests get a 401 before
+  // reaching this handler. Additional CSRF and payload validation follows below.
+
   // ── Origin checking (CSRF protection) ──
   const origin = request.headers.get('origin') ?? '';
   const ALLOWED_ORIGINS = [

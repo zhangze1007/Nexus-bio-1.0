@@ -26,6 +26,7 @@ import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
 import { KEGG_REACTIONS } from '../../hooks/useEquilibrator';
+import { getPrecomputedDGMap, computeDGAtConditions, PHYSIOLOGICAL } from '../../data/precomputedDG';
 import { searchPubChemCompound } from '../../services/database/pubchemClient';
 import type { PubChemCompound } from '../../services/database/pubchemClient';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
@@ -361,6 +362,7 @@ export default React.memo(function CETHXPage() {
   const [pH, setPH] = useState(7.4);
   const [equilibratorData, setEquilibratorData] = useState<Map<string, { dG_prime: number; dG_prime_uncertainty: number }>>(new Map());
   const [isRealData, setIsRealData] = useState(false);
+  const [equilibratorLoaded, setEquilibratorLoaded] = useState(false);
   const [isLoadingEquilibrator, setIsLoadingEquilibrator] = useState(false);
 
   // PubChem compound lookup
@@ -395,8 +397,26 @@ export default React.memo(function CETHXPage() {
     lastAppliedSeedRef.current = seedSignature;
   }, [seedSignature, recommendedSeed.pathway, recommendedSeed.tempC, recommendedSeed.pH]);
 
-  // Fetch real eQuilibrator data when conditions change
+  // Load pre-computed ΔG data immediately (published reference values),
+  // then attempt eQuilibrator sidecar in background for potential upgrade.
   useEffect(() => {
+    // Step 1: Immediately load pre-computed data from published references
+    const isPhysiological = (
+      Math.abs(pH - PHYSIOLOGICAL.pH) < 0.05 &&
+      Math.abs(tempC - PHYSIOLOGICAL.temperature_C) < 0.5
+    );
+
+    const precomputedMap = isPhysiological
+      ? getPrecomputedDGMap(pathway)
+      : computeDGAtConditions(pathway, pH, tempC, 0.25);
+
+    if (precomputedMap.size > 0) {
+      setEquilibratorData(precomputedMap);
+      setIsRealData(true);
+      setEquilibratorLoaded(false);
+    }
+
+    // Step 2: Try eQuilibrator sidecar in background for real-time data
     const reactions = KEGG_REACTIONS[pathway];
     if (!reactions) return;
 
@@ -434,14 +454,15 @@ export default React.memo(function CETHXPage() {
 
         await Promise.allSettled(promises);
 
-        if (newData.size > 0) {
+        // Only upgrade if eQuilibrator returned data for all steps
+        if (newData.size >= Object.keys(reactions).length) {
           setEquilibratorData(newData);
           setIsRealData(true);
-        } else {
-          setIsRealData(false);
+          setEquilibratorLoaded(true);
         }
+        // Otherwise keep the pre-computed data (already set above)
       } catch {
-        setIsRealData(false);
+        // eQuilibrator unavailable — pre-computed data remains active
       } finally {
         setIsLoadingEquilibrator(false);
       }
@@ -564,7 +585,7 @@ export default React.memo(function CETHXPage() {
       .filter((entry): entry is ProvenanceEntry => Boolean(entry))
       .map((entry) => `${entry.toolId}:${entry.timestamp}`);
 
-    const assumptions = isRealData
+    const assumptions = equilibratorLoaded
       ? [
           'cethx.equilibrator_backend',
           'cethx.alberty_transform',
@@ -572,8 +593,8 @@ export default React.memo(function CETHXPage() {
           'cethx.uncertainty_calculated',
         ]
       : [
-          'cethx.alberty_transform_local',
-          'cethx.group_contribution_reference',
+          'cethx.precomputed_reference_data',
+          'cethx.alberty_transform',
           'cethx.condition_aware_ph_ionic',
           'cethx.uncertainty_estimated',
           'cethx.lehninger_reference_dg0',
@@ -581,7 +602,7 @@ export default React.memo(function CETHXPage() {
           'cethx.proton_stoich_estimated',
         ];
 
-    const evidence = isRealData
+    const evidence = equilibratorLoaded
       ? [{
           id: `cethx-${now}`,
           source: 'computation' as const,
@@ -592,9 +613,9 @@ export default React.memo(function CETHXPage() {
       : [{
           id: `cethx-${now}`,
           source: 'computation' as const,
-          reference: 'Alberty (2003) Thermodynamics of Biochemical Reactions; Mavrovouniotis (1991) J Biol Chem 266(22):14440-14445',
+          reference: 'Lehninger Principles of Biochemistry (Nelson & Cox); NIST Webbook; Alberty (2003) Thermodynamics of Biochemical Reactions',
           confidence: 'medium' as const,
-          notes: `Alberty-transformed ΔG' from Lehninger reference ΔG° at pH ${pH}, ${tempC}°C, I=0.25M via calcTransformedGibbs. Proton stoichiometry estimated from KEGG reaction equations.`,
+          notes: `Pre-computed ΔG' from Lehninger/NIST reference ΔG° at pH ${pH}, ${tempC}°C, I=0.25M. Alberty transform with Debye-Hückel ionic strength correction. Proton stoichiometry from KEGG reaction equations.`,
         }];
 
     setToolPayload('cethx', {
@@ -626,7 +647,7 @@ export default React.memo(function CETHXPage() {
   // Console logging
   const appendConsole = useUIStore((s) => s.appendConsole);
   useEffect(() => {
-    const source = isRealData ? 'eQuilibrator' : 'Alberty-local';
+    const source = equilibratorLoaded ? 'eQuilibrator' : 'precomputed';
     appendConsole({
       level: thermo.gibbs_free_energy < 0 ? 'info' : 'warn',
       module: 'CETHX',
@@ -664,9 +685,9 @@ export default React.memo(function CETHXPage() {
     <ToolShell
       moduleId="cethx"
       title="Cell Thermodynamics Engine"
-      description={isRealData
+      description={equilibratorLoaded
         ? "Condition-aware thermodynamics — eQuilibrator 3 with Alberty transform"
-        : "Condition-aware thermodynamics — Alberty transform with Lehninger reference ΔG°"
+        : "Condition-aware thermodynamics — Pre-computed from Lehninger/NIST references with Alberty transform"
       }
       formula="ΔG' = ΔG° + RT·ln(10)·(pH-7)·nH + Debye-Hückel(Δz², I)"
       tabs={CETHX_TABS}
@@ -677,9 +698,9 @@ export default React.memo(function CETHXPage() {
         <ScientificHero
           eyebrow="Stage 2 · Condition-Aware Thermodynamics"
           title={`${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} with condition-aware ΔG′`}
-          summary={isRealData
+          summary={equilibratorLoaded
             ? "CETHX uses eQuilibrator 3 (ComponentContribution) for condition-aware thermodynamic calculations with Alberty transform, Debye-Hückel ionic strength correction, and uncertainty quantification."
-            : "CETHX applies the Alberty transform (Alberty 2003) to Lehninger reference ΔG° values, adjusting for pH and ionic strength via Debye-Hückel theory. Per-step feasibility is assessed from the transformed ΔG′."
+            : "CETHX uses pre-computed ΔG values from Lehninger/NIST references, transformed via the Alberty formalism for pH and ionic strength. Data sourced from published reference tables — no external API required."
           }
           signals={[
             {
@@ -722,8 +743,8 @@ export default React.memo(function CETHXPage() {
             }] : []),
             {
               label: 'Source',
-              value: isRealData ? 'eQuilibrator 3' : 'Alberty Transform',
-              detail: isRealData ? 'ComponentContribution with uncertainty' : 'calcTransformedGibbs from thermoEngine',
+              value: equilibratorLoaded ? 'eQuilibrator 3' : 'Pre-computed',
+              detail: equilibratorLoaded ? 'ComponentContribution with uncertainty' : 'Lehninger/NIST + Alberty transform (pre-computed)',
               tone: 'cool' as const,
             },
           ]}
@@ -731,7 +752,7 @@ export default React.memo(function CETHXPage() {
       }
       footer={
         <>
-          <DataSourceBadge source={isRealData ? 'live' : 'mock'} label={isRealData ? 'eQuilibrator Live' : 'eQuilibrator Demo'} />
+          <DataSourceBadge source={equilibratorLoaded ? 'live' : 'mock'} label={equilibratorLoaded ? 'eQuilibrator Live' : 'Pre-computed (Lehninger/NIST)'} />
           {fba && (
             <div role="status" style={{ padding: '6px 14px', background: `${THEME.SKY}24`, border: `1px solid ${THEME.SKY}47`, borderRadius: 'var(--nb-radius-md)', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
               <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: `${THEME.SKY}38`, border: `1px solid ${THEME.SKY}57`, color: THEME.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
@@ -801,6 +822,9 @@ export default React.memo(function CETHXPage() {
             'Aqueous phase reactions only',
             'Proton stoichiometry estimated from KEGG reaction equations',
             'Reference ΔG° values from Lehninger/NIST tables',
+            equilibratorLoaded
+              ? 'Live data from eQuilibrator 3 (ComponentContribution)'
+              : 'Pre-computed ΔG′ from published reference values',
           ]}
           limitations={[
             'Reference ΔG° values are at standard conditions (25°C, pH 7)',
@@ -808,7 +832,8 @@ export default React.memo(function CETHXPage() {
             'Charge change (Δz²) is approximate',
             'Does not account for magnesium binding effects',
             'Compartment-specific ΔG′ adjustments not included',
-          ]}
+            !equilibratorLoaded && 'Pre-computed values use fixed proton stoichiometry; eQuilibrator uses group contribution',
+          ].filter(Boolean) as string[]}
           citation={{
             authors: 'Alberty RA',
             title: 'Thermodynamics of Biochemical Reactions',
@@ -1058,9 +1083,9 @@ export default React.memo(function CETHXPage() {
               footer={
                 <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
                   limiting step {limitingStep ?? 'pending'} · entropy {thermo.entropy_production.toFixed(3)} · NADH {thermo.nadh_yield.toFixed(1)}
-                  {!isRealData && (
+                  {!equilibratorLoaded && (
                     <span style={{ display: 'block', marginTop: '2px', color: THEME.DIM, fontStyle: 'italic' }}>
-                      Uncertainty estimated at ~15% of |ΔG′| — eQuilibrator data unavailable
+                      Uncertainty estimated at ~15% of |ΔG′| — using pre-computed reference data
                     </span>
                   )}
                 </div>
@@ -1277,8 +1302,8 @@ export default React.memo(function CETHXPage() {
               Conditions
             </div>
             <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.55 }}>
-              {`Pathway: ${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} · ${tempC.toFixed(0)}°C · pH ${pH.toFixed(1)} · I = 0.25 M · Alberty transform with Debye-Hückel ionic strength correction. ${isRealData ? 'eQuilibrator 3 (ComponentContribution) backend.' : 'Reference ΔG° from Lehninger, transformed via calcTransformedGibbs.'}`}
-              {!isRealData && (
+              {`Pathway: ${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} · ${tempC.toFixed(0)}°C · pH ${pH.toFixed(1)} · I = 0.25 M · Alberty transform with Debye-Hückel ionic strength correction. ${equilibratorLoaded ? 'eQuilibrator 3 (ComponentContribution) backend.' : 'Pre-computed from Lehninger/NIST reference ΔG° with Alberty transform.'}`}
+              {!equilibratorLoaded && (
                 <span style={{ display: 'block', marginTop: '6px', fontStyle: 'italic', color: THEME.DIM }}>
                   Note: per-step uncertainty is estimated at ~15% of |ΔG′| as a heuristic. For measured uncertainty from statistical thermodynamics, connect to the eQuilibrator backend.
                 </span>

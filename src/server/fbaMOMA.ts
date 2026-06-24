@@ -11,8 +11,12 @@
  *        lb ≤ v ≤ ub
  *        v_knockout = 0
  *
- * This implementation uses an L1-approximation (Sequential LP) since the
- * HiGHS WASM wrapper does not expose QP:
+ * This implementation uses HiGHS's native QP solver when available.
+ * The objective is expanded as:
+ *   min  Σ (v_i² - 2·v_wt_i·v_i) + const
+ *
+ * If the QP solve fails (e.g. WASM limitation), we fall back to an
+ * L1-approximation via sequential LP:
  *   min  Σ (pos_i + neg_i)
  *   s.t. v_i - v_wt_i = pos_i - neg_i   for all i
  *        S · v = 0
@@ -28,15 +32,10 @@
  *
  * @scientific_provenance
  *   REFERENCE: Segrè et al. (2002) PNAS 99(23):15112-15117
- *   ALGORITHM: L1-approximation of quadratic MOMA via sequential LP
- *   KNOWN_LIMITATIONS:
- *     - L1 norm approximation, not true L2 (Euclidean) minimization
- *     - For small models, L1 and L2 give similar results
- *     - For large models with many alternative pathways, the L1
- *       approximation may select a different optimal than the true QP
+ *   ALGORITHM: Quadratic MOMA (L2 norm) via HiGHS QP, L1 fallback
  */
 
-import { solveLP, type LPModel } from './highsSolver';
+import { solveLP, type LPModel, type QPTerm } from './highsSolver';
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                  */
@@ -209,6 +208,70 @@ function buildMOMAModel(
 }
 
 /* ------------------------------------------------------------------ */
+/*  QP construction: true MOMA (minimise L2 distance to wild-type)     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Build a QP that minimises the Euclidean (L2) distance to the wild-type
+ * flux vector subject to stoichiometric balance and knockout constraints.
+ *
+ * Expanding ||v - v_wt||² = Σ(v_i² - 2·v_wt_i·v_i + v_wt_i²):
+ *   Linear objective:   -2·v_wt_i  for each v_i
+ *   Quadratic objective: v_i²      for each v_i (diagonal, no cross-terms)
+ *   Constant Σ v_wt_i² is dropped (does not affect argmin).
+ */
+function buildMOMAQPModel(
+  model: MOMAModel,
+  knockoutSet: Set<string>,
+  wildtypeFluxes: Record<string, number>,
+): LPModel {
+  const metIds = collectMetabolites(model.reactions);
+
+  // Linear objective: -2 * v_wt_i * v_i
+  const objective = model.reactions.map((r) => ({
+    name: r.id,
+    coef: -2 * (wildtypeFluxes[r.id] ?? 0),
+  }));
+
+  // Quadratic objective: 1 * v_i * v_i for each reaction
+  const quadratic: QPTerm[] = model.reactions.map((r) => ({
+    var1: r.id,
+    var2: r.id,
+    coef: 1,
+  }));
+
+  const constraints: LPModel['constraints'] = [];
+
+  // Stoichiometric balance: S · v = 0
+  for (const metId of metIds) {
+    constraints.push({
+      name: `${metId}_balance`,
+      vars: model.reactions
+        .filter((r) => r.stoichiometry[metId] !== undefined)
+        .map((r) => ({ name: r.id, coef: r.stoichiometry[metId] })),
+      lb: 0,
+      ub: 0,
+    });
+  }
+
+  // Bounds
+  const bounds: LPModel['bounds'] = model.reactions.map((r) => ({
+    name: r.id,
+    lb: r.lb,
+    ub: knockoutSet.has(r.id) ? 0 : r.ub,
+  }));
+
+  return {
+    name: 'moma_qp',
+    sense: 'minimize',
+    objective,
+    constraints,
+    bounds,
+    quadratic,
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Euclidean distance helper                                          */
 /* ------------------------------------------------------------------ */
 
@@ -233,9 +296,10 @@ function euclideanDistance(
  * Run MOMA (Minimization of Metabolic Adjustment) analysis.
  *
  * 1. Solve wild-type FBA (maximise objective) to obtain v_wt.
- * 2. Build an L1-approximation LP that finds the feasible mutant flux
- *    distribution closest to v_wt in L1 norm.
- * 3. Compute the Euclidean (L2) distance from the resulting fluxes.
+ * 2. Build a true QP that minimises ||v - v_wt||² (Euclidean distance)
+ *    subject to stoichiometric balance and knockout constraints.
+ * 3. If QP solve fails, fall back to L1-approximation LP.
+ * 4. Compute the Euclidean (L2) distance from the resulting fluxes.
  *
  * @param model               Metabolic model definition
  * @param knockoutReactionIds Reaction IDs to knock out (flux fixed to 0)
@@ -311,9 +375,15 @@ export async function runMOMA(
     };
   }
 
-  // ── Step 4: Solve MOMA (minimise L1 distance to wild-type) ───────────
-  const momaLP = buildMOMAModel(model, knockoutSet, wildtypeFluxes);
-  const momaResult = await solveLP(momaLP);
+  // ── Step 4: Solve MOMA (try true QP first, fall back to L1 LP) ───────
+  const momaQP = buildMOMAQPModel(model, knockoutSet, wildtypeFluxes);
+  let momaResult = await solveLP(momaQP);
+
+  if (momaResult.status === 'error') {
+    // QP solve failed (e.g. WASM limitation) — fall back to L1 approximation
+    const momaLP = buildMOMAModel(model, knockoutSet, wildtypeFluxes);
+    momaResult = await solveLP(momaLP);
+  }
 
   if (momaResult.status !== 'optimal') {
     // MOMA LP failed — fall back to regular mutant FBA fluxes

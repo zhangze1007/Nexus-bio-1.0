@@ -33,6 +33,17 @@ export interface LPBound {
   ub: number;
 }
 
+/**
+ * Quadratic objective term for QP support.
+ * Represents `coef * var1 * var2` in the quadratic part of the objective.
+ * For diagonal terms (squared), set var1 === var2.
+ */
+export interface QPTerm {
+  var1: string;
+  var2: string;
+  coef: number;
+}
+
 export interface LPModel {
   name?: string;
   sense: 'minimize' | 'maximize';
@@ -41,6 +52,12 @@ export interface LPModel {
   bounds?: LPBound[];
   binaries?: string[];   // variable names that must be binary (0 or 1)
   integers?: string[];   // variable names that must be integer
+  /**
+   * Quadratic objective terms. When present, the objective becomes:
+   *   linear (from `objective`) + quadratic (from `quadratic`)
+   * HiGHS supports QP natively via CPLEX LP `[ Quadratic ]` section.
+   */
+  quadratic?: QPTerm[];
 }
 
 export interface LPSolution {
@@ -174,6 +191,29 @@ function buildLPString(model: LPModel): string {
       if (con.ub < Infinity) {
         lines.push(` ${conName}_ub: ${expr} <= ${con.ub}`);
       }
+    }
+  }
+
+  // Quadratic section — for QP support (HiGHS CPLEX LP format)
+  if (model.quadratic && model.quadratic.length > 0) {
+    const objName = model.name ? escapeName(model.name) : 'obj';
+    const qTerms = model.quadratic
+      .filter((t) => t.coef !== 0)
+      .map((t) => {
+        const v1 = escapeName(t.var1);
+        const v2 = escapeName(t.var2);
+        if (t.var1 === t.var2) {
+          // Diagonal: [ coef var ^ 2 ] or [ var ^ 2 ] when coef=1
+          if (t.coef === 1) return `[ ${v1} ^ 2 ]`;
+          return `[ ${t.coef} ${v1} ^ 2 ]`;
+        }
+        // Cross term: [ coef var1 * var2 ]
+        if (t.coef === 1) return `[ ${v1} * ${v2} ]`;
+        return `[ ${t.coef} ${v1} * ${v2} ]`;
+      });
+    if (qTerms.length > 0) {
+      lines.push('Quadratic');
+      lines.push(` ${objName}: ${qTerms.join(' + ')}`);
     }
   }
 
