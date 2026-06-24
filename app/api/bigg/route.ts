@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 
-import { getCorsHeaders, handleOptions } from '@/utils/cors';
+import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
 const BIGG_BASE = 'http://bigg.ucsd.edu/api/v3';
 
