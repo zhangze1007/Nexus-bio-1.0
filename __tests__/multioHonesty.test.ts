@@ -115,15 +115,15 @@ describe('MultiO model honesty boundary', () => {
     expect(isMultiOFormalModelSurfaceBlocked('external-handoff')).toBe(true);
   });
 
-  it('keeps MultiO validity demo and declares model/backend/uncertainty limitations', () => {
+  it('keeps MultiO validity partial (real MOFA+) and declares limitations', () => {
     const assumptions = TOOL_ASSUMPTIONS.multio;
     const assumptionById = new Map(assumptions.map((assumption) => [assumption.id, assumption]));
     const registryEntry = TOOL_DEFINITIONS.find((tool) => tool.id === 'multio');
 
-    expect(TOOL_VALIDITY.multio.level).toBe('demo');
-    expect(TOOL_VALIDITY.multio.caption).toContain('Deterministic demo integration only');
-    expect(TOOL_VALIDITY.multio.caption).toContain('No Bayesian');
-    expect(TOOL_VALIDITY.multio.caption).toContain('reference-model backend');
+    expect(TOOL_VALIDITY.multio.level).toBe('partial');
+    expect(TOOL_VALIDITY.multio.caption).toContain('MOFA+');
+    expect(TOOL_VALIDITY.multio.caption).toContain('no Bayesian');
+    expect(TOOL_VALIDITY.multio.caption).toContain('Deterministic demo data');
     expect(registryEntry?.tags).not.toContain('vae');
     expect(registryEntry?.tags).toContain('deterministic');
     expect(assumptionById.get('multio.deterministic_demo_only')).toMatchObject({
@@ -199,7 +199,8 @@ describe('MultiO model honesty boundary', () => {
     expect(multioPage).toContain('Deterministic Multi-Omics Integration');
     expect(multioPage).toContain('sensitivity sketches');
     expect(registry).toContain('Demo multi-omics integration');
-    expect(validity).toContain('Deterministic demo integration only');
+    expect(validity).toContain('MOFA+');
+    expect(validity).toContain('Deterministic demo data');
     expect(readme).toContain('sensitivity sketches');
 
     const userFacingText = `${multioPage}\n${registry}\n${readme}`;
