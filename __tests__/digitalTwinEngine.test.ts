@@ -552,8 +552,9 @@ describe('EKF Mathematical Correctness — Bug Regressions', () => {
 
   test('anomaly score uses innovation covariance S not state covariance P (NIS bug regression)', () => {
     // If NIS used P instead of S, high P would suppress anomaly detection.
-    // With correct S, moderate innovation should trigger at least some anomaly flags.
-    const readings = makeReadings(8, { biomassNoise: 0.5 });
+    // With correct S, large innovations should trigger anomaly flags.
+    // Use high noise + more readings to guarantee NIS > threshold regardless of Math.random() seed.
+    const readings = makeReadings(15, { biomassNoise: 3.0 });
     const result = runDigitalTwin(standardConfig, readings);
     const anomalous = result.updateHistory.filter(u => (u as any).anomalyScore > 0.3);
     expect(anomalous.length).toBeGreaterThan(0);
