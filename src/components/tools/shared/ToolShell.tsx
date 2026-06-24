@@ -199,13 +199,14 @@ export default function ToolShell({
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
+          <h1 style={{
             fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
             color: THEME.VALUE,
             letterSpacing: '-0.01em',
+            margin: 0,
           }}>
             {tool?.name ?? title}
-          </div>
+          </h1>
           {description && (
             <div style={{
               fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',

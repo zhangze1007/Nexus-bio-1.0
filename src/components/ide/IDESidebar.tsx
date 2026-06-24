@@ -393,6 +393,7 @@ export default function IDESidebar() {
                   <Link
                     key={tool.id}
                     href={tool.href}
+                    aria-label={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                     title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                     onClick={(e) => {
                       e.stopPropagation();

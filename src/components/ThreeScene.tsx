@@ -723,7 +723,7 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
 
   const N = edgeVecs.length * FLUX_PER_EDGE;
 
-  const { pts, geo } = useMemo(() => {
+  const { pts, geo, mat } = useMemo(() => {
     const pos = new Float32Array(Math.max(N, 1) * 3);
     // Stagger initial positions evenly along each edge
     for (let i = 0; i < N; i++) {
@@ -738,13 +738,21 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
     const g = new BufferGeometry();
     g.setAttribute('position', new BufferAttribute(pos, 3));
     const m = new PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.55, sizeAttenuation: true, depthWrite: false });
-    return { pts: new Points(g, m), geo: g };
+    return { pts: new Points(g, m), geo: g, mat: m };
   }, [N, edgeVecs]);
+
+  // Dispose GPU resources on unmount or when geometry/material instances change
+  useEffect(() => {
+    return () => {
+      geo.dispose();
+      mat.dispose();
+    };
+  }, [geo, mat]);
 
   // Update opacity reactively with glowMultiplier
   useEffect(() => {
-    (pts.material as PointsMaterial).opacity = Math.min(0.85, 0.3 + glowMultiplier * 0.2);
-  }, [pts, glowMultiplier]);
+    mat.opacity = Math.min(0.85, 0.3 + glowMultiplier * 0.2);
+  }, [mat, glowMultiplier]);
 
   const progress = useRef(Float32Array.from({ length: N }, (_, i) => (i % FLUX_PER_EDGE) / FLUX_PER_EDGE));
 

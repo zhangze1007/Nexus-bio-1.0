@@ -18,7 +18,7 @@
  *   KNOWN_LIMITATIONS:
  *     - Full EMU network with atom mapping
  *     - No GC-MS/MS raw data parsing
- *     - Flux estimation uses grid search, not nonlinear optimization
+ *     - Flux estimation uses Levenberg-Marquardt nonlinear least-squares optimization
  *     - No uncertainty quantification (no Monte Carlo confidence intervals)
  */
 

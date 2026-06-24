@@ -141,7 +141,7 @@ export const useUIStore = create<UIState>()(
         ...entry,
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         timestamp: Date.now(),
-      }],
+      }].slice(-500),
     })),
 
     clearConsole: () => set({ consoleEntries: [] }),

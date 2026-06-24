@@ -432,7 +432,7 @@ export function sanitizeHistory(
     const truncated = entry.content.length > MAX_HISTORY_MSG_CHARS
       ? entry.content.slice(0, MAX_HISTORY_MSG_CHARS)
       : entry.content;
-    validated.push({ role: entry.role, content: truncated });
+    validated.push({ role: entry.role, content: escapeHtml(truncated) });
   }
 
   // Keep last N turn-pairs (each pair = user + assistant = 2 messages).

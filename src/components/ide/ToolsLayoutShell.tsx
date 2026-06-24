@@ -128,6 +128,7 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
 
         {/* Main canvas — fills remaining space after topbar. */}
         <main
+          id="main-content"
           className="nb-ide-main"
           role="main"
           aria-label="Tool workspace"

@@ -1,5 +1,5 @@
 /**
- * iJO1366 Subset — ~95 reactions from E. coli K-12 central metabolism
+ * iJO1366 Subset — 71 reactions from E. coli K-12 central metabolism
  *
  * Source: Orth et al. (2011) Mol Syst Biol 7:535 — BiGG iJO1366 model.
  * This is a curated subset covering:
