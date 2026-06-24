@@ -10,11 +10,21 @@ import asyncio
 import json
 import logging
 import os
+import sys
 import tempfile
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+# ── Workaround: anndata tries to import torch for its PyTorch dataloader.
+#    On Python 3.14, torch DLLs fail to load. We don't need torch, so
+#    create a stub module to prevent the crash.
+try:
+    import torch  # noqa: F401
+except (OSError, ImportError):
+    import types
+    sys.modules["torch"] = types.ModuleType("torch")  # type: ignore[assignment]
 
 import anndata as ad
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
