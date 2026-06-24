@@ -1034,7 +1034,6 @@ export default React.memo(function CatalystDesignerPage() {
   const handleInverseFolding = useCallback(async () => {
     setInvFoldLoading(true);
     try {
-      const { runInverseFolding } = await import('../../server/inverseFoldingEngine');
       // Generate backbone from current enzyme's catalytic residues (simplified)
       const backbone = Array.from({ length: Math.max(30, enzyme.catalyticResidues.length * 10) }, (_, i) => ({
         residueIndex: i,
@@ -1043,12 +1042,14 @@ export default React.memo(function CatalystDesignerPage() {
         y: 10 * Math.sin(i * 0.6) + (i % 5) * 2,
         z: i * 3.8,
       }));
-      const result = runInverseFolding({
-        backbone,
-        nSequences: invFoldSeqCount,
-        temperature: invFoldTemp,
+      const res = await fetch('/api/pipeline/inversefolding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backbone, nSequences: invFoldSeqCount, temperature: invFoldTemp }),
       });
-      setInvFoldResult(result);
+      if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+      const data = await res.json();
+      setInvFoldResult(data.result);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Inverse folding failed';
       setCatdesError(msg);
