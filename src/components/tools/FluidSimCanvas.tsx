@@ -67,7 +67,10 @@ function MetaboliteMolecules({ reactionRate, stressIndex, state }: MoleculesProp
   const positions   = useMemo(() => seeds.pos.map(p => [...p] as [number,number,number]), [seeds]);
   const colorArr    = useMemo(() => new Float32Array(MOLECULE_COUNT * 3), []);
 
+  const frameCounter = useRef(0);
   useFrame((state3f) => {
+    frameCounter.current++;
+    if (frameCounter.current % 2 !== 0) return; // skip every other frame for perf
     const mesh = meshRef.current;
     if (!mesh) return;
     const t   = state3f.clock.elapsedTime;

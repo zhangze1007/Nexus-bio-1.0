@@ -167,42 +167,51 @@ export function simulateCellFreePathway(
   const k_deg_mRNA = 0.02; // mRNA degradation (1/min) — half-life ~35 min, E. coli extract
   const k_deg_prot = 0.01; // protein degradation (1/min) — half-life ~70 min, limited proteases
 
-  for (let step = 0; step <= steps; step++) {
-    const t = step * dt;
-
-    // Energy regeneration
-    const atpRegen = energy.atpRate * dt;
-
-    // Transcription
-    const txnRate = k_txn * system.templateDNA * (atp / (atp + 0.5));
-    mrna += (txnRate - k_deg_mRNA * mrna) * dt;
-
-    // Translation
-    const tlnRate = k_tln * mrna * (atp / (atp + 0.5)) * (gtp / (gtp + 0.1));
-    protein += (tlnRate - k_deg_prot * protein) * dt;
-
-    // ATP consumption (transcription + translation + pathway)
-    const atpConsumption = (txnRate * 0.5 + tlnRate * 2.0) * dt;
-
-    // Pathway catalysis (Michaelis-Menten)
+  // RK4 ODE integration (replaces forward Euler for better accuracy with stiff systems)
+  type State = [number, number, number, number, number]; // mrna, protein, substrate, product, atp
+  const derivatives = (s: State): State => {
+    const [m, p, sub, , a] = s;
+    const txnRate = k_txn * system.templateDNA * (a / (a + 0.5));
+    const tlnRate = k_tln * m * (a / (a + 0.5)) * (gtp / (gtp + 0.1));
+    const atpRegen = energy.atpRate;
+    const atpCons = txnRate * 0.5 + tlnRate * 2.0;
     let pathwayFlux = Infinity;
     for (const step of pathway) {
-      const v = step.kcat * step.enzymeConc * substrate / (step.km + substrate);
+      const v = step.kcat * step.enzymeConc * sub / (step.km + sub);
       pathwayFlux = Math.min(pathwayFlux, v);
     }
-    pathwayFlux = Math.min(pathwayFlux, substrate / dt);
+    pathwayFlux = Math.min(pathwayFlux, sub / dt);
+    return [
+      txnRate - k_deg_mRNA * m,         // d(mrna)/dt
+      tlnRate - k_deg_prot * p,          // d(protein)/dt
+      -pathwayFlux,                      // d(substrate)/dt
+      pathwayFlux,                       // d(product)/dt
+      atpRegen - atpCons,                // d(atp)/dt
+    ];
+  };
 
-    product += pathwayFlux * dt;
-    substrate -= pathwayFlux * dt;
+  for (let step = 0; step <= steps; step++) {
+    const t = step * dt;
+    const y: State = [mrna, protein, substrate, product, atp];
 
-    // Update ATP
-    atp += atpRegen - atpConsumption;
-    atp = Math.max(0, atp);
+    // Classic RK4
+    const k1 = derivatives(y);
+    const y2: State = y.map((yi, i) => yi + 0.5 * dt * k1[i]) as State;
+    const k2 = derivatives(y2);
+    const y3: State = y.map((yi, i) => yi + 0.5 * dt * k2[i]) as State;
+    const k3 = derivatives(y3);
+    const y4: State = y.map((yi, i) => yi + dt * k3[i]) as State;
+    const k4 = derivatives(y4);
 
-    // Clamp
+    [mrna, protein, substrate, product, atp] = y.map((yi, i) =>
+      yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+    ) as State;
+
+    // Clamp non-negative
     mrna = Math.max(0, mrna);
     protein = Math.max(0, protein);
     substrate = Math.max(0, substrate);
+    atp = Math.max(0, atp);
 
     if (step % Math.floor(0.5 / dt) === 0) { // every 30 min
       timeSeries.push({
