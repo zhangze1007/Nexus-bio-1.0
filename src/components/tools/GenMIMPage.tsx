@@ -1042,6 +1042,16 @@ function BiosafetyPanel({ schedule }: { schedule: CRISPRiTarget[] }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px', overflowY: 'auto', flex: 1 }}>
+      <div style={{
+        padding: '8px 12px', marginBottom: '12px',
+        background: 'rgba(250,128,114,0.08)',
+        border: '1px solid rgba(250,128,114,0.2)',
+        borderRadius: '6px',
+        fontSize: '12px', color: 'rgba(255,255,255,0.6)',
+        fontFamily: THEME.MONO,
+      }}>
+        ⚠ Demo mode — pattern database is a 14-entry simulated subset. Not suitable for actual biosafety screening.
+      </div>
       {error && <SimErrorBanner message={error} onRetry={() => setError(null)} />}
       {/* Parameters */}
       <ParameterPanel title="Biosafety Parameters">

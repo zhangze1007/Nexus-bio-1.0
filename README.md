@@ -246,6 +246,8 @@ The search bar on the homepage recognizes molecules, strains, DOIs, and producti
 - Hexagonal spot grid (10x Visium style)
 - UMAP with convex hull cluster territories
 
+**Note:** Advanced ScSpatial features (Moran's I, PAGA, scanpy integration) require a Python sidecar with scanpy/anndata installed. On Vercel, only demo data processing is available. For real h5ad analysis, deploy with a Python sidecar or run locally.
+
 #### 13. NEXAI — AI Research Agent
 **Route:** `/tools/nexai`
 **What it does:** AI-powered literature search and analysis with multi-source paper search (OpenAlex + Semantic Scholar + PubMed), citation verification, and Axon AI copilot.
@@ -374,7 +376,7 @@ GROQ_API_KEY=your_groq_key
 GEMINI_API_KEY=your_gemini_key
 ```
 
-All tool simulations work offline without API keys. Database integrations fall back to demo data when APIs are unavailable.
+Most tool simulations work offline without API keys. Database integrations fall back to demo data when APIs are unavailable. However, the AI features (NEXAI/Axon copilot and /analyze endpoint) require at least one of GROQ_API_KEY or GEMINI_API_KEY to function. Without these keys, AI features will return 503 errors.
 
 ### Quality Checks
 
