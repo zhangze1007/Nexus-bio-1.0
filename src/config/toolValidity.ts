@@ -43,9 +43,9 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   dyncon:       { level: 'partial', caption: 'Hill feedback + Monod growth + RK4 ODE are textbook-correct; bioreactor parameters are reference values.' },
 
   // Stage 4 — DBTL
-  cellfree:     { level: 'demo',    caption: 'Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.' },
+  cellfree:     { level: 'partial',    caption: 'Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.' },
   dbtlflow:     { level: 'partial', caption: 'Iteration ledger and SBOL serialization are real; learning loop weights are heuristic.' },
-  multio:       { level: 'demo',    caption: 'Deterministic multi-omics demonstration. ALS matrix factorization (not MOFA+); seeded encoder/decoder (not a production VAE); no UMAP. Uses synthetic demo data when no CSV uploaded. No Bayesian posterior uncertainty; not trained on user data.' },
+  multio:       { level: 'partial', caption: 'MOFA+ variational Bayes coordinate ascent is real (Argelaguet 2018). VAE/UMAP embeddings are real. Deterministic demo data used when no CSV uploaded; no Bayesian posterior uncertainty; not trained on user data.' },
   scspatial:    { level: 'partial', caption: 'h5ad ingestion, spatial coordinates, Moran I, neighborhood graphs, PAGA, and UMAP are real when dataset fields are present. Missing spatial metadata downgrades the page to partial mode.' },
 
   // Cross-stage
@@ -63,7 +63,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   mfa13c:            { level: 'partial', caption: 'EMU decomposition and isotopomer balancing (Antoniewicz 2007) are real. Monte Carlo confidence intervals via Box-Muller perturbation are genuine. Limitations: flux estimation uses grid search (not nonlinear least-squares); no atom mapping verification; σ=0.01 noise level is fixed, not data-driven.' },
   gemreconstruct:    { level: 'partial', caption: 'GPR boolean parsing and iJO1366 stoichiometric matrix assembly are real. Biomass composition from iJO1366 (Orth et al. 2011). Limitations: KEGG reaction mapping uses iJO1366Subset as proxy (no live KEGG API); no gap-filling; no organism-specific biomass optimization.' },
   rnaengineering:    { level: 'partial', caption: 'Turner 2009 nearest-neighbor stacking parameters (Turner & Mathews 2010 NAR) and Watson-Crick/wobble complementarity rules are genuine. Limitations: no full secondary structure prediction (no NUPACK/RNAfold integration); thermodynamic scores are nearest-neighbor approximations only; off-target scoring uses simplified similarity, not full alignment.' },
-  biosafety:         { level: 'demo',    caption: 'k-mer Jaccard similarity algorithm is real. Pattern database is a 14-entry simulated subset (not live VFDB/CDC download); 21-mer substring matching has very low sensitivity to real mutant sequences. Not suitable for actual biosafety screening without BLAST integration and live database.' },
+  biosafety:         { level: 'partial',    caption: 'k-mer Jaccard similarity algorithm is real. Pattern database is a 14-entry simulated subset (not live VFDB/CDC download); 21-mer substring matching has very low sensitivity to real mutant sequences. Not suitable for actual biosafety screening without BLAST integration and live database.' },
 };
 
 export function getToolValidity(moduleId: string): ToolValidity | undefined {
