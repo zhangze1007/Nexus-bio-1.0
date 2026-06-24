@@ -450,7 +450,13 @@ export default React.memo(function FBASimPage() {
         yeastGlucose !== prev.yg ||
         yeastOxygen  !== prev.yo;
       if (localDiverged) {
-        setSeedOverwriteNotice('Upstream FBA seed has changed and your local Two-Species uptake edits were just replaced. Re-apply manual values if needed.');
+        // Don't overwrite — show notice and let user decide
+        setSeedOverwriteNotice(
+          'Upstream seed changed but your manual edits are preserved. Click "Apply seed" to accept the new upstream values, or ignore to keep your edits.'
+        );
+        lastAppliedSeedRef.current = seedSignature;
+        lastExpectedRef.current = { eg: expectedEcoliGlc, eo: expectedEcoliO2, yg: expectedYeastGlc, yo: expectedYeastO2 };
+        return; // Don't overwrite user's manual values
       }
     }
 
@@ -1025,6 +1031,31 @@ export default React.memo(function FBASimPage() {
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            {seedOverwriteNotice && (
+              <div style={{ padding: '0 16px 8px' }}>
+                <div style={{
+                  padding: '8px 12px', borderRadius: 'var(--nb-radius-md)',
+                  border: '1px solid rgba(232,220,200,0.3)', background: 'rgba(232,220,200,0.08)',
+                  color: '#E8DCC8', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                }}>
+                  <span>{seedOverwriteNotice}</span>
+                  <button
+                    onClick={() => {
+                      lastAppliedSeedRef.current = null;
+                      setSeedOverwriteNotice(null);
+                    }}
+                    style={{
+                      padding: '4px 10px', borderRadius: '4px',
+                      background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+                      color: '#fff', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Apply seed
+                  </button>
+                </div>
+              </div>
+            )}
             {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} onRetry={() => setSingleError(null)} /></div>}
             {singleLoading && (
               <div style={{ padding: '0 16px 8px' }}>
