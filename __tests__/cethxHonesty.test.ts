@@ -172,12 +172,14 @@ describe('CETHX thermodynamics honesty boundary', () => {
 
   it('presents CETHX with Alberty-transformed condition-aware calculations', () => {
     const cethxPage = readRepoFile('src/components/tools/CETHXPage.tsx');
+    const cethxState = readRepoFile('src/components/tools/cethx/useCETHXState.ts');
     const registry = readRepoFile('src/components/tools/shared/toolRegistry.ts');
     const validity = readRepoFile('src/config/toolValidity.ts');
     const mockCethx = readRepoFile('src/data/mockCETHX.ts');
 
     // CETHX now uses Alberty transform for condition-aware calculations
-    expect(cethxPage).toContain('calcTransformedGibbs');
+    // calcTransformedGibbs lives in the state hook (useCETHXState.ts)
+    expect(cethxState).toContain('calcTransformedGibbs');
     expect(cethxPage).toContain('Alberty');
     expect(cethxPage).toContain('Condition-aware');
     expect(cethxPage).toContain('Feasibility');
