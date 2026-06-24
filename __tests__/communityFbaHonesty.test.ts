@@ -189,7 +189,7 @@ describe('community FBA honesty boundary', () => {
     expect(mockFba).toContain('Illustrative two-species demo.');
     expect(mockFba).toContain('This is not a joint community LP.');
     expect(mockFba).not.toContain('Composite stoichiometric model S_com');
-    expect(fbaPage).toContain('Two-Species Demo');
+    expect(fbaPage).toContain('Two-Species Heuristic Demo');
     expect(fbaPage).toContain('Demo Biomass Blend');
     expect(fbaPage).not.toContain('Two-Species Flux Comparison');
     expect(fbaPage).not.toContain('Community Biomass Objective');
