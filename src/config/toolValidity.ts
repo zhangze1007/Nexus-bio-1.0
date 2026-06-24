@@ -45,7 +45,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // Stage 4 — DBTL
   cellfree:     { level: 'demo',    caption: 'Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.' },
   dbtlflow:     { level: 'partial', caption: 'Iteration ledger and SBOL serialization are real; learning loop weights are heuristic.' },
-  multio:       { level: 'partial', caption: 'MOFA+ variational Bayes coordinate ascent is real (Argelaguet 2018). VAE/UMAP embeddings are real. Deterministic demo data used when no CSV uploaded; no Bayesian posterior uncertainty; not trained on user data.' },
+  multio:       { level: 'demo',    caption: 'Deterministic multi-omics demonstration. ALS matrix factorization (not MOFA+); seeded encoder/decoder (not a production VAE); no UMAP. Uses synthetic demo data when no CSV uploaded. No Bayesian posterior uncertainty; not trained on user data.' },
   scspatial:    { level: 'partial', caption: 'h5ad ingestion, spatial coordinates, Moran I, neighborhood graphs, PAGA, and UMAP are real when dataset fields are present. Missing spatial metadata downgrades the page to partial mode.' },
 
   // Cross-stage
