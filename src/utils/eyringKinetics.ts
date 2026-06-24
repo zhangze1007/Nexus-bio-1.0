@@ -219,6 +219,10 @@ export function calculateEnzymeKinetics(params: {
     T_opt = 298.15,
   } = params;
 
+  // Track whether defaults were used (caller didn't provide BRENDA data)
+  const usedDefaultKcat = params.kcat == null;
+  const usedDefaultKm = params.km == null;
+
   // Apply temperature correction to kcat
   let kcat_corrected = kcat;
   if (T_opt !== temperature) {
@@ -243,13 +247,21 @@ export function calculateEnzymeKinetics(params: {
   const vmax = kcat_ph_corrected * enzymeConc;
   const rate = michaelisMentenRate(kcat_ph_corrected, enzymeConc, substrate, km_effective);
 
+  // Build source label — flag when estimated defaults are used
+  const defaultParts: string[] = [];
+  if (usedDefaultKcat) defaultParts.push('kcat=10 s⁻¹');
+  if (usedDefaultKm) defaultParts.push('Km=1 mM');
+  const defaultLabel = defaultParts.length > 0
+    ? ` (estimated default: ${defaultParts.join(', ')})`
+    : '';
+
   return {
     rate,
     vmax,
     kcat_eff: kcat_ph_corrected,
     km_eff: km_effective,
     inhibition,
-    source: ki ? 'BRENDA + Eyring' : 'BRENDA',
+    source: (ki ? 'BRENDA + Eyring' : 'BRENDA') + defaultLabel,
   };
 }
 

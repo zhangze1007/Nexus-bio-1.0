@@ -1,6 +1,12 @@
 export const runtime = 'edge';
 
+import { getCorsHeaders, handleOptions } from '@/utils/cors';
+
 const BIGG_BASE = 'http://bigg.ucsd.edu/api/v3';
+
+export async function OPTIONS(req: Request) {
+  return handleOptions(req);
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -39,7 +45,7 @@ export async function GET(request: Request) {
     return Response.json(data, {
       headers: {
         'Cache-Control': 'public, max-age=86400',
-        'Access-Control-Allow-Origin': '*',
+        ...getCorsHeaders(request),
       },
     });
   } catch (e) {

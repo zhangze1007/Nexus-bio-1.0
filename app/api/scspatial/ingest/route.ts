@@ -64,6 +64,14 @@ export async function POST(request: Request) {
       return jsonError('SCSPATIAL ingest only accepts .h5ad uploads');
     }
 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+    if (file.size > MAX_FILE_SIZE) {
+      return jsonError(
+        `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Maximum is 50 MB.`,
+        413,
+      );
+    }
+
     const config = parseConfig(formData.get('config'));
     const artifactId = `scspatial-${randomUUID()}`;
     const uploadedAt = Date.now();

@@ -93,6 +93,20 @@ interface MemoryEntry {
 
 const memoryStore = new Map<string, MemoryEntry>();
 
+// Warn once in production if Upstash is not configured
+let warnedMissingRedis = false;
+function warnMissingRedis(): void {
+  if (warnedMissingRedis) return;
+  warnedMissingRedis = true;
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    console.warn(
+      '[rate-limit] UPSTASH_REDIS_REST_URL not set — using per-instance in-memory fallback. ' +
+      'Rate limiting will NOT work correctly across Vercel serverless instances. ' +
+      'Set Upstash Redis env vars for production: https://upstash.com/docs/redis/overall/getstarted'
+    );
+  }
+}
+
 // Periodic cleanup of stale entries (every 5 minutes)
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
@@ -198,10 +212,12 @@ export async function checkRateLimit(
       return await checkRateLimitRedis(redis, key, limit, windowMs);
     } catch {
       // If Redis fails, fall back to in-memory
+      warnMissingRedis();
       return checkRateLimitMemory(key, limit, windowMs);
     }
   }
 
+  warnMissingRedis();
   return checkRateLimitMemory(key, limit, windowMs);
 }
 

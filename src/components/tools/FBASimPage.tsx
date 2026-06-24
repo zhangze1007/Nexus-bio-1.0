@@ -1179,7 +1179,7 @@ export default React.memo(function FBASimPage() {
                 )}
               </div>
               <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '0 0 8px' }}>
-                Run full strain design: FSEOF + OptKnock → FBA evaluation → Pareto ranking
+                Run full strain design: FSEOF + OptKnock (Heuristic LP) → FBA evaluation → Pareto ranking
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
@@ -1357,9 +1357,9 @@ export default React.memo(function FBASimPage() {
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <ScientificFigureFrame
-              eyebrow="OptKnock — Bi-level Knockout Optimization"
+              eyebrow="OptKnock — Heuristic LP Approximation"
               title="Knockout Strategies"
-              caption="OptKnock uses bi-level optimization (Burgard et al. 2003) to find gene knockout sets that couple growth to product formation. The inner problem maximizes biomass; the outer problem maximizes product flux under the identified knockouts."
+              caption="Inspired by Burgard et al. (2003). This implementation uses sequential LP enumeration with post-hoc coupling verification — NOT a true bilevel MILP reformulation. Results are heuristic suggestions; optimality is not guaranteed for large candidate sets."
               legend={[
                 { label: 'Max Knockouts', value: '3', accent: THEME.CORAL },
                 { label: 'Model', value: loadedReactions ? `${loadedReactions.length} rxns` : 'iJO1366 subset', accent: THEME.SKY },
@@ -1381,7 +1381,7 @@ export default React.memo(function FBASimPage() {
                     cursor: (strainDesignLoading || !loadedReactions) ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {strainDesignLoading ? 'Running...' : !loadedReactions ? 'Load BiGG Model First' : 'Run OptKnock'}
+                  {strainDesignLoading ? 'Running...' : !loadedReactions ? 'Load BiGG Model First' : 'Run OptKnock (Heuristic)'}
                 </button>
               </div>
 
@@ -1444,7 +1444,7 @@ export default React.memo(function FBASimPage() {
                   padding: '24px', textAlign: 'center',
                   color: 'rgba(217,225,235,0.35)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
                 }}>
-                  Click "Run OptKnock" to find knockout strategies that couple growth to product formation.
+                  Click "Run OptKnock (Heuristic)" to find knockout strategies that couple growth to product formation. Results are approximate — not guaranteed optimal.
                 </div>
               )}
             </ScientificFigureFrame>
