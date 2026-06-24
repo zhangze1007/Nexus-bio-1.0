@@ -14,6 +14,7 @@
   --nb-font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', monospace;
   --nb-font-brand: 'Space Grotesk', -apple-system, sans-serif;
 
+  --nb-fs-xxs: 9px;   /* micro labels, badges, data source tags */
   --nb-fs-xs: 11px;   /* metadata, captions — Apple HIG minimum (was 10px) */
   --nb-fs-sm: 12px;   /* body, descriptions, secondary labels */
   --nb-fs-md: 14px;   /* primary labels, controls */

@@ -33,6 +33,14 @@ describe('ScSpatialControlRail', () => {
         showKde={false}
         showNeighbors={false}
         neighborK={6}
+        analysisParams={{
+          leidenResolution: 1.0,
+          nNeighbors: 15,
+          nPcs: 30,
+          nTopGenes: 2000,
+          moranPerms: 1000,
+          coordType: 'auto',
+        }}
         onLoadDemo={jest.fn()}
         onPickFile={jest.fn()}
         onSelectCluster={jest.fn()}
@@ -42,6 +50,7 @@ describe('ScSpatialControlRail', () => {
         onToggleKde={jest.fn()}
         onToggleNeighbors={jest.fn()}
         onSetNeighborK={jest.fn()}
+        onAnalysisParamChange={jest.fn()}
       />,
     );
 

@@ -6,6 +6,9 @@ import type { ScSpatialQueryRequest, ScSpatialViewMode } from '../../../../src/t
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/** Python backend URL (set via SCSPATIAL_PYTHON_BACKEND env var). */
+const PYTHON_BACKEND = process.env.SCSPATIAL_PYTHON_BACKEND?.replace(/\/+$/, '') || '';
+
 const VIEW_MODES = new Set<ScSpatialViewMode>([
   'spatial-2d',
   'spatial-3d',
@@ -43,6 +46,33 @@ export async function POST(request: Request) {
     return jsonError('artifactId is required');
   }
 
+  // ── Proxy to Python backend ──────────────────────────────────────
+  if (PYTHON_BACKEND) {
+    try {
+      const resp = await fetch(`${PYTHON_BACKEND}/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        return NextResponse.json({ ok: true, ...data });
+      }
+
+      // If artifact not found on Python side, fall through to local
+      if (resp.status !== 404) {
+        const errText = await resp.text();
+        console.error('Python backend query error:', errText);
+        return jsonError('Python backend query failed', 502, errText);
+      }
+    } catch (err) {
+      console.error('Python backend unreachable for query:', err);
+      // Fall through to local query
+    }
+  }
+
+  // ── Fallback: local TypeScript engine ────────────────────────────
   const artifact = await readScSpatialArtifact(artifactId);
   if (!artifact) {
     return jsonError('SCSPATIAL artifact not found', 404);

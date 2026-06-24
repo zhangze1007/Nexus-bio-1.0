@@ -71,6 +71,15 @@ export interface ScSpatialDatasetMeta {
   parserVersion: string;
 }
 
+export interface ScSpatialAnalysisResults {
+  moranI?: Array<{ gene: string; I: number; pval: number; pval_adj: number }>;
+  markerGenes?: Record<string, Array<{ gene: string; logFC: number; pval_adj: number; score: number }>>;
+  paga?: { connectivities: number[][]; confidence?: number } | null;
+  nhoodEnrichment?: { clusters: string[]; zscore: number[][]; count?: number[][] } | null;
+  ligrec?: { means?: unknown; pvalues?: unknown } | null;
+  qcMetrics?: { nCellsRaw?: number; nCellsAfter?: number; nGenesRaw?: number; nGenesAfter?: number };
+}
+
 export interface ScSpatialNormalizedArtifact {
   schemaVersion: 1;
   artifactId: string;
@@ -108,6 +117,8 @@ export interface ScSpatialNormalizedArtifact {
     hasClusterLabels: boolean;
     hasPrecomputedUmap: boolean;
   };
+  /** Pre-computed analysis results from scanpy/squidpy (Python backend). */
+  analysis?: ScSpatialAnalysisResults;
 }
 
 export interface ScSpatialIngestConfig {
@@ -119,6 +130,12 @@ export interface ScSpatialIngestConfig {
   embeddingKeys?: string[];
   layerKeys?: string[];
   maxCells?: number;
+  leidenResolution?: number;
+  nNeighbors?: number;
+  nPcs?: number;
+  nTopGenes?: number;
+  moranPerms?: number;
+  coordType?: 'auto' | 'visium' | 'generic';
 }
 
 export interface ScSpatialSelectionState {
@@ -278,6 +295,8 @@ export interface ScSpatialQueryResponse {
     availableEmbeddings: string[];
     availableLayers: string[];
   };
+  /** Pre-computed analysis from Python backend (scanpy/squidpy). */
+  analysis?: ScSpatialAnalysisResults;
 }
 
 export interface ScSpatialIngestResponse {

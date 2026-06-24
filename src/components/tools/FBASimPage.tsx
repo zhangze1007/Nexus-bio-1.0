@@ -1,807 +1,52 @@
 'use client';
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import MetricCard from '../ide/shared/MetricCard';
+/**
+ * FBASimPage.tsx — Thin orchestrator for Flux Balance Analysis.
+ *
+ * All state, effects, and handlers live in useFBASimState().
+ * Tab content is split into sub-components in ./fbasim/.
+ */
+
+import React from 'react';
 import ExportButton from '../ide/shared/ExportButton';
-import SimErrorBanner from '../ide/shared/SimErrorBanner';
-import { SimSkeleton } from '../shared/Skeleton';
-import { usePersistedState } from '../ide/shared/usePersistedState';
-import { useUIStore } from '../../store/uiStore';
-import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
-import AlgorithmPanel from '../shared/AlgorithmPanel';
-import ParameterSnapshot from '../shared/ParameterSnapshot';
-import DataUpload from '../shared/DataUpload';
-import DataPreview from '../shared/DataPreview';
-import {
-  METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, BASE_REACTIONS,
-  YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
-} from '../../data/mockFBA';
-import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
-import type { ProvenanceEntry } from '../../types/assumptions';
-import { buildFBASeed } from './shared/workbenchDataflow';
-import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenance, solveDynamicModelFBA, solveFSEOF, solveOptKnock } from '../../services/FBAAuthorityClient';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
-
-// ── Strain Design Types ─────────────────────────────────────────────────
-interface FSEOFBasalState {
-  growthRate?: number;
-  productFlux?: number;
-}
-
-interface FSEOFReactionData {
-  reactionId: string;
-  fluxAtMin: number;
-  fluxAtMax: number;
-  monotonicity: number;
-}
-
-interface FSEOFResultType {
-  basalState?: FSEOFBasalState;
-  wildType?: FSEOFBasalState;
-  targets: FSEOFReactionData[];
-}
-
-interface OptKnockKnockout {
-  knockouts: string[];
-  growthRate: number;
-  productFlux: number;
-}
-
-interface OptKnockResultType {
-  wildType?: FSEOFBasalState;
-  strategies: OptKnockKnockout[];
-}
+import AlgorithmPanel from '../shared/AlgorithmPanel';
+import {
+  REACTION_DEFS, YEAST_REACTION_DEFS,
+} from '../../data/mockFBA';
 import ToolShell from './shared/ToolShell';
 import ToolTabPanel from './shared/ToolTabPanel';
-import FloatingControlRail from './shared/FloatingControlRail';
-import InlineMetricOverlay from './shared/InlineMetricOverlay';
-import type { ToolTab } from './shared/ToolTabBar';
 import WorkbenchTrustIndicator from '../workbench/WorkbenchTrustIndicator';
-import { listBiGGModels, getModelReactions } from '../../services/database/biggClient';
-import type { BiGGModel, BiGGReaction } from '../../services/database/biggClient';
-import type { FallbackResult } from '../../services/database/fetchWithFallback';
-import DataSourceBadge from '../ide/shared/DataSourceBadge';
-
-// ── Extracted sub-components (imported from fbasim/) ──
-import { FluxMap, W, H, SUBSYSTEM_COLORS, FLUX_FWD_COLOR, FLUX_REV_COLOR, runForceLayout } from './fbasim/FluxMap';
-import { COLORS, ParamSlider, GlassContainer, SharedMetaboliteBus, StrainPanel } from './fbasim/CommunityPanels';
-import { round, createEmptyFBAOutput, createEmptyCommunityOutput, type SimMode } from './fbasim/fbaHelpers';
-import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
+import { THEME } from '../../theme';
 import NextStepButton from '../NextStepButton';
 
-// ── Consortium panel (imported from fbasim/) ──
+// ── Extracted sub-components ──
+import { FBA_TABS } from './fbasim/sharedComponents';
+import { useFBASimState } from './fbasim/useFBASimState';
+import { FluxMapTab, KnockoutTab } from './fbasim/SingleSpeciesFBA';
+import CommunityFBATab from './fbasim/CommunityFBA';
+import StrainDesignTab from './fbasim/StrainDesign';
+import ShadowPricesTab from './fbasim/FBAVisualization';
+import CustomModelPanel from './fbasim/CustomModelPanel';
 import ConsortiumPanel from './fbasim/ConsortiumPanel';
-
-// ── FVA / GPR panels (imported from fba/) ──
 import FVAPanel from './fba/FVAPanel';
 import GPRPanel from './fba/GPRPanel';
 
-// ── Custom Model Panel ───────────────────────────────────────────────────
-function CustomModelPanel() {
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [rows, setRows] = useState<Record<string, string>[]>([]);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [customGlucose, setCustomGlucose] = useState(10);
-  const [customOxygen, setCustomOxygen] = useState(12);
-  const [objectiveId, setObjectiveId] = useState('');
-  const [customResult, setCustomResult] = useState<FBAOutput | null>(null);
-  const [customProvenance, setCustomProvenance] = useState<ProvenanceEntry | undefined>(undefined);
-  const [customLoading, setCustomLoading] = useState(false);
-  const [customError, setCustomError] = useState<string | null>(null);
-
-  const handleUpload = useCallback((data: Record<string, string>[], hdrs: string[]) => {
-    setRows(data);
-    setHeaders(hdrs);
-    setUploadError(null);
-    setCustomResult(null);
-    // Auto-detect first reaction as objective
-    if (data.length > 0) {
-      const firstId = data[0]['reaction_id'] ?? data[0]['reaction id'] ?? data[0]['id'] ?? '';
-      setObjectiveId(firstId);
-    }
-  }, []);
-
-  const handleUploadError = useCallback((err: string) => {
-    setUploadError(err);
-  }, []);
-
-  const parsedReactions = useMemo(() => {
-    if (rows.length === 0) return [];
-    return rows.map((row) => {
-      const id = row['reaction_id'] ?? row['reaction id'] ?? row['id'] ?? '';
-      const lb = parseFloat(row['lb'] ?? row['lower_bound'] ?? row['lower bound'] ?? '-1000');
-      const ub = parseFloat(row['ub'] ?? row['upper_bound'] ?? row['upper bound'] ?? '1000');
-      // Parse stoichiometry: "met1:1;met2:-1" or "met1:1,met2:-1"
-      const stoichRaw = row['stoichiometry'] ?? row['stoich'] ?? '';
-      const stoichiometry: Record<string, number> = {};
-      if (stoichRaw) {
-        const sep = stoichRaw.includes(';') ? ';' : ',';
-        stoichRaw.split(sep).forEach((entry) => {
-          const parts = entry.trim().split(':');
-          if (parts.length === 2) {
-            const met = parts[0].trim();
-            const coeff = parseFloat(parts[1].trim());
-            if (met && !isNaN(coeff)) {
-              stoichiometry[met] = coeff;
-            }
-          }
-        });
-      }
-      return { id, name: id, subsystem: 'Custom', lb, ub, stoichiometry };
-    }).filter((r) => r.id);
-  }, [rows]);
-
-  const handleRunCustomFBA = useCallback(async () => {
-    if (parsedReactions.length === 0) return;
-    setCustomLoading(true);
-    setCustomError(null);
-    const controller = new AbortController();
-    try {
-      const result = await solveDynamicModelFBA(
-        {
-          reactions: parsedReactions,
-          objectiveId: objectiveId || parsedReactions[0].id,
-          glucoseUptake: customGlucose,
-          oxygenUptake: customOxygen,
-        },
-        controller.signal,
-      );
-      setCustomResult(result.result);
-      setCustomProvenance(result.provenance);
-    } catch (err) {
-      if (!controller.signal.aborted) {
-        setCustomError(err instanceof Error ? err.message : 'Custom FBA solve failed');
-      }
-    } finally {
-      setCustomLoading(false);
-    }
-  }, [parsedReactions, objectiveId, customGlucose, customOxygen]);
-
-  const customTop5 = useMemo(() => {
-    if (!customResult) return [];
-    return parsedReactions
-      .map((r) => ({ ...r, flux: customResult.fluxes[r.id] ?? 0 }))
-      .sort((a, b) => Math.abs(b.flux) - Math.abs(a.flux))
-      .slice(0, 5);
-  }, [customResult, parsedReactions]);
-
-  return (
-    <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {/* Upload Section */}
-        <div style={{ padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
-          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
-            Upload Custom FBA Model
-          </p>
-          <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.DIM, margin: '0 0 10px' }}>
-            CSV/TSV with columns: <span style={{ fontFamily: THEME.MONO, color: THEME.LABEL }}>reaction_id</span>, <span style={{ fontFamily: THEME.MONO, color: THEME.LABEL }}>lb</span>, <span style={{ fontFamily: THEME.MONO, color: THEME.LABEL }}>ub</span>, <span style={{ fontFamily: THEME.MONO, color: THEME.LABEL }}>stoichiometry</span>
-          </p>
-          <DataUpload
-            onUpload={handleUpload}
-            onError={handleUploadError}
-            label="Upload FBA Model CSV"
-            accept=".csv,.tsv"
-          />
-          {uploadError && (
-            <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '8px 0 0' }}>
-              {uploadError}
-            </p>
-          )}
-        </div>
-
-        {/* Data Preview */}
-        {rows.length > 0 && (
-          <div style={{ padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
-                Data Preview
-              </p>
-              <span style={{ fontFamily: THEME.MONO, fontSize: 10, color: THEME.MINT, background: 'rgba(191,220,205,0.12)', padding: '2px 6px', borderRadius: 6 }}>
-                {parsedReactions.length} reactions parsed
-              </span>
-            </div>
-            <DataPreview headers={headers} rows={rows} maxRows={5} />
-          </div>
-        )}
-
-        {/* Parameters + Run */}
-        {rows.length > 0 && (
-          <div style={{ padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
-            <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
-              FBA Parameters
-            </p>
-            <ParamSlider label="Glucose uptake" value={customGlucose} min={0} max={20} onChange={setCustomGlucose} unit="mmol/gDW/h" />
-            <ParamSlider label="O₂ uptake" value={customOxygen} min={0} max={20} onChange={setCustomOxygen} unit="mmol/gDW/h" />
-            <div style={{ marginTop: '8px' }}>
-              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.DIM, margin: '0 0 4px' }}>
-                Objective Reaction
-              </p>
-              <select
-                value={objectiveId}
-                onChange={(e) => setObjectiveId(e.target.value)}
-                style={{
-                  width: '100%', padding: '4px 6px',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 'var(--nb-radius-sm)',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', outline: 'none', cursor: 'pointer',
-                }}
-              >
-                {parsedReactions.map((r) => (
-                  <option key={r.id} value={r.id} style={{ background: '#10131a' }}>
-                    {r.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={handleRunCustomFBA}
-              disabled={customLoading || parsedReactions.length === 0}
-              style={{
-                display: 'block', width: '100%', marginTop: '12px',
-                padding: '8px 14px', borderRadius: 'var(--nb-radius-sm)',
-                background: customLoading ? 'rgba(255,255,255,0.04)' : 'rgba(231,199,169,0.14)',
-                border: `1px solid ${customLoading ? 'rgba(255,255,255,0.08)' : 'rgba(231,199,169,0.3)'}`,
-                color: customLoading ? 'rgba(255,255,255,0.35)' : 'rgba(231,199,169,0.9)',
-                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)',
-                cursor: customLoading ? 'wait' : 'pointer',
-              }}
-            >
-              {customLoading ? 'Solving LP...' : 'Run FBA'}
-            </button>
-            {customError && (
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '8px 0 0' }}>
-                {customError}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Results Panel */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {customResult ? (
-          <>
-            <div style={{ padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
-                Custom Model Results
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <MetricCard label="Growth Rate (μ)" value={customResult.growthRate} unit="h⁻¹" highlight />
-                <MetricCard label="ATP Yield" value={customResult.atpYield} unit="mol/mol glc" />
-                <MetricCard label="NADH Production" value={customResult.nadhProduction} unit="mmol/gDW/h" />
-                <MetricCard label="Carbon Efficiency" value={customResult.carbonEfficiency} unit="%" />
-                <MetricCard label="Feasible" value={customResult.feasible ? 'YES' : 'NO'} />
-              </div>
-            </div>
-            <div style={{ padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
-                Shadow Prices
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <MetricCard label="∂μ/∂Glucose" value={customResult.sensitivityCoefficients.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
-                <MetricCard label="∂μ/∂Oxygen"  value={customResult.sensitivityCoefficients.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
-                <MetricCard label="∂μ/∂ATP"     value={customResult.sensitivityCoefficients.atp.toFixed(4)} unit="h⁻¹·gDW/mmol" />
-              </div>
-            </div>
-            {customTop5.length > 0 && (
-              <div style={{ padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
-                <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
-                  Top 5 Active Reactions
-                </p>
-                {customTop5.map((r) => (
-                  <div key={r.id} style={{
-                    padding: '6px 8px', marginBottom: '4px',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 'var(--nb-radius-sm)',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.6)' }}>{r.id}</span>
-                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)' }}>{r.flux.toFixed(2)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '24px', textAlign: 'center',
-            color: 'rgba(217,225,235,0.35)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
-            border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE,
-          }}>
-            Upload a CSV model file and click &quot;Run FBA&quot; to see results here.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// ── MAIN COMPONENT ──
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const FBA_TABS: ToolTab[] = [
-  { id: 'flux', label: 'Flux Map', accent: THEME.SKY },
-  { id: 'fva', label: 'FVA', accent: THEME.LILAC },
-  { id: 'gpr', label: 'GPR KO', accent: THEME.CORAL },
-  { id: 'knockout', label: 'Knockout', accent: THEME.CORAL },
-  { id: 'strain', label: 'Strain Design', accent: THEME.MINT },
-  { id: 'shadows', label: 'Sensitivity', accent: THEME.LILAC },
-  { id: 'community', label: 'Community', accent: THEME.MINT },
-  { id: 'consortium', label: 'Consortium', accent: THEME.LILAC },
-  { id: 'custom', label: 'Custom Model', accent: THEME.APRICOT },
-];
-
 export default React.memo(function FBASimPage() {
-  const [simMode, setSimMode] = useState<SimMode>('single');
-  const chartRef = useRef<SVGSVGElement>(null);
-  const project = useWorkbenchStore((s) => s.project);
-  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
-  const pathdPayload = useWorkbenchStore((s) => s.toolPayloads.pathd);
-  const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
-  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
-
-  // Single-species state (persisted)
-  const [glucoseUptake, setGlucoseUptake] = usePersistedState('nexus-bio:fba:glucose', 10);
-  const [oxygenUptake, setOxygenUptake] = usePersistedState('nexus-bio:fba:oxygen', 12);
-  const [objective, setObjective] = useState<'biomass' | 'atp' | 'product'>('biomass');
-  const [knockouts, setKnockouts] = useState<string[]>([]);
-
-  // Community state (persisted)
-  const [ecoliGlucose, setEcoliGlucose] = usePersistedState('nexus-bio:fba:ecoli-glucose', 10);
-  const [ecoliOxygen, setEcoliOxygen] = usePersistedState('nexus-bio:fba:ecoli-oxygen', 12);
-  const [ecoliKO, setEcoliKO] = useState<string[]>([]);
-  const [yeastGlucose, setYeastGlucose] = usePersistedState('nexus-bio:fba:yeast-glucose', 8);
-  const [yeastOxygen, setYeastOxygen] = usePersistedState('nexus-bio:fba:yeast-oxygen', 6);
-  const [yeastKO, setYeastKO] = useState<string[]>([]);
-  const [singleResult, setSingleResult] = useState<FBAOutput>(() => createEmptyFBAOutput());
-  const [singleRunProvenance, setSingleRunProvenance] = useState<ProvenanceEntry | undefined>(undefined);
-  const [singleError, setSingleError] = useState<string | null>(null);
-  const [singleLoading, setSingleLoading] = useState(true);
-  const [communityResult, setCommunityResult] = useState<CommunityFBAOutput>(() => createEmptyCommunityOutput());
-  const [communityRunProvenance, setCommunityRunProvenance] = useState<ProvenanceEntry | undefined>(undefined);
-  const [communityError, setCommunityError] = useState<string | null>(null);
-  const [communityLoading, setCommunityLoading] = useState(true);
-
-  // Strain Design state (FSEOF + OptKnock)
-  const [fseofResult, setFseofResult] = useState<FSEOFResultType | null>(null);
-  const [optknockResult, setOptknockResult] = useState<OptKnockResultType | null>(null);
-  const [strainDesignLoading, setStrainDesignLoading] = useState(false);
-  const [strainDesignError, setStrainDesignError] = useState<string | null>(null);
-
-  // Strain Design Pipeline state
-  interface PipelineResult {
-    paretoFront: Array<{ growthRate: number; productFlux: number; growthFractionOfWT: number; strategy: { knockouts: string[]; description: string } }>;
-    bestDesign: { growthRate: number; productFlux: number; growthFractionOfWT: number; strategy: { knockouts: string[]; description: string } };
-    evaluations: Array<{ growthRate: number; productFlux: number; feasible: boolean }>;
-  }
-  const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null);
-  const [pipelineLoading, setPipelineLoading] = useState(false);
-  const [pipelineError, setPipelineError] = useState<string | null>(null);
-
-  const recommendedSeed = useMemo(
-    () => buildFBASeed(project, analyzeArtifact, dbtlPayload, pathdPayload),
-    [analyzeArtifact?.generatedAt, analyzeArtifact?.id, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
-  );
-
-  // P1.2: track the seed signature that was last applied. Without this, every
-  // upstream update silently overwrites persisted local edits (E. coli / yeast
-  // glucose & oxygen) — non-monotonic and surprising. We now (a) only re-seed
-  // when the upstream signature actually changes and (b) surface a dismissible
-  // notice when the new seed is replacing locally-modified persisted values.
-  const seedSignature = useMemo(
-    () => `${recommendedSeed.mode}|${recommendedSeed.objective}|${recommendedSeed.glucoseUptake}|${recommendedSeed.oxygenUptake}|${recommendedSeed.knockouts.join(',')}`,
-    [recommendedSeed.glucoseUptake, recommendedSeed.knockouts, recommendedSeed.mode, recommendedSeed.objective, recommendedSeed.oxygenUptake],
-  );
-  const lastAppliedSeedRef = useRef<string | null>(null);
-  // Store the expected values from the last seed application so we can detect
-  // when the user has manually diverged from them (not just stale closures).
-  const lastExpectedRef = useRef<{ eg: number; eo: number; yg: number; yo: number } | null>(null);
-  const [seedOverwriteNotice, setSeedOverwriteNotice] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('flux');
-
-  // BiGG model selector state
-  const [biggModels, setBiggModels] = useState<BiGGModel[]>([]);
-  const [biggResult, setBiggResult] = useState<FallbackResult<BiGGModel[]> | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string>('e_coli_core');
-  const [biggLoading, setBiggLoading] = useState(false);
-  const [loadedReactions, setLoadedReactions] = useState<BiGGReaction[] | null>(null);
-  const [loadedObjectiveId, setLoadedObjectiveId] = useState<string>('BIOMASS');
-  const [modelLoading, setModelLoading] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setBiggLoading(true);
-    listBiGGModels().then((result) => {
-      if (cancelled) return;
-      setBiggResult(result);
-      setBiggModels(result.data);
-      if (result.data.length > 0 && !result.data.find(m => m.bigg_id === selectedModel)) {
-        setSelectedModel(result.data[0].bigg_id);
-      }
-    }).finally(() => {
-      if (!cancelled) setBiggLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (lastAppliedSeedRef.current === seedSignature) return;
-
-    const expectedEcoliGlc = Math.max(3, round(recommendedSeed.glucoseUptake * 0.58));
-    const expectedEcoliO2  = Math.max(3, round(recommendedSeed.oxygenUptake  * 0.65));
-    const expectedYeastGlc = Math.max(2, round(recommendedSeed.glucoseUptake * 0.42));
-    const expectedYeastO2  = Math.max(2, round(recommendedSeed.oxygenUptake  * 0.45));
-
-    // Detect divergence: compare CURRENT state against the PREVIOUS expected
-    // values (not the new ones). This catches when the user manually changed
-    // uptake values between seed applications.
-    if (lastAppliedSeedRef.current !== null && lastExpectedRef.current !== null) {
-      const prev = lastExpectedRef.current;
-      const localDiverged =
-        ecoliGlucose !== prev.eg ||
-        ecoliOxygen  !== prev.eo ||
-        yeastGlucose !== prev.yg ||
-        yeastOxygen  !== prev.yo;
-      if (localDiverged) {
-        // Don't overwrite — show notice and let user decide
-        setSeedOverwriteNotice(
-          'Upstream seed changed but your manual edits are preserved. Click "Apply seed" to accept the new upstream values, or ignore to keep your edits.'
-        );
-        lastAppliedSeedRef.current = seedSignature;
-        lastExpectedRef.current = { eg: expectedEcoliGlc, eo: expectedEcoliO2, yg: expectedYeastGlc, yo: expectedYeastO2 };
-        return; // Don't overwrite user's manual values
-      }
-    }
-
-    setSimMode(recommendedSeed.mode);
-    setObjective(recommendedSeed.objective);
-    setGlucoseUptake(recommendedSeed.glucoseUptake);
-    setOxygenUptake(recommendedSeed.oxygenUptake);
-    setKnockouts(recommendedSeed.knockouts);
-    setEcoliGlucose(expectedEcoliGlc);
-    setEcoliOxygen(expectedEcoliO2);
-    setYeastGlucose(expectedYeastGlc);
-    setYeastOxygen(expectedYeastO2);
-    setEcoliKO(recommendedSeed.knockouts.slice(0, 1));
-    setYeastKO(recommendedSeed.knockouts.slice(1));
-    lastAppliedSeedRef.current = seedSignature;
-    lastExpectedRef.current = { eg: expectedEcoliGlc, eo: expectedEcoliO2, yg: expectedYeastGlc, yo: expectedYeastO2 };
-  }, [
-    seedSignature,
-    recommendedSeed.glucoseUptake,
-    recommendedSeed.knockouts,
-    recommendedSeed.mode,
-    recommendedSeed.objective,
-    recommendedSeed.oxygenUptake,
-    ecoliGlucose,
-    ecoliOxygen,
-    yeastGlucose,
-    yeastOxygen,
-    setEcoliGlucose,
-    setEcoliOxygen,
-    setGlucoseUptake,
-    setOxygenUptake,
-    setObjective,
-    setYeastGlucose,
-    setYeastOxygen,
-  ]);
-
-  useEffect(() => {
-    if (loadedReactions) return;
-    const controller = new AbortController();
-    setSingleLoading(true);
-    setSingleError(null);
-
-    solveAuthorityFBAWithProvenance(
-      {
-        objective,
-        glucoseUptake,
-        oxygenUptake,
-        knockouts,
-      },
-      controller.signal,
-    ).then(({ result, provenance }) => {
-      setSingleResult(result);
-      setSingleRunProvenance(provenance);
-      setSingleError(null);
-    }).catch((error) => {
-      if (controller.signal.aborted) return;
-      setSingleResult(createEmptyFBAOutput());
-      setSingleRunProvenance(undefined);
-      setSingleError(error instanceof Error ? error.message : 'Authoritative FBA solve failed');
-    }).finally(() => {
-      if (!controller.signal.aborted) {
-        setSingleLoading(false);
-      }
-    });
-
-    return () => controller.abort();
-  }, [glucoseUptake, knockouts, loadedReactions, objective, oxygenUptake]);
-
-  useEffect(() => {
-    if (!loadedReactions || loadedReactions.length === 0) return;
-    const controller = new AbortController();
-    setSingleLoading(true);
-    setSingleError(null);
-
-    solveDynamicModelFBA(
-      {
-        reactions: loadedReactions,
-        objectiveId: loadedObjectiveId,
-        glucoseUptake,
-        oxygenUptake,
-        knockouts,
-      },
-      controller.signal,
-    ).then(({ result, provenance }) => {
-      setSingleResult(result);
-      setSingleRunProvenance(provenance);
-      setSingleError(null);
-    }).catch((error) => {
-      if (controller.signal.aborted) return;
-      setSingleResult(createEmptyFBAOutput());
-      setSingleRunProvenance(undefined);
-      setSingleError(error instanceof Error ? error.message : 'BiGG model FBA solve failed');
-    }).finally(() => {
-      if (!controller.signal.aborted) {
-        setSingleLoading(false);
-      }
-    });
-
-    return () => controller.abort();
-  }, [loadedReactions, loadedObjectiveId, glucoseUptake, knockouts, oxygenUptake]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setCommunityLoading(true);
-    setCommunityError(null);
-
-    solveAuthorityCommunityFBAWithProvenance(
-      {
-        objective,
-        ecoli: {
-          glucoseUptake: ecoliGlucose,
-          oxygenUptake: ecoliOxygen,
-          knockouts: ecoliKO,
-        },
-        yeast: {
-          glucoseUptake: yeastGlucose,
-          oxygenUptake: yeastOxygen,
-          knockouts: yeastKO,
-        },
-      },
-      controller.signal,
-    ).then(({ result, provenance }) => {
-      setCommunityResult(result);
-      setCommunityRunProvenance(provenance);
-      setCommunityError(null);
-    }).catch((error) => {
-      if (controller.signal.aborted) return;
-      setCommunityResult(createEmptyCommunityOutput());
-      setCommunityRunProvenance(undefined);
-      setCommunityError(error instanceof Error ? error.message : 'Authority-backed two-species demo failed');
-    }).finally(() => {
-      if (!controller.signal.aborted) {
-        setCommunityLoading(false);
-      }
-    });
-
-    return () => controller.abort();
-  }, [ecoliGlucose, ecoliKO, ecoliOxygen, objective, yeastGlucose, yeastKO, yeastOxygen]);
-
-  const top5 = useMemo(() => {
-    return REACTION_DEFS
-      .map(r => ({ ...r, flux: singleResult.fluxes[r.id] ?? 0 }))
-      .sort((a, b) => Math.abs(b.flux) - Math.abs(a.flux))
-      .slice(0, 5);
-  }, [singleResult]);
-
-  const maxTopFlux = Math.abs(top5[0]?.flux ?? 1) || 1;
-  const figureMeta = useMemo(() => {
-    if (simMode === 'single') {
-      return {
-        eyebrow: 'Figure A · Host Flux State',
-        title: 'Constraint-resolved flux map for the active host context',
-        caption: 'The central flux map is framed as a model figure: objective, uptake limits, and sensitivity-coefficient interpretation are treated as part of the same scientific panel.',
-      };
-    }
-    return {
-      eyebrow: 'Figure B · Two-Species Demo Exchange',
-      title: 'Independent host solves with illustrative exchange',
-      caption: 'Two-species demo mode becomes a comparative figure where strain-specific optima and post-hoc exchange-like values are read together without claiming shared-pool stoichiometric coupling.',
-    };
-  }, [simMode]);
-
-  function toggleKO(id: string) {
-    setKnockouts(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
-  }
-  function toggleEcoliKO(id: string) {
-    setEcoliKO(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
-  }
-  function toggleYeastKO(id: string) {
-    setYeastKO(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
-  }
-
-  function handleLoadModel() {
-    if (modelLoading || !selectedModel) return;
-    setModelLoading(true);
-    setLoadedReactions(null);
-    setSingleError(null);
-    getModelReactions(selectedModel).then((result) => {
-      if (result.data.reactions.length > 0) {
-        setLoadedReactions(result.data.reactions);
-        const bioRxn = result.data.reactions.find(
-          r => r.id.toLowerCase().includes('biomass') || r.name.toLowerCase().includes('biomass')
-        );
-        setLoadedObjectiveId(bioRxn?.id ?? result.data.reactions[0].id);
-      }
-    }).catch((err) => {
-      setLoadedReactions(null);
-      setSingleError(`Failed to load model: ${err instanceof Error ? err.message : String(err)}`);
-    }).finally(() => {
-      setModelLoading(false);
-    });
-  }
-
-  // Default reactions for strain design when no BiGG model is loaded
-  const defaultStrainReactions = useMemo(() => BASE_REACTIONS.map(r => ({
-    id: r.id,
-    lb: r.lb,
-    ub: r.ub,
-    stoichiometry: {} as Record<string, number>,
-  })), []);
-
-  const handleRunFSEOF = async () => {
-    setStrainDesignLoading(true);
-    try {
-      const reactions = loadedReactions ?? defaultStrainReactions;
-      const result = await solveFSEOF({
-        reactions: reactions.map(r => ({ id: r.id, lb: r.lb, ub: r.ub, stoichiometry: r.stoichiometry })),
-        objectiveId: loadedObjectiveId || 'BIOMASS',
-        productReactionId: 'PRODUCT',
-      });
-      setFseofResult(result.result as FSEOFResultType);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'FSEOF analysis failed';
-      setStrainDesignError(msg);
-    } finally {
-      setStrainDesignLoading(false);
-    }
-  };
-
-  const handleRunOptKnock = async () => {
-    setStrainDesignLoading(true);
-    try {
-      const reactions = loadedReactions ?? defaultStrainReactions;
-      const result = await solveOptKnock({
-        reactions: reactions.map(r => ({ id: r.id, lb: r.lb, ub: r.ub, stoichiometry: r.stoichiometry })),
-        objectiveId: loadedObjectiveId || 'BIOMASS',
-        productReactionId: 'PRODUCT',
-        maxKnockouts: 3,
-      });
-      setOptknockResult(result.result as OptKnockResultType);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'OptKnock analysis failed';
-      setStrainDesignError(msg);
-    } finally {
-      setStrainDesignLoading(false);
-    }
-  };
-
-  const exportData = simMode === 'single' ? singleResult : communityResult;
-
-  /* ── Console logging ─────────────────────────────────────────────────── */
-  const appendConsole = useUIStore((s) => s.appendConsole);
-  useEffect(() => {
-    if ((simMode === 'single' && singleLoading) || (simMode === 'community' && communityLoading)) {
-      return;
-    }
-    const error = simMode === 'single' ? singleError : communityError;
-    if (error) {
-      appendConsole({ level: 'error', module: 'FBASIM', message: `FBA error: ${error}` });
-    } else if (simMode === 'single') {
-      appendConsole({
-        level: 'info',
-        module: 'FBASIM',
-        message: `FBA complete — μ=${singleResult.growthRate.toFixed(4)} h⁻¹ | ATP=${singleResult.atpYield.toFixed(1)} mol/mol | C-eff=${singleResult.carbonEfficiency.toFixed(1)}% | KO=[${knockouts.join(',')||'none'}]`,
-      });
-    } else {
-      appendConsole({
-        level: 'info',
-        module: 'FBASIM',
-        message: `Two-species heuristic demo — E.coli μ=${communityResult.ecoli.growthRate.toFixed(4)} | Yeast μ=${communityResult.yeast.growthRate.toFixed(4)} | blended μ=${communityResult.communityGrowthRate.toFixed(4)}`,
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appendConsole, communityError, communityLoading, communityResult, simMode, singleError, singleLoading, singleResult]);
-
-  useEffect(() => {
-    const now = Date.now();
-    const activeResult = simMode === 'single'
-      ? singleResult
-      : {
-          fluxes: communityResult.ecoli.fluxes,
-          growthRate: communityResult.communityGrowthRate,
-          atpYield: (communityResult.ecoli.atpYield + communityResult.yeast.atpYield) / 2,
-          nadhProduction: (communityResult.ecoli.nadhProduction + communityResult.yeast.nadhProduction) / 2,
-          carbonEfficiency: (communityResult.ecoli.carbonEfficiency + communityResult.yeast.carbonEfficiency) / 2,
-          feasible: communityResult.feasible,
-          sensitivityCoefficients: {
-            glc: (communityResult.ecoli.sensitivityCoefficients.glc + communityResult.yeast.sensitivityCoefficients.glc) / 2,
-            o2: (communityResult.ecoli.sensitivityCoefficients.o2 + communityResult.yeast.sensitivityCoefficients.o2) / 2,
-            atp: (communityResult.ecoli.sensitivityCoefficients.atp + communityResult.yeast.sensitivityCoefficients.atp) / 2,
-          },
-        };
-
-    if (singleLoading || communityLoading) return;
-    if (singleError && simMode === 'single') return;
-    if (communityError && simMode === 'community') return;
-
-    setToolPayload('fbasim', {
-      validity: simMode === 'single' ? 'partial' : 'demo',
-      runProvenance: simMode === 'single' ? singleRunProvenance : communityRunProvenance,
-      toolId: 'fbasim',
-      targetProduct: recommendedSeed.targetProduct,
-      pathwayFocus: recommendedSeed.pathwayFocus,
-      sourceArtifactId: analyzeArtifact?.id,
-      mode: simMode,
-      objective,
-      glucoseUptake,
-      oxygenUptake,
-      knockouts,
-      result: {
-        growthRate: activeResult.growthRate,
-        atpYield: activeResult.atpYield,
-        nadhProduction: activeResult.nadhProduction,
-        carbonEfficiency: activeResult.carbonEfficiency,
-        feasible: activeResult.feasible,
-        sensitivityCoefficients: activeResult.sensitivityCoefficients,
-        topFluxes: Object.entries(activeResult.fluxes)
-          .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]))
-          .slice(0, 5)
-          .map(([reactionId, flux]) => ({ reactionId, flux })),
-      },
-      updatedAt: now,
-    });
-  }, [
-    analyzeArtifact?.id,
-    communityLoading,
-    communityError,
-    communityRunProvenance,
-    communityResult,
-    glucoseUptake,
-    knockouts,
-    objective,
-    oxygenUptake,
-    recommendedSeed.pathwayFocus,
-    recommendedSeed.targetProduct,
-    setToolPayload,
-    simMode,
-    singleLoading,
-    singleError,
-    singleResult,
-    singleRunProvenance,
-  ]);
+  const s = useFBASimState();
 
   return (
     <ToolShell
       moduleId="fbasim"
       title="Flux Balance Analysis"
-      description={simMode === 'single' ? 'Server-side GLPK solves a stoichiometric LP for the current host context' : 'Two-species heuristic demo comparison'}
-      formula={simMode === 'single' ? 'max cᵀv s.t. Sv=0, lb≤v≤ub' : 'μ_demo = (1-α)μ₁ + αμ₂'}
+      description={s.simMode === 'single' ? 'Server-side GLPK solves a stoichiometric LP for the current host context' : 'Two-species heuristic demo comparison'}
+      formula={s.simMode === 'single' ? 'max cᵀv s.t. Sv=0, lb≤v≤ub' : 'μ_demo = (1-α)μ₁ + αμ₂'}
       hero={
         <ScientificHero
-            eyebrow={`Stage 2 · ${simMode === 'single' ? 'Host Flux Solve' : 'Two-Species Heuristic Demo'}`}
-            title={simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Side-by-side host flux comparison'}
-            summary={simMode === 'single'
-              ? 'FBASim is the first point where the pathway object becomes a constrained production model. The key question is no longer “can the route exist,” but “what does it cost the host and which uptake constraints dominate the present solution.”'
+            eyebrow={`Stage 2 · ${s.simMode === 'single' ? 'Host Flux Solve' : 'Two-Species Heuristic Demo'}`}
+            title={s.simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Side-by-side host flux comparison'}
+            summary={s.simMode === 'single'
+              ? 'FBASim is the first point where the pathway object becomes a constrained production model. The key question is no longer "can the route exist," but "what does it cost the host and which uptake constraints dominate the present solution."'
               : 'Community mode remains a two-species heuristic demo. It compares independent host solves and post-hoc exchange values; it does not create a shared stoichiometric pool or a real ecological operating state.'}
             aside={
               <>
@@ -809,62 +54,62 @@ export default React.memo(function FBASimPage() {
                   Current route focus
                 </div>
                 <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: 'rgba(247,249,255,0.92)', fontWeight: 700 }}>
-                  {recommendedSeed.pathwayFocus || recommendedSeed.targetProduct}
+                  {s.recommendedSeed.pathwayFocus || s.recommendedSeed.targetProduct}
                 </div>
                 <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: 'rgba(205,214,236,0.6)', lineHeight: 1.55 }}>
-                  Objective {objective === 'biomass' ? 'maximizes biomass resilience' : objective === 'atp' ? 'prioritizes energetic yield' : 'pushes product-oriented flux through the current route'}.
+                  Objective {s.objective === 'biomass' ? 'maximizes biomass resilience' : s.objective === 'atp' ? 'prioritizes energetic yield' : 'pushes product-oriented flux through the current route'}.
                 </div>
               </>
             }
-            signals={simMode === 'single'
+            signals={s.simMode === 'single'
               ? [
                   {
                     label: 'Growth Rate',
-                    value: `${singleResult.growthRate.toFixed(4)} h⁻¹`,
-                    detail: singleLoading ? 'Server authority solve is recomputing this host state.' : singleResult.feasible ? 'Host remains feasible under the present uptake and objective settings.' : 'Infeasible host state under the current constraints.',
-                    tone: singleResult.feasible ? 'cool' : 'alert',
+                    value: `${s.singleResult.growthRate.toFixed(4)} h⁻¹`,
+                    detail: s.singleLoading ? 'Server authority solve is recomputing this host state.' : s.singleResult.feasible ? 'Host remains feasible under the present uptake and objective settings.' : 'Infeasible host state under the current constraints.',
+                    tone: s.singleResult.feasible ? 'cool' : 'alert',
                   },
                   {
                     label: 'Carbon Efficiency',
-                    value: `${singleResult.carbonEfficiency.toFixed(1)}%`,
-                    detail: `${singleResult.atpYield.toFixed(2)} ATP yield · ${singleResult.nadhProduction.toFixed(2)} NADH production`,
-                    tone: singleResult.carbonEfficiency >= 50 ? 'cool' : 'warm',
+                    value: `${s.singleResult.carbonEfficiency.toFixed(1)}%`,
+                    detail: `${s.singleResult.atpYield.toFixed(2)} ATP yield · ${s.singleResult.nadhProduction.toFixed(2)} NADH production`,
+                    tone: s.singleResult.carbonEfficiency >= 50 ? 'cool' : 'warm',
                   },
                   {
                     label: 'Primary Constraint',
-                    value: `∂μ/∂Glc ${singleResult.sensitivityCoefficients.glc.toFixed(4)}`,
-                    detail: `O₂ sens. ${singleResult.sensitivityCoefficients.o2.toFixed(4)} · ATP sens. ${singleResult.sensitivityCoefficients.atp.toFixed(4)}`,
+                    value: `∂μ/∂Glc ${s.singleResult.sensitivityCoefficients.glc.toFixed(4)}`,
+                    detail: `O₂ sens. ${s.singleResult.sensitivityCoefficients.o2.toFixed(4)} · ATP sens. ${s.singleResult.sensitivityCoefficients.atp.toFixed(4)}`,
                     tone: 'neutral',
                   },
                   {
                     label: 'Top Active Route',
-                    value: top5[0]?.id ?? 'Pending',
-                    detail: top5[0] ? `${Math.abs(top5[0].flux).toFixed(2)} mmol/gDW/h through the strongest reaction channel.` : 'No active reactions ranked yet.',
+                    value: s.top5[0]?.id ?? 'Pending',
+                    detail: s.top5[0] ? `${Math.abs(s.top5[0].flux).toFixed(2)} mmol/gDW/h through the strongest reaction channel.` : 'No active reactions ranked yet.',
                     tone: 'neutral',
                   },
                 ]
               : [
                   {
                     label: 'Demo Blended Growth',
-                    value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`,
-                    detail: communityLoading ? 'Recomputing two independent host solves for the heuristic comparison.' : communityResult.feasible ? 'Both independent host solves are feasible before post-hoc exchange scaling.' : 'At least one independent host solve is infeasible.',
-                    tone: communityResult.feasible ? 'cool' : 'alert',
+                    value: `${s.communityResult.communityGrowthRate.toFixed(4)} h⁻¹`,
+                    detail: s.communityLoading ? 'Recomputing two independent host solves for the heuristic comparison.' : s.communityResult.feasible ? 'Both independent host solves are feasible before post-hoc exchange scaling.' : 'At least one independent host solve is infeasible.',
+                    tone: s.communityResult.feasible ? 'cool' : 'alert',
                   },
                   {
                     label: 'Demo Biomass Blend',
-                    value: `${communityResult.communityBiomassObjective.toFixed(3)}`,
-                    detail: `E. coli ${communityResult.ecoli.growthRate.toFixed(3)} · Yeast ${communityResult.yeast.growthRate.toFixed(3)}`,
+                    value: `${s.communityResult.communityBiomassObjective.toFixed(3)}`,
+                    detail: `E. coli ${s.communityResult.ecoli.growthRate.toFixed(3)} · Yeast ${s.communityResult.yeast.growthRate.toFixed(3)}`,
                     tone: 'neutral',
                   },
                   {
                     label: 'Illustrative Exchange',
-                    value: `${communityResult.exchangeFluxes.filter((entry) => Math.abs(entry.flux) > 0.01).length} active links`,
-                    detail: communityResult.exchangeFluxes[0] ? `${communityResult.exchangeFluxes[0].metabolite} ${communityResult.exchangeFluxes[0].flux.toFixed(2)} mmol/h` : 'No exchange fluxes detected yet.',
+                    value: `${s.communityResult.exchangeFluxes.filter((entry) => Math.abs(entry.flux) > 0.01).length} active links`,
+                    detail: s.communityResult.exchangeFluxes[0] ? `${s.communityResult.exchangeFluxes[0].metabolite} ${s.communityResult.exchangeFluxes[0].flux.toFixed(2)} mmol/h` : 'No exchange fluxes detected yet.',
                     tone: 'warm',
                   },
                   {
                     label: 'Pathway Focus',
-                    value: recommendedSeed.pathwayFocus || recommendedSeed.targetProduct,
+                    value: s.recommendedSeed.pathwayFocus || s.recommendedSeed.targetProduct,
                     detail: 'This route focus is what downstream thermodynamics and catalyst design will inherit from the current systems solve.',
                     tone: 'neutral',
                   },
@@ -872,22 +117,22 @@ export default React.memo(function FBASimPage() {
           />
       }
       tabs={FBA_TABS}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
+      activeTab={s.activeTab}
+      onTabChange={s.setActiveTab}
       advancedTabIds={['fva', 'gpr', 'knockout', 'strain', 'shadows', 'community', 'consortium', 'custom']}
       footer={
         <>
-          <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
+          <ExportButton label="Export JSON" data={s.exportData} filename={`fbasim-${s.simMode}-result`} format="json" />
           <ExportButton label="Export CSV" data={
-            simMode === 'single'
-              ? REACTION_DEFS.map(r => ({ id: r.id, name: r.name, subsystem: r.subsystem, flux: singleResult.fluxes[r.id] ?? 0, knocked_out: knockouts.includes(r.id) }))
+            s.simMode === 'single'
+              ? REACTION_DEFS.map(r => ({ id: r.id, name: r.name, subsystem: r.subsystem, flux: s.singleResult.fluxes[r.id] ?? 0, knocked_out: s.knockouts.includes(r.id) }))
               : [
-                  ...REACTION_DEFS.map(r => ({ strain: 'ecoli', id: r.id, name: r.name, subsystem: r.subsystem, flux: communityResult.ecoli.fluxes[r.id] ?? 0, knocked_out: ecoliKO.includes(r.id) })),
-                  ...YEAST_REACTION_DEFS.map(r => ({ strain: 'yeast', id: r.id, name: r.name, subsystem: r.subsystem, flux: communityResult.yeast.fluxes[r.id] ?? 0, knocked_out: yeastKO.includes(r.id) })),
-                  ...communityResult.exchangeFluxes.map(e => ({ strain: 'exchange', id: e.id, name: e.metabolite, subsystem: 'Exchange', flux: e.flux, knocked_out: false })),
+                  ...REACTION_DEFS.map(r => ({ strain: 'ecoli', id: r.id, name: r.name, subsystem: r.subsystem, flux: s.communityResult.ecoli.fluxes[r.id] ?? 0, knocked_out: s.ecoliKO.includes(r.id) })),
+                  ...YEAST_REACTION_DEFS.map(r => ({ strain: 'yeast', id: r.id, name: r.name, subsystem: r.subsystem, flux: s.communityResult.yeast.fluxes[r.id] ?? 0, knocked_out: s.yeastKO.includes(r.id) })),
+                  ...s.communityResult.exchangeFluxes.map(e => ({ strain: 'exchange', id: e.id, name: e.metabolite, subsystem: 'Exchange', flux: e.flux, knocked_out: false })),
                 ]
-          } filename={`fbasim-${simMode}-fluxes`} format="csv" />
-          <ExportButton label="Export SVG" data={null} filename={`fbasim-${simMode}-chart`} format="svg" svgRef={chartRef} />
+          } filename={`fbasim-${s.simMode}-fluxes`} format="csv" />
+          <ExportButton label="Export SVG" data={null} filename={`fbasim-${s.simMode}-chart`} format="svg" svgRef={s.chartRef} />
         </>
       }
     >
@@ -928,685 +173,125 @@ export default React.memo(function FBASimPage() {
       </div>
 
       {/* ── Flux Map Tab ── */}
-      <ToolTabPanel tabId="flux" activeId={activeTab}>
-        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          <FloatingControlRail label="Flux Parameters" defaultCollapsed={false} width={220}>
-            {/* ── BiGG Model Selector ── */}
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: 0 }}>
-                  BiGG Model
-                </p>
-                {biggResult && <DataSourceBadge source={biggResult.source} label={biggResult.source === 'live' ? 'BiGG Live' : 'BiGG Demo'} />}
-              </div>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                disabled={biggLoading}
-                style={{
-                  width: '100%',
-                  padding: '4px 6px',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 'var(--nb-radius-sm)',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontFamily: THEME.MONO,
-                  fontSize: 'var(--nb-fs-xs)',
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                {biggModels.map((m) => (
-                  <option key={m.bigg_id} value={m.bigg_id} style={{ background: '#10131a' }}>
-                    {m.bigg_id} ({m.reaction_count} rxns)
-                  </option>
-                ))}
-                {biggModels.length === 0 && <option value="e_coli_core" style={{ background: '#10131a' }}>e_coli_core (loading...)</option>}
-              </select>
-              {biggModels.length > 0 && selectedModel && (() => {
-                const m = biggModels.find(x => x.bigg_id === selectedModel);
-                if (!m) return null;
-                return (
-                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(255,255,255,0.35)', margin: '3px 0 0', lineHeight: 1.3 }}>
-                    {m.organism} — {m.metabolite_count} metabolites, {m.gene_count} genes
-                  </p>
-                );
-              })()}
-              <button
-                onClick={handleLoadModel}
-                disabled={modelLoading}
-                className="nb-tool-toggle"
-                style={{
-                  display: 'block', width: '100%', marginTop: '6px',
-                  padding: '5px 8px', borderRadius: 'var(--nb-radius-sm)',
-                  background: loadedReactions ? 'rgba(20,140,80,0.12)' : undefined,
-                  borderColor: loadedReactions ? 'rgba(20,140,80,0.3)' : undefined,
-                  color: loadedReactions ? 'rgba(140,230,170,0.9)' : undefined,
-                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                }}
-              >
-                {modelLoading ? 'Loading...' : loadedReactions ? 'Model Loaded' : 'Load Model'}
-              </button>
-              {loadedReactions && (
-                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(140,230,170,0.7)', margin: '3px 0 0', lineHeight: 1.3 }}>
-                  {loadedReactions.length} reactions loaded · obj: {loadedObjectiveId}
-                </p>
-              )}
-            </div>
-
-            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px' }}>
-              Uptake Limits
-            </p>
-            <ParamSlider label="Glucose uptake" value={glucoseUptake} min={0} max={20} onChange={setGlucoseUptake} unit="mmol/gDW/h" />
-            <ParamSlider label="O₂ uptake" value={oxygenUptake} min={0} max={20} onChange={setOxygenUptake} unit="mmol/gDW/h" />
-            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '12px 0 8px' }}>
-              Objective
-            </p>
-            {(['biomass', 'atp', 'product'] as const).map(opt => (
-              <button key={opt} onClick={() => setObjective(opt)}
-                className={`nb-tool-toggle ${objective === opt ? 'nb-tool-toggle--active' : ''}`}
-                style={{
-                display: 'block', width: '100%', textAlign: 'left',
-                padding: '5px 8px', marginBottom: '3px',
-                background: objective === opt ? THEME.PANEL_SURFACE : undefined,
-                borderColor: objective === opt ? THEME.BORDER_STRONG : undefined,
-                borderRadius: 'var(--nb-radius-sm)',
-                color: objective === opt ? 'rgba(255,255,255,0.85)' : undefined,
-              }}>
-                {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
-              </button>
-            ))}
-
-            <div style={{ marginTop: '16px' }}>
-              <ParameterSnapshot
-                toolId="fbasim"
-                parameters={{ glucoseUptake, oxygenUptake, objective }}
-                onLoad={(params) => {
-                  if (params.glucoseUptake !== undefined) setGlucoseUptake(params.glucoseUptake as number);
-                  if (params.oxygenUptake !== undefined) setOxygenUptake(params.oxygenUptake as number);
-                  if (params.objective !== undefined) setObjective(params.objective as 'biomass' | 'atp' | 'product');
-                }}
-              />
-            </div>
-          </FloatingControlRail>
-
-          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {seedOverwriteNotice && (
-              <div style={{ padding: '0 16px 8px' }}>
-                <div style={{
-                  padding: '8px 12px', borderRadius: 'var(--nb-radius-md)',
-                  border: '1px solid rgba(232,220,200,0.3)', background: 'rgba(232,220,200,0.08)',
-                  color: '#E8DCC8', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                }}>
-                  <span>{seedOverwriteNotice}</span>
-                  <button
-                    onClick={() => {
-                      lastAppliedSeedRef.current = null;
-                      setSeedOverwriteNotice(null);
-                    }}
-                    style={{
-                      padding: '4px 10px', borderRadius: '4px',
-                      background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-                      color: '#fff', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Apply seed
-                  </button>
-                </div>
-              </div>
-            )}
-            {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} onRetry={() => setSingleError(null)} /></div>}
-            {singleLoading && (
-              <div style={{ padding: '0 16px 8px' }}>
-                <div style={{ padding: '6px 10px', borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', marginBottom: '8px' }}>
-                  Authority engine recomputing server-side LP.
-                </div>
-                <SimSkeleton />
-              </div>
-            )}
-
-            <ScientificFigureFrame
-              eyebrow={figureMeta.eyebrow}
-              title={figureMeta.title}
-              caption={figureMeta.caption}
-              minHeight="100%"
-              legend={[
-                { label: 'Objective', value: objective, accent: THEME.APRICOT },
-                { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
-                { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
-              ]}
-            >
-              <div style={{ minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
-              </div>
-            </ScientificFigureFrame>
-
-            <InlineMetricOverlay
-              position="top-right"
-              metrics={[
-                { label: 'Growth', value: `${singleResult.growthRate.toFixed(4)} h⁻¹`, accent: singleResult.feasible ? THEME.MINT : THEME.CORAL },
-                { label: 'ATP Yield', value: `${singleResult.atpYield.toFixed(2)} mol/mol`, accent: THEME.SKY },
-                { label: 'C Efficiency', value: `${singleResult.carbonEfficiency.toFixed(1)}%`, accent: singleResult.carbonEfficiency >= 50 ? THEME.MINT : THEME.APRICOT },
-              ]}
-            />
-          </div>
-        </div>
+      <ToolTabPanel tabId="flux" activeId={s.activeTab}>
+        <FluxMapTab
+          glucoseUptake={s.glucoseUptake} setGlucoseUptake={s.setGlucoseUptake}
+          oxygenUptake={s.oxygenUptake} setOxygenUptake={s.setOxygenUptake}
+          objective={s.objective} setObjective={s.setObjective}
+          knockouts={s.knockouts} setKnockouts={s.setKnockouts} toggleKO={s.toggleKO}
+          singleResult={s.singleResult} singleError={s.singleError} setSingleError={s.setSingleError} singleLoading={s.singleLoading}
+          chartRef={s.chartRef}
+          biggModels={s.biggModels} biggResult={s.biggResult} selectedModel={s.selectedModel} setSelectedModel={s.setSelectedModel}
+          biggLoading={s.biggLoading} loadedReactions={s.loadedReactions} loadedObjectiveId={s.loadedObjectiveId} modelLoading={s.modelLoading} handleLoadModel={s.handleLoadModel}
+          seedOverwriteNotice={s.seedOverwriteNotice} setSeedOverwriteNotice={s.setSeedOverwriteNotice} lastAppliedSeedRef={s.lastAppliedSeedRef}
+          recommendedSeed={s.recommendedSeed} figureMeta={s.figureMeta}
+        />
       </ToolTabPanel>
 
       {/* ── Knockout Tab ── */}
-      <ToolTabPanel tabId="knockout" activeId={activeTab}>
-        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          <FloatingControlRail label="Gene Knockouts" defaultCollapsed={false} width={240}>
-            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px' }}>
-              Toggle Reactions
-            </p>
-            {REACTION_DEFS.map(r => {
-              const isKO = knockouts.includes(r.id);
-              return (
-                <button key={r.id} onClick={() => toggleKO(r.id)}
-                  className={`nb-tool-toggle ${isKO ? 'nb-tool-toggle--active' : ''}`}
-                  style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  width: '100%', padding: '4px 6px', marginBottom: '2px',
-                  background: isKO ? 'rgba(255,80,80,0.14)' : undefined,
-                  borderColor: isKO ? 'rgba(255,80,80,0.38)' : undefined,
-                  borderRadius: 'var(--nb-radius-sm)',
-                }}>
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
-                </button>
-              );
-            })}
-            {knockouts.length > 0 && (
-              <button onClick={() => setKnockouts([])}
-                className="nb-tool-toggle"
-                style={{
-                display: 'block', width: '100%', marginTop: '6px',
-                padding: '4px 6px', borderRadius: 'var(--nb-radius-sm)',
-                color: 'rgba(255,255,255,0.3)',
-              }}>
-                Clear knockouts ({knockouts.length})
-              </button>
-            )}
-          </FloatingControlRail>
-
-          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} onRetry={() => setSingleError(null)} /></div>}
-
-            <ScientificFigureFrame
-              eyebrow="Knockout Analysis"
-              title="Flux Map with Gene Knockouts"
-              caption="Red-highlighted reactions show knocked-out genes and their flux impact."
-              minHeight="100%"
-              legend={[
-                { label: 'Knockouts', value: knockouts.length ? knockouts.join(', ') : 'none', accent: THEME.CORAL },
-                { label: 'Growth', value: `${singleResult.growthRate.toFixed(4)} h⁻¹`, accent: singleResult.feasible ? THEME.MINT : THEME.CORAL },
-              ]}
-            >
-              <div style={{ minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
-              </div>
-            </ScientificFigureFrame>
-
-            <InlineMetricOverlay
-              position="top-right"
-              metrics={[
-                { label: 'Growth', value: `${singleResult.growthRate.toFixed(4)} h⁻¹`, accent: singleResult.feasible ? THEME.MINT : THEME.CORAL },
-                { label: 'ATP Yield', value: `${singleResult.atpYield.toFixed(2)} mol/mol`, accent: THEME.SKY },
-                { label: 'Feasible', value: singleResult.feasible ? 'YES' : 'NO', accent: singleResult.feasible ? THEME.MINT : THEME.CORAL },
-              ]}
-            />
-          </div>
-        </div>
+      <ToolTabPanel tabId="knockout" activeId={s.activeTab}>
+        <KnockoutTab
+          glucoseUptake={s.glucoseUptake} setGlucoseUptake={s.setGlucoseUptake}
+          oxygenUptake={s.oxygenUptake} setOxygenUptake={s.setOxygenUptake}
+          objective={s.objective} setObjective={s.setObjective}
+          knockouts={s.knockouts} setKnockouts={s.setKnockouts} toggleKO={s.toggleKO}
+          singleResult={s.singleResult} singleError={s.singleError} setSingleError={s.setSingleError} singleLoading={s.singleLoading}
+          chartRef={s.chartRef}
+          biggModels={s.biggModels} biggResult={s.biggResult} selectedModel={s.selectedModel} setSelectedModel={s.setSelectedModel}
+          biggLoading={s.biggLoading} loadedReactions={s.loadedReactions} loadedObjectiveId={s.loadedObjectiveId} modelLoading={s.modelLoading} handleLoadModel={s.handleLoadModel}
+          seedOverwriteNotice={s.seedOverwriteNotice} setSeedOverwriteNotice={s.setSeedOverwriteNotice} lastAppliedSeedRef={s.lastAppliedSeedRef}
+          recommendedSeed={s.recommendedSeed} figureMeta={s.figureMeta}
+        />
       </ToolTabPanel>
 
       {/* ── Strain Design Tab ── */}
-      <ToolTabPanel tabId="strain" activeId={activeTab}>
-        <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-
-            {/* ── Strain Design Pipeline ── */}
-            <div style={{ marginBottom: 12, padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Strain Design Pipeline
-                </span>
-                {pipelineResult && (
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 10, color: THEME.MINT, background: 'rgba(191,220,205,0.12)', padding: '2px 6px', borderRadius: 6 }}>
-                    ✓ {pipelineResult.paretoFront.length} Pareto designs
-                  </span>
-                )}
-              </div>
-              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '0 0 8px' }}>
-                Run full strain design: FSEOF + OptKnock (Heuristic LP) → FBA evaluation → Pareto ranking
-              </p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={async () => {
-                    setPipelineLoading(true);
-                    setPipelineError(null);
-                    try {
-                      const res = await fetch('/api/pipeline/fbasim', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          species: 'ecoli',
-                          objective,
-                          glucoseUptake,
-                          oxygenUptake,
-                          knockouts,
-                          maxKnockouts: 3,
-                          growthFractionConstraint: 0.1,
-                        }),
-                      });
-                      if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
-                      const data = await res.json();
-                      setPipelineResult(data.result);
-                    } catch (err) {
-                      setPipelineError(err instanceof Error ? err.message : 'Pipeline failed');
-                    } finally {
-                      setPipelineLoading(false);
-                    }
-                  }}
-                  disabled={pipelineLoading}
-                  style={{
-                    padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
-                    background: pipelineLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
-                    border: `1px solid ${pipelineLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
-                    color: pipelineLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
-                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                    cursor: pipelineLoading ? 'wait' : 'pointer',
-                  }}
-                >
-                  {pipelineLoading ? 'Running Pipeline...' : 'Run Strain Design'}
-                </button>
-                {pipelineResult?.bestDesign && (
-                  <button
-                    onClick={() => {
-                      // Send to ProEvol
-                      localStorage.setItem('nexus-bio:fbasim-to-proevol', JSON.stringify({
-                        targetReaction: pipelineResult.bestDesign.strategy.knockouts[0] ?? 'PRODUCT',
-                        knockouts: pipelineResult.bestDesign.strategy.knockouts,
-                      }));
-                      window.location.href = '/tools/proevol';
-                    }}
-                    style={{
-                      padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
-                      background: 'rgba(175,195,214,0.12)',
-                      border: '1px solid rgba(175,195,214,0.25)',
-                      color: 'rgba(175,195,214,0.9)',
-                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Send to ProEvol →
-                  </button>
-                )}
-              </div>
-              {pipelineError && (
-                <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '8px 0 0' }}>
-                  {pipelineError}
-                </p>
-              )}
-              {pipelineResult?.bestDesign && (
-                <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(191,220,205,0.08)', border: '1px solid rgba(191,220,205,0.15)', borderRadius: 'var(--nb-radius-sm)' }}>
-                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(191,220,205,0.7)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Best Design
-                  </p>
-                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: 'rgba(250,246,240,0.9)', margin: '4px 0 0' }}>
-                    Growth: {pipelineResult.bestDesign.growthRate?.toFixed(4) ?? 'N/A'} h⁻¹ | Product: {pipelineResult.bestDesign.productFlux?.toFixed(4) ?? 'N/A'} | Burden: {(pipelineResult.bestDesign.growthFractionOfWT * 100).toFixed(1)}%
-                  </p>
-                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '4px 0 0' }}>
-                    {pipelineResult.bestDesign.strategy.description}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {strainDesignError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={strainDesignError} onRetry={() => setStrainDesignError(null)} /></div>}
-
-            <ScientificFigureFrame
-              eyebrow="FSEOF — Flux Scanning based on Enforced Objective Flux"
-              title="Overexpression Targets"
-              caption="FSEOF identifies gene overexpression targets by scanning flux changes as the enforced product flux increases from zero to its maximum. Reactions with monotonically increasing flux are candidate overexpression targets."
-              legend={[
-                { label: 'Objective', value: loadedObjectiveId || 'BIOMASS', accent: THEME.APRICOT },
-                { label: 'Model', value: loadedReactions ? `${loadedReactions.length} rxns` : 'iJO1366 subset', accent: THEME.SKY },
-              ]}
-            >
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                <button
-                  onClick={handleRunFSEOF}
-                  disabled={strainDesignLoading || !loadedReactions}
-                  title={!loadedReactions ? 'Load a BiGG model first — FSEOF requires stoichiometric data' : undefined}
-                  className="nb-tool-toggle nb-tool-toggle--active"
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 'var(--nb-radius-sm)',
-                    background: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
-                    borderColor: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)',
-                    color: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
-                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                    cursor: (strainDesignLoading || !loadedReactions) ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {strainDesignLoading ? 'Running...' : !loadedReactions ? 'Load BiGG Model First' : 'Run FSEOF'}
-                </button>
-              </div>
-
-              {fseofResult ? (
-                <div style={{ overflow: 'auto' }}>
-                  {fseofResult.wildType && (
-                    <div style={{
-                      padding: '8px 12px', marginBottom: '12px',
-                      background: 'rgba(191,220,205,0.08)',
-                      border: '1px solid rgba(191,220,205,0.15)',
-                      borderRadius: 'var(--nb-radius-sm)',
-                    }}>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(191,220,205,0.7)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        Wild-Type Baseline
-                      </p>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: 'rgba(250,246,240,0.9)', margin: '4px 0 0' }}>
-                        Growth: {fseofResult.wildType.growthRate?.toFixed(4) ?? 'N/A'} h⁻¹ | Product Flux: {fseofResult.wildType.productFlux?.toFixed(4) ?? 'N/A'} mmol/gDW/h
-                      </p>
-                    </div>
-                  )}
-
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                        <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Reaction</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Flux @ Min</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Flux @ Max</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Monotonicity</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(fseofResult.targets ?? []).map((t, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '5px 8px', color: 'rgba(250,246,240,0.85)' }}>{t.reactionId}</td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(250,246,240,0.6)' }}>{t.fluxAtMin.toFixed(3)}</td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{t.fluxAtMax.toFixed(3)}</td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '1px 6px',
-                              borderRadius: '3px',
-                              background: t.monotonicity >= 0.8 ? 'rgba(191,220,205,0.15)' : t.monotonicity >= 0.5 ? 'rgba(231,199,169,0.15)' : 'rgba(232,163,161,0.15)',
-                              color: t.monotonicity >= 0.8 ? 'rgba(191,220,205,0.9)' : t.monotonicity >= 0.5 ? 'rgba(231,199,169,0.9)' : 'rgba(232,163,161,0.9)',
-                            }}>
-                              {t.monotonicity.toFixed(2)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div style={{
-                  padding: '24px', textAlign: 'center',
-                  color: 'rgba(217,225,235,0.35)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
-                }}>
-                  Click "Run FSEOF" to scan for overexpression targets.
-                </div>
-              )}
-            </ScientificFigureFrame>
-          </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <ScientificFigureFrame
-              eyebrow="OptKnock — Heuristic LP Approximation"
-              title="Knockout Strategies"
-              caption="Inspired by Burgard et al. (2003). This implementation uses sequential LP enumeration with post-hoc coupling verification — NOT a true bilevel MILP reformulation. Results are heuristic suggestions; optimality is not guaranteed for large candidate sets."
-              legend={[
-                { label: 'Max Knockouts', value: '3', accent: THEME.CORAL },
-                { label: 'Model', value: loadedReactions ? `${loadedReactions.length} rxns` : 'iJO1366 subset', accent: THEME.SKY },
-              ]}
-            >
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                <button
-                  onClick={handleRunOptKnock}
-                  disabled={strainDesignLoading || !loadedReactions}
-                  title={!loadedReactions ? 'Load a BiGG model first — OptKnock requires stoichiometric data' : undefined}
-                  className="nb-tool-toggle nb-tool-toggle--active"
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 'var(--nb-radius-sm)',
-                    background: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.04)' : 'rgba(232,163,161,0.14)',
-                    borderColor: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.08)' : 'rgba(232,163,161,0.3)',
-                    color: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.35)' : 'rgba(232,163,161,0.9)',
-                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                    cursor: (strainDesignLoading || !loadedReactions) ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {strainDesignLoading ? 'Running...' : !loadedReactions ? 'Load BiGG Model First' : 'Run OptKnock (Heuristic)'}
-                </button>
-              </div>
-
-              {optknockResult ? (
-                <div style={{ overflow: 'auto' }}>
-                  {optknockResult.wildType && (
-                    <div style={{
-                      padding: '8px 12px', marginBottom: '12px',
-                      background: 'rgba(232,163,161,0.08)',
-                      border: '1px solid rgba(232,163,161,0.15)',
-                      borderRadius: 'var(--nb-radius-sm)',
-                    }}>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(232,163,161,0.7)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        Wild-Type Baseline
-                      </p>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: 'rgba(250,246,240,0.9)', margin: '4px 0 0' }}>
-                        Growth: {optknockResult.wildType.growthRate?.toFixed(4) ?? 'N/A'} h⁻¹ | Product Flux: {optknockResult.wildType.productFlux?.toFixed(4) ?? 'N/A'} mmol/gDW/h
-                      </p>
-                    </div>
-                  )}
-
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                        <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>#</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Knockout Set</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Growth (h⁻¹)</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Product Flux</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(optknockResult.strategies ?? []).map((s, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '5px 8px', color: 'rgba(250,246,240,0.5)' }}>{i + 1}</td>
-                          <td style={{ padding: '5px 8px' }}>
-                            {(s.knockouts ?? []).map((ko, j) => (
-                              <span key={j} style={{
-                                display: 'inline-block',
-                                padding: '1px 5px',
-                                marginRight: j < (s.knockouts ?? []).length - 1 ? '3px' : 0,
-                                background: 'rgba(232,163,161,0.12)',
-                                border: '1px solid rgba(232,163,161,0.2)',
-                                borderRadius: '3px',
-                                color: 'rgba(232,163,161,0.85)',
-                                fontSize: 'var(--nb-fs-xxs)',
-                              }}>
-                                {ko}
-                              </span>
-                            ))}
-                          </td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{s.growthRate.toFixed(4)}</td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(231,199,169,0.85)' }}>{s.productFlux.toFixed(4)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div style={{
-                  padding: '24px', textAlign: 'center',
-                  color: 'rgba(217,225,235,0.35)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
-                }}>
-                  Click "Run OptKnock (Heuristic)" to find knockout strategies that couple growth to product formation. Results are approximate — not guaranteed optimal.
-                </div>
-              )}
-            </ScientificFigureFrame>
-          </div>
-        </div>
+      <ToolTabPanel tabId="strain" activeId={s.activeTab}>
+        <StrainDesignTab
+          fseofResult={s.fseofResult}
+          optknockResult={s.optknockResult}
+          strainDesignLoading={s.strainDesignLoading}
+          strainDesignError={s.strainDesignError} setStrainDesignError={s.setStrainDesignError}
+          pipelineResult={s.pipelineResult}
+          pipelineLoading={s.pipelineLoading}
+          pipelineError={s.pipelineError}
+          loadedReactions={s.loadedReactions}
+          loadedObjectiveId={s.loadedObjectiveId}
+          handleRunFSEOF={s.handleRunFSEOF}
+          handleRunOptKnock={s.handleRunOptKnock}
+          handleRunPipeline={s.handleRunPipeline}
+          handleSendToProEvol={s.handleSendToProEvol}
+        />
       </ToolTabPanel>
 
       {/* ── FVA Tab ── */}
-      <ToolTabPanel tabId="fva" activeId={activeTab}>
+      <ToolTabPanel tabId="fva" activeId={s.activeTab}>
         <ScientificFigureFrame
           eyebrow="Figure C · Flux Variability Analysis"
           title="Reaction flux ranges at optimal objective"
           caption="FVA (Mahadevan & Schilling 2003) finds the min and max flux each reaction can carry while maintaining the optimal objective value. Reactions with zero range are uniquely determined; variable reactions have alternate optimal pathways."
           legend={[
-            { label: 'Objective', value: objective, accent: THEME.APRICOT },
-            { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
-            { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
+            { label: 'Objective', value: s.objective, accent: THEME.APRICOT },
+            { label: 'Glucose', value: `${s.glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
+            { label: 'Oxygen', value: `${s.oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
           ]}
         >
           <FVAPanel
-            objective={objective}
-            glucoseUptake={glucoseUptake}
-            oxygenUptake={oxygenUptake}
-            knockouts={knockouts}
+            objective={s.objective}
+            glucoseUptake={s.glucoseUptake}
+            oxygenUptake={s.oxygenUptake}
+            knockouts={s.knockouts}
           />
         </ScientificFigureFrame>
       </ToolTabPanel>
 
       {/* ── GPR Knockout Tab ── */}
-      <ToolTabPanel tabId="gpr" activeId={activeTab}>
+      <ToolTabPanel tabId="gpr" activeId={s.activeTab}>
         <ScientificFigureFrame
           eyebrow="Figure D · Gene-Protein-Reaction Knockout"
           title="Gene knockout simulation via GPR rules"
           caption="Select genes from the iJO1366 model to knock out. The GPR (Gene-Protein-Reaction) boolean rules determine which reactions become disabled: AND = protein complex (all subunits required), OR = isozymes (any one sufficient). Knocked-out genes propagate through the rule tree to identify disabled reactions."
           legend={[
-            { label: 'Objective', value: objective, accent: THEME.APRICOT },
-            { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
-            { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
+            { label: 'Objective', value: s.objective, accent: THEME.APRICOT },
+            { label: 'Glucose', value: `${s.glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
+            { label: 'Oxygen', value: `${s.oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
           ]}
         >
           <GPRPanel
-            objective={objective}
-            glucoseUptake={glucoseUptake}
-            oxygenUptake={oxygenUptake}
-            knockouts={knockouts}
+            objective={s.objective}
+            glucoseUptake={s.glucoseUptake}
+            oxygenUptake={s.oxygenUptake}
+            knockouts={s.knockouts}
           />
         </ScientificFigureFrame>
       </ToolTabPanel>
 
       {/* ── Shadow Prices Tab ── */}
-      <ToolTabPanel tabId="shadows" activeId={activeTab}>
-        <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '0 0 10px' }}>FBA Results</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              <MetricCard label="Growth Rate (μ)" value={singleResult.growthRate} unit="h⁻¹" highlight />
-              <MetricCard label="ATP Yield" value={singleResult.atpYield} unit="mol/mol glc" />
-              <MetricCard label="NADH Production" value={singleResult.nadhProduction} unit="mmol/gDW/h" />
-              <MetricCard label="Carbon Efficiency" value={singleResult.carbonEfficiency} unit="%" />
-              <MetricCard label="Feasible" value={singleResult.feasible ? 'YES' : 'NO'} />
-            </div>
-            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px' }}>Shadow Prices (∂μ/∂uptake)</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <MetricCard label="∂μ/∂Glucose" value={singleResult.sensitivityCoefficients.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
-              <MetricCard label="∂μ/∂Oxygen"  value={singleResult.sensitivityCoefficients.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
-              <MetricCard label="∂μ/∂ATP"     value={singleResult.sensitivityCoefficients.atp.toFixed(4)} unit="h⁻¹·gDW/mmol" />
-            </div>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '0 0 10px' }}>Top 5 Active Reactions</p>
-            {top5.map(r => (
-              <div key={r.id} style={{
-                padding: '6px 8px', marginBottom: '4px',
-                background: 'rgba(255,255,255,0.04)',
-                border: `1px solid ${knockouts.includes(r.id) ? 'rgba(255,80,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: 'var(--nb-radius-sm)',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>{r.flux.toFixed(2)}</span>
-                </div>
-                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>{r.name}</div>
-                <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
-                  <div style={{ height: '100%', borderRadius: '1px', width: `${Math.abs(r.flux / maxTopFlux) * 100}%`, background: knockouts.includes(r.id) ? 'rgba(255,80,80,0.3)' : 'rgba(20,140,80,0.4)', transition: 'width 0.3s' }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <ToolTabPanel tabId="shadows" activeId={s.activeTab}>
+        <ShadowPricesTab
+          singleResult={s.singleResult}
+          knockouts={s.knockouts}
+          top5={s.top5}
+          maxTopFlux={s.maxTopFlux}
+        />
       </ToolTabPanel>
 
       {/* ── Community Tab ── */}
-      <ToolTabPanel tabId="community" activeId={activeTab}>
-        <div style={{ padding: '8px 12px', background: 'rgba(232,220,200,0.1)', borderRadius: 'var(--nb-radius-sm)', fontSize: 'var(--nb-fs-sm)', opacity: 0.8, margin: '8px 12px' }}>
-          [Note] Community FBA uses sequential single-species optimization with shared resource constraints.
-          This is an approximation — for true joint optimization, consider SteCom or BioME frameworks.
-        </div>
-        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          <FloatingControlRail label="Strain Parameters" defaultCollapsed={false} width={260}>
-            <StrainPanel label="E. coli" color={COLORS.strainABg} borderColor={COLORS.strainABorder} accentColor={COLORS.strainA}
-              glucoseUptake={ecoliGlucose} oxygenUptake={ecoliOxygen} knockouts={ecoliKO}
-              reactions={REACTION_DEFS} result={communityResult.ecoli}
-              onGlucoseChange={setEcoliGlucose} onOxygenChange={setEcoliOxygen}
-              onToggleKO={toggleEcoliKO} onClearKO={() => setEcoliKO([])} />
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
-            <StrainPanel label="S. cerevisiae" color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} accentColor={COLORS.strainB}
-              glucoseUptake={yeastGlucose} oxygenUptake={yeastOxygen} knockouts={yeastKO}
-              reactions={YEAST_REACTION_DEFS} result={communityResult.yeast}
-              onGlucoseChange={setYeastGlucose} onOxygenChange={setYeastOxygen}
-              onToggleKO={toggleYeastKO} onClearKO={() => setYeastKO([])} />
-          </FloatingControlRail>
-
-          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {communityError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} onRetry={() => setCommunityError(null)} /></div>}
-            {communityLoading && (
-              <div style={{ padding: '0 16px 8px' }}>
-                <div style={{ padding: '6px 10px', borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)' }}>
-                  Solving two independent single-species LPs.
-                </div>
-              </div>
-            )}
-
-            <ScientificFigureFrame
-              eyebrow="Community FBA"
-              title="Two-Species Metabolic Community"
-              caption="Independent LP solutions per species with shared metabolite exchange."
-              minHeight="100%"
-            >
-              <div style={{ display: 'grid', gap: '12px', minHeight: '500px' }}>
-                <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
-                  style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: 'rgba(255,255,255,0.55)' }}>Demo Biomass Blend</span>
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: COLORS.sharedPool }}>μ_demo = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹</span>
-                </GlassContainer>
-                <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
-                  <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder} style={{ flex: 1, padding: '6px', display: 'flex', flexDirection: 'column' }}>
-                    <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>E. coli</p>
-                    <div style={{ flex: 1, minHeight: 0 }}><FluxMap result={communityResult.ecoli} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={ecoliKO} compact /></div>
-                  </GlassContainer>
-                  <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} style={{ flex: 1, padding: '6px', display: 'flex', flexDirection: 'column' }}>
-                    <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>S. cerevisiae</p>
-                    <div style={{ flex: 1, minHeight: 0 }}><FluxMap result={communityResult.yeast} nodes={YEAST_NODES} edges={YEAST_FLUX_EDGES} knockouts={yeastKO} compact /></div>
-                  </GlassContainer>
-                </div>
-                <SharedMetaboliteBus exchangeFluxes={communityResult.exchangeFluxes} />
-              </div>
-            </ScientificFigureFrame>
-
-            <InlineMetricOverlay
-              position="top-right"
-              metrics={[
-                { label: 'Blend μ', value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`, accent: communityResult.feasible ? THEME.MINT : THEME.CORAL },
-                { label: 'E. coli μ', value: `${communityResult.ecoli.growthRate.toFixed(3)}`, accent: COLORS.strainA },
-                { label: 'Yeast μ', value: `${communityResult.yeast.growthRate.toFixed(3)}`, accent: COLORS.strainB },
-              ]}
-            />
-          </div>
-        </div>
+      <ToolTabPanel tabId="community" activeId={s.activeTab}>
+        <CommunityFBATab
+          ecoliGlucose={s.ecoliGlucose} setEcoliGlucose={s.setEcoliGlucose}
+          ecoliOxygen={s.ecoliOxygen} setEcoliOxygen={s.setEcoliOxygen}
+          ecoliKO={s.ecoliKO} setEcoliKO={s.setEcoliKO} toggleEcoliKO={s.toggleEcoliKO}
+          yeastGlucose={s.yeastGlucose} setYeastGlucose={s.setYeastGlucose}
+          yeastOxygen={s.yeastOxygen} setYeastOxygen={s.setYeastOxygen}
+          yeastKO={s.yeastKO} setYeastKO={s.setYeastKO} toggleYeastKO={s.toggleYeastKO}
+          communityResult={s.communityResult}
+          communityError={s.communityError} setCommunityError={s.setCommunityError}
+          communityLoading={s.communityLoading}
+        />
       </ToolTabPanel>
 
       {/* ── Consortium Design Tab ── */}
-      <ToolTabPanel tabId="consortium" activeId={activeTab}>
+      <ToolTabPanel tabId="consortium" activeId={s.activeTab}>
         <ScientificFigureFrame
           eyebrow="Stage 2 · Multi-Strain Consortium Design"
           title="SteadyCom Community FBA with Quorum Sensing"
@@ -1622,7 +307,7 @@ export default React.memo(function FBASimPage() {
       </ToolTabPanel>
 
       {/* ── Custom Model Tab ── */}
-      <ToolTabPanel tabId="custom" activeId={activeTab}>
+      <ToolTabPanel tabId="custom" activeId={s.activeTab}>
         <CustomModelPanel />
       </ToolTabPanel>
       <NextStepButton currentStepId="fbasim" />

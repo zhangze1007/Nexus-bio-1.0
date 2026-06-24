@@ -35,7 +35,7 @@ export async function ingestScSpatialFile(
   return payload;
 }
 
-export async function ingestScSpatialDemo(signal?: AbortSignal) {
+export async function ingestScSpatialDemo(signal?: AbortSignal, config?: ScSpatialIngestConfig) {
   const response = await fetch('/api/scspatial/ingest', {
     method: 'POST',
     headers: {
@@ -43,7 +43,7 @@ export async function ingestScSpatialDemo(signal?: AbortSignal) {
     },
     cache: 'no-store',
     signal,
-    body: JSON.stringify({ mode: 'demo' }),
+    body: JSON.stringify({ mode: 'demo', config }),
   });
   const payload = await parsePayload<ScSpatialIngestResponse | ScSpatialErrorResponse>(response);
   if (!response.ok || !('ok' in payload) || payload.ok !== true) {

@@ -6,6 +6,15 @@ import styles from './ScSpatialWorkbench.module.css';
 import { colorForCluster } from './scSpatialPalette';
 import type { ScSpatialAvailableViews } from '../../../types/scspatial';
 
+export interface ScSpatialAnalysisParams {
+  leidenResolution: number;
+  nNeighbors: number;
+  nPcs: number;
+  nTopGenes: number;
+  moranPerms: number;
+  coordType: 'auto' | 'visium' | 'generic';
+}
+
 interface ScSpatialControlRailProps {
   availableClusters: string[];
   availableGenes: string[];
@@ -28,6 +37,7 @@ interface ScSpatialControlRailProps {
   showKde: boolean;
   showNeighbors: boolean;
   neighborK: number;
+  analysisParams: ScSpatialAnalysisParams;
   onLoadDemo: () => void;
   onPickFile: () => void;
   onSelectCluster: (cluster: string | null) => void;
@@ -37,6 +47,7 @@ interface ScSpatialControlRailProps {
   onToggleKde: () => void;
   onToggleNeighbors: () => void;
   onSetNeighborK: (k: number) => void;
+  onAnalysisParamChange: <K extends keyof ScSpatialAnalysisParams>(key: K, value: ScSpatialAnalysisParams[K]) => void;
 }
 
 function StepTitle({ n, children }: { n: number; children: React.ReactNode }) {
@@ -60,6 +71,7 @@ export default function ScSpatialControlRail({
   showKde,
   showNeighbors,
   neighborK,
+  analysisParams,
   onLoadDemo,
   onPickFile,
   onSelectCluster,
@@ -69,6 +81,7 @@ export default function ScSpatialControlRail({
   onToggleKde,
   onToggleNeighbors,
   onSetNeighborK,
+  onAnalysisParamChange,
 }: ScSpatialControlRailProps) {
   const busy = loadState === 'uploading' || loadState === 'querying';
 
@@ -88,7 +101,7 @@ export default function ScSpatialControlRail({
           <div className={styles.buttonRow}>
             <button type="button" className={styles.button} onClick={onPickFile} disabled={busy}>
               {busy ? <Loader2 size={13} /> : <UploadCloud size={13} />}
-              Upload h5ad
+              Upload Data
             </button>
             <button type="button" className={styles.button} onClick={onLoadDemo} disabled={busy}>
               <FlaskConical size={13} />
@@ -257,6 +270,96 @@ export default function ScSpatialControlRail({
                 <span>parser <strong style={{ fontSize: 10 }}>{datasetMeta.parserVersion}</strong></span>
               </div>
             ) : null}
+
+            <div style={{ borderTop: '1px solid #d1d5db', margin: '8px 0', paddingTop: 8 }}>
+              <label className={styles.fieldLabel} style={{ fontWeight: 600, marginBottom: 6, display: 'block' }}>
+                Analysis Parameters
+              </label>
+
+              <div>
+                <label className={styles.fieldLabel}>Leiden Resolution: {analysisParams.leidenResolution.toFixed(1)}</label>
+                <input
+                  type="range"
+                  min={0.1}
+                  max={3.0}
+                  step={0.1}
+                  value={analysisParams.leidenResolution}
+                  onChange={(e) => onAnalysisParamChange('leidenResolution', Number(e.target.value))}
+                  className={styles.input}
+                  aria-label="Leiden clustering resolution"
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>N Neighbors: {analysisParams.nNeighbors}</label>
+                <input
+                  type="range"
+                  min={5}
+                  max={50}
+                  step={1}
+                  value={analysisParams.nNeighbors}
+                  onChange={(e) => onAnalysisParamChange('nNeighbors', Number(e.target.value))}
+                  className={styles.input}
+                  aria-label="Number of neighbors for UMAP"
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>N PCs: {analysisParams.nPcs}</label>
+                <input
+                  type="range"
+                  min={10}
+                  max={50}
+                  step={5}
+                  value={analysisParams.nPcs}
+                  onChange={(e) => onAnalysisParamChange('nPcs', Number(e.target.value))}
+                  className={styles.input}
+                  aria-label="Number of principal components"
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>N Top HVGs: {analysisParams.nTopGenes.toLocaleString()}</label>
+                <input
+                  type="range"
+                  min={500}
+                  max={5000}
+                  step={500}
+                  value={analysisParams.nTopGenes}
+                  onChange={(e) => onAnalysisParamChange('nTopGenes', Number(e.target.value))}
+                  className={styles.input}
+                  aria-label="Number of top highly variable genes"
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>Moran's I Permutations: {analysisParams.moranPerms.toLocaleString()}</label>
+                <input
+                  type="range"
+                  min={100}
+                  max={10000}
+                  step={100}
+                  value={analysisParams.moranPerms}
+                  onChange={(e) => onAnalysisParamChange('moranPerms', Number(e.target.value))}
+                  className={styles.input}
+                  aria-label="Moran's I permutation count"
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>Coord Type</label>
+                <select
+                  className={styles.select}
+                  value={analysisParams.coordType}
+                  onChange={(e) => onAnalysisParamChange('coordType', e.target.value as 'auto' | 'visium' | 'generic')}
+                  aria-label="Coordinate type"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="visium">Visium</option>
+                  <option value="generic">Generic</option>
+                </select>
+              </div>
+            </div>
           </div>
         </details>
       </div>

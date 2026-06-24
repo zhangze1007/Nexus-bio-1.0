@@ -12,6 +12,9 @@ import type { ScSpatialIngestConfig, ScSpatialQueryRequest, ScSpatialViewMode } 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/** Python backend URL (set via SCSPATIAL_PYTHON_BACKEND env var). */
+const PYTHON_BACKEND = process.env.SCSPATIAL_PYTHON_BACKEND?.replace(/\/+$/, '') || '';
+
 function jsonError(error: string, status = 400, detail?: string) {
   return NextResponse.json({ ok: false, error, detail }, { status });
 }
@@ -30,12 +33,49 @@ export async function POST(request: Request) {
   const contentType = request.headers.get('content-type') ?? '';
 
   try {
+    // ── Demo mode (JSON) — always handled locally ──────────────────
     if (contentType.includes('application/json')) {
       const body = await request.json().catch(() => null);
       if (body?.mode !== 'demo') {
         return jsonError('Expected multipart h5ad upload or JSON body {"mode":"demo"}');
       }
 
+      // If Python backend is available, use its demo endpoint
+      if (PYTHON_BACKEND) {
+        try {
+          const resp = await fetch(`${PYTHON_BACKEND}/demo`, { method: 'POST' });
+          if (resp.ok) {
+            const data = await resp.json();
+            // Fetch the full artifact via the query endpoint
+            const queryResp = await fetch(`${PYTHON_BACKEND}/query`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                artifactId: data.artifactId,
+                selectedGene: '',
+                selectedCluster: null,
+                selectedCellId: null,
+                viewMode: 'spatial-2d',
+                developerMode: false,
+              }),
+            });
+            if (queryResp.ok) {
+              const queryData = await queryResp.json();
+              return NextResponse.json({
+                ok: true,
+                artifactId: data.artifactId,
+                validity: queryData.validity,
+                datasetMeta: queryData.datasetMeta,
+                initialQuery: queryData,
+              });
+            }
+          }
+        } catch {
+          // Fall through to local demo
+        }
+      }
+
+      // Local demo fallback
       const artifact = createDemoScSpatialArtifact();
       await writeScSpatialArtifact(artifact);
       const initialQuery = buildScSpatialQueryResponse(artifact, {
@@ -55,13 +95,15 @@ export async function POST(request: Request) {
       });
     }
 
+    // ── File upload — proxy to Python backend if available ─────────
     const formData = await request.formData();
     const file = formData.get('file');
     if (!(file instanceof File)) {
-      return jsonError('A .h5ad file is required under the "file" field');
+      return jsonError('A file is required under the "file" field');
     }
-    if (!file.name.toLowerCase().endsWith('.h5ad')) {
-      return jsonError('SCSPATIAL ingest only accepts .h5ad uploads');
+    const fnameLower = file.name.toLowerCase();
+    if (!fnameLower.endsWith('.h5ad') && !fnameLower.endsWith('.zip')) {
+      return jsonError('SCSPATIAL ingest accepts .h5ad files or .zip (Space Ranger output)');
     }
 
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -73,10 +115,43 @@ export async function POST(request: Request) {
     }
 
     const config = parseConfig(formData.get('config'));
+
+    // ── Proxy to Python backend ────────────────────────────────────
+    if (PYTHON_BACKEND) {
+      try {
+        const pyForm = new FormData();
+        pyForm.append('file', file);
+        pyForm.append('config_json', JSON.stringify(config));
+
+        const resp = await fetch(`${PYTHON_BACKEND}/ingest`, {
+          method: 'POST',
+          body: pyForm,
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          console.error('Python backend ingest error:', errText);
+          return jsonError('Python backend analysis failed', 502, errText);
+        }
+
+        const data = await resp.json();
+        return NextResponse.json({
+          ok: true,
+          job_id: data.job_id,
+          artifactId: data.artifactId,
+          status: data.status,
+          // Frontend will poll /status/{job_id} then fetch /result/{job_id}
+        });
+      } catch (err) {
+        console.error('Python backend unreachable:', err);
+        return jsonError('Python analysis backend is unavailable', 502);
+      }
+    }
+
+    // ── Fallback: local sidecar ────────────────────────────────────
     const artifactId = `scspatial-${randomUUID()}`;
     const uploadedAt = Date.now();
     const tempDir = await mkdtemp(path.join(tmpdir(), 'scspatial-'));
-    // Sanitize filename: strip directory components to prevent path traversal
     const safeFileName = path.basename(file.name).replace(/[^a-zA-Z0-9._-]/g, '_');
     const tempFilePath = path.join(tempDir, safeFileName);
 
