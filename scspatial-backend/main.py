@@ -17,14 +17,16 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-# ── Workaround: anndata tries to import torch for its PyTorch dataloader.
-#    On Python 3.14, torch DLLs fail to load. We don't need torch, so
-#    create a stub module to prevent the crash.
+# ── Workaround: anndata/scipy try to import torch. On Python 3.14, torch
+#    DLLs fail to load. We don't need torch, so create a minimal stub.
 try:
     import torch  # noqa: F401
 except (OSError, ImportError):
     import types
-    sys.modules["torch"] = types.ModuleType("torch")  # type: ignore[assignment]
+    _torch_stub = types.ModuleType("torch")
+    _torch_stub.Tensor = type("Tensor", (), {})  # type: ignore[attr-defined]
+    _torch_stub.__version__ = "0.0.0"  # type: ignore[attr-defined]
+    sys.modules["torch"] = _torch_stub  # type: ignore[assignment]
 
 import anndata as ad
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
