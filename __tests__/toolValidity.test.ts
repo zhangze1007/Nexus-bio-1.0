@@ -49,9 +49,9 @@ describe('TOOL_VALIDITY', () => {
     expect(TOOL_VALIDITY.nexai.level).toBe('real');
   });
 
-  it('cethx is marked as partial (Alberty transform) and multio as demo (deterministic)', () => {
+  it('cethx is marked as partial (Alberty transform) and multio as partial (real MOFA+)', () => {
     expect(TOOL_VALIDITY.cethx.level).toBe('partial');
-    expect(TOOL_VALIDITY.multio.level).toBe('demo');
+    expect(TOOL_VALIDITY.multio.level).toBe('partial');
   });
 
   it('fbasim is marked as partial', () => {
