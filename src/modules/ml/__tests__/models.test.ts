@@ -452,11 +452,17 @@ describe('RandomForest', () => {
 
   it('should have meaningful feature importances', () => {
     // Feature 0 dominates, feature 1 has moderate signal
+    // Use seeded RNG for deterministic test (prevents flaky failures)
+    let seed = 42;
+    const seededRandom = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed / 0x7fffffff;
+    };
     const n = 500;
     const X: number[][] = [];
     const y: number[] = [];
     for (let i = 0; i < n; i++) {
-      const x = Array.from({ length: 5 }, () => Math.random() * 10);
+      const x = Array.from({ length: 5 }, () => seededRandom() * 10);
       X.push(x);
       y.push(100 * x[0] + 1 * x[1] + 0.01 * x[2]);
     }
