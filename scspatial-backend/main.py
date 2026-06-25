@@ -17,16 +17,26 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-# ── Workaround: anndata/scipy try to import torch. On Python 3.14, torch
-#    DLLs fail to load. We don't need torch, so create a minimal stub.
-try:
-    import torch  # noqa: F401
-except (OSError, ImportError):
+# ── Torch handling ─────────────────────────────────────────────────
+# If real torch is installed (for ESM-2), use it.
+# If not, create a minimal stub so anndata/scipy don't crash on import.
+def _setup_torch():
+    try:
+        import torch
+        return True  # Real torch available
+    except (OSError, ImportError):
+        pass
+
+    # Create stub for anndata/scipy compatibility
     import types
     _torch_stub = types.ModuleType("torch")
     _torch_stub.Tensor = type("Tensor", (), {})  # type: ignore[attr-defined]
     _torch_stub.__version__ = "0.0.0"  # type: ignore[attr-defined]
+    _torch_stub.cuda = type("cuda", (), {"is_available": lambda self: False})()  # type: ignore[attr-defined]
     sys.modules["torch"] = _torch_stub  # type: ignore[assignment]
+    return False
+
+HAS_REAL_TORCH = _setup_torch()
 
 import anndata as ad
 import numpy as np
@@ -39,6 +49,10 @@ from blast_service import blast_screen_sequence, get_available_databases
 from mofa_service import run_mofa_analysis
 from models import AnalysisConfig, IngestResponse, JobStatus, QueryRequest
 from pipeline import run_full_pipeline
+
+# Conditional ESM-2 import (requires real PyTorch + fair-esm)
+if HAS_REAL_TORCH:
+    from esm2_service import run_esm2_analysis, get_esm2_models
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -572,6 +586,50 @@ async def blast_screen(request: Request):
     )
 
     return {"ok": True, **result}
+
+
+# ── ESM-2 protein language model ────────────────────────────────────
+
+@app.get("/esm2/models")
+async def esm2_models():
+    """List available ESM-2 models."""
+    if not HAS_REAL_TORCH:
+        return {"ok": False, "error": "ESM-2 requires PyTorch. Install torch and fair-esm."}
+    return {"ok": True, **get_esm2_models()}
+
+
+@app.post("/esm2/analyze")
+async def esm2_analyze(request: Request):
+    """Run ESM-2 protein language model analysis."""
+    if not HAS_REAL_TORCH:
+        raise HTTPException(503, "ESM-2 requires PyTorch. Install torch and fair-esm.")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    sequence = body.get("sequence", "").strip()
+    if not sequence:
+        raise HTTPException(400, "sequence is required")
+
+    model_name = body.get("model", "esm2_t6_8M_UR50D")
+    return_embeddings = body.get("returnEmbeddings", True)
+    return_contacts = body.get("returnContacts", False)
+    fitness_mutations = body.get("fitnessMutations", None)
+
+    try:
+        result = run_esm2_analysis(
+            sequence=sequence,
+            model_name=model_name,
+            return_embeddings=return_embeddings,
+            return_contacts=return_contacts,
+            fitness_mutations=fitness_mutations,
+        )
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.exception("ESM-2 analysis failed")
+        raise HTTPException(500, f"ESM-2 analysis failed: {str(e)}")
 
 
 # ── Demo mode: create artifact without Python analysis ──────────────
