@@ -2,13 +2,26 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Transform Nexus-Bio 1.0 from a demo platform into a production-grade Synthetic Biology Operating System across 13 branches.
+**Goal:** Transform Nexus-Bio 1.0 from a demo platform into a production-grade Synthetic Biology Operating System.
 
-**Architecture:** 8-layer platform (Infrastructure → Data → Auth → Scientific → Tools → Collaboration → AI → Business) built incrementally over 4 phases.
+**Architecture:** 8-layer platform built incrementally. Drizzle ORM replaces raw SQL. Turso (free tier) for persistence. Fresh schema (no migration needed). snake_case in DB, camelCase in TypeScript.
 
-**Tech Stack:** Next.js 15, React 19, TypeScript, Drizzle ORM, Turso/libSQL, Upstash Redis, Socket.io, Yjs, Stripe, PostHog, Storybook, Biome
+**Tech Stack:** Next.js 15, React 19, TypeScript 5.8, Drizzle ORM, Turso/libSQL, Biome, Socket.io, Yjs
 
 **Spec:** `docs/superpowers/specs/2026-06-25-nexus-bio-os-platform-blueprint.md`
+
+## Global Constraints
+
+- **Budget:** $0 — use free tiers only (Turso 9GB, Vercel Hobby, Upstash 10K/day, R2 10GB, Sentry 5K/month)
+- **Database:** Turso/libSQL — do NOT switch to PostgreSQL or Supabase
+- **ORM:** Drizzle ORM — fully replace `src/server/workbenchDb.ts` (749 lines of raw SQL)
+- **Naming:** snake_case in database columns, camelCase in TypeScript (Drizzle auto-maps)
+- **Auth:** Auth.js v5 stable, GitHub + Google OAuth, four-tier RBAC (Owner > Admin > Editor > Viewer)
+- **Auth scope:** Single user now — schema pre-includes nullable `org_id`, `team_id` for future multi-tenancy
+- **Existing data:** None — fresh schema, no migration needed
+- **Commits:** Local only — do NOT push to remote without explicit user approval
+- **Testing:** TDD — write failing test first, implement, verify pass, commit
+- **Forbidden files:** Do NOT modify `IDEShell.tsx`, `IDETopBar.tsx`, `IDESidebar.tsx`, `DBTLflowPage.tsx`, `GECAIRPage.tsx`, `ProEvolPage.tsx`
 
 ---
 
@@ -26,15 +39,18 @@
 - Modify: `.github/workflows/ci.yml` (add lint step)
 
 **Interfaces:**
-- Produces: `biome check` command for CI
+- Produces: `npm run lint` → Biome check, `npm run format` → Biome format
 
 - [ ] **Step 1: Install Biome**
 
 ```bash
+cd C:/Users/HP/Nexus-Bio-1.0/Nexus-bio-1.0
 npm install -D @biomejs/biome
 ```
 
-- [ ] **Step 2: Create biome.json config**
+Expected: `@biomejs/biome` appears in `devDependencies` in `package.json`.
+
+- [ ] **Step 2: Create biome.json**
 
 ```json
 {
@@ -67,7 +83,8 @@ npm install -D @biomejs/biome
 
 - [ ] **Step 3: Add scripts to package.json**
 
-Add to `"scripts"`:
+Read `package.json`, find the `"scripts"` object, add these three entries:
+
 ```json
 "lint": "biome check src/",
 "lint:fix": "biome check --fix src/",
@@ -80,9 +97,12 @@ Add to `"scripts"`:
 npm run lint:fix
 ```
 
+Expected: Biome reports warnings/errors and auto-fixes what it can. Some warnings may remain (unused variables, explicit `any`). These are acceptable for now.
+
 - [ ] **Step 5: Add lint step to CI**
 
-In `.github/workflows/ci.yml`, add before typecheck:
+Read `.github/workflows/ci.yml`. Find the job that runs `npm run build`. Add before it:
+
 ```yaml
 - name: Lint
   run: npm run lint
@@ -94,91 +114,51 @@ In `.github/workflows/ci.yml`, add before typecheck:
 npm test
 ```
 
+Expected: All existing tests pass. Biome formatting should not break runtime behavior.
+
 - [ ] **Step 7: Commit**
 
 ```bash
 git add biome.json package.json .github/workflows/ci.yml
-git commit -m "chore: add Biome linting and formatting"
+git commit -m "chore: add Biome linting and formatting
+
+- Install @biomejs/biome
+- Add lint, lint:fix, format scripts
+- Add lint step to CI pipeline
+- Auto-fix existing style issues"
 ```
 
 ---
 
-### Task 2: Configure Sentry Properly
+### Task 2: Install Drizzle ORM & Define Base Schema
 
 **Files:**
-- Modify: `sentry.server.config.ts`
-- Modify: `sentry.edge.config.ts`
-- Create: `src/utils/sentry.ts` (helper for custom spans)
-
-- [ ] **Step 1: Verify Sentry DSN is set**
-
-Check that `SENTRY_DSN` is in `.env.local` or Vercel environment variables.
-
-- [ ] **Step 2: Enhance sentry.server.config.ts**
-
-```typescript
-import * as Sentry from '@sentry/nextjs';
-
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  tracesSampleRate: 0.1,
-  environment: process.env.NODE_ENV,
-  release: process.env.VERCEL_GIT_COMMIT_SHA || 'local',
-  integrations: [
-    Sentry.captureConsoleIntegration({ levels: ['error', 'warn'] }),
-  ],
-});
-```
-
-- [ ] **Step 3: Enhance sentry.edge.config.ts**
-
-Same config as server config.
-
-- [ ] **Step 4: Create custom span helper**
-
-```typescript
-// src/utils/sentry.ts
-import * as Sentry from '@sentry/nextjs';
-
-export async function withSpan<T>(
-  name: string,
-  fn: () => Promise<T>,
-  op = 'function'
-): Promise<T> {
-  return Sentry.startSpan({ name, op }, async () => fn());
-}
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add sentry.server.config.ts sentry.edge.config.ts src/utils/sentry.ts
-git commit -m "feat: configure Sentry with release tracking and custom spans"
-```
-
----
-
-### Task 3: Install Drizzle ORM & Define Base Schema
-
-**Files:**
-- Create: `src/server/db/schema/index.ts`
+- Create: `drizzle.config.ts`
 - Create: `src/server/db/schema/users.ts`
 - Create: `src/server/db/schema/projects.ts`
 - Create: `src/server/db/schema/experiments.ts`
 - Create: `src/server/db/schema/audit.ts`
-- Create: `drizzle.config.ts`
-- Modify: `package.json`
+- Create: `src/server/db/schema/apiKeys.ts`
+- Create: `src/server/db/schema/inventory.ts`
+- Create: `src/server/db/schema/projectManagement.ts`
+- Create: `src/server/db/schema/collaboration.ts`
+- Create: `src/server/db/schema/knowledge.ts`
+- Create: `src/server/db/schema/ai.ts`
+- Create: `src/server/db/schema/index.ts`
+- Create: `src/server/db/migrations/` (auto-generated)
 
 **Interfaces:**
-- Produces: Typed Drizzle schema objects for all base tables
+- Produces: Typed Drizzle schema objects used by all subsequent tasks
 - Consumes: Existing `@libsql/client` connection from `src/lib/db.ts`
 
-- [ ] **Step 1: Install Drizzle ORM**
+- [ ] **Step 1: Install Drizzle ORM and Drizzle Kit**
 
 ```bash
 npm install drizzle-orm
 npm install -D drizzle-kit
 ```
+
+Expected: `drizzle-orm` in `dependencies`, `drizzle-kit` in `devDependencies`.
 
 - [ ] **Step 2: Create drizzle.config.ts**
 
@@ -196,24 +176,27 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: Define users schema**
+- [ ] **Step 3: Create users schema**
+
+Create `src/server/db/schema/users.ts`:
 
 ```typescript
-// src/server/db/schema/users.ts
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { nanoid } from 'nanoid';
 
 export const users = sqliteTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  id: text('id').primaryKey(),
   email: text('email').unique().notNull(),
   name: text('name'),
   image: text('image'),
-  provider: text('provider'), // 'github', 'google', 'email'
+  provider: text('provider'), // 'github' | 'google' | 'email'
   providerId: text('provider_id'),
   institution: text('institution'),
   researchArea: text('research_area'),
   orcid: text('orcid'),
   bio: text('bio'),
+  // Future multi-tenancy (nullable now)
+  orgId: text('org_id'),
+  teamId: text('team_id'),
   createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });
@@ -222,48 +205,79 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 ```
 
-- [ ] **Step 4: Define projects schema**
+- [ ] **Step 4: Create projects schema**
+
+Create `src/server/db/schema/projects.ts`:
 
 ```typescript
-// src/server/db/schema/projects.ts
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
-  orgId: text('org_id'),
+  orgId: text('org_id'), // nullable, future multi-tenancy
   title: text('title').notNull(),
   description: text('description'),
   targetProduct: text('target_product'),
-  status: text('status').default('active'),
+  status: text('status').default('active'), // active, archived, deleted
   visibility: text('visibility').default('private'), // private, unlisted, public
-  forkedFrom: text('forked_from'),
+  forkedFrom: text('forked_from'), // FK to projects.id for forking
+  createdBy: text('created_by'), // FK to users.id
   createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });
+
+export const projectMembers = sqliteTable('project_members', {
+  projectId: text('project_id').notNull(),
+  userId: text('user_id').notNull(),
+  role: text('role').default('editor'), // owner, admin, editor, viewer
+  invitedBy: text('invited_by'),
+  joinedAt: text('joined_at').$defaultFn(() => new Date().toISOString()),
+});
+
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
 ```
 
-- [ ] **Step 5: Define experiments schema**
+- [ ] **Step 5: Create experiments schema**
+
+Create `src/server/db/schema/experiments.ts`:
 
 ```typescript
-// src/server/db/schema/experiments.ts
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 export const experiments = sqliteTable('experiments', {
   id: text('id').primaryKey(),
   projectId: text('project_id').notNull(),
-  tool: text('tool').notNull(),
-  inputJson: text('input_json'),
-  outputJson: text('output_json'),
-  status: text('status').default('pending'),
+  tool: text('tool').notNull(), // tool ID from toolRegistry.ts
+  inputJson: text('input_json'), // JSON string of inputs
+  outputJson: text('output_json'), // JSON string of outputs
+  status: text('status').default('pending'), // pending, running, completed, failed
   durationMs: integer('duration_ms'),
+  errorMessage: text('error_message'),
+  createdBy: text('created_by'),
   createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 });
+
+export const experimentArtifacts = sqliteTable('experiment_artifacts', {
+  id: text('id').primaryKey(),
+  experimentId: text('experiment_id').notNull(),
+  type: text('type').notNull(), // 'result', 'visualization', 'export', 'file'
+  name: text('name'),
+  path: text('path'), // R2 key or local path
+  sizeBytes: integer('size_bytes'),
+  mimeType: text('mime_type'),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+
+export type Experiment = typeof experiments.$inferSelect;
+export type NewExperiment = typeof experiments.$inferInsert;
 ```
 
-- [ ] **Step 6: Define audit log schema**
+- [ ] **Step 6: Create audit log schema**
+
+Create `src/server/db/schema/audit.ts`:
 
 ```typescript
-// src/server/db/schema/audit.ts
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const auditLog = sqliteTable('audit_log', {
@@ -272,51 +286,52 @@ export const auditLog = sqliteTable('audit_log', {
   timestamp: text('timestamp').notNull(),
   actorId: text('actor_id').notNull(),
   actorName: text('actor_name'),
-  action: text('action').notNull(),
-  entityType: text('entity_type'),
+  actorEmail: text('actor_email'),
+  actorIp: text('actor_ip'),
+  action: text('action').notNull(), // create, update, delete, export, sign, login, share
+  entityType: text('entity_type'), // project, experiment, task, inventory, etc.
   entityId: text('entity_id'),
   projectId: text('project_id'),
+  beforeState: text('before_state'), // JSON snapshot
+  afterState: text('after_state'), // JSON snapshot
   changeSummary: text('change_summary'),
-  hash: text('hash').notNull(),
-  previousHash: text('previous_hash'),
+  hash: text('hash').notNull(), // SHA-256 of this row
+  previousHash: text('previous_hash'), // hash of previous entry (chain)
+  metadata: text('metadata'), // JSON for additional context
 });
+
+export type AuditEntry = typeof auditLog.$inferSelect;
+export type NewAuditEntry = typeof auditLog.$inferInsert;
 ```
 
-- [ ] **Step 7: Export all schemas**
+- [ ] **Step 7: Create API keys schema**
+
+Create `src/server/db/schema/apiKeys.ts`:
 
 ```typescript
-// src/server/db/schema/index.ts
-export * from './users';
-export * from './projects';
-export * from './experiments';
-export * from './audit';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+
+export const apiKeys = sqliteTable('api_keys', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  name: text('name').notNull(),
+  keyHash: text('key_hash').notNull().unique(), // SHA-256 of the key
+  keyPrefix: text('key_prefix').notNull(), // first 11 chars for display: nxb_xxxxxxx
+  scopes: text('scopes').default('read,write'), // JSON array
+  expiresAt: text('expires_at'),
+  lastUsedAt: text('last_used_at'),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
 ```
 
-- [ ] **Step 8: Generate initial migration**
+- [ ] **Step 8: Create inventory schema**
 
-```bash
-npx drizzle-kit generate
-```
-
-- [ ] **Step 9: Commit**
-
-```bash
-git add src/server/db/schema/ drizzle.config.ts package.json
-git commit -m "feat: add Drizzle ORM with base schema (users, projects, experiments, audit)"
-```
-
----
-
-### Task 4: Add Inventory Schema
-
-**Files:**
-- Create: `src/server/db/schema/inventory.ts`
-- Modify: `src/server/db/schema/index.ts`
-
-- [ ] **Step 1: Define inventory tables**
+Create `src/server/db/schema/inventory.ts`:
 
 ```typescript
-// src/server/db/schema/inventory.ts
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 export const inventoryStrains = sqliteTable('inventory_strains', {
@@ -412,7 +427,7 @@ export const inventoryChemicals = sqliteTable('inventory_chemicals', {
 export const inventoryLocations = sqliteTable('inventory_locations', {
   id: text('id').primaryKey(),
   parentId: text('parent_id'),
-  type: text('type').notNull(), // building, room, freezer, shelf, box
+  type: text('type').notNull(), // building, room, freezer, shelf, box, position
   name: text('name').notNull(),
   capacity: integer('capacity'),
   currentCount: integer('current_count').default(0),
@@ -422,38 +437,11 @@ export const inventoryLocations = sqliteTable('inventory_locations', {
 });
 ```
 
-- [ ] **Step 2: Export from index.ts**
+- [ ] **Step 9: Create project management schema**
 
-Add to `src/server/db/schema/index.ts`:
-```typescript
-export * from './inventory';
-```
-
-- [ ] **Step 3: Generate migration**
-
-```bash
-npx drizzle-kit generate
-```
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/server/db/schema/inventory.ts src/server/db/schema/index.ts
-git commit -m "feat: add inventory schema (strains, plasmids, primers, chemicals, locations)"
-```
-
----
-
-### Task 5: Add Project Management Schema
-
-**Files:**
-- Create: `src/server/db/schema/projectManagement.ts`
-- Modify: `src/server/db/schema/index.ts`
-
-- [ ] **Step 1: Define PM tables**
+Create `src/server/db/schema/projectManagement.ts`:
 
 ```typescript
-// src/server/db/schema/projectManagement.ts
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 export const pmTasks = sqliteTable('pm_tasks', {
@@ -461,13 +449,14 @@ export const pmTasks = sqliteTable('pm_tasks', {
   projectId: text('project_id').notNull(),
   title: text('title').notNull(),
   description: text('description'),
-  status: text('status').default('backlog'),
-  priority: text('priority').default('medium'),
+  status: text('status').default('backlog'), // backlog, in_progress, review, done, blocked
+  priority: text('priority').default('medium'), // critical, high, medium, low
   assignedTo: text('assigned_to'),
   createdBy: text('created_by'),
   dueDate: text('due_date'),
   milestoneId: text('milestone_id'),
   toolId: text('tool_id'),
+  experimentRecordId: text('experiment_record_id'),
   tags: text('tags'), // JSON array
   sortOrder: integer('sort_order').default(0),
   createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
@@ -481,7 +470,7 @@ export const pmMilestones = sqliteTable('pm_milestones', {
   name: text('name').notNull(),
   description: text('description'),
   dueDate: text('due_date'),
-  status: text('status').default('upcoming'),
+  status: text('status').default('upcoming'), // upcoming, in_progress, completed, missed
   deliverables: text('deliverables'), // JSON array
   createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
   completedAt: text('completed_at'),
@@ -501,32 +490,11 @@ export const pmTemplates = sqliteTable('pm_templates', {
 });
 ```
 
-- [ ] **Step 2: Export and generate migration**
+- [ ] **Step 10: Create collaboration schema**
 
-```bash
-# Add export to index.ts, then:
-npx drizzle-kit generate
-```
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add src/server/db/schema/projectManagement.ts src/server/db/schema/index.ts
-git commit -m "feat: add project management schema (tasks, milestones, templates)"
-```
-
----
-
-### Task 6: Add Collaboration Schema
-
-**Files:**
-- Create: `src/server/db/schema/collaboration.ts`
-- Modify: `src/server/db/schema/index.ts`
-
-- [ ] **Step 1: Define collaboration tables**
+Create `src/server/db/schema/collaboration.ts`:
 
 ```typescript
-// src/server/db/schema/collaboration.ts
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const chatMessages = sqliteTable('chat_messages', {
@@ -560,7 +528,7 @@ export const commentReplies = sqliteTable('comment_replies', {
 export const notifications = sqliteTable('notifications', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
-  type: text('type').notNull(),
+  type: text('type').notNull(), // mention, comment, assignment, alert
   title: text('title'),
   body: text('body'),
   read: integer('read').default(0),
@@ -571,7 +539,7 @@ export const notifications = sqliteTable('notifications', {
 export const shareLinks = sqliteTable('share_links', {
   id: text('id').primaryKey(),
   projectId: text('project_id').notNull(),
-  permission: text('permission').default('view'),
+  permission: text('permission').default('view'), // view, edit
   createdBy: text('created_by'),
   expiresAt: text('expires_at'),
   maxUses: integer('max_uses'),
@@ -580,27 +548,11 @@ export const shareLinks = sqliteTable('share_links', {
 });
 ```
 
-- [ ] **Step 2: Export and commit**
+- [ ] **Step 11: Create knowledge schema**
 
-```bash
-npx drizzle-kit generate
-git add src/server/db/schema/collaboration.ts src/server/db/schema/index.ts
-git commit -m "feat: add collaboration schema (chat, comments, notifications, share links)"
-```
-
----
-
-### Task 7: Add Knowledge & AI Schema
-
-**Files:**
-- Create: `src/server/db/schema/knowledge.ts`
-- Create: `src/server/db/schema/ai.ts`
-- Modify: `src/server/db/schema/index.ts`
-
-- [ ] **Step 1: Define knowledge tables**
+Create `src/server/db/schema/knowledge.ts`:
 
 ```typescript
-// src/server/db/schema/knowledge.ts
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 export const wikiPages = sqliteTable('wiki_pages', {
@@ -608,10 +560,10 @@ export const wikiPages = sqliteTable('wiki_pages', {
   projectId: text('project_id').notNull(),
   title: text('title').notNull(),
   slug: text('slug').notNull(),
-  content: text('content'),
-  contentMarkdown: text('content_markdown'),
-  category: text('category'),
-  tags: text('tags'),
+  content: text('content'), // Tiptap JSON
+  contentMarkdown: text('content_markdown'), // for FTS5
+  category: text('category'), // protocol, design, result, meeting_notes, misc
+  tags: text('tags'), // JSON array
   createdBy: text('created_by'),
   lastEditedBy: text('last_edited_by'),
   version: integer('version').default(1),
@@ -624,6 +576,7 @@ export const wikiRevisions = sqliteTable('wiki_revisions', {
   pageId: text('page_id').notNull(),
   version: integer('version').notNull(),
   content: text('content'),
+  contentMarkdown: text('content_markdown'),
   editedBy: text('edited_by'),
   changeSummary: text('change_summary'),
   editedAt: text('edited_at').$defaultFn(() => new Date().toISOString()),
@@ -634,10 +587,10 @@ export const protocols = sqliteTable('protocols', {
   wikiPageId: text('wiki_page_id'),
   category: text('category'),
   estimatedDurationMin: integer('estimated_duration_min'),
-  difficulty: text('difficulty'),
-  equipment: text('equipment'),
-  reagents: text('reagents'),
-  steps: text('steps'),
+  difficulty: text('difficulty'), // beginner, intermediate, advanced
+  equipment: text('equipment'), // JSON array
+  reagents: text('reagents'), // JSON array with links to inventory_chemicals
+  steps: text('steps'), // JSON array of {order, description, duration_min, notes}
   forkOf: text('fork_of'),
   forkCount: integer('fork_count').default(0),
   ratingAvg: real('rating_avg'),
@@ -650,12 +603,12 @@ export const literatureEntries = sqliteTable('literature_entries', {
   projectId: text('project_id'),
   doi: text('doi'),
   title: text('title'),
-  authors: text('authors'),
+  authors: text('authors'), // JSON array
   journal: text('journal'),
   year: integer('year'),
   abstract: text('abstract'),
-  tags: text('tags'),
-  userAnnotations: text('user_annotations'),
+  tags: text('tags'), // JSON array
+  userAnnotations: text('user_annotations'), // JSON array
   addedBy: text('added_by'),
   addedAt: text('added_at').$defaultFn(() => new Date().toISOString()),
 });
@@ -665,19 +618,21 @@ export const decisionLog = sqliteTable('decision_log', {
   projectId: text('project_id'),
   title: text('title').notNull(),
   context: text('context'),
-  options: text('options'),
+  options: text('options'), // JSON array
   decision: text('decision'),
   rationale: text('rationale'),
   outcome: text('outcome'),
+  relatedExperimentIds: text('related_experiment_ids'), // JSON array
   decidedBy: text('decided_by'),
   decidedAt: text('decided_at').$defaultFn(() => new Date().toISOString()),
 });
 ```
 
-- [ ] **Step 2: Define AI tables**
+- [ ] **Step 12: Create AI schema**
+
+Create `src/server/db/schema/ai.ts`:
 
 ```typescript
-// src/server/db/schema/ai.ts
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 export const aiConversations = sqliteTable('ai_conversations', {
@@ -692,10 +647,10 @@ export const aiConversations = sqliteTable('ai_conversations', {
 export const aiMessages = sqliteTable('ai_messages', {
   id: text('id').primaryKey(),
   conversationId: text('conversation_id').notNull(),
-  role: text('role').notNull(),
+  role: text('role').notNull(), // user, assistant, system
   content: text('content').notNull(),
-  toolCalls: text('tool_calls'),
-  tokenUsage: text('token_usage'),
+  toolCalls: text('tool_calls'), // JSON
+  tokenUsage: text('token_usage'), // JSON {input, output}
   createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 });
 
@@ -703,36 +658,374 @@ export const aiUsage = sqliteTable('ai_usage', {
   id: text('id').primaryKey(),
   userId: text('user_id'),
   orgId: text('org_id'),
-  date: text('date').notNull(),
+  date: text('date').notNull(), // YYYY-MM-DD
   model: text('model'),
   inputTokens: integer('input_tokens').default(0),
   outputTokens: integer('output_tokens').default(0),
   costUsd: real('cost_usd').default(0),
-  requestType: text('request_type'),
+  requestType: text('request_type'), // analyze, plan, classify, rag
 });
 ```
 
-- [ ] **Step 3: Export and commit**
+- [ ] **Step 13: Create barrel export**
+
+Create `src/server/db/schema/index.ts`:
+
+```typescript
+export * from './users';
+export * from './projects';
+export * from './experiments';
+export * from './audit';
+export * from './apiKeys';
+export * from './inventory';
+export * from './projectManagement';
+export * from './collaboration';
+export * from './knowledge';
+export * from './ai';
+```
+
+- [ ] **Step 14: Generate initial migration**
 
 ```bash
 npx drizzle-kit generate
-git add src/server/db/schema/knowledge.ts src/server/db/schema/ai.ts src/server/db/schema/index.ts
-git commit -m "feat: add knowledge and AI schema (wiki, protocols, literature, conversations, usage)"
+```
+
+Expected: Creates migration files in `src/server/db/migrations/`.
+
+- [ ] **Step 15: Run tests to verify nothing broke**
+
+```bash
+npm test
+```
+
+Expected: All existing tests pass. New schema files are not imported by existing code yet, so no conflicts.
+
+- [ ] **Step 16: Commit**
+
+```bash
+git add drizzle.config.ts src/server/db/schema/ package.json package-lock.json
+git commit -m "feat: add Drizzle ORM with complete OS platform schema
+
+- Install drizzle-orm and drizzle-kit
+- Define 30+ tables across 10 schema files:
+  - users, projects, project_members
+  - experiments, experiment_artifacts
+  - audit_log (immutable, hash-chained)
+  - api_keys (per-user, SHA-256 hashed)
+  - inventory (strains, plasmids, primers, chemicals, locations)
+  - project management (tasks, milestones, templates)
+  - collaboration (chat, comments, notifications, share_links)
+  - knowledge (wiki, protocols, literature, decision_log)
+  - AI (conversations, messages, usage tracking)
+- All tables include nullable org_id/team_id for future multi-tenancy
+- snake_case columns auto-mapped to camelCase in TypeScript"
 ```
 
 ---
 
-### Task 8: Upgrade Auth.js to Stable & Add Email Login
+### Task 3: Configure Sentry Properly
+
+**Files:**
+- Modify: `sentry.server.config.ts`
+- Modify: `sentry.edge.config.ts`
+- Create: `src/utils/sentry.ts`
+
+- [ ] **Step 1: Verify Sentry DSN is set**
+
+```bash
+grep -q "SENTRY_DSN" .env.local && echo "SENTRY_DSN found" || echo "SENTRY_DSN missing"
+```
+
+If missing, add `SENTRY_DSN=your_dsn_here` to `.env.local`.
+
+- [ ] **Step 2: Enhance sentry.server.config.ts**
+
+Replace contents of `sentry.server.config.ts`:
+
+```typescript
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  environment: process.env.NODE_ENV,
+  release: process.env.VERCEL_GIT_COMMIT_SHA || 'local',
+  integrations: [
+    Sentry.captureConsoleIntegration({ levels: ['error', 'warn'] }),
+  ],
+  beforeSend(event) {
+    // Strip sensitive data
+    if (event.request?.headers) {
+      delete event.request.headers['authorization'];
+      delete event.request.headers['cookie'];
+    }
+    return event;
+  },
+});
+```
+
+- [ ] **Step 3: Enhance sentry.edge.config.ts**
+
+Same content as server config.
+
+- [ ] **Step 4: Create custom span helper**
+
+Create `src/utils/sentry.ts`:
+
+```typescript
+import * as Sentry from '@sentry/nextjs';
+
+export async function withSpan<T>(
+  name: string,
+  fn: () => Promise<T>,
+  op = 'function'
+): Promise<T> {
+  return Sentry.startSpan({ name, op }, async () => fn());
+}
+
+export function captureError(error: unknown, context?: Record<string, unknown>) {
+  Sentry.withScope((scope) => {
+    if (context) {
+      Object.entries(context).forEach(([key, value]) => {
+        scope.setExtra(key, value);
+      });
+    }
+    Sentry.captureException(error);
+  });
+}
+```
+
+- [ ] **Step 5: Run tests**
+
+```bash
+npm test
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add sentry.server.config.ts sentry.edge.config.ts src/utils/sentry.ts
+git commit -m "feat: configure Sentry with release tracking, source maps, and custom spans
+
+- Add release tracking via VERCEL_GIT_COMMIT_SHA
+- Strip authorization headers from error reports
+- Add withSpan() helper for custom performance tracing
+- Add captureError() with context attachment"
+```
+
+---
+
+### Task 4: Create API Key Utility & Routes
+
+**Files:**
+- Create: `src/utils/apiKeys.ts`
+- Create: `app/api/keys/route.ts`
+- Create: `app/api/keys/[id]/route.ts`
+- Create: `__tests__/apiKeys.test.ts`
+
+**Interfaces:**
+- Consumes: Auth.js session from `src/lib/auth.ts`, Drizzle schema from Task 2
+- Produces: `POST /api/keys` (create), `GET /api/keys` (list), `DELETE /api/keys/[id]` (revoke)
+
+- [ ] **Step 1: Write failing test for API key generation**
+
+Create `__tests__/apiKeys.test.ts`:
+
+```typescript
+import { generateApiKey, hashApiKey } from '../src/utils/apiKeys';
+
+describe('API Keys', () => {
+  it('should generate a key with nxb_ prefix', () => {
+    const { key, hash, prefix } = generateApiKey();
+    expect(key).toMatch(/^nxb_[A-Za-z0-9_-]{32}$/);
+    expect(hash).toHaveLength(64); // SHA-256 hex
+    expect(prefix).toMatch(/^nxb_[A-Za-z0-9_-]{7}$/);
+  });
+
+  it('should produce deterministic hashes', () => {
+    const { key, hash } = generateApiKey();
+    expect(hashApiKey(key)).toBe(hash);
+  });
+
+  it('should generate unique keys', () => {
+    const keys = new Set(Array.from({ length: 100 }, () => generateApiKey().key));
+    expect(keys.size).toBe(100);
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+```bash
+npx jest __tests__/apiKeys.test.ts
+```
+
+Expected: FAIL — `Cannot find module '../src/utils/apiKeys'`
+
+- [ ] **Step 3: Implement API key utility**
+
+Create `src/utils/apiKeys.ts`:
+
+```typescript
+import { nanoid } from 'nanoid';
+import { createHash } from 'crypto';
+
+export function generateApiKey(): { key: string; hash: string; prefix: string } {
+  const randomPart = nanoid(32);
+  const key = `nxb_${randomPart}`;
+  const hash = createHash('sha256').update(key).digest('hex');
+  const prefix = key.slice(0, 11); // nxb_ + 7 chars
+  return { key, hash, prefix };
+}
+
+export function hashApiKey(key: string): string {
+  return createHash('sha256').update(key).digest('hex');
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+```bash
+npx jest __tests__/apiKeys.test.ts
+```
+
+Expected: PASS — all 3 tests pass.
+
+- [ ] **Step 5: Create API key list/create route**
+
+Create `app/api/keys/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { apiKeys } from '@/server/db/schema';
+import { generateApiKey } from '@/utils/apiKeys';
+import { eq } from 'drizzle-orm';
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const keys = await db
+    .select({
+      id: apiKeys.id,
+      name: apiKeys.name,
+      keyPrefix: apiKeys.keyPrefix,
+      scopes: apiKeys.scopes,
+      expiresAt: apiKeys.expiresAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+      createdAt: apiKeys.createdAt,
+    })
+    .from(apiKeys)
+    .where(eq(apiKeys.userId, session.user.id));
+
+  return NextResponse.json({ keys });
+}
+
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { name, scopes, expiresAt } = body;
+
+  if (!name || typeof name !== 'string' || name.length < 1 || name.length > 100) {
+    return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
+  }
+
+  const { key, hash, prefix } = generateApiKey();
+
+  await db.insert(apiKeys).values({
+    id: nanoid(),
+    userId: session.user.id,
+    name,
+    keyHash: hash,
+    keyPrefix: prefix,
+    scopes: scopes ? JSON.stringify(scopes) : 'read,write',
+    expiresAt: expiresAt || null,
+  });
+
+  // Return the raw key ONCE — it cannot be retrieved later
+  return NextResponse.json({ key, prefix, name }, { status: 201 });
+}
+```
+
+- [ ] **Step 6: Create API key revoke route**
+
+Create `app/api/keys/[id]/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { apiKeys } from '@/server/db/schema';
+import { eq, and } from 'drizzle-orm';
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  const deleted = await db
+    .delete(apiKeys)
+    .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, session.user.id)))
+    .returning();
+
+  if (deleted.length === 0) {
+    return NextResponse.json({ error: 'Key not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ deleted: true });
+}
+```
+
+- [ ] **Step 7: Run all tests**
+
+```bash
+npm test
+```
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/utils/apiKeys.ts app/api/keys/ __tests__/apiKeys.test.ts
+git commit -m "feat: add per-user API key system
+
+- Generate keys with nxb_ prefix and nanoid(32) randomness
+- SHA-256 hash for storage (raw key shown once at creation)
+- GET /api/keys — list user's keys (no secret exposed)
+- POST /api/keys — create new key (returns raw key once)
+- DELETE /api/keys/[id] — revoke key
+- TDD: 3 unit tests for key generation and hashing"
+```
+
+---
+
+### Task 5: Upgrade Auth.js & Update Middleware
 
 **Files:**
 - Modify: `src/lib/auth.ts`
+- Modify: `middleware.ts`
 - Modify: `package.json`
 
 - [ ] **Step 1: Check current Auth.js version**
 
 ```bash
-npm ls next-auth
+npm ls next-auth 2>&1 | head -5
 ```
+
+Expected: Shows current version (likely 5.0.0-beta.x).
 
 - [ ] **Step 2: Upgrade to stable**
 
@@ -740,29 +1033,187 @@ npm ls next-auth
 npm install next-auth@latest @auth/core@latest
 ```
 
-- [ ] **Step 3: Add Resend email provider**
+- [ ] **Step 3: Verify auth config still works**
+
+Read `src/lib/auth.ts` and ensure the providers array still contains GitHub and Google. The API should be compatible — Auth.js v5 stable is backward-compatible with beta.
+
+- [ ] **Step 4: Update middleware to support API key auth**
+
+Read `middleware.ts`. Add API key validation alongside existing auth:
+
+```typescript
+// In the middleware function, after existing auth checks:
+import { hashApiKey } from '@/utils/apiKeys';
+
+// Check for API key in headers
+const apiKey = request.headers.get('x-api-key');
+if (apiKey && apiKey.startsWith('nxb_')) {
+  const hash = hashApiKey(apiKey);
+  // Look up key in DB, check expiry, update last_used_at
+  // If valid, allow the request
+}
+```
+
+- [ ] **Step 5: Run tests**
 
 ```bash
-npm install resend
+npm test
 ```
 
-- [ ] **Step 4: Add Resend provider to auth config**
+- [ ] **Step 6: Commit**
 
-In `src/lib/auth.ts`, add to providers array:
+```bash
+git add src/lib/auth.ts middleware.ts package.json package-lock.json
+git commit -m "feat: upgrade Auth.js to stable, add API key middleware support
+
+- Upgrade next-auth from beta to stable release
+- Add X-API-Key header validation in middleware
+- Support nxb_ prefixed API keys alongside session auth"
+```
+
+---
+
+### Task 6: Set Up Cloudflare R2 File Storage
+
+**Files:**
+- Create: `src/utils/storage.ts`
+- Create: `app/api/files/upload/route.ts`
+- Create: `app/api/files/[key]/route.ts`
+- Modify: `.env.example`
+
+- [ ] **Step 1: Install AWS SDK (S3-compatible)**
+
+```bash
+npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+```
+
+- [ ] **Step 2: Create storage utility**
+
+Create `src/utils/storage.ts`:
+
 ```typescript
-import { Resend } from 'resend';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-// Add to providers:
-Resend({
-  apiKey: process.env.RESEND_API_KEY,
-  from: 'noreply@nexus-bio.vercel.app',
-})
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+  },
+});
+
+const BUCKET = process.env.R2_BUCKET || 'nexus-bio-files';
+
+export async function getUploadUrl(key: string, contentType: string, expiresIn = 3600) {
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    ContentType: contentType,
+  });
+  return getSignedUrl(s3, command, { expiresIn });
+}
+
+export async function getDownloadUrl(key: string, expiresIn = 3600) {
+  const command = new GetObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+  });
+  return getSignedUrl(s3, command, { expiresIn });
+}
+
+export async function deleteFile(key: string) {
+  const command = new DeleteObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+  });
+  await s3.send(command);
+}
+
+export function buildFileKey(projectId: string, category: string, filename: string): string {
+  const timestamp = Date.now();
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+  return `${projectId}/${category}/${timestamp}_${safeName}`;
+}
 ```
 
-- [ ] **Step 5: Add RESEND_API_KEY to .env.local**
+- [ ] **Step 3: Create upload route**
+
+Create `app/api/files/upload/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { getUploadUrl, buildFileKey } from '@/utils/storage';
+
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { filename, contentType, projectId, category } = await request.json();
+
+  if (!filename || !contentType) {
+    return NextResponse.json({ error: 'filename and contentType required' }, { status: 400 });
+  }
+
+  // Validate content type
+  const allowedTypes = [
+    'text/plain', 'text/csv', 'application/json',
+    'chemical/x-fasta', 'chemical/x-genbank', 'application/xml',
+    'application/pdf', 'image/png', 'image/jpeg', 'image/svg+xml',
+  ];
+  if (!allowedTypes.includes(contentType) && !contentType.startsWith('text/')) {
+    return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
+  }
+
+  const key = buildFileKey(projectId || 'default', category || 'uploads', filename);
+  const uploadUrl = await getUploadUrl(key, contentType);
+
+  return NextResponse.json({ uploadUrl, key });
+}
+```
+
+- [ ] **Step 4: Create download route**
+
+Create `app/api/files/[key]/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { getDownloadUrl } from '@/utils/storage';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ key: string }> }
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { key } = await params;
+  // Decode the key (may contain / characters)
+  const decodedKey = decodeURIComponent(key);
+
+  const downloadUrl = await getDownloadUrl(decodedKey);
+
+  return NextResponse.json({ downloadUrl });
+}
+```
+
+- [ ] **Step 5: Add R2 env vars to .env.example**
+
+Append to `.env.example`:
 
 ```
-RESEND_API_KEY=re_xxxxx
+# Cloudflare R2 File Storage
+R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=nexus-bio-files
 ```
 
 - [ ] **Step 6: Run tests**
@@ -774,684 +1225,52 @@ npm test
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/lib/auth.ts package.json
-git commit -m "feat: upgrade Auth.js to stable, add Resend email provider"
+git add src/utils/storage.ts app/api/files/ .env.example package.json package-lock.json
+git commit -m "feat: add Cloudflare R2 file storage with pre-signed URLs
+
+- S3-compatible client via @aws-sdk/client-s3
+- POST /api/files/upload — generate pre-signed upload URL
+- GET /api/files/[key] — generate pre-signed download URL
+- Content type validation for allowed file types
+- Content-addressed key generation: {projectId}/{category}/{timestamp}_{filename}"
 ```
 
 ---
 
-### Task 9: Add Per-User API Key System
+## Phase 0 Summary
 
-**Files:**
-- Create: `src/server/db/schema/apiKeys.ts`
-- Create: `app/api/keys/route.ts`
-- Modify: `src/server/db/schema/index.ts`
-- Modify: `middleware.ts`
+After completing Tasks 1-6, the platform has:
+- ✅ Biome linting & formatting (code quality)
+- ✅ Drizzle ORM with 30+ typed tables (data foundation)
+- ✅ Sentry with proper config (monitoring)
+- ✅ Per-user API keys (developer access)
+- ✅ Auth.js stable + API key middleware (authentication)
+- ✅ Cloudflare R2 file storage (file handling)
 
-**Interfaces:**
-- Produces: `POST /api/keys` (create), `GET /api/keys` (list), `DELETE /api/keys/[id]` (revoke)
-- Consumes: Auth.js session for user identity
-
-- [ ] **Step 1: Define API keys schema**
-
-```typescript
-// src/server/db/schema/apiKeys.ts
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-
-export const apiKeys = sqliteTable('api_keys', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull(),
-  name: text('name').notNull(),
-  keyHash: text('key_hash').notNull().unique(),
-  keyPrefix: text('key_prefix').notNull(), // first 8 chars for display
-  scopes: text('scopes').default('read,write'), // JSON array
-  expiresAt: text('expires_at'),
-  lastUsedAt: text('last_used_at'),
-  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
-});
-```
-
-- [ ] **Step 2: Create API key generation utility**
-
-```typescript
-// src/utils/apiKeys.ts
-import { nanoid } from 'nanoid';
-import { createHash } from 'crypto';
-
-export function generateApiKey(): { key: string; hash: string; prefix: string } {
-  const key = `nxb_${nanoid(32)}`;
-  const hash = createHash('sha256').update(key).digest('hex');
-  const prefix = key.slice(0, 11); // nxb_xxxxxxx
-  return { key, hash, prefix };
-}
-
-export function hashApiKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex');
-}
-```
-
-- [ ] **Step 3: Create API key routes**
-
-Create `app/api/keys/route.ts` for create/list and `app/api/keys/[id]/route.ts` for revoke.
-
-- [ ] **Step 4: Update middleware to validate API keys**
-
-In `middleware.ts`, add API key validation:
-```typescript
-const apiKey = request.headers.get('x-api-key');
-if (apiKey) {
-  const hash = hashApiKey(apiKey);
-  // Look up in api_keys table, check expiry, update last_used_at
-}
-```
-
-- [ ] **Step 5: Export and commit**
-
-```bash
-npx drizzle-kit generate
-git add src/server/db/schema/apiKeys.ts src/utils/apiKeys.ts app/api/keys/ middleware.ts src/server/db/schema/index.ts
-git commit -m "feat: add per-user API key system with SHA-256 hashing"
-```
-
----
-
-### Task 10: Add File Storage API
-
-**Files:**
-- Create: `app/api/files/upload/route.ts`
-- Create: `app/api/files/[key]/route.ts`
-- Modify: `.env.example`
-
-- [ ] **Step 1: Install AWS SDK for S3-compatible storage**
-
-```bash
-npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
-```
-
-- [ ] **Step 2: Create S3 client utility**
-
-```typescript
-// src/utils/storage.ts
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-
-const s3 = new S3Client({
-  region: 'auto',
-  endpoint: process.env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
-
-export async function getUploadUrl(key: string, contentType: string) {
-  const command = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET,
-    Key: key,
-    ContentType: contentType,
-  });
-  return getSignedUrl(s3, command, { expiresIn: 3600 });
-}
-
-export async function getDownloadUrl(key: string) {
-  const command = new GetObjectCommand({
-    Bucket: process.env.R2_BUCKET,
-    Key: key,
-  });
-  return getSignedUrl(s3, command, { expiresIn: 3600 });
-}
-```
-
-- [ ] **Step 3: Create upload route**
-
-Create `app/api/files/upload/route.ts` that generates pre-signed upload URLs.
-
-- [ ] **Step 4: Create download route**
-
-Create `app/api/files/[key]/route.ts` that generates pre-signed download URLs.
-
-- [ ] **Step 5: Add R2 env vars to .env.example**
-
-```
-R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_BUCKET=nexus-bio-files
-```
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add app/api/files/ src/utils/storage.ts .env.example package.json
-git commit -m "feat: add Cloudflare R2 file storage with pre-signed URLs"
-```
+**Next phase:** Sequence Editor (the core differentiator) — see Phase 1.
 
 ---
 
 ## Phase 1: Core Value (Month 3-4)
 
-> Goal: Multi-user platform with real-time collaboration, sequence editor, and open API.
+> Goal: Sequence editor, real-time collaboration, API documentation.
 
----
+### Task 7: Build Sequence Data Model & Linear Viewer
 
-### Task 11: Set Up WebSocket Server
-
-**Files:**
-- Create: `server.ts` (project root)
-- Modify: `package.json` (scripts)
-
-- [ ] **Step 1: Install Socket.io**
-
-```bash
-npm install socket.io socket.io-client
-```
-
-- [ ] **Step 2: Create custom server**
-
-```typescript
-// server.ts
-import { createServer } from 'http';
-import { parse } from 'url';
-import next from 'next';
-import { Server as SocketIOServer } from 'socket.io';
-
-const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev });
-const handle = app.getRequestHandler();
-
-app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
-    const parsedUrl = parse(req.url!, true);
-    handle(req, res, parsedUrl);
-  });
-
-  const io = new SocketIOServer(httpServer, {
-    cors: { origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' },
-    path: '/api/ws',
-  });
-
-  io.on('connection', (socket) => {
-    socket.on('join:project', (projectId: string) => {
-      socket.join(`project:${projectId}`);
-    });
-    socket.on('cursor:move', (data) => {
-      socket.to(`project:${data.projectId}`).emit('cursor:update', data);
-    });
-    socket.on('chat:message', (data) => {
-      io.to(`project:${data.projectId}`).emit('chat:message', data);
-    });
-  });
-
-  const port = parseInt(process.env.PORT || '3000', 10);
-  httpServer.listen(port);
-});
-```
-
-- [ ] **Step 3: Update package.json scripts**
-
-```json
-"dev": "tsx server.ts",
-"start": "NODE_ENV=production tsx server.ts"
-```
-
-- [ ] **Step 4: Test server starts**
-
-```bash
-npm run dev
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add server.ts package.json
-git commit -m "feat: add Socket.io WebSocket server for real-time collaboration"
-```
-
----
-
-### Task 12: Add API Documentation with OpenAPI
+> This is the HIGHEST PRIORITY feature. The sequence editor is what makes Nexus-Bio a synbio platform vs a calculator.
 
 **Files:**
-- Create: `src/services/api/openapiSpec.ts`
-- Create: `app/docs/api/page.tsx`
+- Create: `src/components/sequence/types.ts`
+- Create: `src/components/sequence/SequenceModel.ts`
+- Create: `src/components/sequence/LinearSequenceViewer.tsx`
+- Create: `src/components/sequence/FeatureAnnotation.tsx`
+- Create: `app/tools/sequence/page.tsx`
+- Create: `__tests__/sequenceModel.test.ts`
 
-- [ ] **Step 1: Install OpenAPI tools**
-
-```bash
-npm install swagger-jsdoc @scalar/api-reference-react
-```
-
-- [ ] **Step 2: Create OpenAPI spec generator**
-
-```typescript
-// src/services/api/openapiSpec.ts
-export const openapiSpec = {
-  openapi: '3.1.0',
-  info: {
-    title: 'Nexus-Bio API',
-    version: '1.0.0',
-    description: 'Synthetic Biology Operating System API',
-    contact: { email: 'fuchanze@gmail.com' },
-  },
-  servers: [
-    { url: 'https://nexus-bio-1-0.vercel.app', description: 'Production' },
-    { url: 'http://localhost:3000', description: 'Local' },
-  ],
-  paths: {
-    '/api/v1/analyze': {
-      post: {
-        summary: 'AI Analysis',
-        description: 'Send a query to the AI research assistant',
-        requestBody: {
-          content: { 'application/json': { schema: { type: 'object', properties: { prompt: { type: 'string' } } } } },
-        },
-        responses: { '200': { description: 'Analysis result' } },
-      },
-    },
-    '/api/v1/fba': {
-      post: {
-        summary: 'Flux Balance Analysis',
-        description: 'Run FBA simulation',
-        responses: { '200': { description: 'FBA result' } },
-      },
-    },
-    // ... more endpoints
-  },
-};
-```
-
-- [ ] **Step 3: Create docs page**
-
-```typescript
-// app/docs/api/page.tsx
-'use client';
-import { ApiReferenceReact } from '@scalar/api-reference-react';
-import spec from '@/services/api/openapiSpec';
-
-export default function ApiDocs() {
-  return <ApiReferenceReact configuration={{ spec, theme: 'kepler' }} />;
-}
-```
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/services/api/openapiSpec.ts app/docs/api/ package.json
-git commit -m "feat: add OpenAPI 3.1 spec and interactive API documentation"
-```
+*Detailed steps for Tasks 7+ will be written after Phase 0 tasks are executed. The sequence editor is a 4-8 week effort that warrants its own sub-plan.*
 
 ---
 
-### Task 13: Set Up Storybook
+*This plan covers Phase 0 in full detail. Phase 1-4 tasks will be expanded into equally detailed sub-plans as Phase 0 completes.*
 
-**Files:**
-- Create: `.storybook/main.ts`
-- Create: `.storybook/preview.ts`
-- Create: `src/components/tools/shared/MetricCard.stories.tsx`
-
-- [ ] **Step 1: Install Storybook**
-
-```bash
-npx storybook@latest init --type nextjs
-```
-
-- [ ] **Step 2: Configure Storybook**
-
-```typescript
-// .storybook/main.ts
-import type { StorybookConfig } from '@storybook/nextjs';
-
-const config: StorybookConfig = {
-  stories: ['../src/**/*.stories.@(ts|tsx)'],
-  addons: ['@storybook/addon-essentials', '@storybook/addon-a11y'],
-  framework: { name: '@storybook/nextjs', options: {} },
-};
-export default config;
-```
-
-- [ ] **Step 3: Configure dark theme preview**
-
-```typescript
-// .storybook/preview.ts
-import type { Preview } from '@storybook/react';
-import '../src/app/globals.css';
-
-const preview: Preview = {
-  parameters: {
-    backgrounds: { default: 'dark', values: [{ name: 'dark', value: '#0d0f14' }] },
-  },
-};
-export default preview;
-```
-
-- [ ] **Step 4: Write first story (MetricCard)**
-
-```typescript
-// src/components/tools/shared/MetricCard.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react';
-import { MetricCard } from './MetricCard';
-
-const meta: Meta<typeof MetricCard> = { title: 'Shared/MetricCard', component: MetricCard };
-export default meta;
-type Story = StoryObj<typeof MetricCard>;
-
-export const Default: Story = { args: { label: 'Growth Rate', value: '0.87 h⁻¹' } };
-export const Loading: Story = { args: { label: 'Growth Rate', value: '...' } };
-```
-
-- [ ] **Step 5: Add storybook scripts to package.json**
-
-```json
-"storybook": "storybook dev -p 6006",
-"build-storybook": "storybook build"
-```
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add .storybook/ src/components/tools/shared/MetricCard.stories.tsx package.json
-git commit -m "feat: add Storybook 8 with dark theme and MetricCard story"
-```
-
----
-
-## Phase 2: Domain Depth (Month 5-7)
-
-> Goal: Best-in-class computational tools, ML models, inventory system.
-
----
-
-### Task 14: Implement Real SteadyCom for Community FBA
-
-**Files:**
-- Modify: `src/server/fbaEngine.ts`
-- Create: `__tests__/steadyCom.test.ts`
-
-- [ ] **Step 1: Write failing test for SteadyCom**
-
-```typescript
-// __tests__/steadyCom.test.ts
-import { steadyCom } from '../src/server/fbaEngine';
-
-describe('SteadyCom Community FBA', () => {
-  it('should solve a 2-species community model', () => {
-    // Define a simple 2-species model
-    const model = {
-      species: [
-        { id: 'S1', reactions: [...], metabolites: [...] },
-        { id: 'S2', reactions: [...], metabolites: [...] },
-      ],
-      sharedMetabolites: ['glucose', 'acetate'],
-    };
-    const result = steadyCom(model);
-    expect(result.status).toBe('optimal');
-    expect(result.growthRate).toBeGreaterThan(0);
-    expect(result.speciesFluxes).toHaveProperty('S1');
-    expect(result.speciesFluxes).toHaveProperty('S2');
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-```bash
-npx jest __tests__/steadyCom.test.ts
-```
-
-- [ ] **Step 3: Implement SteadyCom algorithm**
-
-SteadyCom iterates: fix community growth rate μ, solve LP for each species, update μ based on community constraint. Repeat until convergence.
-
-- [ ] **Step 4: Run test to verify it passes**
-
-```bash
-npx jest __tests__/steadyCom.test.ts
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/server/fbaEngine.ts __tests__/steadyCom.test.ts
-git commit -m "feat: implement real SteadyCom community FBA algorithm"
-```
-
----
-
-### Task 15: Build Escher-Style Flux Map Visualization
-
-**Files:**
-- Create: `src/components/visualizations/FluxMap.tsx`
-
-- [ ] **Step 1: Install d3.js**
-
-```bash
-npm install d3 @types/d3
-```
-
-- [ ] **Step 2: Build FluxMap component**
-
-```typescript
-// src/components/visualizations/FluxMap.tsx
-'use client';
-import { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
-
-interface FluxMapProps {
-  model: { metabolites: any[]; reactions: any[] };
-  fluxes: Map<string, number>;
-  width?: number;
-  height?: number;
-}
-
-export function FluxMap({ model, fluxes, width = 800, height = 600 }: FluxMapProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    if (!svgRef.current) return;
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
-
-    // ... d3 force layout, metabolite nodes, reaction edges with flux-proportional width
-  }, [model, fluxes]);
-
-  return <svg ref={svgRef} width={width} height={height} />;
-}
-```
-
-- [ ] **Step 3: Integrate into FBASimPage**
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/components/visualizations/FluxMap.tsx
-git commit -m "feat: add Escher-style interactive metabolic flux map visualization"
-```
-
----
-
-## Phase 3: Enterprise (Month 8-10)
-
-> Goal: Enterprise-ready with LIMS, compliance, performance.
-
----
-
-### Task 16: Implement Immutable Audit Trail
-
-**Files:**
-- Create: `src/services/audit/auditLogger.ts`
-- Create: `src/services/audit/chainVerifier.ts`
-
-- [ ] **Step 1: Write test for hash chain**
-
-```typescript
-// __tests__/auditChain.test.ts
-import { auditLogger } from '../src/services/audit/auditLogger';
-import { verifyChain } from '../src/services/audit/chainVerifier';
-
-describe('Audit Chain', () => {
-  it('should create hash-chained entries', async () => {
-    const entry1 = await auditLogger.log({ actorId: 'u1', action: 'create', entityType: 'project', entityId: 'p1' });
-    const entry2 = await auditLogger.log({ actorId: 'u1', action: 'update', entityType: 'project', entityId: 'p1' });
-    expect(entry2.previousHash).toBe(entry1.hash);
-  });
-
-  it('should verify chain integrity', async () => {
-    const result = await verifyChain();
-    expect(result.valid).toBe(true);
-  });
-});
-```
-
-- [ ] **Step 2: Implement audit logger with SHA-256 chaining**
-
-- [ ] **Step 3: Implement chain verifier**
-
-- [ ] **Step 4: Run tests**
-
-```bash
-npx jest __tests__/auditChain.test.ts
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/services/audit/ __tests__/auditChain.test.ts
-git commit -m "feat: implement immutable audit trail with SHA-256 hash chain"
-```
-
----
-
-### Task 17: Add Stripe Billing Integration
-
-**Files:**
-- Create: `src/services/billing/stripeClient.ts`
-- Create: `app/api/billing/checkout/route.ts`
-- Create: `app/api/billing/webhook/route.ts`
-
-- [ ] **Step 1: Install Stripe**
-
-```bash
-npm install stripe
-```
-
-- [ ] **Step 2: Create Stripe client**
-
-```typescript
-// src/services/billing/stripeClient.ts
-import Stripe from 'stripe';
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
-```
-
-- [ ] **Step 3: Create checkout route**
-
-- [ ] **Step 4: Create webhook handler for subscription events**
-
-- [ ] **Step 5: Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to .env.example**
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/services/billing/ app/api/billing/ package.json .env.example
-git commit -m "feat: add Stripe billing integration with checkout and webhooks"
-```
-
----
-
-## Phase 4: Growth (Month 11-12)
-
-> Goal: Launch, community, go-to-market.
-
----
-
-### Task 18: Build Landing Page
-
-**Files:**
-- Create: `app/(marketing)/layout.tsx`
-- Create: `app/(marketing)/page.tsx`
-
-- [ ] **Step 1: Create marketing route group layout**
-
-Separate from the IDE layout — no IDEShell, no sidebar.
-
-- [ ] **Step 2: Build landing page with hero, features, pricing, CTA**
-
-- [ ] **Step 3: Add framer-motion scroll animations**
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add app/\(marketing\)/
-git commit -m "feat: add conversion-optimized landing page"
-```
-
----
-
-### Task 19: Set Up PostHog Analytics
-
-**Files:**
-- Create: `src/components/analytics/PostHogProvider.tsx`
-- Modify: `app/layout.tsx`
-
-- [ ] **Step 1: Install PostHog**
-
-```bash
-npm install posthog-js posthog-node
-```
-
-- [ ] **Step 2: Create PostHog provider**
-
-- [ ] **Step 3: Wrap app layout**
-
-- [ ] **Step 4: Track custom events (tool_opened, experiment_created, fba_run)**
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/components/analytics/ app/layout.tsx package.json
-git commit -m "feat: add PostHog product analytics with custom event tracking"
-```
-
----
-
-### Task 20: Build Documentation Site
-
-**Files:**
-- Create: `docs-site/` (separate Nextra project)
-
-- [ ] **Step 1: Initialize Nextra project**
-
-```bash
-npx create-nextra@latest docs-site
-```
-
-- [ ] **Step 2: Write getting started guide, tool documentation, API reference**
-
-- [ ] **Step 3: Deploy to Vercel as docs.nexus-bio.vercel.app**
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add docs-site/
-git commit -m "feat: add Nextra documentation site"
-```
-
----
-
-## Summary
-
-| Phase | Tasks | Duration | Deliverable |
-|-------|-------|----------|-------------|
-| **P0: Foundation** | 1-10 | Month 1-2 | Production-ready platform with proper tooling, auth, data layer |
-| **P1: Core Value** | 11-13 | Month 3-4 | Real-time collab, API docs, Storybook |
-| **P2: Domain Depth** | 14-15 | Month 5-7 | SteadyCom, flux maps, inventory, ML models |
-| **P3: Enterprise** | 16-17 | Month 8-10 | Audit trail, billing, compliance |
-| **P4: Growth** | 18-20 | Month 11-12 | Landing page, analytics, docs site |
-
-Each task is independently testable and committable. Tasks within a phase can be parallelized. Cross-phase dependencies are documented in the spec.
-
----
-
-*Spec: `docs/superpowers/specs/2026-06-25-nexus-bio-os-platform-blueprint.md`*
+**Spec:** `docs/superpowers/specs/2026-06-25-nexus-bio-os-platform-blueprint.md`

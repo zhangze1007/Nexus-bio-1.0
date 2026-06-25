@@ -20,6 +20,77 @@ This document specifies **13 branches** of upgrade, each with problem statement,
 
 ---
 
+## 1.1 Confirmed Decisions (Brainstorming 2026-06-25)
+
+> All architectural decisions below are **confirmed and locked**. Do not revisit unless explicitly requested.
+
+### Budget & Team
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Monthly budget** | **$0** (free tiers only) | No funding yet. All services use free tiers. Upgrade to paid tiers only after融资. |
+| **Team size** | **4+ people** (full team) | Allows complex architecture, parallel development, clear module ownership |
+| **Target users** | **Academic-first, enterprise-grade quality** | Enter via academic users (iGEM, labs), but build infrastructure to enterprise standards from day one |
+| **Quality standard** | **Enterprise-grade regardless of budget** | Free tiers of modern services are generous enough for production-quality architecture |
+
+### Free Tier Stack (Confirmed)
+
+| Service | Free Tier Limit | Purpose |
+|---------|----------------|---------|
+| **Turso** | 9GB storage, 1 billion row reads/month | Primary database (libSQL) |
+| **Vercel Hobby** | Unlimited deploys, 100GB bandwidth | Hosting & Edge Runtime |
+| **Upstash Redis** | 10K commands/day | Rate limiting, caching |
+| **Cloudflare R2** | 10GB storage, $0 egress | File storage (FASTA, PDB, etc.) |
+| **Sentry** | 5K errors/month | Error tracking |
+| **PostHog** | 1M events/month | Product analytics |
+| **Resend** | 3K emails/month | Transactional email (future) |
+
+### Data Layer
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Database** | **Turso (free tier)** | Already integrated, generous free tier, edge-compatible |
+| **ORM** | **Drizzle ORM** | Type-safe, lightweight, Turso-native adapter, migration tooling |
+| **Existing code** | **Fully replace workbenchDb.ts** | Type safety, migration management, team collaboration, schema-as-documentation |
+| **Existing data** | **Fresh schema (no migration)** | No real user data exists — purely development. Clean start. |
+| **Naming convention** | **snake_case (DB) → camelCase (TypeScript)** | SQL convention in DB, JS convention in code. Drizzle auto-maps. |
+| **File storage** | **Cloudflare R2 (free tier)** | 10GB free, S3-compatible, zero egress fees |
+
+### Authentication
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Auth scope** | **Single user + extensible schema** | Implement user auth now. Schema pre-includes `org_id`, `team_id` (nullable) for future multi-tenancy. |
+| **Login providers** | **GitHub OAuth + Google OAuth** | Covers 90% of synbio users (academic = Google/school email, developers = GitHub) |
+| **Future providers** | Google Workspace SSO, Email magic link | Add when enterprise customers need them |
+| **Permission model** | **Four-tier RBAC** | Owner > Admin > Editor > Viewer. Simple, sufficient for 4-person team. |
+| **API keys** | **Per-user, nxb_ prefix, SHA-256 hashed** | Scoped (read/write/admin), revocable, rate-limited |
+
+### Scientific Computing (Execution Order)
+
+| Priority | Branch | Timeline | Rationale |
+|----------|--------|----------|-----------|
+| **1st** | **Sequence Editor** | 4-8 weeks | THE core differentiator for a synbio platform. Without it, Nexus-Bio is just a calculator. |
+| **2nd** | **FBA Polish** | 1-2 weeks | Quick win — SteadyCom + full iJO1366 + SBML import. Already strong, just补齐短板. |
+| **3rd** | **Protein Engineering** | 2-4 weeks | RFdiffusion, ProteinMPNN, AlphaFold3 integration |
+| **4th** | **Gene Circuits** | 2-4 weeks | React Flow visual circuit editor |
+
+### Collaboration
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Real-time scope** | **Full real-time collaboration** | WebSocket + Yjs CRDT + cursor presence + chat. Google Docs-level experience. |
+| **Offline support** | **y-indexeddb** | Changes persist locally when offline, sync on reconnect |
+
+### AI Platform
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Scope** | **All features, gradually** | Copilot (multi-turn) first → Axon Agent → ML model zoo |
+| **Model providers** | **Groq (primary) + Gemini (fallback)** | Already integrated, generous free tiers |
+
+---
+
 ## 2. Current State Assessment
 
 | Dimension | Current State | Gap |
