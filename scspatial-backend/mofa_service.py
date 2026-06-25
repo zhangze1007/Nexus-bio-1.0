@@ -66,36 +66,54 @@ def run_mofa_analysis(
     model = ent.model
 
     # Get factors (Z matrix: samples x factors)
-    factors_data = model.get_factors()
-    factors = {}
-    for i in range(n_factors):
-        factor_key = f"factor_{i}"
-        factors[factor_key] = {
-            sample_names[j]: float(factors_data[0][j, i]) if j < len(sample_names) else 0.0
-            for j in range(len(sample_names))
-        }
+    try:
+        factors_data = model.get_factors()
+        # factors_data is typically a list of arrays (one per group)
+        z = factors_data[0] if isinstance(factors_data, list) else factors_data
+        factors = {}
+        for i in range(min(n_factors, z.shape[1])):
+            factor_key = f"factor_{i}"
+            factors[factor_key] = {
+                sample_names[j]: float(z[j, i])
+                for j in range(min(len(sample_names), z.shape[0]))
+            }
+    except Exception as e:
+        logger.warning(f"Failed to extract factors: {e}")
+        factors = {}
 
     # Get variance explained per view per factor
-    r2 = model.calculate_variance_explained()
-    variance_explained = {}
-    for view_idx, view_name in enumerate(views.keys()):
-        variance_explained[view_name] = [
-            float(r2[0][view_idx][f]) if r2[0] is not None and view_idx < len(r2[0]) and f < len(r2[0][view_idx]) else 0.0
-            for f in range(n_factors)
-        ]
+    try:
+        r2 = model.calculate_variance_explained()
+        variance_explained = {}
+        for view_idx, view_name in enumerate(views.keys()):
+            if r2 is not None and len(r2) > 0 and view_idx < len(r2[0]):
+                variance_explained[view_name] = [
+                    float(r2[0][view_idx][f]) if f < len(r2[0][view_idx]) else 0.0
+                    for f in range(n_factors)
+                ]
+            else:
+                variance_explained[view_name] = [0.0] * n_factors
+    except Exception as e:
+        logger.warning(f"Failed to extract variance explained: {e}")
+        variance_explained = {v: [0.0] * n_factors for v in views.keys()}
 
     # Get feature weights (W matrix)
-    weights = model.get_weights()
-    feature_weights = {}
-    for view_idx, view_name in enumerate(views.keys()):
-        feature_weights[view_name] = {}
-        fnames = feature_names.get(view_name, [f"f{j}" for j in range(weights[0][view_idx].shape[0])])
-        for f in range(n_factors):
-            factor_key = f"factor_{f}"
-            feature_weights[view_name][factor_key] = {
-                fnames[j]: float(weights[0][view_idx][j, f])
-                for j in range(min(len(fnames), weights[0][view_idx].shape[0]))
-            }
+    try:
+        weights = model.get_weights()
+        feature_weights = {}
+        for view_idx, view_name in enumerate(views.keys()):
+            feature_weights[view_name] = {}
+            w = weights[0][view_idx] if isinstance(weights, list) else weights[view_idx]
+            fnames = feature_names.get(view_name, [f"f{j}" for j in range(w.shape[0])])
+            for f in range(min(n_factors, w.shape[1])):
+                factor_key = f"factor_{f}"
+                feature_weights[view_name][factor_key] = {
+                    fnames[j]: float(w[j, f])
+                    for j in range(min(len(fnames), w.shape[0]))
+                }
+    except Exception as e:
+        logger.warning(f"Failed to extract feature weights: {e}")
+        feature_weights = {}
 
     return {
         "factors": factors,
