@@ -29,11 +29,13 @@ except (OSError, ImportError):
     sys.modules["torch"] = _torch_stub  # type: ignore[assignment]
 
 import anndata as ad
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+import numpy as np
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from artifact_builder import build_artifact
+from mofa_service import run_mofa_analysis
 from models import AnalysisConfig, IngestResponse, JobStatus, QueryRequest
 from pipeline import run_full_pipeline
 
@@ -485,6 +487,56 @@ def _build_query_response(artifact: Dict[str, Any], request: QueryRequest) -> Di
             "paga": analysis.get("paga"),
         },
     }
+
+
+# ── MOFA+ multi-omics factor analysis ──────────────────────────────
+
+@app.post("/mofa")
+async def mofa_endpoint(request: Request):
+    """Run MOFA+ multi-omics factor analysis."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    views_data = body.get("views", {})
+    n_factors = body.get("nFactors", 10)
+    n_iterations = body.get("nIterations", 1000)
+    convergence_mode = body.get("convergenceMode", "medium")
+
+    if not views_data:
+        raise HTTPException(400, "At least one view is required")
+
+    # Convert to numpy arrays
+    views = {}
+    feature_names = {}
+    sample_names = []
+
+    for view_name, view_data in views_data.items():
+        data = np.array(view_data.get("data", []))
+        if data.size == 0:
+            continue
+        views[view_name] = data
+        feature_names[view_name] = view_data.get("features", [f"f{j}" for j in range(data.shape[1])])
+        if not sample_names:
+            sample_names = view_data.get("samples", [f"sample_{i}" for i in range(data.shape[0])])
+
+    if not views:
+        raise HTTPException(400, "No valid view data provided")
+
+    try:
+        result = run_mofa_analysis(
+            views=views,
+            sample_names=sample_names,
+            feature_names=feature_names,
+            n_factors=n_factors,
+            n_iterations=n_iterations,
+            convergence_mode=convergence_mode,
+        )
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.exception("MOFA+ analysis failed")
+        raise HTTPException(500, f"MOFA+ analysis failed: {str(e)}")
 
 
 # ── Demo mode: create artifact without Python analysis ──────────────
