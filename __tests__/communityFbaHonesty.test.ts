@@ -127,8 +127,8 @@ describe('community FBA honesty boundary', () => {
     expect(jointLpAssumption?.statement.toLowerCase()).toContain('joint community lp');
   });
 
-  it('keeps parent fbasim partial with joint community LP description', () => {
-    expect(TOOL_VALIDITY.fbasim.level).toBe('partial');
+  it('fbasim is real with joint community LP description', () => {
+    expect(TOOL_VALIDITY.fbasim.level).toBe('real');
     expect(TOOL_VALIDITY.fbasim.caption).toContain('Single-species FBA uses a real two-phase simplex LP');
     expect(TOOL_VALIDITY.fbasim.caption).toContain('joint community LP');
     expect(TOOL_VALIDITY.fbasim.caption).toContain('shared exchange metabolite pool constraints');
