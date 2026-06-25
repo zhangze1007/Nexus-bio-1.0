@@ -200,7 +200,7 @@ export const inverseFoldingAdapter: AxonAdapter = async (input: unknown, _ctx: A
 export const multiplexCRISPRAdapter: AxonAdapter = async (input: unknown, _ctx: AxonAdapterContext) => {
   const { runMultiplexCRISPR } = await import("../server/multiplexCRISPREngine");
   const p = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
-  const result = runMultiplexCRISPR({
+  const result = await runMultiplexCRISPR({
     genes: (p.genes as Parameters<typeof runMultiplexCRISPR>[0]["genes"]) ?? [],
     targetProduct: p.targetProduct as string | undefined,
     maxEdits: (p.maxEdits as number) ?? 5,
