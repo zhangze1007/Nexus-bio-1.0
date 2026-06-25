@@ -339,4 +339,31 @@ def build_artifact(
         "analysis": analysis,
     }
 
+    # ── H&E image extraction (Visium) ─────────────────────────────────
+    he_image = None
+    if 'spatial' in adata.uns and isinstance(adata.uns['spatial'], dict):
+        for lib_id, lib_data in adata.uns['spatial'].items():
+            if isinstance(lib_data, dict) and 'images' in lib_data:
+                images = lib_data['images']
+                if 'hires' in images:
+                    import base64
+                    from io import BytesIO
+                    from PIL import Image
+                    img_array = images['hires']
+                    if img_array.max() <= 1.0:
+                        img_array = (img_array * 255).astype(np.uint8)
+                    img = Image.fromarray(img_array)
+                    buf = BytesIO()
+                    img.save(buf, format='PNG')
+                    he_image = {
+                        'data': base64.b64encode(buf.getvalue()).decode(),
+                        'scaleFactor': lib_data.get('scalefactors', {}).get('tissue_hires_scalef', 1.0),
+                        'spotDiameter': lib_data.get('scalefactors', {}).get('spot_diameter_fullres', 1.0),
+                    }
+                    break
+
+    spatial_format = adata.uns.get('_spatial_format', 'none')
+    artifact['heImage'] = he_image
+    artifact['spatialFormat'] = spatial_format
+
     return artifact

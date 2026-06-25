@@ -28,6 +28,19 @@ def _noop_progress(progress: float, stage: str, message: str) -> None:
     pass
 
 
+def detect_spatial_format(adata: ad.AnnData) -> str:
+    """Auto-detect spatial data format."""
+    if 'spatial' in adata.uns:
+        return 'visium'
+    obsm_keys = list(getattr(adata, 'obsm_keys', lambda: [])())
+    if 'spatial' in obsm_keys:
+        coords = adata.obsm['spatial']
+        if hasattr(coords, 'shape') and len(coords.shape) == 2 and coords.shape[1] == 3:
+            return 'merfish'
+        return 'generic'
+    return 'none'
+
+
 def run_full_pipeline(
     adata: ad.AnnData,
     config: AnalysisConfig,
@@ -45,6 +58,11 @@ def run_full_pipeline(
     """
     n_cells_raw = adata.n_obs
     n_genes_raw = adata.n_vars
+
+    # ── Detect spatial format ─────────────────────────────────────────
+    spatial_format = detect_spatial_format(adata)
+    adata.uns['_spatial_format'] = spatial_format
+    logger.info(f"Detected spatial format: {spatial_format}")
 
     # ── Step 1: QC ──────────────────────────────────────────────────
     on_progress(0.05, "qc", "Computing QC metrics")
