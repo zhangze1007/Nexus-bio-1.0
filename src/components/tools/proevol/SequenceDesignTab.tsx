@@ -1,5 +1,6 @@
 "use client";
 
+import { getESM2Embeddings } from "../../../services/esm2Client";
 import { designMutantLibrary, designSequences } from "../../../services/ProEvolCampaignEngine";
 import { THEME } from "../../../theme";
 import { PROEVOL_THEME } from "./shared";
@@ -17,6 +18,10 @@ export default function SequenceDesignTab({ state }: { state: ProEvolState }) {
     setLibraryResult,
     designLoading,
     setDesignLoading,
+    useESM2,
+    setUseESM2,
+    esm2Loading,
+    setEsm2Loading,
     setProevolError,
   } = state;
 
@@ -35,16 +40,57 @@ export default function SequenceDesignTab({ state }: { state: ProEvolState }) {
         <p style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-xs)", color: THEME.LABEL, margin: "4px 0 12px" }}>
           Design sequences that fold into the target structure using structural constraints + BLOSUM62 plausibility.
         </p>
+
+        {/* ESM-2 Toggle */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "10px",
+            cursor: "pointer",
+            fontFamily: THEME.MONO,
+            fontSize: "var(--nb-fs-xs)",
+            color: useESM2 ? PROEVOL_THEME.mint : THEME.LABEL,
+            userSelect: "none",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={useESM2}
+            onChange={(e) => setUseESM2(e.target.checked)}
+            disabled={designLoading || esm2Loading}
+            style={{ accentColor: PROEVOL_THEME.mint }}
+          />
+          Use ESM-2 Embeddings
+          <span style={{ color: THEME.DIM, fontSize: 9 }}>(protein language model — adds 5-10 s)</span>
+        </label>
+
         <button
-          onClick={() => {
+          onClick={async () => {
             if (!scanSequence) return;
             setDesignLoading(true);
             try {
+              // Fetch ESM-2 embeddings if toggle is on
+              let esm2Embeddings: number[][] | undefined;
+              if (useESM2) {
+                setEsm2Loading(true);
+                try {
+                  const esm2Result = await getESM2Embeddings(scanSequence);
+                  esm2Embeddings = esm2Result.embeddings;
+                } catch (esm2Err) {
+                  console.warn("ESM-2 fetch failed, falling back to local scoring:", esm2Err);
+                } finally {
+                  setEsm2Loading(false);
+                }
+              }
+
               const designs = designSequences({
                 sequence: scanSequence,
                 pdbText: pdbText ?? undefined,
                 fixedPositions: conservationResult?.conservedPositions,
                 numDesigns: 10,
+                esm2Embeddings,
               });
               setDesignResult(designs);
 
@@ -65,20 +111,47 @@ export default function SequenceDesignTab({ state }: { state: ProEvolState }) {
               setDesignLoading(false);
             }
           }}
-          disabled={!scanSequence || designLoading}
+          disabled={!scanSequence || designLoading || esm2Loading}
           style={{
             padding: "6px 12px",
             borderRadius: "var(--nb-radius-sm)",
-            background: !scanSequence || designLoading ? "rgba(255,255,255,0.04)" : "rgba(191,220,205,0.14)",
-            border: `1px solid ${!scanSequence || designLoading ? "rgba(255,255,255,0.08)" : "rgba(191,220,205,0.3)"}`,
-            color: !scanSequence || designLoading ? "rgba(255,255,255,0.35)" : PROEVOL_THEME.mint,
+            background: !scanSequence || designLoading || esm2Loading ? "rgba(255,255,255,0.04)" : "rgba(191,220,205,0.14)",
+            border: `1px solid ${!scanSequence || designLoading || esm2Loading ? "rgba(255,255,255,0.08)" : "rgba(191,220,205,0.3)"}`,
+            color: !scanSequence || designLoading || esm2Loading ? "rgba(255,255,255,0.35)" : PROEVOL_THEME.mint,
             fontFamily: THEME.MONO,
             fontSize: "var(--nb-fs-xs)",
             cursor: "pointer",
           }}
         >
-          {designLoading ? "Designing…" : "Design Sequences"}
+          {esm2Loading ? "Fetching ESM-2 embeddings…" : designLoading ? "Designing…" : "Design Sequences"}
         </button>
+
+        {/* ESM-2 Loading Indicator */}
+        {esm2Loading && (
+          <div
+            style={{
+              marginTop: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontFamily: THEME.MONO,
+              fontSize: "var(--nb-fs-xs)",
+              color: PROEVOL_THEME.sky,
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: PROEVOL_THEME.sky,
+                animation: "proevol-pulse 1.2s ease-in-out infinite",
+              }}
+            />
+            Querying ESM-2 protein language model (may take 5-10 s on CPU)...
+          </div>
+        )}
       </div>
 
       {/* Designed Sequences */}
@@ -91,7 +164,26 @@ export default function SequenceDesignTab({ state }: { state: ProEvolState }) {
             padding: "14px",
           }}
         >
-          <span style={kicker}>Designed Sequences ({designResult.designs.length})</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={kicker}>Designed Sequences ({designResult.designs.length})</span>
+            {designResult.esm2Used && (
+              <span
+                style={{
+                  fontFamily: THEME.MONO,
+                  fontSize: 9,
+                  padding: "1px 6px",
+                  borderRadius: "999px",
+                  background: `${PROEVOL_THEME.mint}18`,
+                  border: `1px solid ${PROEVOL_THEME.mint}44`,
+                  color: PROEVOL_THEME.mint,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+              >
+                ESM-2
+              </span>
+            )}
+          </div>
           <div style={{ marginTop: 8, fontFamily: THEME.MONO, fontSize: 10, maxHeight: 300, overflow: "auto" }}>
             {designResult.designs.slice(0, 10).map((d, i) => (
               <div key={i} style={{ padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>

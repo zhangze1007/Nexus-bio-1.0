@@ -1913,6 +1913,7 @@ export function designSequences(input: {
   pdbText?: string;
   fixedPositions?: number[];
   numDesigns?: number;
+  esm2Embeddings?: number[][];
 }): {
   designs: Array<{
     sequence: string;

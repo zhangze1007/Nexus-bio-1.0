@@ -58,6 +58,8 @@ export function useProEvolState() {
   const [designResult, setDesignResult] = useState<ReturnType<typeof designSequences> | null>(null);
   const [libraryResult, setLibraryResult] = useState<ReturnType<typeof designMutantLibrary> | null>(null);
   const [designLoading, setDesignLoading] = useState(false);
+  const [useESM2, setUseESM2] = useState(false);
+  const [esm2Loading, setEsm2Loading] = useState(false);
 
   // ── ML-Guided mode (Gaussian Process) ────────────────────────────────
   const [mlMode, setMlMode] = useState(false);
@@ -498,6 +500,10 @@ export function useProEvolState() {
     setLibraryResult,
     designLoading,
     setDesignLoading,
+    useESM2,
+    setUseESM2,
+    esm2Loading,
+    setEsm2Loading,
     // ML-Guided
     mlMode,
     setMlMode,
