@@ -491,11 +491,38 @@ def _build_query_response(artifact: Dict[str, Any], request: QueryRequest) -> Di
 
 @app.post("/demo")
 async def demo():
-    """Create a demo artifact using bundled data (no file upload needed)."""
-    import random
+    """Create a demo artifact using real Visium mouse brain data."""
+    import squidpy as sq
 
     artifact_id = f"scspatial-demo-{uuid.uuid4().hex[:12]}"
     uploaded_at = int(time.time() * 1000)
+
+    try:
+        # Load real Visium mouse brain dataset
+        adata = sq.datasets.visium_hne_adata()
+    except Exception as e:
+        logger.warning(f"Failed to load real Visium data: {e}, falling back to synthetic")
+        return _create_synthetic_demo(artifact_id, uploaded_at)
+
+    # Run the full scanpy pipeline on real data
+    config = AnalysisConfig()
+    on_progress = lambda p, s, m: logger.info(f"[demo] {p:.0%} | {s} | {m}")
+    adata = run_full_pipeline(adata, config, on_progress)
+
+    # Build artifact
+    artifact = build_artifact(adata, artifact_id, "visium_hne_demo.h5ad", uploaded_at)
+    artifacts[artifact_id] = artifact
+
+    return {
+        "ok": True,
+        "artifactId": artifact_id,
+        "status": "completed",
+    }
+
+
+def _create_synthetic_demo(artifact_id: str, uploaded_at: int) -> Dict[str, Any]:
+    """Create a synthetic spatial transcriptomics demo artifact as fallback."""
+    import random
 
     # Generate realistic synthetic spatial transcriptomics data
     # Simulates a tissue section with spatially coherent clusters
