@@ -1,32 +1,38 @@
-import { predictDDG, predictMultiDDG, scanAllMutations } from '../server/ddgPrediction';
-import { parsePDB, computeDihedrals, computeSASA, assignSecondaryStructure, getHydrophobicity } from '../utils/pdbParser';
+import { predictDDG, predictMultiDDG, scanAllMutations } from "../server/ddgPrediction";
+import {
+  assignSecondaryStructure,
+  computeDihedrals,
+  computeSASA,
+  getHydrophobicity,
+  parsePDB,
+} from "../utils/pdbParser";
 
 // ── BLOSUM62 matrix for evolutionary scoring ──────────────────────────────
 // Built from the standard BLOSUM62 matrix. Each row maps amino acid → score.
 const _B62: number[][] = [
   // A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V
-  [ 4,-1,-2,-2, 0,-1,-1, 0,-2,-1,-1,-1,-1,-2,-1, 1, 0,-3,-2, 0], // A
-  [-1, 5, 0,-2,-3, 1, 0,-2, 0,-3,-2, 2,-1,-3,-2,-1,-1,-3,-2,-3], // R
-  [-2, 0, 6, 1,-3, 0, 0, 0, 1,-3,-3, 0,-2,-3,-2, 1, 0,-4,-2,-3], // N
-  [-2,-1, 1, 6,-3, 0, 2,-1,-1,-3,-4,-1,-3,-3,-1, 0,-1,-4,-3,-3], // D
-  [ 0,-3,-3,-3, 9,-3,-4,-3,-3,-1,-1,-3,-1,-2,-3,-1,-1,-2,-2,-1], // C
-  [-1, 1, 0, 0,-3, 5, 2,-2, 0,-3,-2, 1, 0,-3,-1, 0,-1,-2,-1,-2], // Q
-  [-1, 0, 0, 2,-4, 2, 5,-2, 0,-3,-3, 1,-2,-3,-1, 0,-1,-3,-2,-2], // E
-  [ 0,-2, 0,-1,-3,-2,-2, 6,-2,-4,-4,-2,-3,-3,-2, 0,-2,-2,-3,-3], // G
-  [-2, 0, 1,-1,-3, 0, 0,-2, 8,-3,-3,-1,-2,-1,-2,-1,-2,-2, 2,-3], // H
-  [-1,-3,-3,-3,-1,-3,-3,-4,-3, 4, 2,-3, 1, 0,-3,-2,-1,-3,-1, 3], // I
-  [-1,-2,-3,-4,-1,-2,-3,-4,-1, 2, 4,-2, 2, 0,-3,-2,-1,-2,-1, 1], // L
-  [-1, 2, 0,-1,-3, 1, 1,-2,-1,-3,-2, 5,-1,-3,-1, 0,-1,-3,-2,-2], // K
-  [-1,-1,-2,-3,-1, 0,-2,-3,-2, 1, 2,-1, 5, 0,-2,-1,-1,-1,-1, 1], // M
-  [-2,-3,-3,-3,-2,-3,-3,-3,-1, 0, 0,-3, 0, 6,-4,-2,-2, 1, 3,-1], // F
-  [-1,-2,-2,-1,-3,-1,-1,-2,-2,-3,-3,-1,-2,-4, 7,-1,-1,-4,-3,-2], // P
-  [ 1,-1, 0, 0,-1, 0, 0, 0,-1,-2,-2, 0,-1,-2,-1, 4, 1,-3,-2,-2], // S
-  [ 0,-1, 0,-1,-1,-1,-1,-2,-2,-1,-1,-1,-1,-2,-1, 1, 5,-2,-2, 0], // T
-  [-3,-3,-4,-4,-2,-1,-3,-2,-2,-3,-2,-3,-1, 1,-4,-3,-2,11, 2,-3], // W
-  [-2,-2,-2,-3,-2,-1,-2,-3, 2,-1,-1,-2,-1, 3,-3,-2,-2, 2, 7,-1], // Y
-  [ 0,-3,-3,-3,-1,-2,-2,-3,-3, 3, 1,-2, 1,-1,-2,-2, 0,-3,-1, 4], // V
+  [4, -1, -2, -2, 0, -1, -1, 0, -2, -1, -1, -1, -1, -2, -1, 1, 0, -3, -2, 0], // A
+  [-1, 5, 0, -2, -3, 1, 0, -2, 0, -3, -2, 2, -1, -3, -2, -1, -1, -3, -2, -3], // R
+  [-2, 0, 6, 1, -3, 0, 0, 0, 1, -3, -3, 0, -2, -3, -2, 1, 0, -4, -2, -3], // N
+  [-2, -1, 1, 6, -3, 0, 2, -1, -1, -3, -4, -1, -3, -3, -1, 0, -1, -4, -3, -3], // D
+  [0, -3, -3, -3, 9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1], // C
+  [-1, 1, 0, 0, -3, 5, 2, -2, 0, -3, -2, 1, 0, -3, -1, 0, -1, -2, -1, -2], // Q
+  [-1, 0, 0, 2, -4, 2, 5, -2, 0, -3, -3, 1, -2, -3, -1, 0, -1, -3, -2, -2], // E
+  [0, -2, 0, -1, -3, -2, -2, 6, -2, -4, -4, -2, -3, -3, -2, 0, -2, -2, -3, -3], // G
+  [-2, 0, 1, -1, -3, 0, 0, -2, 8, -3, -3, -1, -2, -1, -2, -1, -2, -2, 2, -3], // H
+  [-1, -3, -3, -3, -1, -3, -3, -4, -3, 4, 2, -3, 1, 0, -3, -2, -1, -3, -1, 3], // I
+  [-1, -2, -3, -4, -1, -2, -3, -4, -1, 2, 4, -2, 2, 0, -3, -2, -1, -2, -1, 1], // L
+  [-1, 2, 0, -1, -3, 1, 1, -2, -1, -3, -2, 5, -1, -3, -1, 0, -1, -3, -2, -2], // K
+  [-1, -1, -2, -3, -1, 0, -2, -3, -2, 1, 2, -1, 5, 0, -2, -1, -1, -1, -1, 1], // M
+  [-2, -3, -3, -3, -2, -3, -3, -3, -1, 0, 0, -3, 0, 6, -4, -2, -2, 1, 3, -1], // F
+  [-1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4, 7, -1, -1, -4, -3, -2], // P
+  [1, -1, 0, 0, -1, 0, 0, 0, -1, -2, -2, 0, -1, -2, -1, 4, 1, -3, -2, -2], // S
+  [0, -1, 0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1, 1, 5, -2, -2, 0], // T
+  [-3, -3, -4, -4, -2, -1, -3, -2, -2, -3, -2, -3, -1, 1, -4, -3, -2, 11, 2, -3], // W
+  [-2, -2, -2, -3, -2, -1, -2, -3, 2, -1, -1, -2, -1, 3, -3, -2, -2, 2, 7, -1], // Y
+  [0, -3, -3, -3, -1, -2, -2, -3, -3, 3, 1, -2, 1, -1, -2, -2, 0, -3, -1, 4], // V
 ];
-const AA_ORDER = 'ARNDCEQGHILKMFPSTWYV';
+const AA_ORDER = "ARNDCEQGHILKMFPSTWYV";
 const BLOSUM62: Record<string, Record<string, number>> = {};
 for (let i = 0; i < 20; i++) {
   BLOSUM62[AA_ORDER[i]] = {};
@@ -35,21 +41,17 @@ for (let i = 0; i < 20; i++) {
   }
 }
 
-export type CampaignProvenance = 'simulated' | 'inferred' | 'literature-backed' | 'user-supplied';
-export type VariantSelectionStatus = 'selected' | 'rejected' | 'wild-type';
-export type ConvergenceState =
-  | 'broadening'
-  | 'productive-convergence'
-  | 'premature-collapse'
-  | 'plateau';
+export type CampaignProvenance = "simulated" | "inferred" | "literature-backed" | "user-supplied";
+export type VariantSelectionStatus = "selected" | "rejected" | "wild-type";
+export type ConvergenceState = "broadening" | "productive-convergence" | "premature-collapse" | "plateau";
 export type RecommendationAction =
-  | 'continue-another-round'
-  | 'narrow-library'
-  | 'broaden-exploration'
-  | 'rescue-stability'
-  | 'freeze-and-transfer'
-  | 'stop-campaign';
-export type LandscapeMode = 'activity' | 'diversity' | 'convergence' | 'confidence' | 'selection-density';
+  | "continue-another-round"
+  | "narrow-library"
+  | "broaden-exploration"
+  | "rescue-stability"
+  | "freeze-and-transfer"
+  | "stop-campaign";
+export type LandscapeMode = "activity" | "diversity" | "convergence" | "confidence" | "selection-density";
 
 export interface SelectionObjective {
   label: string;
@@ -102,7 +104,7 @@ export interface VariantCandidate {
   score: VariantScore;
   embedding: { x: number; y: number };
   lineageDepth: number;
-  branchState: 'active' | 'persisting' | 'dead' | 'lead' | 'rejected' | 'wild-type';
+  branchState: "active" | "persisting" | "dead" | "lead" | "rejected" | "wild-type";
   selectionDensity: number;
 }
 
@@ -120,10 +122,10 @@ export interface DiversitySummary {
   dominantFamilyShare: number;
   mutationSpread: number;
   classification:
-    | 'broadly exploring'
-    | 'balanced exploration'
-    | 'converging around one family'
-    | 'over-collapsing early';
+    | "broadly exploring"
+    | "balanced exploration"
+    | "converging around one family"
+    | "over-collapsing early";
   narrative: string;
 }
 
@@ -162,7 +164,7 @@ export interface LineageNode {
   familyLabel: string;
   mutationString: string;
   score: number;
-  status: 'lead' | 'survivor' | 'dead' | 'rejected' | 'wild-type';
+  status: "lead" | "survivor" | "dead" | "rejected" | "wild-type";
   x: number;
   y: number;
 }
@@ -220,7 +222,7 @@ export interface LandscapeHotspot {
   selectionDensity: number;
   leadVariantId: string | null;
   leadScore: number;
-  status: 'selected' | 'rejected' | 'mixed';
+  status: "selected" | "rejected" | "mixed";
 }
 
 export interface LandscapeMap {
@@ -315,8 +317,8 @@ interface FamilyArchetype {
 
 const FAMILY_ARCHETYPES: FamilyArchetype[] = [
   {
-    id: 'activity-push',
-    label: 'Activity push',
+    id: "activity-push",
+    label: "Activity push",
     centerX: 0.18,
     centerY: 0.76,
     activityBias: 10,
@@ -324,11 +326,11 @@ const FAMILY_ARCHETYPES: FamilyArchetype[] = [
     expressionBias: 2,
     specificityBias: 2,
     preferredSiteIndexes: [1, 2, 4, 6],
-    substitutionPool: ['V', 'I', 'L', 'F', 'Y'],
+    substitutionPool: ["V", "I", "L", "F", "Y"],
   },
   {
-    id: 'stability-rescue',
-    label: 'Stability rescue',
+    id: "stability-rescue",
+    label: "Stability rescue",
     centerX: 0.74,
     centerY: 0.22,
     activityBias: 2,
@@ -336,11 +338,11 @@ const FAMILY_ARCHETYPES: FamilyArchetype[] = [
     expressionBias: 4,
     specificityBias: 1,
     preferredSiteIndexes: [0, 3, 5, 7],
-    substitutionPool: ['A', 'T', 'S', 'N', 'Q'],
+    substitutionPool: ["A", "T", "S", "N", "Q"],
   },
   {
-    id: 'specificity-balance',
-    label: 'Specificity balance',
+    id: "specificity-balance",
+    label: "Specificity balance",
     centerX: 0.58,
     centerY: 0.64,
     activityBias: 6,
@@ -348,11 +350,11 @@ const FAMILY_ARCHETYPES: FamilyArchetype[] = [
     expressionBias: 1,
     specificityBias: 9,
     preferredSiteIndexes: [2, 5, 6, 8],
-    substitutionPool: ['Y', 'W', 'H', 'F', 'R'],
+    substitutionPool: ["Y", "W", "H", "F", "R"],
   },
   {
-    id: 'expression-light',
-    label: 'Expression light',
+    id: "expression-light",
+    label: "Expression light",
     centerX: 0.34,
     centerY: 0.34,
     activityBias: 4,
@@ -360,7 +362,7 @@ const FAMILY_ARCHETYPES: FamilyArchetype[] = [
     expressionBias: 11,
     specificityBias: 0,
     preferredSiteIndexes: [0, 1, 4, 8],
-    substitutionPool: ['A', 'G', 'S', 'T', 'N'],
+    substitutionPool: ["A", "G", "S", "T", "N"],
   },
 ];
 
@@ -401,7 +403,7 @@ function thresholdBurdenPenalty(mutationBurden: number, burdenWeight: number): n
   if (mutationBurden <= 1) return 0;
   // First mutation is free; subsequent mutations cost (n-1)^1.4 * weight * 0.55
   const effectiveBurden = mutationBurden - 1;
-  return Math.pow(effectiveBurden, 1.4) * burdenWeight * 0.55;
+  return effectiveBurden ** 1.4 * burdenWeight * 0.55;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -463,11 +465,11 @@ function mergeWeights(overrides?: Partial<ProEvolCampaignWeights>): ProEvolCampa
 }
 
 function createMutationString(mutations: VariantMutation[]) {
-  if (!mutations.length) return 'WT';
+  if (!mutations.length) return "WT";
   return [...mutations]
     .sort((left, right) => left.position - right.position)
     .map((mutation) => `${mutation.from}${mutation.position}${mutation.to}`)
-    .join(' / ');
+    .join(" / ");
 }
 
 function scoreVariantMetrics(
@@ -540,10 +542,10 @@ export function scoreVariant(
 
 function determineRiskFlags(stability: number, expression: number, mutationBurden: number) {
   const flags: string[] = [];
-  if (stability < 46) flags.push('stability floor');
-  if (expression < 48) flags.push('expression drag');
-  if (mutationBurden >= 4) flags.push('mutation burden');
-  if (stability < 42 && mutationBurden >= 3) flags.push('aggregation risk');
+  if (stability < 46) flags.push("stability floor");
+  if (expression < 48) flags.push("expression drag");
+  if (mutationBurden >= 4) flags.push("mutation burden");
+  if (stability < 42 && mutationBurden >= 3) flags.push("aggregation risk");
   return flags;
 }
 
@@ -554,20 +556,23 @@ function describeCandidate(
   specificity: number,
   burden: number,
 ) {
-  const strongestMetric = [
-    { label: 'activity', value: activity },
-    { label: 'stability', value: stability },
-    { label: 'expression', value: expression },
-    { label: 'specificity', value: specificity },
-  ].sort((left, right) => right.value - left.value)[0]?.label ?? 'activity';
-  const burdenPhrase = burden >= 4 ? 'with a heavy substitution stack' : burden >= 3 ? 'while carrying a moderate burden' : 'without overloading the sequence';
+  const strongestMetric =
+    [
+      { label: "activity", value: activity },
+      { label: "stability", value: stability },
+      { label: "expression", value: expression },
+      { label: "specificity", value: specificity },
+    ].sort((left, right) => right.value - left.value)[0]?.label ?? "activity";
+  const burdenPhrase =
+    burden >= 4
+      ? "with a heavy substitution stack"
+      : burden >= 3
+        ? "while carrying a moderate burden"
+        : "without overloading the sequence";
   return `This branch leans on ${strongestMetric} improvement ${burdenPhrase}, which keeps it relevant as a directed-evolution family rather than a one-off mutation event.`;
 }
 
-function mutationPersistence(
-  variants: VariantCandidate[],
-  threshold: number,
-) {
+function mutationPersistence(variants: VariantCandidate[], threshold: number) {
   const counts = new Map<string, number>();
   variants.forEach((variant) => {
     variant.mutations.forEach((mutation) => {
@@ -601,7 +606,7 @@ function summarizeDiversity(selected: VariantCandidate[]): DiversitySummary {
   });
   const counts = [...familyCounts.values()];
   const maxCount = Math.max(...counts, 1);
-  const dominantFamily = [...familyCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? 'No family';
+  const dominantFamily = [...familyCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "No family";
   const dominantFamilyShare = round(maxCount / Math.max(selected.length, 1), 2);
   const familyCount = familyCounts.size;
   const mutationSpread = round(averagePairwiseDistance(selected.map((variant) => variant.embedding)), 3);
@@ -611,19 +616,19 @@ function summarizeDiversity(selected: VariantCandidate[]): DiversitySummary {
   }, 0);
   const normalizedIndex = round(familyCount > 1 ? shannon / Math.log2(familyCount) : 0, 2);
 
-  let classification: DiversitySummary['classification'] = 'balanced exploration';
-  if (familyCount >= 3 && dominantFamilyShare <= 0.45) classification = 'broadly exploring';
-  else if (dominantFamilyShare >= 0.75 || familyCount <= 1) classification = 'over-collapsing early';
-  else if (dominantFamilyShare >= 0.58) classification = 'converging around one family';
+  let classification: DiversitySummary["classification"] = "balanced exploration";
+  if (familyCount >= 3 && dominantFamilyShare <= 0.45) classification = "broadly exploring";
+  else if (dominantFamilyShare >= 0.75 || familyCount <= 1) classification = "over-collapsing early";
+  else if (dominantFamilyShare >= 0.58) classification = "converging around one family";
 
   const narrative =
-    classification === 'broadly exploring'
-      ? 'Survivors are still distributed across several variant families, so the campaign has not collapsed into a single lineage yet.'
-      : classification === 'converging around one family'
-        ? 'Selection is now favoring one lineage family, but secondary branches are still present and worth tracking for stability rescue.'
-        : classification === 'over-collapsing early'
-          ? 'The survivor pool is collapsing around too little sequence space, which raises the risk of premature fixation before the objective is fully explored.'
-          : 'The campaign is balancing exploration and exploitation, with enough family breadth to justify another selection cycle.';
+    classification === "broadly exploring"
+      ? "Survivors are still distributed across several variant families, so the campaign has not collapsed into a single lineage yet."
+      : classification === "converging around one family"
+        ? "Selection is now favoring one lineage family, but secondary branches are still present and worth tracking for stability rescue."
+        : classification === "over-collapsing early"
+          ? "The survivor pool is collapsing around too little sequence space, which raises the risk of premature fixation before the objective is fully explored."
+          : "The campaign is balancing exploration and exploitation, with enough family breadth to justify another selection cycle.";
 
   return {
     index: normalizedIndex,
@@ -641,22 +646,25 @@ function summarizeConvergence(rounds: RoundResult[], currentSelected: VariantCan
   const familyConcentration = currentDiversity.dominantFamilyShare;
   const lastLead = rounds[rounds.length - 1]?.selectedSurvivors[0];
   const prevLead = rounds[rounds.length - 2]?.selectedSurvivors[0];
-  const improvementSlope = round((lastLead?.score.composite ?? 0) - (prevLead?.score.composite ?? lastLead?.score.composite ?? 0), 2);
+  const improvementSlope = round(
+    (lastLead?.score.composite ?? 0) - (prevLead?.score.composite ?? lastLead?.score.composite ?? 0),
+    2,
+  );
   const persistenceSignals = mutationPersistence(currentSelected, 2).slice(0, 4);
 
-  let state: ConvergenceState = 'productive-convergence';
-  if (improvementSlope < 1.1 && familyConcentration >= 0.68) state = 'plateau';
-  else if (familyConcentration >= 0.78) state = 'premature-collapse';
-  else if (familyConcentration <= 0.45 && currentDiversity.familyCount >= 3) state = 'broadening';
+  let state: ConvergenceState = "productive-convergence";
+  if (improvementSlope < 1.1 && familyConcentration >= 0.68) state = "plateau";
+  else if (familyConcentration >= 0.78) state = "premature-collapse";
+  else if (familyConcentration <= 0.45 && currentDiversity.familyCount >= 3) state = "broadening";
 
   const narrative =
-    state === 'broadening'
-      ? 'Variant families remain dispersed, so the campaign is still exploring multiple mutational directions without over-committing to one basin.'
-      : state === 'premature-collapse'
-        ? 'One family is taking over before the gain curve has clearly flattened, which suggests the current library is converging too early.'
-        : state === 'plateau'
-          ? 'Lead gains are flattening while survivor diversity is narrowing, so additional rounds should be justified carefully rather than assumed.'
-          : 'The campaign is converging around a productive lineage while still preserving enough branch diversity to support another round.';
+    state === "broadening"
+      ? "Variant families remain dispersed, so the campaign is still exploring multiple mutational directions without over-committing to one basin."
+      : state === "premature-collapse"
+        ? "One family is taking over before the gain curve has clearly flattened, which suggests the current library is converging too early."
+        : state === "plateau"
+          ? "Lead gains are flattening while survivor diversity is narrowing, so additional rounds should be justified carefully rather than assumed."
+          : "The campaign is converging around a productive lineage while still preserving enough branch diversity to support another round.";
 
   return {
     state,
@@ -674,29 +682,32 @@ function recommendationFromCampaign(
   convergenceSignal: ConvergenceSignal,
   currentRound: RoundResult,
 ) {
-  const burdenRisk = leadVariant.mutationBurden >= 4 || leadVariant.riskFlags.includes('mutation burden');
-  const lowStability = leadVariant.predictedStability < 52 || leadVariant.riskFlags.includes('stability floor');
-  const flattening = currentRound.scoreDeltaVsPrevious < 1.2 || convergenceSignal.state === 'plateau';
+  const burdenRisk = leadVariant.mutationBurden >= 4 || leadVariant.riskFlags.includes("mutation burden");
+  const lowStability = leadVariant.predictedStability < 52 || leadVariant.riskFlags.includes("stability floor");
+  const flattening = currentRound.scoreDeltaVsPrevious < 1.2 || convergenceSignal.state === "plateau";
 
   if (leadVariant.score.composite >= 72 && leadVariant.confidence >= 73 && !lowStability && !burdenRisk) {
     return {
       nextRoundRecommendation: {
-        action: 'freeze-and-transfer' as RecommendationAction,
-        title: 'Freeze the lead family and transfer it downstream',
-        summary: 'The current lead has enough score, stability, and confidence to justify downstream validation instead of another expansive library.',
-        rationale: 'Lead gains remain credible and the branch is no longer paying a destabilizing burden penalty, so downstream screening is the higher-value next step.',
+        action: "freeze-and-transfer" as RecommendationAction,
+        title: "Freeze the lead family and transfer it downstream",
+        summary:
+          "The current lead has enough score, stability, and confidence to justify downstream validation instead of another expansive library.",
+        rationale:
+          "Lead gains remain credible and the branch is no longer paying a destabilizing burden penalty, so downstream screening is the higher-value next step.",
         directives: [
-          'Freeze the current lead family as the transfer candidate.',
-          'Export the surviving family table and lineage summary for downstream validation.',
-          'Use cell-free or DBTL validation before reopening broader evolution.',
+          "Freeze the current lead family as the transfer candidate.",
+          "Export the surviving family table and lineage summary for downstream validation.",
+          "Use cell-free or DBTL validation before reopening broader evolution.",
         ],
         stopSuggested: false,
         downstreamTransfer: true,
       },
       selectionDecision: {
-        recommendedAction: 'freeze-and-transfer' as RecommendationAction,
-        summary: 'Transfer the lead family downstream rather than spending another round on marginal exploratory gain.',
-        researchBrief: 'The lead branch is ahead on composite score while keeping stability above the campaign floor, so the research decision is to preserve that family and validate it in a downstream stage.',
+        recommendedAction: "freeze-and-transfer" as RecommendationAction,
+        summary: "Transfer the lead family downstream rather than spending another round on marginal exploratory gain.",
+        researchBrief:
+          "The lead branch is ahead on composite score while keeping stability above the campaign floor, so the research decision is to preserve that family and validate it in a downstream stage.",
         confidence: 0.83,
         evidence: [
           `Lead score ${leadVariant.score.composite.toFixed(1)}`,
@@ -710,56 +721,62 @@ function recommendationFromCampaign(
   if (lowStability) {
     return {
       nextRoundRecommendation: {
-        action: 'rescue-stability' as RecommendationAction,
-        title: 'Rescue stability before pushing activity further',
-        summary: 'The lead lineage is still improving, but stability is approaching the floor too quickly to justify a pure activity push.',
-        rationale: 'Directed evolution should preserve a viable family. Stability rescue is warranted before another burden-adding round narrows the sequence window further.',
+        action: "rescue-stability" as RecommendationAction,
+        title: "Rescue stability before pushing activity further",
+        summary:
+          "The lead lineage is still improving, but stability is approaching the floor too quickly to justify a pure activity push.",
+        rationale:
+          "Directed evolution should preserve a viable family. Stability rescue is warranted before another burden-adding round narrows the sequence window further.",
         directives: [
-          'Keep the current lead family in play, but constrain the next library to lower-burden substitutions.',
-          'Preserve the strongest persistent mutation and diversify only secondary positions around it.',
-          'Treat stability floor failures as hard rejections in the next round.',
+          "Keep the current lead family in play, but constrain the next library to lower-burden substitutions.",
+          "Preserve the strongest persistent mutation and diversify only secondary positions around it.",
+          "Treat stability floor failures as hard rejections in the next round.",
         ],
         stopSuggested: false,
         downstreamTransfer: false,
       },
       selectionDecision: {
-        recommendedAction: 'rescue-stability' as RecommendationAction,
-        summary: 'The campaign should rescue stability before attempting another aggressive activity expansion.',
-        researchBrief: 'Activity gains are still present, but the survivor pool is paying for them with increasing stability risk. The correct next move is to stabilize the current family rather than push more burden into it.',
+        recommendedAction: "rescue-stability" as RecommendationAction,
+        summary: "The campaign should rescue stability before attempting another aggressive activity expansion.",
+        researchBrief:
+          "Activity gains are still present, but the survivor pool is paying for them with increasing stability risk. The correct next move is to stabilize the current family rather than push more burden into it.",
         confidence: 0.79,
         evidence: [
           `Lead stability ${leadVariant.predictedStability.toFixed(1)}`,
           `Mutation burden ${leadVariant.mutationBurden}`,
-          `Risk flags ${leadVariant.riskFlags.join(', ') || 'none'}`,
+          `Risk flags ${leadVariant.riskFlags.join(", ") || "none"}`,
         ],
       },
     };
   }
 
-  if (convergenceSignal.state === 'premature-collapse' || diversitySummary.classification === 'over-collapsing early') {
+  if (convergenceSignal.state === "premature-collapse" || diversitySummary.classification === "over-collapsing early") {
     return {
       nextRoundRecommendation: {
-        action: 'broaden-exploration' as RecommendationAction,
-        title: 'Broaden the next library before fixation sets in',
-        summary: 'The survivor pool is concentrating too quickly around one family, so the next round should restore exploratory breadth.',
-        rationale: 'Premature fixation risks trapping the campaign in one lineage before secondary beneficial combinations are tested.',
+        action: "broaden-exploration" as RecommendationAction,
+        title: "Broaden the next library before fixation sets in",
+        summary:
+          "The survivor pool is concentrating too quickly around one family, so the next round should restore exploratory breadth.",
+        rationale:
+          "Premature fixation risks trapping the campaign in one lineage before secondary beneficial combinations are tested.",
         directives: [
-          'Retain the lead family as an anchor but lower its relative oversampling.',
-          'Increase family diversity in the next library design.',
-          'Bias the next round toward alternative secondary-shell positions rather than reusing the same mutation stack.',
+          "Retain the lead family as an anchor but lower its relative oversampling.",
+          "Increase family diversity in the next library design.",
+          "Bias the next round toward alternative secondary-shell positions rather than reusing the same mutation stack.",
         ],
         stopSuggested: false,
         downstreamTransfer: false,
       },
       selectionDecision: {
-        recommendedAction: 'broaden-exploration' as RecommendationAction,
-        summary: 'The campaign is converging too early and should reopen sequence diversity.',
-        researchBrief: 'Selection is rewarding one lineage faster than the evidence justifies. A broader next-round library is the safer research choice than doubling down on the same branch immediately.',
+        recommendedAction: "broaden-exploration" as RecommendationAction,
+        summary: "The campaign is converging too early and should reopen sequence diversity.",
+        researchBrief:
+          "Selection is rewarding one lineage faster than the evidence justifies. A broader next-round library is the safer research choice than doubling down on the same branch immediately.",
         confidence: 0.76,
         evidence: [
           `Dominant family share ${Math.round(diversitySummary.dominantFamilyShare * 100)}%`,
           `Convergence state ${convergenceSignal.state}`,
-          `Persistent mutations ${convergenceSignal.persistenceSignals.join(', ') || 'none'}`,
+          `Persistent mutations ${convergenceSignal.persistenceSignals.join(", ") || "none"}`,
         ],
       },
     };
@@ -768,22 +785,25 @@ function recommendationFromCampaign(
   if (flattening) {
     return {
       nextRoundRecommendation: {
-        action: 'stop-campaign' as RecommendationAction,
-        title: 'Stop the campaign because incremental gains are flattening',
-        summary: 'Another round is unlikely to justify the experimental burden unless the objective or assay changes.',
-        rationale: 'The gain curve is flattening and the campaign is no longer returning enough new improvement to warrant another selection cycle under the current rules.',
+        action: "stop-campaign" as RecommendationAction,
+        title: "Stop the campaign because incremental gains are flattening",
+        summary: "Another round is unlikely to justify the experimental burden unless the objective or assay changes.",
+        rationale:
+          "The gain curve is flattening and the campaign is no longer returning enough new improvement to warrant another selection cycle under the current rules.",
         directives: [
-          'Freeze the current lead as the best modeled campaign output.',
-          'Archive the round summary and lineage trace.',
-          'Reopen evolution only if the objective or assay pressure changes.',
+          "Freeze the current lead as the best modeled campaign output.",
+          "Archive the round summary and lineage trace.",
+          "Reopen evolution only if the objective or assay pressure changes.",
         ],
         stopSuggested: true,
         downstreamTransfer: true,
       },
       selectionDecision: {
-        recommendedAction: 'stop-campaign' as RecommendationAction,
-        summary: 'Current evidence suggests stopping the campaign rather than extending a flattening improvement curve.',
-        researchBrief: 'The selected family is no longer separating meaningfully from the rest of the pool. Without a new objective or pressure shift, another round is more likely to consume time than create a stronger lead.',
+        recommendedAction: "stop-campaign" as RecommendationAction,
+        summary:
+          "Current evidence suggests stopping the campaign rather than extending a flattening improvement curve.",
+        researchBrief:
+          "The selected family is no longer separating meaningfully from the rest of the pool. Without a new objective or pressure shift, another round is more likely to consume time than create a stronger lead.",
         confidence: 0.72,
         evidence: [
           `Round delta ${currentRound.scoreDeltaVsPrevious.toFixed(2)}`,
@@ -797,22 +817,25 @@ function recommendationFromCampaign(
   if (leadVariant.mutationBurden >= 3) {
     return {
       nextRoundRecommendation: {
-        action: 'narrow-library' as RecommendationAction,
-        title: 'Preserve the lead family but narrow the next library',
-        summary: 'The best path is now to keep the winning lineage while reducing the mutational search width around it.',
-        rationale: 'The lead family is productive, but additional broad mutation stacking would add burden faster than it adds useful gain.',
+        action: "narrow-library" as RecommendationAction,
+        title: "Preserve the lead family but narrow the next library",
+        summary:
+          "The best path is now to keep the winning lineage while reducing the mutational search width around it.",
+        rationale:
+          "The lead family is productive, but additional broad mutation stacking would add burden faster than it adds useful gain.",
         directives: [
-          'Lock the strongest persistent mutation in the next round.',
-          'Restrict diversification to one or two supporting positions.',
-          'Reject high-burden variants unless they clear the stability floor comfortably.',
+          "Lock the strongest persistent mutation in the next round.",
+          "Restrict diversification to one or two supporting positions.",
+          "Reject high-burden variants unless they clear the stability floor comfortably.",
         ],
         stopSuggested: false,
         downstreamTransfer: false,
       },
       selectionDecision: {
-        recommendedAction: 'narrow-library' as RecommendationAction,
-        summary: 'The campaign should keep the lead lineage and narrow the mutational scope around it.',
-        researchBrief: 'This is the stage where PROEVOL should stop exploring indiscriminately and start exploiting the strongest family with tighter, lower-burden libraries.',
+        recommendedAction: "narrow-library" as RecommendationAction,
+        summary: "The campaign should keep the lead lineage and narrow the mutational scope around it.",
+        researchBrief:
+          "This is the stage where PROEVOL should stop exploring indiscriminately and start exploiting the strongest family with tighter, lower-burden libraries.",
         confidence: 0.8,
         evidence: [
           `Lead burden ${leadVariant.mutationBurden}`,
@@ -825,22 +848,24 @@ function recommendationFromCampaign(
 
   return {
     nextRoundRecommendation: {
-      action: 'continue-another-round' as RecommendationAction,
-      title: 'Continue another round with the current family mix',
-      summary: 'The campaign is still making productive gains without collapsing or violating the stability floor.',
-      rationale: 'Survivor diversity remains healthy enough and the lead family is still separating from wild type, so one more round is justified.',
+      action: "continue-another-round" as RecommendationAction,
+      title: "Continue another round with the current family mix",
+      summary: "The campaign is still making productive gains without collapsing or violating the stability floor.",
+      rationale:
+        "Survivor diversity remains healthy enough and the lead family is still separating from wild type, so one more round is justified.",
       directives: [
-        'Carry the current survivor set forward as parents for the next library.',
-        'Preserve persistent mutations while exploring one new supporting substitution per branch.',
-        'Keep the same assay pressure and selection floor for one more cycle.',
+        "Carry the current survivor set forward as parents for the next library.",
+        "Preserve persistent mutations while exploring one new supporting substitution per branch.",
+        "Keep the same assay pressure and selection floor for one more cycle.",
       ],
       stopSuggested: false,
       downstreamTransfer: false,
     },
     selectionDecision: {
-      recommendedAction: 'continue-another-round' as RecommendationAction,
-      summary: 'The campaign is still productive enough to justify another round under the same selection regime.',
-      researchBrief: 'Improvement, diversity, and stability remain aligned. The next scientific action is to continue the campaign rather than freeze the lead prematurely.',
+      recommendedAction: "continue-another-round" as RecommendationAction,
+      summary: "The campaign is still productive enough to justify another round under the same selection regime.",
+      researchBrief:
+        "Improvement, diversity, and stability remain aligned. The next scientific action is to continue the campaign rather than freeze the lead prematurely.",
       confidence: 0.74,
       evidence: [
         `Lead delta ${leadVariant.score.deltaFromWildType.toFixed(1)}`,
@@ -857,32 +882,22 @@ function deriveFamilySelectionDensity(selected: VariantCandidate[], familyLabel:
   return round(familyTotal / total, 2);
 }
 
-function preferredSites(
-  sitePool: number[],
-  preferredSiteIndexes: number[],
-) {
+function preferredSites(sitePool: number[], preferredSiteIndexes: number[]) {
   return preferredSiteIndexes.map((index) => sitePool[index % sitePool.length]).filter(Boolean);
 }
 
-function pickMutationSite(
-  rng: SeededRNG,
-  sitePool: number[],
-  family: FamilyArchetype,
-  usedPositions: number[],
-) {
-  const preferred = preferredSites(sitePool, family.preferredSiteIndexes).filter((position) => !usedPositions.includes(position));
+function pickMutationSite(rng: SeededRNG, sitePool: number[], family: FamilyArchetype, usedPositions: number[]) {
+  const preferred = preferredSites(sitePool, family.preferredSiteIndexes).filter(
+    (position) => !usedPositions.includes(position),
+  );
   const fallback = sitePool.filter((position) => !usedPositions.includes(position));
   const pool = preferred.length ? preferred : fallback;
   return pool[Math.floor(rng.next() * pool.length) % pool.length] ?? sitePool[0];
 }
 
-function chooseSubstitution(
-  rng: SeededRNG,
-  from: string,
-  family: FamilyArchetype,
-) {
+function chooseSubstitution(rng: SeededRNG, from: string, family: FamilyArchetype) {
   const pool = family.substitutionPool.filter((residue) => residue !== from);
-  return pool[Math.floor(rng.next() * pool.length) % pool.length] ?? (from === 'A' ? 'V' : 'A');
+  return pool[Math.floor(rng.next() * pool.length) % pool.length] ?? (from === "A" ? "V" : "A");
 }
 
 function mutationBonus(position: number, toResidue: string, sequenceLength: number) {
@@ -895,8 +910,8 @@ function mutationBonus(position: number, toResidue: string, sequenceLength: numb
   if (normalized > 0.15 && normalized < 0.35) activityBonus += 2.4;
   if (normalized > 0.45 && normalized < 0.7) stabilityBonus += 2.0;
   if (normalized > 0.68) expressionBonus += 1.6;
-  if (['Y', 'W', 'H', 'R'].includes(toResidue)) specificityBonus += 1.8;
-  if (['A', 'S', 'T', 'N'].includes(toResidue)) stabilityBonus += 1.2;
+  if (["Y", "W", "H", "R"].includes(toResidue)) specificityBonus += 1.8;
+  if (["A", "S", "T", "N"].includes(toResidue)) stabilityBonus += 1.2;
 
   return { activityBonus, stabilityBonus, expressionBonus, specificityBonus };
 }
@@ -913,12 +928,17 @@ function buildCandidate(
   weights: ProEvolCampaignWeights,
 ): VariantCandidate {
   const existingMutations = [...parent.mutations];
-  const mutationSteps = roundNumber === 1 ? (rng.next() < 0.72 ? 1 : 2) : (rng.next() < 0.58 ? 1 : 2);
+  const mutationSteps = roundNumber === 1 ? (rng.next() < 0.72 ? 1 : 2) : rng.next() < 0.58 ? 1 : 2;
   const mutations = [...existingMutations];
 
   for (let step = 0; step < mutationSteps; step += 1) {
-    const position = pickMutationSite(rng, input.sitePool, family, mutations.map((mutation) => mutation.position));
-    const from = input.startingSequence[position - 1] ?? 'A';
+    const position = pickMutationSite(
+      rng,
+      input.sitePool,
+      family,
+      mutations.map((mutation) => mutation.position),
+    );
+    const from = input.startingSequence[position - 1] ?? "A";
     const to = chooseSubstitution(rng, from, family);
     if (!mutations.some((mutation) => mutation.position === position)) {
       mutations.push({ position, from, to });
@@ -952,13 +972,13 @@ function buildCandidate(
 
   const predictedActivity = clamp(
     round(
-      wildType.predictedActivity
-        + parentActivityCarry
-        + family.activityBias * 0.75
-        + mutationBonuses.activity * 1.15
-        + roundPressure
-        - incrementalBurden * 1.1
-        + rng.gaussian() * 3.4,
+      wildType.predictedActivity +
+        parentActivityCarry +
+        family.activityBias * 0.75 +
+        mutationBonuses.activity * 1.15 +
+        roundPressure -
+        incrementalBurden * 1.1 +
+        rng.gaussian() * 3.4,
       2,
     ),
     30,
@@ -966,14 +986,14 @@ function buildCandidate(
   );
   const predictedStability = clamp(
     round(
-      wildType.predictedStability
-        + parentStabilityCarry
-        + family.stabilityBias * 0.75
-        + mutationBonuses.stability
-        + expressionSupport * 0.45
-        - incrementalBurden * 1.7
-        - stressPenalty
-        + rng.gaussian() * 3.1,
+      wildType.predictedStability +
+        parentStabilityCarry +
+        family.stabilityBias * 0.75 +
+        mutationBonuses.stability +
+        expressionSupport * 0.45 -
+        incrementalBurden * 1.7 -
+        stressPenalty +
+        rng.gaussian() * 3.1,
       2,
     ),
     26,
@@ -981,14 +1001,14 @@ function buildCandidate(
   );
   const predictedExpression = clamp(
     round(
-      wildType.predictedExpression
-        + parentExpressionCarry
-        + family.expressionBias * 0.72
-        + mutationBonuses.expression
-        + expressionSupport
-        + catalystSupport * 0.3
-        - incrementalBurden * 1.0
-        + rng.gaussian() * 2.8,
+      wildType.predictedExpression +
+        parentExpressionCarry +
+        family.expressionBias * 0.72 +
+        mutationBonuses.expression +
+        expressionSupport +
+        catalystSupport * 0.3 -
+        incrementalBurden * 1.0 +
+        rng.gaussian() * 2.8,
       2,
     ),
     28,
@@ -996,13 +1016,13 @@ function buildCandidate(
   );
   const predictedSpecificity = clamp(
     round(
-      wildType.predictedSpecificity
-        + parentSpecificityCarry
-        + family.specificityBias * 0.76
-        + mutationBonuses.specificity * 1.1
-        + catalystSupport * 0.4
-        - incrementalBurden * 0.7
-        + rng.gaussian() * 2.6,
+      wildType.predictedSpecificity +
+        parentSpecificityCarry +
+        family.specificityBias * 0.76 +
+        mutationBonuses.specificity * 1.1 +
+        catalystSupport * 0.4 -
+        incrementalBurden * 0.7 +
+        rng.gaussian() * 2.6,
       2,
     ),
     26,
@@ -1017,13 +1037,13 @@ function buildCandidate(
   );
   const confidence = clamp(
     round(
-      42
-        + roundNumber * 5
-        + confidenceSupport
-        + catalystSupport * 0.7
-        - mutationBurden * 2.4
-        - riskFlags.length * 2.3
-        + rng.gaussian() * 2,
+      42 +
+        roundNumber * 5 +
+        confidenceSupport +
+        catalystSupport * 0.7 -
+        mutationBurden * 2.4 -
+        riskFlags.length * 2.3 +
+        rng.gaussian() * 2,
       2,
     ),
     28,
@@ -1051,7 +1071,7 @@ function buildCandidate(
 
   return {
     id: `proevol-r${roundNumber}-v${libraryRank + 1}`,
-    name: `PV-R${roundNumber}-${String(libraryRank + 1).padStart(2, '0')}`,
+    name: `PV-R${roundNumber}-${String(libraryRank + 1).padStart(2, "0")}`,
     parentId: parent.id,
     round: roundNumber,
     libraryRank,
@@ -1075,13 +1095,13 @@ function buildCandidate(
       predictedSpecificity,
       mutationBurden,
     ),
-    selectionReason: '',
-    rejectionReason: '',
-    status: 'rejected',
+    selectionReason: "",
+    rejectionReason: "",
+    status: "rejected",
     score,
     embedding,
     lineageDepth: parent.lineageDepth + 1,
-    branchState: 'rejected',
+    branchState: "rejected",
     selectionDensity: 0,
   };
 }
@@ -1102,9 +1122,9 @@ function selectSurvivors(
 
   sorted.forEach((candidate) => {
     if (
-      selected.length < minFamilies
-      && !selectedFamilies.has(candidate.familyId)
-      && candidate.predictedStability >= stabilityFloor - 3
+      selected.length < minFamilies &&
+      !selectedFamilies.has(candidate.familyId) &&
+      candidate.predictedStability >= stabilityFloor - 3
     ) {
       selected.push(candidate);
       selectedFamilies.add(candidate.familyId);
@@ -1114,21 +1134,25 @@ function selectSurvivors(
   sorted.forEach((candidate) => {
     if (selected.length >= survivorCount) return;
     if (selected.some((item) => item.id === candidate.id)) return;
-    if (candidate.predictedStability < stabilityFloor && candidate.score.composite < sorted[Math.min(survivorCount, sorted.length) - 1].score.composite + 2) return;
+    if (
+      candidate.predictedStability < stabilityFloor &&
+      candidate.score.composite < sorted[Math.min(survivorCount, sorted.length) - 1].score.composite + 2
+    )
+      return;
     selected.push(candidate);
     selectedFamilies.add(candidate.familyId);
   });
 
-  const finalSelected = selected.slice(0, survivorCount).sort((left, right) => right.score.composite - left.score.composite);
-  const finalRejected = sorted.filter((candidate) => !finalSelected.some((selectedCandidate) => selectedCandidate.id === candidate.id));
+  const finalSelected = selected
+    .slice(0, survivorCount)
+    .sort((left, right) => right.score.composite - left.score.composite);
+  const finalRejected = sorted.filter(
+    (candidate) => !finalSelected.some((selectedCandidate) => selectedCandidate.id === candidate.id),
+  );
   return { selected: finalSelected, rejected: finalRejected, stabilityFloor };
 }
 
-function annotateSelectionReasons(
-  selected: VariantCandidate[],
-  rejected: VariantCandidate[],
-  stabilityFloor: number,
-) {
+function annotateSelectionReasons(selected: VariantCandidate[], rejected: VariantCandidate[], stabilityFloor: number) {
   const selectedFamilies = new Set(selected.map((variant) => variant.familyId));
 
   selected.forEach((variant, index) => {
@@ -1136,27 +1160,35 @@ function annotateSelectionReasons(
       variant.predictedStability < stabilityFloor
         ? `Selected despite a marginal stability drop because the activity gain remained unusually strong for round ${variant.round}.`
         : index === 0
-          ? 'This variant leads the current round because it combines the best composite score with a credible stability and expression profile.'
+          ? "This variant leads the current round because it combines the best composite score with a credible stability and expression profile."
           : selectedFamilies.size > 1 && index < selectedFamilies.size
-            ? 'Selected to preserve family diversity while still clearing the round score and stability thresholds.'
-            : 'Selected as a survivor because it improved the composite campaign score without violating the round selection floor.';
-    variant.status = 'selected';
+            ? "Selected to preserve family diversity while still clearing the round score and stability thresholds."
+            : "Selected as a survivor because it improved the composite campaign score without violating the round selection floor.";
+    variant.status = "selected";
     variant.selectionReason = reason;
-    variant.branchState = 'persisting';
+    variant.branchState = "persisting";
   });
 
   rejected.forEach((variant) => {
-    let reason = 'Rejected because stronger sibling variants carried the same family direction with a better score profile.';
+    let reason =
+      "Rejected because stronger sibling variants carried the same family direction with a better score profile.";
     if (variant.predictedStability < stabilityFloor) {
-      reason = 'Rejected because predicted stability fell below the round floor before the activity gain justified the burden.';
-    } else if (variant.riskFlags.includes('mutation burden')) {
-      reason = 'Rejected because the mutation stack added burden faster than it improved the selection objective.';
-    } else if (selected.some((selectedVariant) => selectedVariant.familyId === variant.familyId && selectedVariant.score.composite > variant.score.composite)) {
-      reason = 'Rejected because this branch duplicated a stronger survivor from the same family without adding new diversity value.';
+      reason =
+        "Rejected because predicted stability fell below the round floor before the activity gain justified the burden.";
+    } else if (variant.riskFlags.includes("mutation burden")) {
+      reason = "Rejected because the mutation stack added burden faster than it improved the selection objective.";
+    } else if (
+      selected.some(
+        (selectedVariant) =>
+          selectedVariant.familyId === variant.familyId && selectedVariant.score.composite > variant.score.composite,
+      )
+    ) {
+      reason =
+        "Rejected because this branch duplicated a stronger survivor from the same family without adding new diversity value.";
     }
-    variant.status = 'rejected';
+    variant.status = "rejected";
     variant.rejectionReason = reason;
-    variant.branchState = 'rejected';
+    variant.branchState = "rejected";
   });
 }
 
@@ -1168,15 +1200,15 @@ function buildLineage(
 ): LineageNode[] {
   return variants.map((variant) => {
     const status =
-      variant.status === 'wild-type'
-        ? 'wild-type'
+      variant.status === "wild-type"
+        ? "wild-type"
         : variant.id === leadVariantId
-          ? 'lead'
+          ? "lead"
           : currentRoundSurvivorIds.has(variant.id)
-            ? 'survivor'
+            ? "survivor"
             : (descendants.get(variant.id) ?? 0) > 0
-              ? 'dead'
-              : 'rejected';
+              ? "dead"
+              : "rejected";
     return {
       variantId: variant.id,
       parentId: variant.parentId,
@@ -1193,7 +1225,7 @@ function buildLineage(
 }
 
 export function buildLandscapeMap(
-  campaign: Pick<ProteinEvolutionCampaign, 'rounds' | 'leadVariant' | 'currentRound'>,
+  campaign: Pick<ProteinEvolutionCampaign, "rounds" | "leadVariant" | "currentRound">,
 ): LandscapeMap {
   const points: LandscapePoint[] = [];
   const edges: LandscapeEdge[] = [];
@@ -1214,7 +1246,7 @@ export function buildLandscapeMap(
         convergence: round(1 - roundResult.convergenceSummary.familyConcentration, 3),
         confidence: round(variant.confidence / 100, 3),
         selectionDensity: round(variant.selectionDensity, 3),
-        selected: variant.status === 'selected',
+        selected: variant.status === "selected",
         lead: variant.id === campaign.leadVariant.id,
         selectionStatus: variant.status,
       });
@@ -1222,8 +1254,8 @@ export function buildLandscapeMap(
         edges.push({
           fromId: variant.parentId,
           toId: variant.id,
-          active: variant.status === 'selected' || variant.id === campaign.leadVariant.id,
-          intensity: round(variant.status === 'selected' ? 0.85 : 0.35, 2),
+          active: variant.status === "selected" || variant.id === campaign.leadVariant.id,
+          intensity: round(variant.status === "selected" ? 0.85 : 0.35, 2),
         });
       }
       const group = familyGroups.get(variant.familyLabel) ?? [];
@@ -1235,21 +1267,23 @@ export function buildLandscapeMap(
   const hotspots: LandscapeHotspot[] = [...familyGroups.entries()].map(([familyLabel, variants]) => {
     const latestRound = Math.max(...variants.map((variant) => variant.round));
     const currentRoundVariants = variants.filter((variant) => variant.round === latestRound);
-    const leadVariant = currentRoundVariants.find((variant) => variant.status === 'selected') ?? variants[0];
-    const status =
-      currentRoundVariants.every((variant) => variant.status === 'selected')
-        ? 'selected'
-        : currentRoundVariants.every((variant) => variant.status === 'rejected')
-          ? 'rejected'
-          : 'mixed';
+    const leadVariant = currentRoundVariants.find((variant) => variant.status === "selected") ?? variants[0];
+    const status = currentRoundVariants.every((variant) => variant.status === "selected")
+      ? "selected"
+      : currentRoundVariants.every((variant) => variant.status === "rejected")
+        ? "rejected"
+        : "mixed";
     return {
-      id: familyLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      id: familyLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       label: familyLabel,
       round: latestRound,
       x: round(average(variants.map((variant) => variant.embedding.x)), 3),
       y: round(average(variants.map((variant) => variant.embedding.y)), 3),
       activity: round(average(currentRoundVariants.map((variant) => variant.predictedActivity / 100)), 3),
-      diversity: round(average(currentRoundVariants.map((variant) => variant.selectionDensity < 0.4 ? 0.75 : 0.3)), 3),
+      diversity: round(
+        average(currentRoundVariants.map((variant) => (variant.selectionDensity < 0.4 ? 0.75 : 0.3))),
+        3,
+      ),
       convergence: round(average(currentRoundVariants.map((variant) => variant.selectionDensity)), 3),
       confidence: round(average(currentRoundVariants.map((variant) => variant.confidence / 100)), 3),
       selectionDensity: round(average(currentRoundVariants.map((variant) => variant.selectionDensity)), 3),
@@ -1265,8 +1299,8 @@ export function buildLandscapeMap(
 export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolutionCampaign {
   const weights = mergeWeights(input.scoreWeights);
   const seed =
-    input.seed
-    ?? hashString(
+    input.seed ??
+    hashString(
       [
         input.campaignName,
         input.targetProtein,
@@ -1274,12 +1308,20 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
         input.totalRounds,
         input.librarySize,
         input.survivorCount,
-      ].join('|'),
+      ].join("|"),
     );
   const rng = new SeededRNG(seed);
   const wildTypeMetrics = {
-    activity: clamp(round(46 + input.upstreamSignals.pathwayPressure * 16 + input.upstreamSignals.catalystConfidence * 6, 2), 35, 70),
-    stability: clamp(round(60 - input.upstreamSignals.thermodynamicStress * 9 + input.upstreamSignals.expressionHeadroom * 4, 2), 40, 82),
+    activity: clamp(
+      round(46 + input.upstreamSignals.pathwayPressure * 16 + input.upstreamSignals.catalystConfidence * 6, 2),
+      35,
+      70,
+    ),
+    stability: clamp(
+      round(60 - input.upstreamSignals.thermodynamicStress * 9 + input.upstreamSignals.expressionHeadroom * 4, 2),
+      40,
+      82,
+    ),
     expression: clamp(round(58 + input.upstreamSignals.expressionHeadroom * 12, 2), 42, 84),
     specificity: clamp(round(54 + input.upstreamSignals.catalystConfidence * 8, 2), 40, 82),
   };
@@ -1296,14 +1338,14 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
     weights,
   ).composite;
   const wildType: VariantCandidate = {
-    id: 'wt',
+    id: "wt",
     name: input.wildTypeLabel,
     parentId: null,
     round: 0,
     libraryRank: 0,
-    familyId: 'wild-type',
-    familyLabel: 'Wild type',
-    mutationString: 'WT',
+    familyId: "wild-type",
+    familyLabel: "Wild type",
+    mutationString: "WT",
     mutatedPositions: [],
     mutations: [],
     predictedActivity: wildTypeMetrics.activity,
@@ -1314,10 +1356,10 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
     developability: round((wildTypeMetrics.stability + wildTypeMetrics.expression) / 2, 2),
     confidence: clamp(round(58 + input.upstreamSignals.literatureSupport * 12, 2), 45, 82),
     riskFlags: [],
-    rationale: 'Wild type remains the reference family against which all directed-evolution gains are judged.',
-    selectionReason: 'Baseline starting sequence for the campaign.',
-    rejectionReason: '',
-    status: 'wild-type',
+    rationale: "Wild type remains the reference family against which all directed-evolution gains are judged.",
+    selectionReason: "Baseline starting sequence for the campaign.",
+    rejectionReason: "",
+    status: "wild-type",
     score: {
       composite: wildTypeComposite,
       deltaFromWildType: 0,
@@ -1331,12 +1373,12 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
     },
     embedding: { x: 0.5, y: 0.5 },
     lineageDepth: 0,
-    branchState: 'wild-type',
+    branchState: "wild-type",
     selectionDensity: 0,
   };
 
   const rounds: RoundResult[] = [];
-  const variantIndex = new Map<string, VariantCandidate>([['wt', wildType]]);
+  const variantIndex = new Map<string, VariantCandidate>([["wt", wildType]]);
   const allVariants: VariantCandidate[] = [wildType];
   let parents = [wildType];
 
@@ -1344,8 +1386,8 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
     const candidates = Array.from({ length: input.librarySize }, (_, libraryRank) => {
       const parent = parents[Math.floor(rng.next() * parents.length) % parents.length] ?? wildType;
       const familyBias =
-        parent.familyId !== 'wild-type' && rng.next() < 0.62
-          ? FAMILY_ARCHETYPES.find((family) => family.id === parent.familyId) ?? rng.pick(FAMILY_ARCHETYPES)
+        parent.familyId !== "wild-type" && rng.next() < 0.62
+          ? (FAMILY_ARCHETYPES.find((family) => family.id === parent.familyId) ?? rng.pick(FAMILY_ARCHETYPES))
           : rng.pick(FAMILY_ARCHETYPES);
       return buildCandidate(
         rng,
@@ -1380,7 +1422,11 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
       }
     }
 
-    const { selected, rejected, stabilityFloor } = selectSurvivors(deduped, input.survivorCount, input.selectionStringency);
+    const { selected, rejected, stabilityFloor } = selectSurvivors(
+      deduped,
+      input.survivorCount,
+      input.selectionStringency,
+    );
     annotateSelectionReasons(selected, rejected, stabilityFloor);
     selected.forEach((variant) => {
       variant.selectionDensity = deriveFamilySelectionDensity(selected, variant.familyLabel);
@@ -1399,16 +1445,20 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
       averageScore,
       diversitySummary: summarizeDiversity(selected),
       convergenceSummary: {
-        state: 'productive-convergence',
+        state: "productive-convergence",
         score: 0,
         improvementSlope: 0,
         familyConcentration: 0,
         persistenceSignals: [],
-        narrative: '',
+        narrative: "",
       },
       bestLeadDelta: round(selected[0]?.score.deltaFromWildType ?? 0, 2),
-      scoreDeltaVsPrevious: round((selected[0]?.score.composite ?? 0) - (rounds[rounds.length - 1]?.selectedSurvivors[0]?.score.composite ?? wildType.score.composite), 2),
-      leadVariantId: selected[0]?.id ?? 'wt',
+      scoreDeltaVsPrevious: round(
+        (selected[0]?.score.composite ?? 0) -
+          (rounds[rounds.length - 1]?.selectedSurvivors[0]?.score.composite ?? wildType.score.composite),
+        2,
+      ),
+      leadVariantId: selected[0]?.id ?? "wt",
       persistentMutations,
       variantLibrary: {
         roundNumber,
@@ -1427,12 +1477,13 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
     parents = selected.length ? selected : [wildType];
   }
 
-  const leadVariant = [...allVariants]
-    .filter((variant) => variant.status === 'selected' || variant.status === 'wild-type')
-    .sort((left, right) => {
-      if (right.score.composite !== left.score.composite) return right.score.composite - left.score.composite;
-      return right.round - left.round;
-    })[0] ?? wildType;
+  const leadVariant =
+    [...allVariants]
+      .filter((variant) => variant.status === "selected" || variant.status === "wild-type")
+      .sort((left, right) => {
+        if (right.score.composite !== left.score.composite) return right.score.composite - left.score.composite;
+        return right.round - left.round;
+      })[0] ?? wildType;
 
   const descendants = new Map<string, number>();
   allVariants.forEach((variant) => {
@@ -1441,15 +1492,15 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
   });
   const currentRoundResult = rounds[rounds.length - 1];
   currentRoundResult.selectedSurvivors.forEach((variant) => {
-    if (variant.id === leadVariant.id) variant.branchState = 'lead';
+    if (variant.id === leadVariant.id) variant.branchState = "lead";
   });
   const currentRoundSurvivorIds = new Set(currentRoundResult.selectedSurvivors.map((variant) => variant.id));
   allVariants.forEach((variant) => {
-    if (variant.id === leadVariant.id) variant.branchState = 'lead';
-    else if (currentRoundSurvivorIds.has(variant.id)) variant.branchState = 'persisting';
-    else if (variant.status === 'selected' && (descendants.get(variant.id) ?? 0) === 0) variant.branchState = 'dead';
-    else if (variant.status === 'selected') variant.branchState = 'active';
-    else if (variant.status === 'rejected') variant.branchState = 'rejected';
+    if (variant.id === leadVariant.id) variant.branchState = "lead";
+    else if (currentRoundSurvivorIds.has(variant.id)) variant.branchState = "persisting";
+    else if (variant.status === "selected" && (descendants.get(variant.id) ?? 0) === 0) variant.branchState = "dead";
+    else if (variant.status === "selected") variant.branchState = "active";
+    else if (variant.status === "rejected") variant.branchState = "rejected";
   });
 
   const diversitySummary = currentRoundResult.diversitySummary;
@@ -1483,11 +1534,11 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
     wildType,
     leadVariant,
     leadNarrative:
-      `${leadVariant.name} leads because it combines a ${leadVariant.score.composite.toFixed(1)} composite score with `
-      + `${leadVariant.predictedActivity.toFixed(1)} predicted activity, `
-      + `${leadVariant.predictedStability.toFixed(1)} stability, and `
-      + `${leadVariant.mutationBurden} accumulated substitution${leadVariant.mutationBurden === 1 ? '' : 's'} `
-      + `without losing campaign viability.`,
+      `${leadVariant.name} leads because it combines a ${leadVariant.score.composite.toFixed(1)} composite score with ` +
+      `${leadVariant.predictedActivity.toFixed(1)} predicted activity, ` +
+      `${leadVariant.predictedStability.toFixed(1)} stability, and ` +
+      `${leadVariant.mutationBurden} accumulated substitution${leadVariant.mutationBurden === 1 ? "" : "s"} ` +
+      `without losing campaign viability.`,
     rounds,
     currentRoundResult,
     diversitySummary,
@@ -1532,17 +1583,17 @@ export function predictFitness(input: {
     wt: string;
     mut: string;
     fitnessScore: number;
-    classification: 'beneficial' | 'neutral' | 'deleterious';
+    classification: "beneficial" | "neutral" | "deleterious";
     confidence: number;
     components: { blosum: number; stability: number; structural: number };
   }>;
 } {
   const { sequence, mutations, pdbText, ddgResults } = input;
-  const AA_CODES = 'ACDEFGHIKLMNPQRSTVWY';
+  const AA_CODES = "ACDEFGHIKLMNPQRSTVWY";
 
   // Pre-compute structural features if PDB available
-  let sasaMap: Map<number, number> = new Map();
-  let ssMap: Map<number, string> = new Map();
+  const sasaMap: Map<number, number> = new Map();
+  const ssMap: Map<number, string> = new Map();
   if (pdbText) {
     try {
       const structure = parsePDB(pdbText);
@@ -1550,11 +1601,13 @@ export function predictFitness(input: {
       const ss = assignSecondaryStructure(structure);
       for (const r of sasa) sasaMap.set(r.residueNumber, r.relativeSASA);
       for (const r of ss) ssMap.set(r.residueNumber, r.ss);
-    } catch { /* PDB parse failed — use defaults */ }
+    } catch {
+      /* PDB parse failed — use defaults */
+    }
   }
 
   const predictions = mutations.map(({ position, mut }) => {
-    const wt = sequence[position - 1]?.toUpperCase() ?? 'A';
+    const wt = sequence[position - 1]?.toUpperCase() ?? "A";
     const mutUpper = mut.toUpperCase();
 
     // 1. BLOSUM62 score (evolutionary plausibility)
@@ -1572,17 +1625,19 @@ export function predictFitness(input: {
       try {
         const result = predictDDG(pdbText, { position, wtResidue: wt, mutantResidue: mutUpper });
         stability = Math.exp(-Math.abs(result.ddG) / 2);
-      } catch { /* prediction failed */ }
+      } catch {
+        /* prediction failed */
+      }
     }
 
     // 3. Structural environment score
     let structural = 0.5;
     const relSASA = sasaMap.get(position) ?? 0.5;
-    const ss = ssMap.get(position) ?? 'C';
+    const ss = ssMap.get(position) ?? "C";
     const mutHydro = getHydrophobicity(residueName3(mutUpper));
     const isBuried = relSASA < 0.3;
-    const isHelix = ss === 'H';
-    const isSheet = ss === 'E';
+    const isHelix = ss === "H";
+    const isSheet = ss === "E";
 
     // Buried positions prefer hydrophobic residues
     if (isBuried) {
@@ -1593,8 +1648,50 @@ export function predictFitness(input: {
     }
 
     // Helix/sheet propensity bonus
-    const HELIX_P: Record<string, number> = { A: 1.42, E: 1.51, L: 1.21, M: 1.45, K: 1.16, Q: 1.11, R: 0.98, V: 1.06, I: 1.08, F: 1.13, D: 1.01, H: 1.0, W: 1.08, S: 0.77, N: 0.67, T: 0.83, C: 0.70, P: 0.57, G: 0.57, Y: 0.69 };
-    const SHEET_P: Record<string, number> = { V: 1.7, I: 1.6, Y: 1.47, F: 1.38, W: 1.37, L: 1.3, T: 1.19, C: 1.19, Q: 1.1, M: 1.05, R: 0.93, H: 0.87, N: 0.89, A: 0.83, G: 0.75, S: 0.75, K: 0.74, D: 0.54, E: 0.37, P: 0.55 };
+    const HELIX_P: Record<string, number> = {
+      A: 1.42,
+      E: 1.51,
+      L: 1.21,
+      M: 1.45,
+      K: 1.16,
+      Q: 1.11,
+      R: 0.98,
+      V: 1.06,
+      I: 1.08,
+      F: 1.13,
+      D: 1.01,
+      H: 1.0,
+      W: 1.08,
+      S: 0.77,
+      N: 0.67,
+      T: 0.83,
+      C: 0.7,
+      P: 0.57,
+      G: 0.57,
+      Y: 0.69,
+    };
+    const SHEET_P: Record<string, number> = {
+      V: 1.7,
+      I: 1.6,
+      Y: 1.47,
+      F: 1.38,
+      W: 1.37,
+      L: 1.3,
+      T: 1.19,
+      C: 1.19,
+      Q: 1.1,
+      M: 1.05,
+      R: 0.93,
+      H: 0.87,
+      N: 0.89,
+      A: 0.83,
+      G: 0.75,
+      S: 0.75,
+      K: 0.74,
+      D: 0.54,
+      E: 0.37,
+      P: 0.55,
+    };
 
     if (isHelix) {
       const prop = (HELIX_P[mutUpper] ?? 1.0) / 1.5;
@@ -1608,8 +1705,8 @@ export function predictFitness(input: {
     const fitnessScore = round(0.4 * blosum + 0.3 * stability + 0.3 * structural, 3);
 
     // Classification
-    const classification: 'beneficial' | 'neutral' | 'deleterious' =
-      fitnessScore > 0.7 ? 'beneficial' : fitnessScore > 0.4 ? 'neutral' : 'deleterious';
+    const classification: "beneficial" | "neutral" | "deleterious" =
+      fitnessScore > 0.7 ? "beneficial" : fitnessScore > 0.4 ? "neutral" : "deleterious";
 
     // Confidence: higher when we have PDB data
     const confidence = pdbText ? 0.65 : 0.35;
@@ -1630,12 +1727,28 @@ export function predictFitness(input: {
 
 function residueName3(aa1: string): string {
   const map: Record<string, string> = {
-    A: 'ALA', R: 'ARG', N: 'ASN', D: 'ASP', C: 'CYS',
-    E: 'GLU', Q: 'GLN', G: 'GLY', H: 'HIS', I: 'ILE',
-    L: 'LEU', K: 'LYS', M: 'MET', F: 'PHE', P: 'PRO',
-    S: 'SER', T: 'THR', W: 'TRP', Y: 'TYR', V: 'VAL',
+    A: "ALA",
+    R: "ARG",
+    N: "ASN",
+    D: "ASP",
+    C: "CYS",
+    E: "GLU",
+    Q: "GLN",
+    G: "GLY",
+    H: "HIS",
+    I: "ILE",
+    L: "LEU",
+    K: "LYS",
+    M: "MET",
+    F: "PHE",
+    P: "PRO",
+    S: "SER",
+    T: "THR",
+    W: "TRP",
+    Y: "TYR",
+    V: "VAL",
   };
-  return map[aa1] ?? 'ALA';
+  return map[aa1] ?? "ALA";
 }
 
 export interface ConservationPosition {
@@ -1643,7 +1756,7 @@ export interface ConservationPosition {
   residue: string;
   entropy: number;
   conservation: number;
-  classification: 'conserved' | 'moderate' | 'variable';
+  classification: "conserved" | "moderate" | "variable";
   /** Solvent-accessible surface area (normalized 0–1). Only available when PDB is provided. */
   normalizedSASA: number | null;
   /** conservation × (1 − normalizedSASA). Higher = more structurally constrained. */
@@ -1680,8 +1793,8 @@ export function analyzeConservation(
   catalyticResidues?: number[],
 ): ConservationResult {
   // Pre-compute structural features if PDB is available
-  let sasaMap: Map<number, number> = new Map(); // residueNumber → relativeSASA (0–1)
-  let coordMap: Map<number, { x: number; y: number; z: number }> = new Map(); // residueNumber → CA coords
+  const sasaMap: Map<number, number> = new Map(); // residueNumber → relativeSASA (0–1)
+  const coordMap: Map<number, { x: number; y: number; z: number }> = new Map(); // residueNumber → CA coords
   if (pdbText) {
     try {
       const structure = parsePDB(pdbText);
@@ -1690,11 +1803,13 @@ export function analyzeConservation(
 
       // Extract CA atom coordinates per residue for distance calculations
       for (const atom of structure.atoms) {
-        if (atom.name === 'CA' && !atom.isHetero) {
+        if (atom.name === "CA" && !atom.isHetero) {
           coordMap.set(atom.residueNumber, { x: atom.x, y: atom.y, z: atom.z });
         }
       }
-    } catch { /* PDB parse failed — structural fields will be null */ }
+    } catch {
+      /* PDB parse failed — structural fields will be null */
+    }
   }
 
   // Build set of catalytic residue coordinates for proximity checks
@@ -1711,7 +1826,7 @@ export function analyzeConservation(
   // Max SASA across the structure for normalization (if available)
   const maxSASA = sasaMap.size > 0 ? Math.max(...sasaMap.values(), 0.01) : 1;
 
-  const perPosition: ConservationPosition[] = sequence.split('').map((aa, i) => {
+  const perPosition: ConservationPosition[] = sequence.split("").map((aa, i) => {
     const pos = i + 1;
     const upper = aa.toUpperCase();
     const row = BLOSUM62[upper];
@@ -1719,17 +1834,17 @@ export function analyzeConservation(
     // ── BLOSUM62 conservation (existing logic) ──
     let entropy = 2.0;
     let conservation = 0.5;
-    let classification: ConservationPosition['classification'] = 'moderate';
+    let classification: ConservationPosition["classification"] = "moderate";
     if (row) {
       const values = Object.values(row);
       const maxVal = Math.max(...values);
-      const expValues = values.map(v => Math.exp((v - maxVal) / 3)); // temperature = 3
+      const expValues = values.map((v) => Math.exp((v - maxVal) / 3)); // temperature = 3
       const sumExp = expValues.reduce((s, v) => s + v, 0);
-      const probs = expValues.map(v => v / sumExp);
+      const probs = expValues.map((v) => v / sumExp);
       entropy = -probs.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
       const maxEntropy = Math.log2(20);
       conservation = 1 - entropy / maxEntropy;
-      classification = conservation > 0.8 ? 'conserved' : conservation > 0.5 ? 'moderate' : 'variable';
+      classification = conservation > 0.8 ? "conserved" : conservation > 0.5 ? "moderate" : "variable";
     }
 
     // ── Structural SASA weighting (new) ──
@@ -1741,8 +1856,7 @@ export function analyzeConservation(
     }
 
     // ── Do-not-mutate flag: conserved AND buried ──
-    const doNotMutate =
-      classification === 'conserved' && normalizedSASA !== null && normalizedSASA < 0.25;
+    const doNotMutate = classification === "conserved" && normalizedSASA !== null && normalizedSASA < 0.25;
 
     // ── Functional site proximity (within 5 Angstrom of catalytic residue) ──
     let functionalSiteWarning: string | null = null;
@@ -1782,10 +1896,10 @@ export function analyzeConservation(
 
   return {
     perPosition,
-    conservedPositions: perPosition.filter(p => p.classification === 'conserved').map(p => p.position),
-    variablePositions: perPosition.filter(p => p.classification === 'variable').map(p => p.position),
-    doNotMutatePositions: perPosition.filter(p => p.doNotMutate).map(p => p.position),
-    functionalSitePositions: perPosition.filter(p => p.functionalSiteWarning !== null).map(p => p.position),
+    conservedPositions: perPosition.filter((p) => p.classification === "conserved").map((p) => p.position),
+    variablePositions: perPosition.filter((p) => p.classification === "variable").map((p) => p.position),
+    doNotMutatePositions: perPosition.filter((p) => p.doNotMutate).map((p) => p.position),
+    functionalSitePositions: perPosition.filter((p) => p.functionalSiteWarning !== null).map((p) => p.position),
   };
 }
 
@@ -1808,11 +1922,11 @@ export function designSequences(input: {
 } {
   const { sequence, pdbText, fixedPositions = [], numDesigns = 10 } = input;
   const fixedSet = new Set(fixedPositions);
-  const AA_CODES = 'ACDEFGHIKLMNPQRSTVWY';
+  const AA_CODES = "ACDEFGHIKLMNPQRSTVWY";
 
   // Pre-compute structural features
-  let burialMap: Map<number, number> = new Map();
-  let ssMap: Map<number, string> = new Map();
+  const burialMap: Map<number, number> = new Map();
+  const ssMap: Map<number, string> = new Map();
   if (pdbText) {
     try {
       const structure = parsePDB(pdbText);
@@ -1820,7 +1934,9 @@ export function designSequences(input: {
       const ss = assignSecondaryStructure(structure);
       for (const r of sasa) burialMap.set(r.residueNumber, 1 - r.relativeSASA);
       for (const r of ss) ssMap.set(r.residueNumber, r.ss);
-    } catch { /* use defaults */ }
+    } catch {
+      /* use defaults */
+    }
   }
 
   const designs: Array<{
@@ -1830,7 +1946,7 @@ export function designSequences(input: {
   }> = [];
 
   for (let d = 0; d < numDesigns; d++) {
-    const mutSeq = sequence.split('');
+    const mutSeq = sequence.split("");
     const mutations: Array<{ position: number; wt: string; mut: string }> = [];
     let totalPlausibility = 0;
     let totalCompatibility = 0;
@@ -1842,12 +1958,15 @@ export function designSequences(input: {
 
       const wt = sequence[i].toUpperCase();
       const burial = burialMap.get(pos) ?? 0.5;
-      const ss = ssMap.get(pos) ?? 'C';
+      const ss = ssMap.get(pos) ?? "C";
 
       // Score all 20 AAs for this position
       const scores: Array<{ aa: string; score: number }> = [];
       for (const aa of AA_CODES) {
-        if (aa === wt) { scores.push({ aa, score: 1.0 }); continue; }
+        if (aa === wt) {
+          scores.push({ aa, score: 1.0 });
+          continue;
+        }
 
         // BLOSUM62 plausibility
         const blosum = BLOSUM62[wt]?.[aa] ?? -4;
@@ -1858,9 +1977,51 @@ export function designSequences(input: {
         const hydroMatch = burial > 0.6 ? hydro : 1 - hydro;
 
         // Secondary structure propensity
-        const HELIX_P: Record<string, number> = { A: 1.42, E: 1.51, L: 1.21, M: 1.45, K: 1.16, Q: 1.11, R: 0.98, V: 1.06, I: 1.08, F: 1.13, D: 1.01, H: 1.0, W: 1.08, S: 0.77, N: 0.67, T: 0.83, C: 0.70, P: 0.57, G: 0.57, Y: 0.69 };
-        const SHEET_P: Record<string, number> = { V: 1.7, I: 1.6, Y: 1.47, F: 1.38, W: 1.37, L: 1.3, T: 1.19, C: 1.19, Q: 1.1, M: 1.05, R: 0.93, H: 0.87, N: 0.89, A: 0.83, G: 0.75, S: 0.75, K: 0.74, D: 0.54, E: 0.37, P: 0.55 };
-        const ssProp = ss === 'H' ? (HELIX_P[aa] ?? 1.0) / 1.5 : ss === 'E' ? (SHEET_P[aa] ?? 1.0) / 1.7 : 0.5;
+        const HELIX_P: Record<string, number> = {
+          A: 1.42,
+          E: 1.51,
+          L: 1.21,
+          M: 1.45,
+          K: 1.16,
+          Q: 1.11,
+          R: 0.98,
+          V: 1.06,
+          I: 1.08,
+          F: 1.13,
+          D: 1.01,
+          H: 1.0,
+          W: 1.08,
+          S: 0.77,
+          N: 0.67,
+          T: 0.83,
+          C: 0.7,
+          P: 0.57,
+          G: 0.57,
+          Y: 0.69,
+        };
+        const SHEET_P: Record<string, number> = {
+          V: 1.7,
+          I: 1.6,
+          Y: 1.47,
+          F: 1.38,
+          W: 1.37,
+          L: 1.3,
+          T: 1.19,
+          C: 1.19,
+          Q: 1.1,
+          M: 1.05,
+          R: 0.93,
+          H: 0.87,
+          N: 0.89,
+          A: 0.83,
+          G: 0.75,
+          S: 0.75,
+          K: 0.74,
+          D: 0.54,
+          E: 0.37,
+          P: 0.55,
+        };
+        const ssProp = ss === "H" ? (HELIX_P[aa] ?? 1.0) / 1.5 : ss === "E" ? (SHEET_P[aa] ?? 1.0) / 1.7 : 0.5;
 
         const composite = 0.4 * plausibility + 0.3 * hydroMatch + 0.3 * ssProp;
         scores.push({ aa, score: composite });
@@ -1868,9 +2029,9 @@ export function designSequences(input: {
 
       // Sample from softmax distribution (temperature decreases with design rank)
       const temp = 0.3 + (d / numDesigns) * 0.5;
-      const expScores = scores.map(s => Math.exp(s.score / temp));
+      const expScores = scores.map((s) => Math.exp(s.score / temp));
       const sumExp = expScores.reduce((s, v) => s + v, 0);
-      const probs = expScores.map(v => v / sumExp);
+      const probs = expScores.map((v) => v / sumExp);
 
       // Weighted random selection
       const r = Math.random(); // OK for design diversity
@@ -1878,13 +2039,16 @@ export function designSequences(input: {
       let selected = wt;
       for (let j = 0; j < probs.length; j++) {
         cumulative += probs[j];
-        if (r < cumulative) { selected = scores[j].aa; break; }
+        if (r < cumulative) {
+          selected = scores[j].aa;
+          break;
+        }
       }
 
       if (selected !== wt) {
         mutSeq[i] = selected;
         mutations.push({ position: pos, wt, mut: selected });
-        const bestScore = scores.find(s => s.aa === selected)?.score ?? 0.5;
+        const bestScore = scores.find((s) => s.aa === selected)?.score ?? 0.5;
         totalPlausibility += (BLOSUM62[wt]?.[selected] ?? -4 + 4) / 15;
         totalCompatibility += getHydrophobicity(residueName3(selected));
         positionsScored++;
@@ -1896,7 +2060,7 @@ export function designSequences(input: {
     const stability = pdbText ? estimateDesignStability(pdbText, mutations) : 0.5;
 
     designs.push({
-      sequence: mutSeq.join(''),
+      sequence: mutSeq.join(""),
       mutations,
       scores: {
         stability: round(stability, 3),
@@ -1912,14 +2076,24 @@ export function designSequences(input: {
   return { designs };
 }
 
-function estimateDesignStability(pdbText: string, mutations: Array<{ position: number; wt: string; mut: string }>): number {
+function estimateDesignStability(
+  pdbText: string,
+  mutations: Array<{ position: number; wt: string; mut: string }>,
+): number {
   if (mutations.length === 0) return 1.0;
   try {
-    const result = predictMultiDDG(pdbText, mutations.map(m => ({
-      position: m.position, wtResidue: m.wt, mutantResidue: m.mut,
-    })));
+    const result = predictMultiDDG(
+      pdbText,
+      mutations.map((m) => ({
+        position: m.position,
+        wtResidue: m.wt,
+        mutantResidue: m.mut,
+      })),
+    );
     return Math.exp(-Math.abs(result.ddG) / 3);
-  } catch { return 0.5; }
+  } catch {
+    return 0.5;
+  }
 }
 
 /**
@@ -1956,8 +2130,8 @@ export function designMutantLibrary(input: {
   }
 
   // Score each combination
-  const scored = combinations.map(combo => {
-    const mutSeq = sequence.split('');
+  const scored = combinations.map((combo) => {
+    const mutSeq = sequence.split("");
     const mutations: Array<{ position: number; wt: string; mut: string }> = [];
     for (let i = 0; i < positions.length; i++) {
       const pos = positions[i];
@@ -1976,15 +2150,16 @@ export function designMutantLibrary(input: {
     }
 
     // Fitness: BLOSUM62 average
-    const fitness = mutations.length > 0
-      ? mutations.reduce((s, m) => s + ((BLOSUM62[m.wt]?.[m.mut] ?? -4) + 4) / 15, 0) / mutations.length
-      : 1.0;
+    const fitness =
+      mutations.length > 0
+        ? mutations.reduce((s, m) => s + ((BLOSUM62[m.wt]?.[m.mut] ?? -4) + 4) / 15, 0) / mutations.length
+        : 1.0;
 
     // Diversity: Hamming distance from wild-type (normalized)
     const diversity = mutations.length / positions.length;
 
     return {
-      sequence: mutSeq.join(''),
+      sequence: mutSeq.join(""),
       mutations,
       scores: { stability: round(stability, 3), fitness: round(fitness, 3), diversity: round(diversity, 3) },
     };
@@ -1994,9 +2169,7 @@ export function designMutantLibrary(input: {
   const paretoFront = selectParetoFront(scored);
 
   // If pareto front is larger than librarySize, sample uniformly
-  const selected = paretoFront.length <= librarySize
-    ? paretoFront
-    : paretoFront.slice(0, librarySize);
+  const selected = paretoFront.length <= librarySize ? paretoFront : paretoFront.slice(0, librarySize);
 
   return {
     library: selected,
@@ -2025,7 +2198,10 @@ function selectParetoFront<T extends { scores: { stability: number; fitness: num
         other.scores.stability > c.scores.stability ||
         other.scores.fitness > c.scores.fitness ||
         other.scores.diversity > c.scores.diversity;
-      if (betterInAll && strictlyBetter) { dominated = true; break; }
+      if (betterInAll && strictlyBetter) {
+        dominated = true;
+        break;
+      }
     }
     if (!dominated) front.push(c);
   }

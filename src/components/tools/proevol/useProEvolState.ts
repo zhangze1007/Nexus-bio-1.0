@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useWorkbenchStore } from '../../../store/workbenchStore';
-import { THEME } from '../../../theme';
-import { buildProEvolCampaignInput } from '../../../data/proevolMockCampaign';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buildProEvolCampaignInput } from "../../../data/proevolMockCampaign";
+import type { ProEvolArtifact } from "../../../domain/proevolArtifact";
+import { campaignToArtifact } from "../../../domain/proevolArtifact";
+import { GaussianProcess } from "../../../server/gaussianProcess";
+import type { AcquisitionType, BOTrajectoryResult } from "../../../services/boTrajectory";
+import { runBOTrajectory } from "../../../services/boTrajectory";
+import type { ConservationResult } from "../../../services/ProEvolCampaignEngine";
 import {
-  buildProEvolCampaign,
-  scanMutations,
-  predictFitness,
   analyzeConservation,
-  designSequences,
-  designMutantLibrary,
-} from '../../../services/ProEvolCampaignEngine';
-import type { ConservationResult } from '../../../services/ProEvolCampaignEngine';
-import { campaignToArtifact } from '../../../domain/proevolArtifact';
-import type { ProEvolArtifact } from '../../../domain/proevolArtifact';
-import { buildProEvolResearchSummary } from '../../../services/proevolAnalysis';
-import { GaussianProcess } from '../../../server/gaussianProcess';
-import { runBOTrajectory } from '../../../services/boTrajectory';
-import type { BOTrajectoryResult, AcquisitionType } from '../../../services/boTrajectory';
-import type { ToolTab } from '../shared/ToolTabBar';
-import { parseCSV, csvToArtifact } from './sharedComponents';
+  buildProEvolCampaign,
+  type designMutantLibrary,
+  type designSequences,
+  type predictFitness,
+  type scanMutations,
+} from "../../../services/ProEvolCampaignEngine";
+import { buildProEvolResearchSummary } from "../../../services/proevolAnalysis";
+import { useWorkbenchStore } from "../../../store/workbenchStore";
+import { THEME } from "../../../theme";
+import type { ToolTab } from "../shared/ToolTabBar";
+import { csvToArtifact, parseCSV } from "./sharedComponents";
 
 export function useProEvolState() {
   const project = useWorkbenchStore((state) => state.project);
@@ -43,16 +43,16 @@ export function useProEvolState() {
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState('landscape');
+  const [activeTab, setActiveTab] = useState("landscape");
   const [proevolError, setProevolError] = useState<string | null>(null);
 
   // ── Mutation Scanner state ───────────────────────────────────────────
-  const [scanSequence, setScanSequence] = useState('');
+  const [scanSequence, setScanSequence] = useState("");
   const [pdbText, setPdbText] = useState<string | null>(null);
   const [pdbLoading, setPdbLoading] = useState(false);
   const [scanResult, setScanResult] = useState<ReturnType<typeof scanMutations> | null>(null);
   const [conservationResult, setConservationResult] = useState<ConservationResult | null>(null);
-  const [fitnessResult, setFitnessResult] = useState<ReturnType<typeof predictFitness>['predictions'] | null>(null);
+  const [fitnessResult, setFitnessResult] = useState<ReturnType<typeof predictFitness>["predictions"] | null>(null);
 
   // ── Sequence Design state ────────────────────────────────────────────
   const [designResult, setDesignResult] = useState<ReturnType<typeof designSequences> | null>(null);
@@ -70,59 +70,69 @@ export function useProEvolState() {
   const [boResult, setBoResult] = useState<BOTrajectoryResult | null>(null);
   const [boRunning, setBoRunning] = useState(false);
   const [boError, setBoError] = useState<string | null>(null);
-  const [boAcqType, setBoAcqType] = useState<AcquisitionType>('EI');
+  const [boAcqType, setBoAcqType] = useState<AcquisitionType>("EI");
   const [boRounds, setBoRounds] = useState(5);
   const [boBatchSize, setBoBatchSize] = useState(10);
 
   // ── CSV upload handler ──────────────────────────────────────────────────
-  const handleCSVUpload = useCallback((file: File) => {
-    setIsParsing(true);
-    setUploadError(null);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result;
-        if (typeof text !== 'string') throw new Error('Failed to read file.');
-        const parsed = parseCSV(text);
-        const targetProduct = analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product';
-        const artifact = csvToArtifact(parsed, targetProduct);
-        setCsvArtifact(artifact);
-        setUploadFileName(file.name);
-        setUploadError(null);
-      } catch (err) {
-        setUploadError(err instanceof Error ? err.message : 'Unknown error parsing CSV.');
-        setCsvArtifact(null);
-        setUploadFileName(null);
-      } finally {
+  const handleCSVUpload = useCallback(
+    (file: File) => {
+      setIsParsing(true);
+      setUploadError(null);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result;
+          if (typeof text !== "string") throw new Error("Failed to read file.");
+          const parsed = parseCSV(text);
+          const targetProduct =
+            analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || "Target Product";
+          const artifact = csvToArtifact(parsed, targetProduct);
+          setCsvArtifact(artifact);
+          setUploadFileName(file.name);
+          setUploadError(null);
+        } catch (err) {
+          setUploadError(err instanceof Error ? err.message : "Unknown error parsing CSV.");
+          setCsvArtifact(null);
+          setUploadFileName(null);
+        } finally {
+          setIsParsing(false);
+        }
+      };
+      reader.onerror = () => {
+        setUploadError("Failed to read file.");
         setIsParsing(false);
-      }
-    };
-    reader.onerror = () => {
-      setUploadError('Failed to read file.');
-      setIsParsing(false);
-    };
-    reader.readAsText(file);
-  }, [analyzeArtifact?.targetProduct, project?.targetProduct, project?.title]);
+      };
+      reader.readAsText(file);
+    },
+    [analyzeArtifact?.targetProduct, project?.targetProduct, project?.title],
+  );
 
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleCSVUpload(file);
-    // Reset input so re-uploading the same file triggers onChange
-    e.target.value = '';
-  }, [handleCSVUpload]);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleCSVUpload(file);
+      // Reset input so re-uploading the same file triggers onChange
+      e.target.value = "";
+    },
+    [handleCSVUpload],
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      if (!file.name.endsWith('.csv')) {
-        setUploadError('Please upload a .csv file.');
-        return;
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const file = e.dataTransfer.files?.[0];
+      if (file) {
+        if (!file.name.endsWith(".csv")) {
+          setUploadError("Please upload a .csv file.");
+          return;
+        }
+        handleCSVUpload(file);
       }
-      handleCSVUpload(file);
-    }
-  }, [handleCSVUpload]);
+    },
+    [handleCSVUpload],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -136,23 +146,38 @@ export function useProEvolState() {
   }, []);
 
   const campaignInput = useMemo(
-    () => buildProEvolCampaignInput({
-      project, analyzeArtifact, catalyst: catalystPayload, fba: fbaPayload, cethx: cethxPayload,
-      totalRounds, librarySize, survivorCount, selectionStringency,
-    }),
-    [analyzeArtifact, catalystPayload, cethxPayload, fbaPayload, librarySize, project, selectionStringency, survivorCount, totalRounds],
+    () =>
+      buildProEvolCampaignInput({
+        project,
+        analyzeArtifact,
+        catalyst: catalystPayload,
+        fba: fbaPayload,
+        cethx: cethxPayload,
+        totalRounds,
+        librarySize,
+        survivorCount,
+        selectionStringency,
+      }),
+    [
+      analyzeArtifact,
+      catalystPayload,
+      cethxPayload,
+      fbaPayload,
+      librarySize,
+      project,
+      selectionStringency,
+      survivorCount,
+      totalRounds,
+    ],
   );
 
   const campaign = useMemo(() => buildProEvolCampaign(campaignInput), [campaignInput]);
-  const targetProduct = analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product';
+  const targetProduct = analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || "Target Product";
   const artifact = useMemo(() => campaignToArtifact({ campaign, targetProduct }), [campaign, targetProduct]);
   const research = useMemo(() => buildProEvolResearchSummary(artifact), [artifact]);
 
   // Real analysis from CSV data (overrides synthetic when CSV is uploaded)
-  const csvResearch = useMemo(
-    () => (csvArtifact ? buildProEvolResearchSummary(csvArtifact) : null),
-    [csvArtifact],
-  );
+  const csvResearch = useMemo(() => (csvArtifact ? buildProEvolResearchSummary(csvArtifact) : null), [csvArtifact]);
 
   // When CSV is present, use real analysis; otherwise use synthetic
   const activeResearch = csvResearch ?? research;
@@ -160,9 +185,9 @@ export function useProEvolState() {
   const bandSemantic = activeArtifact.provenance.bandSemantic;
 
   const focusedVariant =
-    (selectedVariantId ? campaign.variantIndex[selectedVariantId] : undefined)
-    ?? campaign.currentRoundResult.selectedSurvivors[0]
-    ?? campaign.leadVariant;
+    (selectedVariantId ? campaign.variantIndex[selectedVariantId] : undefined) ??
+    campaign.currentRoundResult.selectedSurvivors[0] ??
+    campaign.leadVariant;
 
   useEffect(() => {
     if (!selectedVariantId || !campaign.variantIndex[selectedVariantId]) {
@@ -171,8 +196,8 @@ export function useProEvolState() {
   }, [campaign.leadVariant.id, campaign.variantIndex, selectedVariantId]);
 
   useEffect(() => {
-    setToolPayload('proevol', {
-      toolId: 'proevol',
+    setToolPayload("proevol", {
+      toolId: "proevol",
       targetProduct,
       sourceArtifactId: analyzeArtifact?.id,
       campaignName: campaign.name,
@@ -197,39 +222,70 @@ export function useProEvolState() {
       },
       updatedAt: Date.now(),
     });
-  }, [activeResearch.lastRoundShannon, analyzeArtifact?.id, artifact.provenance.validity, campaign, setToolPayload, targetProduct]);
+  }, [
+    activeResearch.lastRoundShannon,
+    analyzeArtifact?.id,
+    artifact.provenance.validity,
+    campaign,
+    setToolPayload,
+    targetProduct,
+  ]);
 
   // ── Exports ────────────────────────────────────────────────────────────
   const trajectoryExport = useMemo(
-    () => activeResearch.trajectories.flatMap((t) => t.points.map((p) => ({
-      variantId: t.variantId, variant: t.label, family: t.familyLabel,
-      round: p.roundNumber, frequency: p.frequency, bandLower: p.lower, bandUpper: p.upper,
-      bandSemantic, totalReads: p.totalReads,
-    }))),
+    () =>
+      activeResearch.trajectories.flatMap((t) =>
+        t.points.map((p) => ({
+          variantId: t.variantId,
+          variant: t.label,
+          family: t.familyLabel,
+          round: p.roundNumber,
+          frequency: p.frequency,
+          bandLower: p.lower,
+          bandUpper: p.upper,
+          bandSemantic,
+          totalReads: p.totalReads,
+        })),
+      ),
     [bandSemantic, activeResearch.trajectories],
   );
   const enrichmentExport = useMemo(
-    () => activeResearch.enrichment.map((e) => ({
-      variantId: e.variantId, variant: e.label, family: e.familyLabel, mutations: e.mutationString,
-      mutationBurden: e.mutationBurden, finalFrequency: e.finalFrequency,
-      bandLower: e.finalFrequencyCi.lower, bandUpper: e.finalFrequencyCi.upper, bandSemantic,
-      log2EnrichmentVsWildType: e.log2EnrichmentVsWildType,
-      log2EnrichmentAcrossRounds: e.log2EnrichmentAcrossRounds,
-      meanSelectionCoefficient: e.meanSelectionCoefficient, totalReadsLastRound: e.totalReadsLastRound,
-    })),
+    () =>
+      activeResearch.enrichment.map((e) => ({
+        variantId: e.variantId,
+        variant: e.label,
+        family: e.familyLabel,
+        mutations: e.mutationString,
+        mutationBurden: e.mutationBurden,
+        finalFrequency: e.finalFrequency,
+        bandLower: e.finalFrequencyCi.lower,
+        bandUpper: e.finalFrequencyCi.upper,
+        bandSemantic,
+        log2EnrichmentVsWildType: e.log2EnrichmentVsWildType,
+        log2EnrichmentAcrossRounds: e.log2EnrichmentAcrossRounds,
+        meanSelectionCoefficient: e.meanSelectionCoefficient,
+        totalReadsLastRound: e.totalReadsLastRound,
+      })),
     [bandSemantic, activeResearch.enrichment],
   );
   const diversityExport = useMemo(
-    () => activeResearch.diversity.map((d) => ({
-      round: d.roundNumber, shannonBits: d.shannonBits.mean,
-      shannonBandLower: d.shannonBits.lower, shannonBandUpper: d.shannonBits.upper,
-      topShare: d.topShare.mean, topShareBandLower: d.topShare.lower, topShareBandUpper: d.topShare.upper,
-      bandSemantic, effectiveVariantCount: d.effectiveVariantCount, observedVariantCount: d.observedVariantCount,
-    })),
+    () =>
+      activeResearch.diversity.map((d) => ({
+        round: d.roundNumber,
+        shannonBits: d.shannonBits.mean,
+        shannonBandLower: d.shannonBits.lower,
+        shannonBandUpper: d.shannonBits.upper,
+        topShare: d.topShare.mean,
+        topShareBandLower: d.topShare.lower,
+        topShareBandUpper: d.topShare.upper,
+        bandSemantic,
+        effectiveVariantCount: d.effectiveVariantCount,
+        observedVariantCount: d.observedVariantCount,
+      })),
     [bandSemantic, activeResearch.diversity],
   );
 
-  const exportSuffix = bandSemantic === 'modeled' ? '-modeled' : '-experiment';
+  const exportSuffix = bandSemantic === "modeled" ? "-modeled" : "-experiment";
   const lead = campaign.leadVariant;
   const wt = campaign.wildType;
 
@@ -256,7 +312,7 @@ export function useProEvolState() {
 
     // Fit GP with RBF kernel
     const gp = new GaussianProcess({
-      kernel: 'rbf',
+      kernel: "rbf",
       lengthScale: 10.0,
       signalVariance: 1.0,
       noiseVariance: 0.1,
@@ -286,8 +342,8 @@ export function useProEvolState() {
       setSuggestedVariantId(mlVariants[bestIdx]?.id ?? null);
       setGpError(null);
     } catch (gpErr) {
-      console.warn('GP analysis failed:', gpErr);
-      setGpError(gpErr instanceof Error ? gpErr.message : 'GP analysis failed');
+      console.warn("GP analysis failed:", gpErr);
+      setGpError(gpErr instanceof Error ? gpErr.message : "GP analysis failed");
       setGpPredictions([]);
       setEiScores([]);
       setSuggestedVariantId(null);
@@ -334,7 +390,7 @@ export function useProEvolState() {
       });
       setBoResult(result);
     } catch (err) {
-      setBoError(err instanceof Error ? err.message : 'BO simulation failed');
+      setBoError(err instanceof Error ? err.message : "BO simulation failed");
     } finally {
       setBoRunning(false);
     }
@@ -352,17 +408,17 @@ export function useProEvolState() {
       gpStd: Math.sqrt(gpPredictions[i]?.variance ?? 0),
       ei: eiScores[i] ?? 0,
       suggested: v.id === suggestedVariantId,
-      selected: v.status === 'selected',
+      selected: v.status === "selected",
     }));
   }, [mlMode, gpPredictions, eiScores, mlVariants, suggestedVariantId]);
 
   const tabs: ToolTab[] = [
-    { id: 'landscape', label: 'Landscape', accent: THEME.SKY },
-    { id: 'scanner', label: 'Mutation Scanner', accent: THEME.CORAL },
-    { id: 'design', label: 'Sequence Design', accent: THEME.MINT },
-    { id: 'trajectory', label: 'Trajectory', accent: THEME.LILAC },
-    { id: 'library', label: 'Library', accent: THEME.APRICOT },
-    { id: 'ml', label: 'ML-Guided', accent: THEME.LILAC },
+    { id: "landscape", label: "Landscape", accent: THEME.SKY },
+    { id: "scanner", label: "Mutation Scanner", accent: THEME.CORAL },
+    { id: "design", label: "Sequence Design", accent: THEME.MINT },
+    { id: "trajectory", label: "Trajectory", accent: THEME.LILAC },
+    { id: "library", label: "Library", accent: THEME.APRICOT },
+    { id: "ml", label: "ML-Guided", accent: THEME.LILAC },
   ];
 
   return {
