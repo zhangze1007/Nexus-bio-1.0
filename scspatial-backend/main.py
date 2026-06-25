@@ -92,6 +92,120 @@ async def health():
     }
 
 
+# ── Lightweight sidecar ingest (anndata parsing only, no scanpy) ───
+
+@app.post("/ingest-sidecar")
+async def ingest_sidecar(
+    file: UploadFile = File(...),
+    config: str = Form(default="{}"),
+    artifactId: str = Form(...),
+    fileName: str = Form(...),
+    uploadedAt: str = Form(...),
+):
+    """Lightweight ingest: parse .h5ad with anndata, return normalized artifact.
+    Does NOT run scanpy/squidpy pipeline — fast, no heavy dependencies."""
+    if not file.filename or not file.filename.lower().endswith('.h5ad'):
+        raise HTTPException(400, "Only .h5ad files accepted")
+
+    try:
+        parsed_config = json.loads(config)
+    except Exception:
+        parsed_config = {}
+
+    content = await file.read()
+    tmp = tempfile.NamedTemporaryFile(suffix='.h5ad', delete=False)
+    tmp.write(content)
+    tmp_path = tmp.name
+    tmp.close()
+
+    try:
+        adata = ad.read_h5ad(tmp_path)
+        max_cells = int(parsed_config.get('maxCells', 10000))
+        if max_cells > 0 and adata.n_obs > max_cells:
+            import random
+            indices = sorted(random.sample(range(adata.n_obs), max_cells))
+            adata = adata[indices].copy()
+
+        # Import sidecar functions from the main repo
+        sidecar_path = Path(__file__).parent.parent / 'src' / 'server'
+        if str(sidecar_path) not in sys.path:
+            sys.path.insert(0, str(sidecar_path))
+
+        from scspatial_sidecar import (
+            build_obs_records, build_var_records,
+            extract_embedding_payload, build_spatial_payload,
+            matrix_to_sparse_rows, PARSER_VERSION,
+        )
+
+        obs_payload = build_obs_records(adata, parsed_config)
+        var_payload = build_var_records(adata)
+        embeddings = extract_embedding_payload(adata, parsed_config.get('embeddingKeys'))
+        spatial = build_spatial_payload(adata, parsed_config.get('spatialKey'))
+
+        selected_layer_keys = list(adata.layers.keys())
+        layers = {k: matrix_to_sparse_rows(adata.layers[k]) for k in selected_layer_keys}
+
+        sample_ids = {r['sampleId'] for r in obs_payload['records'] if r.get('sampleId')}
+        has_cluster_labels = any(r.get('clusterLabel') for r in obs_payload['records'])
+        has_precomputed_umap = any('umap' in k.lower() for k in embeddings)
+
+        warnings = []
+        missing_fields = []
+        if spatial is None:
+            missing_fields.append('obsm.spatial')
+            warnings.append('Spatial coordinates not found; spatial views disabled.')
+        if not has_cluster_labels:
+            missing_fields.append('obs.clusterLabel')
+            warnings.append('No cluster labels found.')
+        if not has_precomputed_umap:
+            warnings.append('No precomputed UMAP; backend UMAP fallback will be used.')
+
+        result = {
+            "schemaVersion": 1,
+            "artifactId": artifactId,
+            "source": {
+                "fileName": fileName,
+                "uploadedAt": int(uploadedAt),
+                "sampleCount": len(sample_ids) or 1,
+                "parserVersion": PARSER_VERSION,
+                "pythonVersion": sys.version.split(" ")[0],
+            },
+            "matrix": {
+                "X": matrix_to_sparse_rows(adata.X),
+                "layers": layers,
+                "defaultLayer": "X",
+            },
+            "obs": obs_payload["records"],
+            "var": var_payload,
+            "obsm": {"spatial": spatial, "embeddings": embeddings},
+            "metadata": {
+                "warnings": warnings,
+                "missingFields": missing_fields,
+                "availableViews": {
+                    "spatial2d": spatial is not None,
+                    "spatial3d": spatial is not None,
+                    "umap": has_precomputed_umap,
+                    "trajectory": has_cluster_labels,
+                    "table": True,
+                },
+                "extractedKeys": {
+                    "layers": list(layers.keys()),
+                    "embeddings": list(embeddings.keys()),
+                    "clusterLabelKey": obs_payload["clusterKey"],
+                    "cellTypeKey": obs_payload["cellTypeKey"],
+                    "batchKey": obs_payload["batchKey"],
+                    "sampleMetadataKeys": obs_payload["sampleMetadataKeys"],
+                },
+                "hasSpatialCoords": spatial is not None,
+                "hasClusterLabels": has_cluster_labels,
+                "hasPrecomputedUmap": has_precomputed_umap,
+            },
+        }
+        return result
+    finally:
+        os.unlink(tmp_path)
+
+
 # ── Ingest: upload h5ad → run pipeline → store artifact ────────────
 
 @app.post("/ingest", response_model=IngestResponse)

@@ -115,32 +115,46 @@ export async function POST(request: Request) {
     }
 
     const config = parseConfig(formData.get('config'));
+    const artifactId = `scspatial-${randomUUID()}`;
+    const uploadedAt = Date.now();
+    const safeFileName = path.basename(file.name).replace(/[^a-zA-Z0-9._-]/g, '_');
 
-    // ── Proxy to Python backend ────────────────────────────────────
+    // ── Proxy to Python backend (sidecar: anndata parsing only) ───
     if (PYTHON_BACKEND) {
       try {
         const pyForm = new FormData();
         pyForm.append('file', file);
-        pyForm.append('config_json', JSON.stringify(config));
+        pyForm.append('config', JSON.stringify(config));
+        pyForm.append('artifactId', artifactId);
+        pyForm.append('fileName', safeFileName);
+        pyForm.append('uploadedAt', String(uploadedAt));
 
-        const resp = await fetch(`${PYTHON_BACKEND}/ingest`, {
+        const resp = await fetch(`${PYTHON_BACKEND}/ingest-sidecar`, {
           method: 'POST',
           body: pyForm,
         });
 
         if (!resp.ok) {
           const errText = await resp.text();
-          console.error('Python backend ingest error:', errText);
+          console.error('Python backend ingest-sidecar error:', errText);
           return jsonError('Python backend analysis failed', 502, errText);
         }
 
-        const data = await resp.json();
+        const artifact = await resp.json() as ScSpatialNormalizedArtifact;
+        const initialQuery = buildScSpatialQueryResponse(artifact, {
+          artifactId: artifact.artifactId,
+          selectedGene: '',
+          selectedCluster: null,
+          selectedCellId: null,
+          viewMode: defaultViewMode(artifact.metadata.hasSpatialCoords),
+          developerMode: false,
+        });
         return NextResponse.json({
           ok: true,
-          job_id: data.job_id,
-          artifactId: data.artifactId,
-          status: data.status,
-          // Frontend will poll /status/{job_id} then fetch /result/{job_id}
+          artifactId: artifact.artifactId,
+          validity: initialQuery.validity,
+          datasetMeta: initialQuery.datasetMeta,
+          initialQuery,
         });
       } catch (err) {
         console.error('Python backend unreachable:', err);
@@ -149,10 +163,7 @@ export async function POST(request: Request) {
     }
 
     // ── Fallback: local sidecar ────────────────────────────────────
-    const artifactId = `scspatial-${randomUUID()}`;
-    const uploadedAt = Date.now();
     const tempDir = await mkdtemp(path.join(tmpdir(), 'scspatial-'));
-    const safeFileName = path.basename(file.name).replace(/[^a-zA-Z0-9._-]/g, '_');
     const tempFilePath = path.join(tempDir, safeFileName);
 
     try {
