@@ -863,15 +863,53 @@ function detectStructuralMotifs(graph: GraphRepresentation): Array<{
  */
 
 /**
+ * Generate a plausible amino acid sequence from backbone Cα geometry.
+ *
+ * Uses Cα-Cα distances to classify secondary structure (same thresholds as
+ * buildStructuralGraph), then assigns residues with appropriate physicochemical
+ * properties:
+ *   - Helix: alanine, leucine, glutamate (high helix propensity)
+ *   - Strand: valine, isoleucine, threonine (high sheet propensity)
+ *   - Coil: glycine, proline, serine (flexible / turn-forming)
+ *
+ * The position index adds variation so adjacent residues in the same SS class
+ * get different amino acids, giving ESM-2 a realistic distribution to embed.
+ */
+function generatePlausibleSequence(backbone: BackboneAtom[]): string {
+  const n = backbone.length;
+  const coords: [number, number, number][] = backbone.map((a) => [a.x, a.y, a.z]);
+
+  // Amino acid pools per secondary structure class
+  const HELIX_AA = ["A", "L", "E"];
+  const SHEET_AA = ["V", "I", "T"];
+  const COIL_AA  = ["G", "P", "S"];
+
+  return backbone.map((_a, i) => {
+    // Classify secondary structure from Cα-Cα distances (mirrors buildStructuralGraph)
+    let ssClass: "helix" | "sheet" | "coil" = "coil";
+    if (i > 0 && i < n - 1) {
+      const d1 = euclideanDistance(coords[i - 1], coords[i]);
+      const d2 = euclideanDistance(coords[i + 1], coords[i]);
+      const avgDist = (d1 + d2) / 2;
+      if (avgDist < SS_HELIX_CA_DIST + 0.3) ssClass = "helix";
+      else if (avgDist > SS_SHEET_CA_DIST - 1.0) ssClass = "sheet";
+    }
+
+    const pool = ssClass === "helix" ? HELIX_AA : ssClass === "sheet" ? SHEET_AA : COIL_AA;
+    return pool[i % pool.length];
+  }).join("");
+}
+
+/**
  * Fetch ESM-2 embeddings from API (synchronous wrapper).
  *
  * Calls the local /api/esm2 endpoint which proxies the ESM Atlas API.
  * Falls back to local computation if API is unavailable.
  */
 function fetchESM2Embeddings(backbone: BackboneAtom[]): Map<number, number[]> | null {
-  // Generate a placeholder sequence from backbone geometry
-  // In real use, this would be the current best-guess sequence
-  const seq = backbone.map(() => "A").join("");
+  // Generate a structurally plausible sequence from backbone geometry
+  // instead of sending a meaningless all-alanine string
+  const seq = generatePlausibleSequence(backbone);
 
   try {
     // Use child_process to make sync HTTP call (Node.js only)

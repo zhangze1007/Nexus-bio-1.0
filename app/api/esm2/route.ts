@@ -82,10 +82,16 @@ export async function POST(req: NextRequest) {
 
     const result = await response.json();
 
+    // ESM Atlas foldSequence returns PDB structure, not per-residue embeddings.
+    // Compute local Atchley-factor embeddings so callers always receive an
+    // embeddings array they can use for scoring / ranking.
+    const embeddings = computeLocalEmbeddings(cleanSeq);
+
     return NextResponse.json(
       {
         ok: true,
         pdb: result.pdb || '',
+        embeddings,
         model,
         sequence: cleanSeq,
         requestId,
