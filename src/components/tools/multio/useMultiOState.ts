@@ -115,11 +115,41 @@ export function useMultiOState() {
   const [mofaPlusResult, setMofaPlusResult] = useState<MOFAPlusResultType | null>(null);
   const [mofaPlusLoading, setMofaPlusLoading] = useState(false);
 
-  /* Backend toggles */
-  const [useMOFA, setUseMOFA] = useState(false);
-  const [useRealUMAP, setUseRealUMAP] = useState(false);
+  /* Backend toggles — default to Python backends when available */
+  const [useMOFA, setUseMOFA] = useState(true);
+  const [useRealUMAP, setUseRealUMAP] = useState(true);
   const [mofaBackendWarning, setMofaBackendWarning] = useState<string | null>(null);
   const [umapBackendWarning, setUmapBackendWarning] = useState<string | null>(null);
+
+  /* Health-check: probe MOFA+ backend on mount */
+  useEffect(() => {
+    fetch("/api/mofa", { method: "OPTIONS" })
+      .then((res) => {
+        if (!res.ok) {
+          setUseMOFA(false);
+          setMofaBackendWarning("MOFA+ backend unavailable, using local ALS");
+        }
+      })
+      .catch(() => {
+        setUseMOFA(false);
+        setMofaBackendWarning("MOFA+ backend unreachable, using local ALS");
+      });
+  }, []);
+
+  /* Health-check: probe UMAP backend on mount */
+  useEffect(() => {
+    fetch("/api/umap", { method: "OPTIONS" })
+      .then((res) => {
+        if (!res.ok) {
+          setUseRealUMAP(false);
+          setUmapBackendWarning("UMAP backend unavailable, using local PCA projection");
+        }
+      })
+      .catch(() => {
+        setUseRealUMAP(false);
+        setUmapBackendWarning("UMAP backend unreachable, using local PCA projection");
+      });
+  }, []);
 
   /* UMAP result from Python backend */
   const [umapResult, setUmapResult] = useState<number[][] | null>(null);
