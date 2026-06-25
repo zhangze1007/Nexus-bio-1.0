@@ -35,20 +35,24 @@ def run_mofa_analysis(
 
     ent = entry_point()
 
-    # Prepare data in mofapy2 format: list of matrices per view
+    # Prepare data in mofapy2 format
     view_names = list(views.keys())
-    data_matrices = [views[v].tolist() for v in view_names]
+    data_matrices = [views[v] for v in view_names]  # numpy arrays
     features = [feature_names.get(v, [f"f{j}" for j in range(views[v].shape[1])]) for v in view_names]
     likelihoods = ["gaussian"] * len(view_names)
 
-    # Set data matrices
-    ent.set_data_matrix(
-        data=data_matrices,
-        views_names=view_names,
-        samples_names=[sample_names],
-        features_names=features,
-        likelihoods=likelihoods,
-    )
+    # Set data matrices (mofapy2 expects numpy arrays)
+    # mofapy2 calls sys.exit() on error, so we catch SystemExit
+    try:
+        ent.set_data_matrix(
+            data=data_matrices,
+            views_names=view_names,
+            samples_names=[sample_names],
+            features_names=features,
+            likelihoods=likelihoods,
+        )
+    except SystemExit as e:
+        raise RuntimeError(f"mofapy2 data validation failed: invalid data format or dimensions")
 
     # Set model options
     ent.set_model_options(factors=n_factors)
