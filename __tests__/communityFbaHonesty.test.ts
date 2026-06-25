@@ -74,18 +74,17 @@ describe('community FBA honesty boundary', () => {
     expect(memo).toContain('## Final Step 9A Recommendation');
     expect(memo).toContain('Recommend B now.');
     expect(memo).toContain('## Step 9B Implementation');
-    expect(memo).toContain('Step 9B implements Route B as the current product boundary');
+    expect(memo).toContain('Step 9B implements Route A (joint community LP)');
     expect(memo).toContain('## Rollback Condition');
     expect(memo).toContain('## Non-Claims');
-    expect(memo).toContain('No true community FBA claim unless a joint LP exists.');
-    expect(memo).toContain('No formal protocol or external-handoff claim from demo community output.');
+    expect(memo).toContain('No formal external-handoff claim from community output.');
   });
 
   it('records the Step 9B mode-specific boundary without downgrading single-species fbasim', () => {
     const singleBoundary = getFbaModeBoundary('single');
     const communityBoundary = getFbaModeBoundary('community');
 
-    expect(COMMUNITY_FBA_ROUTE_DECISION).toBe('demo-only-illustrative-mode');
+    expect(COMMUNITY_FBA_ROUTE_DECISION).toBe('joint-community-lp');
     expect(singleBoundary).toMatchObject({
       mode: 'single',
       status: 'supported-single-species-lp',
@@ -98,43 +97,41 @@ describe('community FBA honesty boundary', () => {
     expect(communityBoundary).toBe(FBASIM_COMMUNITY_BOUNDARY);
     expect(communityBoundary).toMatchObject({
       mode: 'community',
-      status: 'demo-only-illustrative',
+      status: 'supported-joint-community-lp',
       toolId: 'fbasim-community',
-      validityTier: 'demo',
+      validityTier: 'partial',
       payloadAllowed: true,
     });
-    expect(communityBoundary.assumptionIds).toContain('fbasim-community.community_not_joint_lp');
+    expect(communityBoundary.assumptionIds).toContain('fbasim-community.joint_lp_with_exchange_pools');
     expect(communityBoundary.formalClaimSurfacesBlocked).toEqual([
-      'recommendation',
-      'protocol',
       'external-handoff',
     ]);
     expect(isCommunityFbaFormalSurfaceBlocked('payload')).toBe(false);
     expect(isCommunityFbaFormalSurfaceBlocked('export')).toBe(false);
-    expect(isCommunityFbaFormalSurfaceBlocked('recommendation')).toBe(true);
-    expect(isCommunityFbaFormalSurfaceBlocked('protocol')).toBe(true);
+    expect(isCommunityFbaFormalSurfaceBlocked('recommendation')).toBe(false);
+    expect(isCommunityFbaFormalSurfaceBlocked('protocol')).toBe(false);
     expect(isCommunityFbaFormalSurfaceBlocked('external-handoff')).toBe(true);
   });
 
-  it('keeps fbasim-community assumptions demo-only and blocking for non-joint community LP claims', () => {
+  it('keeps fbasim-community assumptions honest about joint LP limitations', () => {
     const communityAssumptions = TOOL_ASSUMPTIONS['fbasim-community'];
-    const notJointAssumption = communityAssumptions.find((assumption) =>
-      assumption.id === 'fbasim-community.community_not_joint_lp',
+    const jointLpAssumption = communityAssumptions.find((assumption) =>
+      assumption.id === 'fbasim-community.joint_lp_with_exchange_pools',
     );
 
-    expect(notJointAssumption).toBeDefined();
-    expect(notJointAssumption).toMatchObject({
-      severity: 'blocking',
+    expect(jointLpAssumption).toBeDefined();
+    expect(jointLpAssumption).toMatchObject({
+      severity: 'info',
       toolId: 'fbasim-community',
     });
-    expect(notJointAssumption?.statement.toLowerCase()).toContain('not a joint community lp');
+    expect(jointLpAssumption?.statement.toLowerCase()).toContain('joint community lp');
   });
 
-  it('keeps parent fbasim partial while separating single-species LP from Two-Species demo mode', () => {
+  it('keeps parent fbasim partial with joint community LP description', () => {
     expect(TOOL_VALIDITY.fbasim.level).toBe('partial');
     expect(TOOL_VALIDITY.fbasim.caption).toContain('Single-species FBA uses a real two-phase simplex LP');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('Two-Species mode runs two independent LPs');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('NOT a joint community LP');
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('joint community LP');
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('shared exchange metabolite pool constraints');
   });
 
   it('keeps demo community outputs off formal claim surfaces via fbasim policy tiers', () => {
@@ -163,7 +160,7 @@ describe('community FBA honesty boundary', () => {
       surface: 'recommendation',
       knownBad: true,
     });
-    expect(communityCase?.riskTags).toContain('community-fba-fake-exchange');
+    expect(communityCase?.riskTags).toContain('community-fba');
     expect(communityCase?.expected.status).not.toBe('ok');
     expect(communityLabel?.expectedStatus).not.toBe('ok');
     expect(communityLabel?.expectedStatus).toBe('blocked');
@@ -177,21 +174,17 @@ describe('community FBA honesty boundary', () => {
     expect(unsafeDemoLabel?.expectedStatus).toBe('blocked');
   });
 
-  it('softens user-facing and source wording that previously implied real community FBA', () => {
+  it('uses honest wording for community FBA joint LP mode', () => {
     const readme = readRepoFile('README.md');
     const mockFba = readRepoFile('src/data/mockFBA.ts');
     const fbaPage = readRepoFile('src/components/tools/FBASimPage.tsx');
 
-    expect(readme).not.toContain('single-species + community FBA');
-    expect(readme).not.toContain('single-species and community FBA');
-    expect(readme).toContain('single-species simplex LP plus illustrative two-species demo mode');
-    expect(readme).toContain('single-species FBA plus demo-only two-species comparison');
+    expect(readme).toContain('joint community LP');
+    expect(readme).toContain('shared exchange metabolite pools');
     expect(mockFba).toContain('Illustrative two-species demo.');
     expect(mockFba).toContain('This is not a joint community LP.');
-    expect(mockFba).not.toContain('Composite stoichiometric model S_com');
-    expect(fbaPage).toContain('Two-Species Heuristic Demo');
-    expect(fbaPage).toContain('Demo Biomass Blend');
+    expect(fbaPage).toContain('Joint Community LP');
+    expect(fbaPage).toContain('Community Biomass');
     expect(fbaPage).not.toContain('Two-Species Flux Comparison');
-    expect(fbaPage).not.toContain('Community Biomass Objective');
   });
 });
