@@ -38,6 +38,7 @@ interface ScSpatialControlRailProps {
   showNeighbors: boolean;
   neighborK: number;
   analysisParams: ScSpatialAnalysisParams;
+  spatialFormat?: string | null;
   onLoadDemo: () => void;
   onPickFile: () => void;
   onSelectCluster: (cluster: string | null) => void;
@@ -72,6 +73,7 @@ export default function ScSpatialControlRail({
   showNeighbors,
   neighborK,
   analysisParams,
+  spatialFormat,
   onLoadDemo,
   onPickFile,
   onSelectCluster,
@@ -108,6 +110,13 @@ export default function ScSpatialControlRail({
               Demo
             </button>
           </div>
+          {spatialFormat && spatialFormat !== 'none' && (
+            <span className={styles.badge} style={{ marginTop: 4 }}>
+              {spatialFormat === 'visium' ? '10x Visium' :
+               spatialFormat === 'merfish' ? 'MERFISH' :
+               spatialFormat === 'generic' ? 'Spatial' : spatialFormat}
+            </span>
+          )}
           {datasetMeta ? (
             <div className={styles.inlineStats}>
               <span><strong>{datasetMeta.cellCount.toLocaleString()}</strong>cells</span>

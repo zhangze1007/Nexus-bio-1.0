@@ -825,6 +825,7 @@ export default React.memo(function ScSpatialPage() {
               onToggleNeighbors={toggleNeighbors}
               onSetNeighborK={setNeighborK}
               onAnalysisParamChange={handleAnalysisParamChange}
+              spatialFormat={query ? ((query as unknown as Record<string, unknown>).spatialFormat as string ?? null) : null}
             />
 
             <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
@@ -838,6 +839,7 @@ export default React.memo(function ScSpatialPage() {
                 showKde={showKde}
                 showNeighbors={showNeighbors}
                 neighborK={neighborK}
+                heImageData={query ? ((query as unknown as Record<string, unknown>).heImage as { data: string; scaleFactor: number; spotDiameter: number } | null ?? null) : null}
               />
 
               {query && (

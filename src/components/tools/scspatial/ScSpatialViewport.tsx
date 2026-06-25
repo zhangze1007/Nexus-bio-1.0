@@ -32,6 +32,7 @@ interface ScSpatialViewportProps {
   showNeighbors?: boolean;
   neighborK?: number;
   availableGenes?: string[];
+  heImageData?: { data: string; scaleFactor: number; spotDiameter: number } | null;
 }
 
 interface TableRow {
@@ -209,6 +210,7 @@ function ScatterViewport({
   showKde,
   showNeighbors,
   neighborK,
+  heImageData,
 }: {
   points: ScSpatialPointDatum[];
   svgRef: MutableRefObject<SVGSVGElement | null>;
@@ -220,6 +222,7 @@ function ScatterViewport({
   showKde?: boolean;
   showNeighbors?: boolean;
   neighborK?: number;
+  heImageData?: { data: string; scaleFactor: number; spotDiameter: number } | null;
 }) {
   const [zoom, setZoom] = useState(1);
   const canvasOverlayRef = useRef<HTMLCanvasElement | null>(null);
@@ -428,6 +431,19 @@ function ScatterViewport({
         <rect width={W} height={H} fill="#050505" />
         {/* plot background */}
         <rect x={marginL} y={marginT} width={plotW} height={plotH} fill="rgba(255,255,255,0.03)" />
+
+        {/* H&E tissue image overlay (Visium data) */}
+        {heImageData && (
+          <image
+            href={`data:image/png;base64,${heImageData.data}`}
+            x={marginL}
+            y={marginT}
+            width={plotW}
+            height={plotH}
+            preserveAspectRatio="xMidYMid slice"
+            opacity={0.65}
+          />
+        )}
 
         {/* gridlines */}
         {tickFractions.map((t, i) => (
@@ -1381,6 +1397,7 @@ export default function ScSpatialViewport({
   showKde,
   showNeighbors,
   neighborK,
+  heImageData,
 }: ScSpatialViewportProps) {
   if (loadState === 'uploading' || loadState === 'querying') {
     return (
@@ -1478,6 +1495,7 @@ export default function ScSpatialViewport({
                   showKde={showKde}
                   showNeighbors={showNeighbors}
                   neighborK={neighborK}
+                  heImageData={heImageData}
                 />
               )}
               <ClusterLegend query={query} />
