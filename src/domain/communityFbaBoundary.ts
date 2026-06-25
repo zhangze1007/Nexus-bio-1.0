@@ -6,7 +6,7 @@ export type FbaMode = 'single' | 'community';
 
 export type FbaModeBoundaryStatus =
   | 'supported-single-species-lp'
-  | 'joint-community-lp';
+  | 'supported-joint-community-lp';
 
 export interface FbaModeBoundary {
   mode: FbaMode;
