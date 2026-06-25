@@ -9,7 +9,7 @@ import { checkRateLimit, getRateLimitConfig } from '@/src/utils/rateLimit';
  *
  * Auth:
  *   - Public routes (no key needed): /api/health, /api/alphafold, /api/pubchem, /api/kegg
- *   - Protected routes: /api/analyze, /api/fba, /api/workbench, /api/scspatial/*
+ *   - Protected routes: /api/analyze, /api/fba, /api/files/*, /api/workbench, /api/scspatial/*
  *   - Auth methods (checked in order):
  *     1. Same-origin requests (Sec-Fetch-Site: same-origin) are allowed
  *     2. X-API-Key header with nxb_ prefix → DB-backed key validation (hash + lookup)
@@ -34,6 +34,7 @@ function getApiKey(): string | undefined {
 const PROTECTED_ROUTES = [
   '/api/analyze',
   '/api/fba',
+  '/api/files',
   '/api/workbench',
   '/api/scspatial',
 ];

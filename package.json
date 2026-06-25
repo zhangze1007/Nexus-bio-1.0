@@ -26,6 +26,8 @@
     "reference:py:compare": "python3 reference_impl_py/run_reference_benchmark.py compare"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@libsql/client": "^0.17.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
