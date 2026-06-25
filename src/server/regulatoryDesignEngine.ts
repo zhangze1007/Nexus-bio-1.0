@@ -377,7 +377,7 @@ function computeSpacingReal(rbs: string, cds: string): number {
  * Reference: Turner & Mathews (2010) Nucleic Acids Res 38:D280-D282
  * Reference: Nussinov & Jacobson (1980) PNAS 77:6309-6313
  */
-function computeMRNAFoldingNN(sequence: string): number {
+export function computeMRNAFoldingNN(sequence: string): number {
   const seq = sequence.toUpperCase();
   const n = seq.length;
   if (n < 4) return 0;

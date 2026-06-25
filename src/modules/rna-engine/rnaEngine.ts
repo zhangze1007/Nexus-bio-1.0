@@ -16,58 +16,14 @@
  */
 
 import type { RibozymeType, RNADesignInput, RNADesignResult } from "./types";
-
-// ── RNA Thermodynamic Parameters ───────────────────────────────────────────
-
-/**
- * RNA nearest-neighbor stacking parameters (Turner 2009).
- * Reference: Turner & Mathews (2010) Nucleic Acids Res 38:D280-D282
- */
-const NN_RNA: Record<string, number> = {
-  AA: -0.9,
-  UU: -0.9,
-  AU: -1.1,
-  UA: -1.3,
-  CA: -1.8,
-  UG: -2.1,
-  CU: -0.9,
-  AG: -0.9,
-  GA: -1.1,
-  UC: -1.3,
-  GU: -1.4,
-  AC: -1.4,
-  CG: -2.4,
-  GC: -3.4,
-  GG: -1.7,
-  CC: -1.7,
-};
+import { computeMRNAFoldingNN } from "../../server/regulatoryDesignEngine";
 
 /**
- * RNA complementarity check (Watson-Crick + wobble).
- */
-function isComplementary(a: string, b: string): boolean {
-  return (
-    (a === "A" && b === "U") ||
-    (a === "U" && b === "A") ||
-    (a === "G" && b === "C") ||
-    (a === "C" && b === "G") ||
-    (a === "G" && b === "U") ||
-    (a === "U" && b === "G")
-  );
-}
-
-/**
- * Compute RNA folding energy using NN model.
+ * Compute RNA folding energy using Nussinov DP with Turner NN parameters.
+ * Delegates to computeMRNAFoldingNN from regulatoryDesignEngine.
  */
 function computeFoldingEnergy(seq: string): number {
-  let dg = 0;
-  for (let i = 0; i < seq.length - 1; i++) {
-    dg += NN_RNA[seq.substring(i, i + 2)] || 0;
-  }
-  // Add hairpin loop penalty
-  const nLoops = Math.max(1, Math.floor(seq.length / 10));
-  dg += nLoops * 5.4;
-  return dg;
+  return computeMRNAFoldingNN(seq);
 }
 
 // ── Ribozyme Design ────────────────────────────────────────────────────────
