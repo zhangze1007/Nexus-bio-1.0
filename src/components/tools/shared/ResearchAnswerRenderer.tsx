@@ -1,29 +1,26 @@
-import { formatResearchAnswer } from '../../../utils/researchAnswerFormatter';
-import { THEME } from '../../../theme';
+import { THEME } from "../../../theme";
+import { formatResearchAnswer } from "../../../utils/researchAnswerFormatter";
 
 interface ResearchAnswerRendererProps {
   answer: string;
   compact?: boolean;
 }
 
-export default function ResearchAnswerRenderer({
-  answer,
-  compact = false,
-}: ResearchAnswerRendererProps) {
+export default function ResearchAnswerRenderer({ answer, compact = false }: ResearchAnswerRendererProps) {
   const { sections } = formatResearchAnswer(answer);
   if (sections.length === 0) return null;
 
   return (
-    <div style={{ display: 'grid', gap: compact ? '10px' : '12px' }}>
+    <div style={{ display: "grid", gap: compact ? "10px" : "12px" }}>
       {sections.map((section) => (
-        <section key={section.id} style={{ display: 'grid', gap: compact ? '6px' : '8px' }}>
+        <section key={section.id} style={{ display: "grid", gap: compact ? "6px" : "8px" }}>
           <div
             style={{
               fontFamily: THEME.MONO,
-              fontSize: compact ? '10px' : '11px',
+              fontSize: compact ? "10px" : "11px",
               color: THEME.LABEL,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
             }}
           >
             {section.title}
@@ -34,7 +31,7 @@ export default function ResearchAnswerRenderer({
               key={`${section.id}-paragraph-${index}`}
               style={{
                 color: THEME.VALUE,
-                fontSize: compact ? '11px' : '12px',
+                fontSize: compact ? "11px" : "12px",
                 lineHeight: 1.7,
                 margin: 0,
                 fontFamily: THEME.SANS,
@@ -45,32 +42,32 @@ export default function ResearchAnswerRenderer({
           ))}
 
           {section.bullets.length > 0 && (
-            <div style={{ display: 'grid', gap: compact ? '6px' : '7px' }}>
+            <div style={{ display: "grid", gap: compact ? "6px" : "7px" }}>
               {section.bullets.map((bullet, index) => (
                 <div
                   key={`${section.id}-bullet-${index}`}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: '10px minmax(0, 1fr)',
-                    gap: '8px',
-                    alignItems: 'start',
+                    display: "grid",
+                    gridTemplateColumns: "10px minmax(0, 1fr)",
+                    gap: "8px",
+                    alignItems: "start",
                   }}
                 >
                   <span
                     aria-hidden
                     style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
                       background: THEME.SKY,
-                      marginTop: '7px',
-                      boxShadow: '0 0 0 3px rgba(175,195,214,0.12)',
+                      marginTop: "7px",
+                      boxShadow: "0 0 0 3px rgba(175,195,214,0.12)",
                     }}
                   />
                   <p
                     style={{
                       color: THEME.VALUE,
-                      fontSize: compact ? '11px' : '12px',
+                      fontSize: compact ? "11px" : "12px",
                       lineHeight: 1.65,
                       margin: 0,
                       fontFamily: THEME.SANS,

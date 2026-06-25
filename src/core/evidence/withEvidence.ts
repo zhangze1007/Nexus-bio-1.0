@@ -8,9 +8,9 @@
  * and cannot appear in the "trusted results" section of the UI.
  */
 
-import type { BioEvidence, EvidenceSourceType, EvidenceConfidence } from './bioEvidence';
+import type { BioEvidence, EvidenceConfidence, EvidenceSourceType } from "./bioEvidence";
 
-export type ResultStatus = 'production' | 'research' | 'demo';
+export type ResultStatus = "production" | "research" | "demo";
 
 export interface EvidenceWrapped<T> {
   /** The raw result */
@@ -34,44 +34,39 @@ export interface EvidenceWrapped<T> {
 /**
  * Wrap a result with evidence metadata.
  */
-export function withEvidence<T>(
-  result: T,
-  evidence: BioEvidence[],
-  forcedStatus?: ResultStatus,
-): EvidenceWrapped<T> {
-  const hasExperimental = evidence.some(e => e.sourceType === 'experimental');
-  const hasPredicted = evidence.some(e => e.sourceType === 'predicted' || e.sourceType === 'simulated');
-  const hasLiterature = evidence.some(e => e.sourceType === 'literature');
-  const hasDatabase = evidence.some(e => e.sourceType === 'database');
+export function withEvidence<T>(result: T, evidence: BioEvidence[], forcedStatus?: ResultStatus): EvidenceWrapped<T> {
+  const hasExperimental = evidence.some((e) => e.sourceType === "experimental");
+  const hasPredicted = evidence.some((e) => e.sourceType === "predicted" || e.sourceType === "simulated");
+  const hasLiterature = evidence.some((e) => e.sourceType === "literature");
+  const hasDatabase = evidence.some((e) => e.sourceType === "database");
 
   // Determine confidence
   let confidence: EvidenceConfidence;
-  if ((hasExperimental || hasLiterature || hasDatabase) && !hasPredicted) confidence = 'high';
-  else if (hasPredicted && (hasLiterature || hasDatabase)) confidence = 'medium';
-  else if (hasPredicted) confidence = 'low';
-  else confidence = 'uncertain';
+  if ((hasExperimental || hasLiterature || hasDatabase) && !hasPredicted) confidence = "high";
+  else if (hasPredicted && (hasLiterature || hasDatabase)) confidence = "medium";
+  else if (hasPredicted) confidence = "low";
+  else confidence = "uncertain";
 
   // Determine status
   let status: ResultStatus;
   if (forcedStatus) {
     status = forcedStatus;
   } else if (hasExperimental || (hasLiterature && !hasPredicted) || (hasDatabase && !hasPredicted)) {
-    status = 'production';
+    status = "production";
   } else if (hasPredicted) {
-    status = 'research';
+    status = "research";
   } else {
-    status = 'demo';
+    status = "demo";
   }
 
-  const isProductionReady = status === 'production' && confidence === 'high';
+  const isProductionReady = status === "production" && confidence === "high";
   const containsSimulated = hasPredicted;
   const isExperimentallyValidated = hasExperimental;
 
   // Evidence summary
-  const sources = evidence.map(e => `${e.sourceType}:${e.source}`).join(', ');
-  const evidenceSummary = evidence.length > 0
-    ? `${evidence.length} evidence(s): ${sources}`
-    : 'No evidence attached — result is unverified';
+  const sources = evidence.map((e) => `${e.sourceType}:${e.source}`).join(", ");
+  const evidenceSummary =
+    evidence.length > 0 ? `${evidence.length} evidence(s): ${sources}` : "No evidence attached — result is unverified";
 
   return {
     result,
@@ -96,9 +91,9 @@ export function isTrustedResult<T>(wrapped: EvidenceWrapped<T>): boolean {
  * Get display label for evidence status.
  */
 export function getEvidenceStatusLabel<T>(wrapped: EvidenceWrapped<T>): string {
-  if (wrapped.isProductionReady) return '✓ Validated';
-  if (wrapped.isExperimentallyValidated) return '✓ Experimental';
-  if (wrapped.containsSimulated) return '⚠ Predicted/Simulated';
-  if (wrapped.evidence.length === 0) return '✗ No Evidence';
-  return '○ Research-grade';
+  if (wrapped.isProductionReady) return "✓ Validated";
+  if (wrapped.isExperimentallyValidated) return "✓ Experimental";
+  if (wrapped.containsSimulated) return "⚠ Predicted/Simulated";
+  if (wrapped.evidence.length === 0) return "✗ No Evidence";
+  return "○ Research-grade";
 }

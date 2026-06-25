@@ -21,19 +21,11 @@
  *     pretending the data is available.
  */
 
-import type {
-  NextStepRecommendation,
-  WorkbenchAnalyzeArtifact,
-  WorkbenchEvidenceItem,
-} from '../store/workbenchTypes';
+import type { NextStepRecommendation, WorkbenchAnalyzeArtifact, WorkbenchEvidenceItem } from "../store/workbenchTypes";
 
-export type EvidenceSourceId =
-  | 'workbench'
-  | 'pubmed'
-  | 'biorxiv'
-  | 'semantic-scholar';
+export type EvidenceSourceId = "workbench" | "pubmed" | "biorxiv" | "semantic-scholar";
 
-export type EvidenceAdapterStatus = 'available' | 'not-implemented';
+export type EvidenceAdapterStatus = "available" | "not-implemented";
 
 export interface EvidenceQuery {
   targetProduct: string | null;
@@ -99,9 +91,9 @@ export function createWorkbenchEvidenceAdapter(
   now: () => number = Date.now,
 ): EvidenceAdapter {
   return {
-    source: 'workbench',
-    label: 'Workbench evidence ledger',
-    status: 'available',
+    source: "workbench",
+    label: "Workbench evidence ledger",
+    status: "available",
     query(q) {
       const snap = read();
       const limit = Math.min(q.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
@@ -110,19 +102,17 @@ export function createWorkbenchEvidenceAdapter(
         title: truncate(item.title, 120),
         year: item.year,
         sourceKind: item.sourceKind,
-        source: 'workbench' as const,
-        excerpt: item.abstract
-          ? truncate(item.abstract, EXCERPT_CAP)
-          : undefined,
+        source: "workbench" as const,
+        excerpt: item.abstract ? truncate(item.abstract, EXCERPT_CAP) : undefined,
       }));
       return {
-        status: 'available',
+        status: "available",
         items,
         provenance: {
-          source: 'workbench',
+          source: "workbench",
           retrievedAt: now(),
           queryTarget: q.targetProduct,
-          emptyReason: items.length === 0 ? 'No workbench evidence saved yet' : undefined,
+          emptyReason: items.length === 0 ? "No workbench evidence saved yet" : undefined,
         },
       };
     },
@@ -143,10 +133,10 @@ export function createStubEvidenceAdapter(
   return {
     source,
     label,
-    status: 'not-implemented',
+    status: "not-implemented",
     query(q) {
       return {
-        status: 'not-implemented',
+        status: "not-implemented",
         items: [],
         provenance: {
           source,
@@ -166,9 +156,7 @@ export interface EvidenceAdapterRegistry {
   isAvailable: (source: EvidenceSourceId) => boolean;
 }
 
-export function createEvidenceAdapterRegistry(
-  adapters: EvidenceAdapter[],
-): EvidenceAdapterRegistry {
+export function createEvidenceAdapterRegistry(adapters: EvidenceAdapter[]): EvidenceAdapterRegistry {
   const byId = new Map(adapters.map((a) => [a.source, a]));
   return {
     list() {
@@ -178,7 +166,7 @@ export function createEvidenceAdapterRegistry(
       return byId.get(source);
     },
     isAvailable(source) {
-      return byId.get(source)?.status === 'available';
+      return byId.get(source)?.status === "available";
     },
   };
 }
@@ -193,8 +181,8 @@ export function buildDefaultEvidenceRegistry(
 ): EvidenceAdapterRegistry {
   return createEvidenceAdapterRegistry([
     createWorkbenchEvidenceAdapter(readWorkbench),
-    createStubEvidenceAdapter('pubmed', 'PubMed'),
-    createStubEvidenceAdapter('biorxiv', 'bioRxiv'),
-    createStubEvidenceAdapter('semantic-scholar', 'Semantic Scholar'),
+    createStubEvidenceAdapter("pubmed", "PubMed"),
+    createStubEvidenceAdapter("biorxiv", "bioRxiv"),
+    createStubEvidenceAdapter("semantic-scholar", "Semantic Scholar"),
   ]);
 }

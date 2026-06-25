@@ -34,7 +34,7 @@
  *       for high-dimensional ARD the grid grows exponentially.
  */
 
-export type KernelType = 'rbf' | 'matern52';
+export type KernelType = "rbf" | "matern52";
 
 export interface GPConfig {
   kernel: KernelType;
@@ -60,9 +60,7 @@ function normalCDF(x: number): number {
   const sign = x < 0 ? -1 : 1;
   const absX = Math.abs(x);
   const t = 1.0 / (1.0 + p * absX);
-  const y =
-    1.0 -
-    ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX / 2);
+  const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp((-absX * absX) / 2);
   return 0.5 * (1.0 + sign * y);
 }
 
@@ -88,10 +86,10 @@ export class GaussianProcess {
    */
   fit(X: number[][], y: number[]): void {
     if (X.length === 0 || X.length !== y.length) {
-      throw new Error('X and y must have the same non-zero length');
+      throw new Error("X and y must have the same non-zero length");
     }
 
-    this.XTrain = X.map(row => [...row]);
+    this.XTrain = X.map((row) => [...row]);
     this.yTrain = [...y];
 
     const n = X.length;
@@ -127,15 +125,8 @@ export class GaussianProcess {
    * @param kernelType  'rbf' (default) or 'matern52'
    * @param lsGrid      Optional custom lengthScale grid (default [1,5,10,20,50])
    */
-  fitOptimized(
-    X: number[][],
-    y: number[],
-    kernelType: KernelType = 'rbf',
-    lsGrid?: number[],
-  ): void {
-    const bestConfig = GaussianProcess.optimizeHyperparameters(
-      X, y, kernelType, lsGrid,
-    );
+  fitOptimized(X: number[][], y: number[], kernelType: KernelType = "rbf", lsGrid?: number[]): void {
+    const bestConfig = GaussianProcess.optimizeHyperparameters(X, y, kernelType, lsGrid);
     this.config = bestConfig;
     this.fit(X, y);
   }
@@ -150,7 +141,7 @@ export class GaussianProcess {
 
     for (const xNew of X) {
       // k_star: covariance between xNew and training points
-      const kStar = this.XTrain.map(xTrain => this.kernelFn(xNew, xTrain));
+      const kStar = this.XTrain.map((xTrain) => this.kernelFn(xNew, xTrain));
 
       // Posterior mean: k_star^T * alpha
       let mean = 0;
@@ -215,26 +206,17 @@ export class GaussianProcess {
    * Supports ARD (per-dimension length scales) for both kernel types.
    */
   private kernelFn(x1: number[], x2: number[]): number {
-    if (this.config.kernel === 'matern52') {
-      return GaussianProcess.matern52(
-        x1, x2, this.config.lengthScale, this.config.signalVariance,
-      );
+    if (this.config.kernel === "matern52") {
+      return GaussianProcess.matern52(x1, x2, this.config.lengthScale, this.config.signalVariance);
     }
-    return GaussianProcess.rbf(
-      x1, x2, this.config.lengthScale, this.config.signalVariance,
-    );
+    return GaussianProcess.rbf(x1, x2, this.config.lengthScale, this.config.signalVariance);
   }
 
   /**
    * RBF (squared-exponential) kernel with ARD support.
    * k(x, x') = σ² exp(-0.5 Σ_i ((x_i - x'_i) / l_i)²)
    */
-  private static rbf(
-    x1: number[],
-    x2: number[],
-    ls: number | number[],
-    sv: number,
-  ): number {
+  private static rbf(x1: number[], x2: number[], ls: number | number[], sv: number): number {
     let sqDist = 0;
     for (let i = 0; i < x1.length; i++) {
       const li = Array.isArray(ls) ? ls[i] : ls;
@@ -255,12 +237,7 @@ export class GaussianProcess {
    * @scientific_provenance
    *   REFERENCE: Rasmussen & Williams (2006) eq. 4.16, Table 4.1.
    */
-  private static matern52(
-    x1: number[],
-    x2: number[],
-    ls: number | number[],
-    sv: number,
-  ): number {
+  private static matern52(x1: number[], x2: number[], ls: number | number[], sv: number): number {
     let sqDist = 0;
     for (let i = 0; i < x1.length; i++) {
       const li = Array.isArray(ls) ? ls[i] : ls;
@@ -327,7 +304,7 @@ export class GaussianProcess {
   static optimizeHyperparameters(
     X: number[][],
     y: number[],
-    kernelType: KernelType = 'rbf',
+    kernelType: KernelType = "rbf",
     lengthScaleGrid?: number[],
   ): GPConfig {
     const lsGrid = lengthScaleGrid ?? [1, 5, 10, 20, 50];
@@ -431,7 +408,7 @@ export class GaussianProcess {
 
   private ensureFitted(): void {
     if (!this.fitted) {
-      throw new Error('GaussianProcess has not been fitted. Call fit() before predict() or expectedImprovement().');
+      throw new Error("GaussianProcess has not been fitted. Call fit() before predict() or expectedImprovement().");
     }
   }
 }

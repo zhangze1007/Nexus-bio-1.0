@@ -1,19 +1,11 @@
-'use client';
+"use client";
 
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
-import {
-  Activity,
-  AlertTriangle,
-  Dna,
-  Gauge,
-  Layers,
-  Sparkles,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react';
-import HomeInteractiveCard from './HomeInteractiveCard';
-import { THEME } from '../theme';
+import { motion, useInView } from "framer-motion";
+import { Activity, AlertTriangle, Dna, Gauge, Layers, type LucideIcon, Sparkles, Zap } from "lucide-react";
+import { useRef } from "react";
+import { THEME } from "../theme";
+import HomeInteractiveCard from "./HomeInteractiveCard";
+
 const HEADER = THEME.SANS;
 const MONO = THEME.MONO;
 
@@ -32,294 +24,296 @@ interface EngineBlock {
 
 const ENGINE_BLOCKS: EngineBlock[] = [
   {
-    label: 'Safety',
-    title: 'Cellular Solvency & Toxicity',
+    label: "Safety",
+    title: "Cellular Solvency & Toxicity",
     description:
-      'Host tolerance, energetic solvency, and impurity burden are read as one viability envelope so route promise never detaches from what a cell can actually sustain.',
+      "Host tolerance, energetic solvency, and impurity burden are read as one viability envelope so route promise never detaches from what a cell can actually sustain.",
     models: [
       {
-        name: 'Toxicity window',
-        detail: 'Exposure is judged against viability thresholds rather than generic hazard flags.',
+        name: "Toxicity window",
+        detail: "Exposure is judged against viability thresholds rather than generic hazard flags.",
       },
       {
-        name: 'Cellular solvency',
-        detail: 'Energy demand, impurity load, and growth pressure remain visible inside one viability picture.',
+        name: "Cellular solvency",
+        detail: "Energy demand, impurity load, and growth pressure remain visible inside one viability picture.",
       },
     ],
     notes: [
-      'Defines whether a route is biologically tolerable before downstream ranking begins.',
-      'Keeps pathway ambition grounded in host survivability and burden.',
+      "Defines whether a route is biologically tolerable before downstream ranking begins.",
+      "Keeps pathway ambition grounded in host survivability and burden.",
     ],
     icon: AlertTriangle,
   },
   {
-    label: 'Purification',
-    title: 'Downstream Processing (DSP) Intelligence',
+    label: "Purification",
+    title: "Downstream Processing (DSP) Intelligence",
     description:
-      'Purification difficulty is treated as an engineering cost through structural similarity, co-elution pressure, and separation burden rather than left for downstream surprise.',
+      "Purification difficulty is treated as an engineering cost through structural similarity, co-elution pressure, and separation burden rather than left for downstream surprise.",
     models: [
       {
-        name: 'Similarity screening',
-        detail: 'Fingerprint similarity estimates separation conflict and purification ambiguity.',
+        name: "Similarity screening",
+        detail: "Fingerprint similarity estimates separation conflict and purification ambiguity.",
       },
       {
-        name: 'Separation burden',
-        detail: 'DSP cost stays attached to the route instead of surfacing only at the end.',
+        name: "Separation burden",
+        detail: "DSP cost stays attached to the route instead of surfacing only at the end.",
       },
     ],
     notes: [
-      'Keeps downstream processing visible at the same level as upstream pathway design.',
-      'Preserves one of Nexus-Bio’s signature engineering distinctions.',
+      "Keeps downstream processing visible at the same level as upstream pathway design.",
+      "Preserves one of Nexus-Bio’s signature engineering distinctions.",
     ],
     icon: Layers,
   },
   {
-    label: 'Yield',
-    title: 'Genetic ROI & Carbon Efficiency',
+    label: "Yield",
+    title: "Genetic ROI & Carbon Efficiency",
     featured: true,
     description:
-      'Carbon retention is treated as an engineering return signal so atom economy, diversion loss, and chassis burden stay visible during route choice.',
+      "Carbon retention is treated as an engineering return signal so atom economy, diversion loss, and chassis burden stay visible during route choice.",
     models: [
       {
-        name: 'Carbon retention',
-        detail: 'Product yield is judged by retained carbon, not only by headline titer or flux volume.',
+        name: "Carbon retention",
+        detail: "Product yield is judged by retained carbon, not only by headline titer or flux volume.",
       },
       {
-        name: 'Genetic ROI',
-        detail: 'Genetic burden and wasted atoms are read as engineering loss against pathway return.',
+        name: "Genetic ROI",
+        detail: "Genetic burden and wasted atoms are read as engineering loss against pathway return.",
       },
     ],
     notes: [
-      'Owns route economics rather than stoichiometric feasibility.',
-      'Keeps ROI grounded in measurable carbon efficiency instead of generic optimization language.',
+      "Owns route economics rather than stoichiometric feasibility.",
+      "Keeps ROI grounded in measurable carbon efficiency instead of generic optimization language.",
     ],
     icon: Zap,
   },
   {
-    label: 'Constraint',
-    title: 'Stoichiometric Flux Solver',
+    label: "Constraint",
+    title: "Stoichiometric Flux Solver",
     featured: true,
     description:
-      'Pathway performance is solved as a constrained stoichiometric system so growth, production, and limiting resources remain on one quantitative state.',
+      "Pathway performance is solved as a constrained stoichiometric system so growth, production, and limiting resources remain on one quantitative state.",
     models: [
       {
-        name: 'Steady-state LP',
-        detail: 'Constraint-based flux optimization runs under stoichiometric balance and bounded exchange.',
+        name: "Steady-state LP",
+        detail: "Constraint-based flux optimization runs under stoichiometric balance and bounded exchange.",
       },
       {
-        name: 'Shadow-price sensitivity',
-        detail: 'Dual sensitivities expose which substrates and cofactors are limiting the design.',
+        name: "Shadow-price sensitivity",
+        detail: "Dual sensitivities expose which substrates and cofactors are limiting the design.",
       },
     ],
     notes: [
-      'Backs FBASIM growth, ATP yield, and shadow-price readouts.',
-      'Owns mass-balance solution, not route economics or thermodynamic plausibility.',
+      "Backs FBASIM growth, ATP yield, and shadow-price readouts.",
+      "Owns mass-balance solution, not route economics or thermodynamic plausibility.",
     ],
     icon: Activity,
   },
   {
-    label: 'Energy',
-    title: 'Cofactor Ledger',
+    label: "Energy",
+    title: "Cofactor Ledger",
     description:
-      'ATP, NADH, and NADPH accounting stays attached to pathway nodes and burden ledgers so energetic cost is readable directly from the design surface.',
+      "ATP, NADH, and NADPH accounting stays attached to pathway nodes and burden ledgers so energetic cost is readable directly from the design surface.",
     models: [
       {
-        name: 'ATP accounting',
-        detail: 'Energetic turnover is accumulated across reactions instead of hidden behind aggregate scores.',
+        name: "ATP accounting",
+        detail: "Energetic turnover is accumulated across reactions instead of hidden behind aggregate scores.",
       },
       {
-        name: 'Redox accounting',
-        detail: 'Reducing-equivalent demand stays visible when routes compete for the same cofactor pool.',
+        name: "Redox accounting",
+        detail: "Reducing-equivalent demand stays visible when routes compete for the same cofactor pool.",
       },
     ],
     notes: [
-      'Owns energetic bookkeeping rather than reaction-level feasibility.',
-      'Remains one of the clearest quantitative signatures in the platform.',
+      "Owns energetic bookkeeping rather than reaction-level feasibility.",
+      "Remains one of the clearest quantitative signatures in the platform.",
     ],
     icon: Zap,
   },
   {
-    label: 'Feasibility',
-    title: 'Thermodynamic Feasibility',
+    label: "Feasibility",
+    title: "Thermodynamic Feasibility",
     description:
-      'Free-energy plausibility is evaluated explicitly so route viability is grounded in driving force, reversibility, and reaction slack rather than topology alone.',
+      "Free-energy plausibility is evaluated explicitly so route viability is grounded in driving force, reversibility, and reaction slack rather than topology alone.",
     models: [
       {
-        name: 'Gibbs free energy',
-        detail: 'Reaction favorability is interpreted against the current concentration state, not just network shape.',
+        name: "Gibbs free energy",
+        detail: "Reaction favorability is interpreted against the current concentration state, not just network shape.",
       },
       {
-        name: 'Reaction reversibility',
-        detail: 'Thermodynamic slack and equilibrium pressure remain visible at the reaction level.',
+        name: "Reaction reversibility",
+        detail: "Thermodynamic slack and equilibrium pressure remain visible at the reaction level.",
       },
     ],
     notes: [
-      'Owns reaction plausibility rather than host toxicity or cofactor bookkeeping.',
-      'Keeps route chemistry legible inside PATHD and thermodynamic analysis.',
+      "Owns reaction plausibility rather than host toxicity or cofactor bookkeeping.",
+      "Keeps route chemistry legible inside PATHD and thermodynamic analysis.",
     ],
     icon: Activity,
   },
   {
-    label: 'Dynamics',
-    title: 'Regulatory Control Dynamics',
+    label: "Dynamics",
+    title: "Regulatory Control Dynamics",
     featured: true,
     description:
-      'Time-dependent pathway behavior is modeled with enzyme kinetics, Hill regulation, Monod growth, and RK4 integration so stability is treated as a control problem.',
+      "Time-dependent pathway behavior is modeled with enzyme kinetics, Hill regulation, Monod growth, and RK4 integration so stability is treated as a control problem.",
     models: [
       {
-        name: 'Kinetic regulation',
-        detail: 'Michaelis-Menten and Hill responses define the local logic of enzyme and circuit control.',
+        name: "Kinetic regulation",
+        detail: "Michaelis-Menten and Hill responses define the local logic of enzyme and circuit control.",
       },
       {
-        name: 'Control response',
-        detail: 'Monod growth and RK4 time-stepping keep stability, lag, and overshoot legible.',
+        name: "Control response",
+        detail: "Monod growth and RK4 time-stepping keep stability, lag, and overshoot legible.",
       },
     ],
     notes: [
-      'Owns closed-loop behavior across PATHD kinetics, GECAIR, and DYNCON.',
-      'Distinct from cell-free validation, which focuses on resource-coupled assay behavior.',
+      "Owns closed-loop behavior across PATHD kinetics, GECAIR, and DYNCON.",
+      "Distinct from cell-free validation, which focuses on resource-coupled assay behavior.",
     ],
     icon: Gauge,
   },
   {
-    label: 'Catalysis',
-    title: 'Catalyst Design & Ranking',
+    label: "Catalysis",
+    title: "Catalyst Design & Ranking",
     featured: true,
     description:
-      'Catalyst choice couples binding plausibility, sequence design, and multi-objective ranking so enzyme selection remains tied to system viability.',
+      "Catalyst choice couples binding plausibility, sequence design, and multi-objective ranking so enzyme selection remains tied to system viability.",
     models: [
       {
-        name: 'Binding design',
-        detail: 'Affinity and structural fit act as design constraints within catalyst selection.',
+        name: "Binding design",
+        detail: "Affinity and structural fit act as design constraints within catalyst selection.",
       },
       {
-        name: 'Pareto ranking',
-        detail: 'Candidates are compared across burden, yield, and route quality at the same time.',
+        name: "Pareto ranking",
+        detail: "Candidates are compared across burden, yield, and route quality at the same time.",
       },
     ],
     notes: [
-      'Owns catalyst choice, not the adaptive search that follows it.',
-      'Keeps molecular design tied to pathway-level trade-offs.',
+      "Owns catalyst choice, not the adaptive search that follows it.",
+      "Keeps molecular design tied to pathway-level trade-offs.",
     ],
     icon: Sparkles,
   },
   {
-    label: 'Evolution',
-    title: 'Directed Evolution Campaigns',
+    label: "Evolution",
+    title: "Directed Evolution Campaigns",
     description:
-      'Directed evolution is framed as a campaign over variant populations, where rounds, survivor families, lineage persistence, and next-round strategy matter more than a single abstract landscape score.',
+      "Directed evolution is framed as a campaign over variant populations, where rounds, survivor families, lineage persistence, and next-round strategy matter more than a single abstract landscape score.",
     models: [
       {
-        name: 'Round selection',
-        detail: 'Each library is filtered into survivors and rejected branches under an explicit stability and burden-aware campaign rule.',
+        name: "Round selection",
+        detail:
+          "Each library is filtered into survivors and rejected branches under an explicit stability and burden-aware campaign rule.",
       },
       {
-        name: 'Lineage monitoring',
-        detail: 'Campaign quality is judged by lineage persistence, mutation accumulation, diversity retention, and convergence signals.',
+        name: "Lineage monitoring",
+        detail:
+          "Campaign quality is judged by lineage persistence, mutation accumulation, diversity retention, and convergence signals.",
       },
     ],
     notes: [
-      'Owns evolution campaign management rather than catalyst design logic or residue-level interpretation.',
-      'Keeps survivor families and next-round decisions legible at the architecture level.',
+      "Owns evolution campaign management rather than catalyst design logic or residue-level interpretation.",
+      "Keeps survivor families and next-round decisions legible at the architecture level.",
     ],
     icon: Dna,
   },
   {
-    label: 'Selection',
-    title: 'Genetic Intervention Scoring',
+    label: "Selection",
+    title: "Genetic Intervention Scoring",
     description:
-      'Genome and control interventions are ranked with explicit knockdown efficiency and viability penalties so design choice stays readable instead of disappearing into heuristics.',
+      "Genome and control interventions are ranked with explicit knockdown efficiency and viability penalties so design choice stays readable instead of disappearing into heuristics.",
     models: [
       {
-        name: 'Intervention ranking',
-        detail: 'Interventions are scored with explicit knockdown efficiency and growth-impact terms.',
+        name: "Intervention ranking",
+        detail: "Interventions are scored with explicit knockdown efficiency and growth-impact terms.",
       },
       {
-        name: 'Growth-impact penalty',
-        detail: 'Selection stays readable because the growth-cost tradeoff is surfaced directly.',
+        name: "Growth-impact penalty",
+        detail: "Selection stays readable because the growth-cost tradeoff is surfaced directly.",
       },
     ],
     notes: [
-      'Owns intervention choice rather than catalyst design or evolution search.',
-      'Keeps CRISPRi-style prioritization quantitative and bounded.',
+      "Owns intervention choice rather than catalyst design or evolution search.",
+      "Keeps CRISPRi-style prioritization quantitative and bounded.",
     ],
     icon: Activity,
   },
   {
-    label: 'Validation',
-    title: 'Cell-Free TXTL Validation',
+    label: "Validation",
+    title: "Cell-Free TXTL Validation",
     description:
-      'Cell-free validation is modeled as a resource-aware TXTL system so expression burden, reagent depletion, and translation capacity remain measurable before in vivo transfer.',
+      "Cell-free validation is modeled as a resource-aware TXTL system so expression burden, reagent depletion, and translation capacity remain measurable before in vivo transfer.",
     models: [
       {
-        name: 'TXTL resource model',
-        detail: 'Protein synthesis is tied to ribosome and transcript competition instead of a flat yield lookup.',
+        name: "TXTL resource model",
+        detail: "Protein synthesis is tied to ribosome and transcript competition instead of a flat yield lookup.",
       },
       {
-        name: 'Energy regeneration',
-        detail: 'Expression demand is balanced against depletion and regeneration inside the assay mix.',
+        name: "Energy regeneration",
+        detail: "Expression demand is balanced against depletion and regeneration inside the assay mix.",
       },
     ],
     notes: [
-      'Owns assay-scale validation rather than pathway-scale control dynamics.',
-      'Keeps TXTL visible as a quantitative bridge between design and experiment.',
+      "Owns assay-scale validation rather than pathway-scale control dynamics.",
+      "Keeps TXTL visible as a quantitative bridge between design and experiment.",
     ],
     icon: Zap,
   },
   {
-    label: 'Inference',
-    title: 'Omics & Spatial Inference',
+    label: "Inference",
+    title: "Omics & Spatial Inference",
     featured: true,
     description:
-      'Omics interpretation uses low-rank factorization, linear embeddings, and spatial autocorrelation to turn assay and spatial layers into structured bottleneck evidence.',
+      "Omics interpretation uses low-rank factorization, linear embeddings, and spatial autocorrelation to turn assay and spatial layers into structured bottleneck evidence.",
     models: [
       {
-        name: 'Latent factor model',
-        detail: 'Latent factors compress assay layers into interpretable biological pressure axes.',
+        name: "Latent factor model",
+        detail: "Latent factors compress assay layers into interpretable biological pressure axes.",
       },
       {
-        name: 'Spatial autocorrelation',
-        detail: 'Local structure is surfaced quantitatively rather than treated as visual decoration.',
+        name: "Spatial autocorrelation",
+        detail: "Local structure is surfaced quantitatively rather than treated as visual decoration.",
       },
     ],
     notes: [
-      'Owns evidence extraction from assay layers rather than generative pathway design.',
-      'Keeps omics and spatial statistics visible as one quantitative inference family.',
+      "Owns evidence extraction from assay layers rather than generative pathway design.",
+      "Keeps omics and spatial statistics visible as one quantitative inference family.",
     ],
     icon: Layers,
   },
 ];
 
-function ModelStack({ models }: { models: EngineBlock['models'] }) {
+function ModelStack({ models }: { models: EngineBlock["models"] }) {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        padding: '14px',
-        borderRadius: '12px',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.018) 100%)',
-        border: '0.5px solid rgba(255,255,255,0.09)',
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        padding: "14px",
+        borderRadius: "12px",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.018) 100%)",
+        border: "0.5px solid rgba(255,255,255,0.09)",
       }}
     >
       {models.map((model) => (
         <div
           key={model.name}
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
           }}
         >
           <span
             style={{
               fontFamily: HEADER,
-              fontSize: '11px',
+              fontSize: "11px",
               fontWeight: 600,
               lineHeight: 1.4,
-              color: 'rgba(255,255,255,0.84)',
-              letterSpacing: '-0.01em',
+              color: "rgba(255,255,255,0.84)",
+              letterSpacing: "-0.01em",
             }}
           >
             {model.name}
@@ -327,10 +321,10 @@ function ModelStack({ models }: { models: EngineBlock['models'] }) {
           <span
             style={{
               fontFamily: HEADER,
-              fontSize: '11px',
+              fontSize: "11px",
               lineHeight: 1.6,
-              color: 'rgba(255,255,255,0.46)',
-              letterSpacing: '-0.005em',
+              color: "rgba(255,255,255,0.46)",
+              letterSpacing: "-0.005em",
             }}
           >
             {model.detail}
@@ -343,7 +337,7 @@ function ModelStack({ models }: { models: EngineBlock['models'] }) {
 
 function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   const Icon = block.icon;
 
   return (
@@ -352,38 +346,38 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
       initial={{ opacity: 0, y: 28 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay: 0.08 * index, ease: [0.22, 1, 0.36, 1] }}
-      style={{ minHeight: '100%' }}
+      style={{ minHeight: "100%" }}
     >
       <HomeInteractiveCard
-        icon={<Icon size={16} style={{ color: 'rgba(255,255,255,0.62)' }} />}
+        icon={<Icon size={16} style={{ color: "rgba(255,255,255,0.62)" }} />}
         label={block.label}
         title={block.title}
         description={block.description}
-        labelStyle={{ color: 'rgba(255,255,255,0.50)', marginBottom: '7px' }}
-        titleStyle={{ fontSize: '17px', fontWeight: 650, marginBottom: '10px', letterSpacing: '-0.016em' }}
-        descriptionStyle={{ color: 'rgba(255,255,255,0.4)' }}
+        labelStyle={{ color: "rgba(255,255,255,0.50)", marginBottom: "7px" }}
+        titleStyle={{ fontSize: "17px", fontWeight: 650, marginBottom: "10px", letterSpacing: "-0.016em" }}
+        descriptionStyle={{ color: "rgba(255,255,255,0.4)" }}
         focusable
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <ModelStack models={block.models} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
             {block.notes.map((note) => (
-              <div key={note} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <div key={note} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                 <div
                   style={{
-                    width: '3px',
-                    height: '3px',
-                    borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.34)',
-                    marginTop: '8px',
+                    width: "3px",
+                    height: "3px",
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.34)",
+                    marginTop: "8px",
                     flexShrink: 0,
                   }}
                 />
                 <span
                   style={{
                     fontFamily: HEADER,
-                    fontSize: '11px',
-                    color: 'rgba(255,255,255,0.36)',
+                    fontSize: "11px",
+                    color: "rgba(255,255,255,0.36)",
                     lineHeight: 1.62,
                   }}
                 >
@@ -400,30 +394,30 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
 
 export default function FeaturesArchitecture() {
   const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: '-80px' });
+  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
 
   return (
     <section
       id="architecture"
       ref={sectionRef}
-      style={{ padding: 'clamp(64px,10vw,120px) clamp(16px,4vw,40px)', background: '#000' }}
+      style={{ padding: "clamp(64px,10vw,120px) clamp(16px,4vw,40px)", background: "#000" }}
     >
-      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+      <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          style={{ marginBottom: '48px' }}
+          style={{ marginBottom: "48px" }}
         >
           <h2
             style={{
               fontFamily: HEADER,
-              fontSize: 'clamp(1.8rem,3.5vw,2.8rem)',
+              fontSize: "clamp(1.8rem,3.5vw,2.8rem)",
               fontWeight: 700,
-              color: '#FFFFFF',
-              letterSpacing: '-0.025em',
+              color: "#FFFFFF",
+              letterSpacing: "-0.025em",
               lineHeight: 1.1,
-              margin: '0 0 14px',
+              margin: "0 0 14px",
             }}
           >
             Engine Architecture
@@ -431,20 +425,20 @@ export default function FeaturesArchitecture() {
           <p
             style={{
               fontFamily: HEADER,
-              fontSize: '14px',
-              color: 'rgba(255,255,255,0.55)',
+              fontSize: "14px",
+              color: "rgba(255,255,255,0.55)",
               margin: 0,
               lineHeight: 1.65,
-              maxWidth: '760px',
+              maxWidth: "760px",
             }}
           >
-            Nexus-Bio is powered by quantitative engines that carry real computational identity —
-            flux solvers, catalyst design, kinetic regulation, and omics inference working together as one system.
+            Nexus-Bio is powered by quantitative engines that carry real computational identity — flux solvers, catalyst
+            design, kinetic regulation, and omics inference working together as one system.
           </p>
         </motion.div>
 
         <div className="nb-home-engine-grid">
-          {ENGINE_BLOCKS.filter(b => b.featured).map((block, index) => (
+          {ENGINE_BLOCKS.filter((b) => b.featured).map((block, index) => (
             <EngineCard key={block.title} block={block} index={index} />
           ))}
         </div>

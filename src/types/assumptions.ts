@@ -49,7 +49,7 @@ export interface ToolAssumption {
    *   - 'data'           : about input data shape or provenance
    *   - 'computational'  : about runtime, numerical precision, or scaling
    */
-  category: 'biological' | 'mathematical' | 'data' | 'computational';
+  category: "biological" | "mathematical" | "data" | "computational";
   /** One-line statement, ≤ 120 characters. Imperative, specific, honest. */
   statement: string;
   /** Optional DOI or URL backing the assumption. */
@@ -60,7 +60,7 @@ export interface ToolAssumption {
    *   - 'warning'  : a violation surfaces a UI warning but does not block
    *   - 'info'     : displayed for transparency only; never gates
    */
-  severity: 'blocking' | 'warning' | 'info';
+  severity: "blocking" | "warning" | "info";
 }
 
 /**
@@ -81,11 +81,11 @@ export interface Evidence {
   /** Unique ID for cross-referencing from ProvenanceEntry.evidence. */
   id: string;
   /** Where this evidence comes from. 'mock' = no scientific source. */
-  source: 'literature' | 'database' | 'computation' | 'mock';
+  source: "literature" | "database" | "computation" | "mock";
   /** DOI, URL, database query string, or the literal token "MOCK". */
   reference: string;
   /** Confidence band. 'demo' is for UI-illustration-only outputs. */
-  confidence: 'high' | 'medium' | 'low' | 'demo';
+  confidence: "high" | "medium" | "low" | "demo";
   /** Optional free-text annotation (e.g. "extrapolated outside fitted range"). */
   notes?: string;
 }
@@ -116,7 +116,7 @@ export interface ProvenanceEntry {
   /** Evidence backing the values produced by this run. */
   evidence: Evidence[];
   /** Snapshot of the tool's validity tier at the time of the run. */
-  validityTier: 'real' | 'partial' | 'demo';
+  validityTier: "real" | "partial" | "demo";
   /**
    * Provenance entry IDs (or composite "toolId:timestamp" keys) for the
    * upstream tool runs whose outputs fed into this run. Phase 1 stores
@@ -142,7 +142,7 @@ export interface AssumptionViolation {
    * but the runtime may downgrade (e.g. blocking → warning) when an
    * override is configured for a given workflow.
    */
-  severity: 'blocking' | 'warning';
+  severity: "blocking" | "warning";
   /**
    * Identifier of the upstream payload, tool run, or specific field that
    * triggered this violation. Free-form; format is defined per-trigger.

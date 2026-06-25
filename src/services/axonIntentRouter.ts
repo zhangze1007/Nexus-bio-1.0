@@ -20,47 +20,47 @@
  */
 
 export type IntentRoute =
-  | { kind: 'none'; reason: string }
+  | { kind: "none"; reason: string }
   | {
-      kind: 'pathd';
+      kind: "pathd";
       targetProduct: string;
       reason: string;
       signals: string[];
     }
   | {
-      kind: 'fbasim';
+      kind: "fbasim";
       reason: string;
       signals: string[];
       params: {
-        species: 'ecoli' | 'yeast';
-        objective: 'biomass' | 'atp' | 'product';
+        species: "ecoli" | "yeast";
+        objective: "biomass" | "atp" | "product";
       };
     };
 
 const PATHD_KEYWORDS = [
-  'pathway design',
-  'design the pathway',
-  'design a pathway',
-  'biosynthesis pathway',
-  'bottleneck design',
-  'design bottleneck',
-  'design enzyme',
-  'de novo design',
-  'redesign',
-  'metabolic pathway for',
-  'pathway for',
+  "pathway design",
+  "design the pathway",
+  "design a pathway",
+  "biosynthesis pathway",
+  "bottleneck design",
+  "design bottleneck",
+  "design enzyme",
+  "de novo design",
+  "redesign",
+  "metabolic pathway for",
+  "pathway for",
 ];
 
 const FBASIM_KEYWORDS = [
-  'flux balance',
-  'flux-balance',
-  'fba',
-  'metabolic simulation',
-  'simulate the metabolism',
-  'simulate metabolism',
-  'community simulation',
-  'growth rate simulation',
-  'knockout analysis',
+  "flux balance",
+  "flux-balance",
+  "fba",
+  "metabolic simulation",
+  "simulate the metabolism",
+  "simulate metabolism",
+  "community simulation",
+  "growth rate simulation",
+  "knockout analysis",
 ];
 
 const PRODUCT_PATTERNS = [
@@ -69,7 +69,7 @@ const PRODUCT_PATTERNS = [
 ];
 
 function lowerTrim(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, ' ').trim();
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 function matchedKeywords(lower: string, keywords: string[]): string[] {
@@ -80,7 +80,7 @@ function extractProduct(raw: string): string | null {
   for (const pattern of PRODUCT_PATTERNS) {
     const match = raw.match(pattern);
     if (match && match[1]) {
-      return match[1].trim().replace(/[.?!,]$/, '');
+      return match[1].trim().replace(/[.?!,]$/, "");
     }
   }
   return null;
@@ -92,8 +92,8 @@ export interface IntentContextHint {
 }
 
 export function routeIntent(query: string, context?: IntentContextHint): IntentRoute {
-  const trimmed = query?.trim() ?? '';
-  if (!trimmed) return { kind: 'none', reason: 'Empty query' };
+  const trimmed = query?.trim() ?? "";
+  if (!trimmed) return { kind: "none", reason: "Empty query" };
 
   const lower = lowerTrim(trimmed);
 
@@ -103,43 +103,44 @@ export function routeIntent(query: string, context?: IntentContextHint): IntentR
   // Conflict: both tools mentioned. Stay conservative — don't route.
   if (pathdHits.length > 0 && fbasimHits.length > 0) {
     return {
-      kind: 'none',
-      reason: 'Query mentions both PATHD and FBASIM scope; keeping it in copilot mode',
+      kind: "none",
+      reason: "Query mentions both PATHD and FBASIM scope; keeping it in copilot mode",
     };
   }
 
   if (pathdHits.length > 0) {
-    const product = extractProduct(trimmed) ?? context?.targetProduct ?? '';
+    const product = extractProduct(trimmed) ?? context?.targetProduct ?? "";
     if (!product) {
       return {
-        kind: 'none',
-        reason: 'PATHD intent detected but no target product present in query or context',
+        kind: "none",
+        reason: "PATHD intent detected but no target product present in query or context",
       };
     }
     return {
-      kind: 'pathd',
+      kind: "pathd",
       targetProduct: product,
-      reason: `Matched PATHD keyword(s): ${pathdHits.join(', ')}`,
+      reason: `Matched PATHD keyword(s): ${pathdHits.join(", ")}`,
       signals: pathdHits,
     };
   }
 
   if (fbasimHits.length > 0) {
-    const species: 'ecoli' | 'yeast' = lower.includes('yeast') ? 'yeast' : 'ecoli';
-    const objective: 'biomass' | 'atp' | 'product' =
-      lower.includes('atp') ? 'atp' :
-      lower.includes('product') || lower.includes('yield') ? 'product' :
-      'biomass';
+    const species: "ecoli" | "yeast" = lower.includes("yeast") ? "yeast" : "ecoli";
+    const objective: "biomass" | "atp" | "product" = lower.includes("atp")
+      ? "atp"
+      : lower.includes("product") || lower.includes("yield")
+        ? "product"
+        : "biomass";
     return {
-      kind: 'fbasim',
-      reason: `Matched FBASIM keyword(s): ${fbasimHits.join(', ')}`,
+      kind: "fbasim",
+      reason: `Matched FBASIM keyword(s): ${fbasimHits.join(", ")}`,
       signals: fbasimHits,
       params: { species, objective },
     };
   }
 
   return {
-    kind: 'none',
-    reason: 'No automatable PATHD / FBASIM intent detected',
+    kind: "none",
+    reason: "No automatable PATHD / FBASIM intent detected",
   };
 }

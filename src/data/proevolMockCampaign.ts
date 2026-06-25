@@ -1,15 +1,7 @@
-import { ENZYME_STRUCTURES, RATE_LIMITING_ENZYME } from './mockCatalystDesigner';
-import type { WorkbenchAnalyzeArtifact, WorkbenchProjectBrief } from '../store/workbenchTypes';
-import type {
-  CatalystWorkbenchPayload,
-  CETHXWorkbenchPayload,
-  FBAWorkbenchPayload,
-} from '../store/workbenchPayloads';
-import type {
-  CampaignProvenance,
-  ProEvolCampaignInput,
-  SelectionObjective,
-} from '../services/ProEvolCampaignEngine';
+import type { CampaignProvenance, ProEvolCampaignInput, SelectionObjective } from "../services/ProEvolCampaignEngine";
+import type { CatalystWorkbenchPayload, CETHXWorkbenchPayload, FBAWorkbenchPayload } from "../store/workbenchPayloads";
+import type { WorkbenchAnalyzeArtifact, WorkbenchProjectBrief } from "../store/workbenchTypes";
+import { ENZYME_STRUCTURES, RATE_LIMITING_ENZYME } from "./mockCatalystDesigner";
 
 interface BuildProEvolCampaignInputOptions {
   project?: WorkbenchProjectBrief | null;
@@ -47,32 +39,34 @@ function deriveProvenance(
   catalyst?: CatalystWorkbenchPayload | null,
 ) {
   if (analyzeArtifact && analyzeArtifact.evidenceTraceIds.length > 0 && !project?.isDemo) {
-    return 'literature-backed' as CampaignProvenance;
+    return "literature-backed" as CampaignProvenance;
   }
   if (analyzeArtifact || catalyst) {
-    return 'inferred' as CampaignProvenance;
+    return "inferred" as CampaignProvenance;
   }
-  return 'simulated' as CampaignProvenance;
+  return "simulated" as CampaignProvenance;
 }
 
 function deriveSelectionObjective(targetProduct: string, targetProtein: string): SelectionObjective {
   return {
-    label: 'Directed evolution objective',
+    label: "Directed evolution objective",
     summary: `Improve ${targetProtein} as a pathway-facing catalyst for ${targetProduct} while preserving stability, expression, and manageable mutation burden.`,
-    primaryMetric: 'Composite campaign score',
+    primaryMetric: "Composite campaign score",
     balancingMetrics: [
-      'Predicted activity',
-      'Predicted stability',
-      'Predicted expression',
-      'Predicted specificity',
-      'Mutation burden risk',
+      "Predicted activity",
+      "Predicted stability",
+      "Predicted expression",
+      "Predicted specificity",
+      "Mutation burden risk",
     ],
   };
 }
 
 function buildSitePool(sequenceLength: number) {
   const fractions = [0.07, 0.11, 0.16, 0.22, 0.31, 0.4, 0.49, 0.58, 0.69, 0.81];
-  const positions = fractions.map((fraction) => clamp(Math.round(sequenceLength * fraction), 6, Math.max(sequenceLength - 6, 6)));
+  const positions = fractions.map((fraction) =>
+    clamp(Math.round(sequenceLength * fraction), 6, Math.max(sequenceLength - 6, 6)),
+  );
   return Array.from(new Set(positions));
 }
 
@@ -81,7 +75,7 @@ function pickEnzyme(catalyst?: CatalystWorkbenchPayload | null, analyzeArtifact?
     return ENZYME_STRUCTURES.find((enzyme) => enzyme.id === catalyst.selectedEnzymeId) ?? RATE_LIMITING_ENZYME;
   }
 
-  const analyzeHint = analyzeArtifact?.enzymeCandidates[0]?.label?.toLowerCase() ?? '';
+  const analyzeHint = analyzeArtifact?.enzymeCandidates[0]?.label?.toLowerCase() ?? "";
   const match = ENZYME_STRUCTURES.find((enzyme) => {
     const searchable = `${enzyme.id} ${enzyme.name} ${enzyme.substrate} ${enzyme.product}`.toLowerCase();
     return analyzeHint && searchable.includes(analyzeHint);
@@ -94,31 +88,28 @@ function deriveAssayCondition(
   fba?: FBAWorkbenchPayload | null,
   cethx?: CETHXWorkbenchPayload | null,
 ) {
-  const objective = fba?.objective === 'product' ? 'product-coupled output screen' : 'growth-coupled enrichment';
-  const thermo = cethx?.result.limitingStep ? ` with thermodynamic attention on ${cethx.result.limitingStep}` : '';
+  const objective = fba?.objective === "product" ? "product-coupled output screen" : "growth-coupled enrichment";
+  const thermo = cethx?.result.limitingStep ? ` with thermodynamic attention on ${cethx.result.limitingStep}` : "";
   return `${targetProduct} ${objective}${thermo}`;
 }
 
-function deriveSelectionPressure(
-  fba?: FBAWorkbenchPayload | null,
-  cethx?: CETHXWorkbenchPayload | null,
-) {
+function deriveSelectionPressure(fba?: FBAWorkbenchPayload | null, cethx?: CETHXWorkbenchPayload | null) {
   const carbon = fba?.result.carbonEfficiency;
   const thermodynamicStress = cethx?.result.efficiency != null ? 100 - cethx.result.efficiency : 28;
   if ((carbon ?? 0) < 45 || thermodynamicStress > 35) {
-    return 'High pathway pressure with simultaneous activity and stability selection';
+    return "High pathway pressure with simultaneous activity and stability selection";
   }
   if ((carbon ?? 0) > 65) {
-    return 'Moderate pressure favoring activity gain while preserving expression headroom';
+    return "Moderate pressure favoring activity gain while preserving expression headroom";
   }
-  return 'Balanced selection pressure across activity, stability, and developability';
+  return "Balanced selection pressure across activity, stability, and developability";
 }
 
 function deriveHostSystem(targetProduct: string, project?: WorkbenchProjectBrief | null) {
-  const text = `${project?.title ?? ''} ${project?.summary ?? ''} ${targetProduct}`.toLowerCase();
-  if (/yeast|saccharomyces|artemisinin/.test(text)) return 'Saccharomyces cerevisiae microscale library screen';
-  if (/e\.?coli|ecoli/.test(text)) return 'Escherichia coli plate-based variant screen';
-  return 'Heterologous microbial expression screen';
+  const text = `${project?.title ?? ""} ${project?.summary ?? ""} ${targetProduct}`.toLowerCase();
+  if (/yeast|saccharomyces|artemisinin/.test(text)) return "Saccharomyces cerevisiae microscale library screen";
+  if (/e\.?coli|ecoli/.test(text)) return "Escherichia coli plate-based variant screen";
+  return "Heterologous microbial expression screen";
 }
 
 function deriveScreeningSystem(targetProduct: string, catalyst?: CatalystWorkbenchPayload | null) {
@@ -140,16 +131,16 @@ export function buildProEvolCampaignInput({
   selectionStringency,
 }: BuildProEvolCampaignInputOptions): ProEvolCampaignInput {
   const enzyme = pickEnzyme(catalyst, analyzeArtifact);
-  const targetProduct = analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product';
+  const targetProduct = analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || "Target Product";
   const targetProtein = catalyst?.selectedEnzymeName || enzyme.name;
   const provenance = deriveProvenance(project, analyzeArtifact, catalyst);
   const sequence = enzyme.sequence || RATE_LIMITING_ENZYME.sequence;
 
   const pathwayPressure = clamp(
     round(
-      0.34
-      + ((100 - (fba?.result.carbonEfficiency ?? 58)) / 100) * 0.34
-      + (analyzeArtifact?.bottleneckAssumptions.length ?? 1) * 0.05,
+      0.34 +
+        ((100 - (fba?.result.carbonEfficiency ?? 58)) / 100) * 0.34 +
+        (analyzeArtifact?.bottleneckAssumptions.length ?? 1) * 0.05,
       3,
     ),
     0.18,
@@ -157,9 +148,7 @@ export function buildProEvolCampaignInput({
   );
   const catalystConfidence = clamp(
     round(
-      0.28
-      + (catalyst?.result.overallBinding ?? 0.56) * 0.46
-      + ((catalyst?.result.isViable ?? true) ? 0.08 : -0.1),
+      0.28 + (catalyst?.result.overallBinding ?? 0.56) * 0.46 + ((catalyst?.result.isViable ?? true) ? 0.08 : -0.1),
       3,
     ),
     0.15,
@@ -167,43 +156,33 @@ export function buildProEvolCampaignInput({
   );
   const thermodynamicStress = clamp(
     round(
-      0.18
-      + ((100 - (cethx?.result.efficiency ?? 72)) / 100) * 0.6
-      + Math.max(0, -(cethx?.result.gibbsFreeEnergy ?? -18)) / 220,
+      0.18 +
+        ((100 - (cethx?.result.efficiency ?? 72)) / 100) * 0.6 +
+        Math.max(0, -(cethx?.result.gibbsFreeEnergy ?? -18)) / 220,
       3,
     ),
     0.08,
     0.95,
   );
   const expressionHeadroom = clamp(
-    round(
-      0.58
-      + (catalyst?.result.bestCAI ?? 0.62) * 0.18
-      - (catalyst?.result.growthPenalty ?? 8) / 100 * 0.5,
-      3,
-    ),
+    round(0.58 + (catalyst?.result.bestCAI ?? 0.62) * 0.18 - ((catalyst?.result.growthPenalty ?? 8) / 100) * 0.5, 3),
     0.12,
     0.94,
   );
   const literatureSupport = clamp(
     round(
-      0.2
-      + Math.min((analyzeArtifact?.evidenceTraceIds.length ?? 0) / 8, 0.48)
-      + (!project?.isDemo && analyzeArtifact ? 0.12 : 0),
+      0.2 +
+        Math.min((analyzeArtifact?.evidenceTraceIds.length ?? 0) / 8, 0.48) +
+        (!project?.isDemo && analyzeArtifact ? 0.12 : 0),
       3,
     ),
     0.18,
     0.92,
   );
 
-  const seed = hashString([
-    targetProduct,
-    targetProtein,
-    totalRounds,
-    librarySize,
-    survivorCount,
-    selectionStringency.toFixed(2),
-  ].join('|'));
+  const seed = hashString(
+    [targetProduct, targetProtein, totalRounds, librarySize, survivorCount, selectionStringency.toFixed(2)].join("|"),
+  );
 
   return {
     campaignName: `${targetProduct} · ${targetProtein} evolution campaign`,

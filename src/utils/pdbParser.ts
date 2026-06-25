@@ -10,34 +10,98 @@
 // ── Amino acid properties for structural analysis ──────────────────────────
 
 const AA_3_TO_1: Record<string, string> = {
-  ALA: 'A', ARG: 'R', ASN: 'N', ASP: 'D', CYS: 'C',
-  GLU: 'E', GLN: 'Q', GLY: 'G', HIS: 'H', ILE: 'I',
-  LEU: 'L', LYS: 'K', MET: 'M', PHE: 'F', PRO: 'P',
-  SER: 'S', THR: 'T', TRP: 'W', TYR: 'Y', VAL: 'V',
+  ALA: "A",
+  ARG: "R",
+  ASN: "N",
+  ASP: "D",
+  CYS: "C",
+  GLU: "E",
+  GLN: "Q",
+  GLY: "G",
+  HIS: "H",
+  ILE: "I",
+  LEU: "L",
+  LYS: "K",
+  MET: "M",
+  PHE: "F",
+  PRO: "P",
+  SER: "S",
+  THR: "T",
+  TRP: "W",
+  TYR: "Y",
+  VAL: "V",
 };
 
 /** Chou-Fasman helix propensity (simplified) */
 const HELIX_PROPENSITY: Record<string, number> = {
-  A: 1.42, R: 0.98, N: 0.67, D: 1.01, C: 0.70,
-  E: 1.51, Q: 1.11, G: 0.57, H: 1.00, I: 1.08,
-  L: 1.21, K: 1.16, M: 1.45, F: 1.13, P: 0.57,
-  S: 0.77, T: 0.83, W: 1.08, Y: 0.69, V: 1.06,
+  A: 1.42,
+  R: 0.98,
+  N: 0.67,
+  D: 1.01,
+  C: 0.7,
+  E: 1.51,
+  Q: 1.11,
+  G: 0.57,
+  H: 1.0,
+  I: 1.08,
+  L: 1.21,
+  K: 1.16,
+  M: 1.45,
+  F: 1.13,
+  P: 0.57,
+  S: 0.77,
+  T: 0.83,
+  W: 1.08,
+  Y: 0.69,
+  V: 1.06,
 };
 
 /** Chou-Fasman sheet propensity (simplified) */
 const SHEET_PROPENSITY: Record<string, number> = {
-  A: 0.83, R: 0.93, N: 0.89, D: 0.54, C: 1.19,
-  E: 0.37, Q: 1.10, G: 0.75, H: 0.87, I: 1.60,
-  L: 1.30, K: 0.74, M: 1.05, F: 1.38, P: 0.55,
-  S: 0.75, T: 1.19, W: 1.37, Y: 1.47, V: 1.70,
+  A: 0.83,
+  R: 0.93,
+  N: 0.89,
+  D: 0.54,
+  C: 1.19,
+  E: 0.37,
+  Q: 1.1,
+  G: 0.75,
+  H: 0.87,
+  I: 1.6,
+  L: 1.3,
+  K: 0.74,
+  M: 1.05,
+  F: 1.38,
+  P: 0.55,
+  S: 0.75,
+  T: 1.19,
+  W: 1.37,
+  Y: 1.47,
+  V: 1.7,
 };
 
 /** Hydrophobicity (Kyte-Doolittle, normalized to [0,1]) */
 const HYDROPHOBICITY: Record<string, number> = {
-  A: 0.62, R: 0.00, N: 0.24, D: 0.03, C: 0.68,
-  E: 0.05, Q: 0.19, G: 0.48, H: 0.17, I: 1.00,
-  L: 0.97, K: 0.00, M: 0.74, F: 0.88, P: 0.40,
-  S: 0.38, T: 0.45, W: 0.81, Y: 0.56, V: 0.93,
+  A: 0.62,
+  R: 0.0,
+  N: 0.24,
+  D: 0.03,
+  C: 0.68,
+  E: 0.05,
+  Q: 0.19,
+  G: 0.48,
+  H: 0.17,
+  I: 1.0,
+  L: 0.97,
+  K: 0.0,
+  M: 0.74,
+  F: 0.88,
+  P: 0.4,
+  S: 0.38,
+  T: 0.45,
+  W: 0.81,
+  Y: 0.56,
+  V: 0.93,
 };
 
 export interface PDBAtom {
@@ -61,7 +125,10 @@ export interface PDBStructure {
   title: string;
   distance(i: number, j: number): number;
   atomsNear(point: [number, number, number], radius: number): PDBAtom[];
-  residuesNear(atomIndex: number, radius: number): Array<{
+  residuesNear(
+    atomIndex: number,
+    radius: number,
+  ): Array<{
     residueName: string;
     residueNumber: number;
     chainId: string;
@@ -77,18 +144,18 @@ export interface PDBStructure {
  */
 export function parsePDB(pdbText: string): PDBStructure {
   const atoms: PDBAtom[] = [];
-  let title = '';
+  let title = "";
 
-  const lines = pdbText.split('\n');
+  const lines = pdbText.split("\n");
 
   for (const line of lines) {
     const recordType = line.substring(0, 6).trim();
 
-    if (recordType === 'TITLE') {
+    if (recordType === "TITLE") {
       // TITLE record: columns 11-80 contain the title
       title = line.substring(10).trim();
-    } else if (recordType === 'ATOM' || recordType === 'HETATM') {
-      const atom = parseAtomLine(line, recordType === 'HETATM');
+    } else if (recordType === "ATOM" || recordType === "HETATM") {
+      const atom = parseAtomLine(line, recordType === "HETATM");
       if (atom) {
         atoms.push(atom);
       }
@@ -127,10 +194,10 @@ function parseAtomLine(line: string, isHetero: boolean): PDBAtom | null {
     // So column N in spec = index N-1 in string
     const serial = parseIntSafe(line.substring(6, 11).trim());
     const name = line.substring(12, 16).trim();
-    const altLoc = line.length > 16 ? line.charAt(16) : ' ';
+    const altLoc = line.length > 16 ? line.charAt(16) : " ";
     const residueName = line.substring(17, 20).trim();
     // PDB columns 18-20 (1-indexed) = indices 17-19 (0-indexed), length 3
-    const chainId = line.length > 21 ? line.charAt(21) : ' ';
+    const chainId = line.length > 21 ? line.charAt(21) : " ";
     const residueNumber = parseIntSafe(line.substring(22, 26).trim());
     const x = parseFloatSafe(line.substring(30, 38).trim());
     const y = parseFloatSafe(line.substring(38, 46).trim());
@@ -146,9 +213,9 @@ function parseAtomLine(line: string, isHetero: boolean): PDBAtom | null {
     return {
       serial,
       name,
-      altLoc: altLoc === ' ' ? '' : altLoc,
+      altLoc: altLoc === " " ? "" : altLoc,
       residueName,
-      chainId: chainId === ' ' ? '' : chainId,
+      chainId: chainId === " " ? "" : chainId,
       residueNumber,
       x,
       y,
@@ -186,10 +253,10 @@ function parseFloatSafe(s: string): number {
  */
 function extractElementFromName(atomName: string): string {
   // Remove leading digits and spaces
-  const cleaned = atomName.replace(/^[\d\s]+/, '');
+  const cleaned = atomName.replace(/^[\d\s]+/, "");
 
   if (cleaned.length === 0) {
-    return '';
+    return "";
   }
 
   // First character is typically the element
@@ -198,7 +265,40 @@ function extractElementFromName(atomName: string): string {
   // Check for two-letter elements (common ones)
   if (cleaned.length >= 2) {
     const twoChar = (firstChar + cleaned.charAt(1)).toUpperCase();
-    const twoLetterElements = ['HE', 'LI', 'BE', 'NE', 'NA', 'MG', 'AL', 'SI', 'CL', 'AR', 'CA', 'FE', 'CU', 'ZN', 'SE', 'BR', 'KR', 'RB', 'SR', 'PD', 'AG', 'CD', 'IN', 'SN', 'XE', 'CS', 'BA', 'PT', 'AU', 'HG', 'PB', 'BI'];
+    const twoLetterElements = [
+      "HE",
+      "LI",
+      "BE",
+      "NE",
+      "NA",
+      "MG",
+      "AL",
+      "SI",
+      "CL",
+      "AR",
+      "CA",
+      "FE",
+      "CU",
+      "ZN",
+      "SE",
+      "BR",
+      "KR",
+      "RB",
+      "SR",
+      "PD",
+      "AG",
+      "CD",
+      "IN",
+      "SN",
+      "XE",
+      "CS",
+      "BA",
+      "PT",
+      "AU",
+      "HG",
+      "PB",
+      "BI",
+    ];
 
     if (twoLetterElements.includes(twoChar)) {
       return twoChar;
@@ -212,11 +312,14 @@ function extractElementFromName(atomName: string): string {
  * Create a PDBStructure object with utility methods.
  */
 function createPDBStructure(atoms: PDBAtom[], title: string): PDBStructure {
-  const residueCache = new Map<string, {
-    residueName: string;
-    residueNumber: number;
-    chainId: string;
-  }>();
+  const residueCache = new Map<
+    string,
+    {
+      residueName: string;
+      residueNumber: number;
+      chainId: string;
+    }
+  >();
 
   // Build residue cache for deduplication
   for (const atom of atoms) {
@@ -284,7 +387,10 @@ function createPDBStructure(atoms: PDBAtom[], title: string): PDBStructure {
      * @param radius - Search radius in Angstroms
      * @returns Array of unique residue descriptors with minimum distance to reference atom
      */
-    residuesNear(atomIndex: number, radius: number): Array<{
+    residuesNear(
+      atomIndex: number,
+      radius: number,
+    ): Array<{
       residueName: string;
       residueNumber: number;
       chainId: string;
@@ -299,12 +405,15 @@ function createPDBStructure(atoms: PDBAtom[], title: string): PDBStructure {
       const refResidueKey = `${refAtom.chainId}:${refAtom.residueNumber}:${refAtom.residueName}`;
 
       // Track minimum distance for each residue
-      const residueDistances = new Map<string, {
-        residueName: string;
-        residueNumber: number;
-        chainId: string;
-        minDistance: number;
-      }>();
+      const residueDistances = new Map<
+        string,
+        {
+          residueName: string;
+          residueNumber: number;
+          chainId: string;
+          minDistance: number;
+        }
+      >();
 
       for (const atom of atoms) {
         const dx = atom.x - refAtom.x;
@@ -335,7 +444,7 @@ function createPDBStructure(atoms: PDBAtom[], title: string): PDBStructure {
       }
 
       // Convert to array and sort by distance
-      const result = Array.from(residueDistances.values()).map(r => ({
+      const result = Array.from(residueDistances.values()).map((r) => ({
         residueName: r.residueName,
         residueNumber: r.residueNumber,
         chainId: r.chainId,
@@ -382,12 +491,12 @@ function groupByResidue(structure: PDBStructure, chainId?: string): ResidueAtoms
       });
     }
     const g = groups.get(key)!;
-    if (atom.name === 'N') g.N = atom;
-    else if (atom.name === 'CA') g.CA = atom;
-    else if (atom.name === 'C') g.C = atom;
-    else if (atom.name === 'O') g.O = atom;
-    else if (atom.name === 'CB') g.CB = atom;
-    else if (!['N', 'CA', 'C', 'O', 'CB', 'H', 'HA'].includes(atom.name)) {
+    if (atom.name === "N") g.N = atom;
+    else if (atom.name === "CA") g.CA = atom;
+    else if (atom.name === "C") g.C = atom;
+    else if (atom.name === "O") g.O = atom;
+    else if (atom.name === "CB") g.CB = atom;
+    else if (!["N", "CA", "C", "O", "CB", "H", "HA"].includes(atom.name)) {
       g.sidechain.push(atom);
     }
   }
@@ -403,11 +512,11 @@ function vec3Dot(a: [number, number, number], b: [number, number, number]): numb
 }
 
 function vec3Cross(a: [number, number, number], b: [number, number, number]): [number, number, number] {
-  return [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]];
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
 function vec3Norm(v: [number, number, number]): number {
-  return Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+  return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
 function dihedralAngle(a: PDBAtom, b: PDBAtom, c: PDBAtom, d: PDBAtom): number {
@@ -416,7 +525,7 @@ function dihedralAngle(a: PDBAtom, b: PDBAtom, c: PDBAtom, d: PDBAtom): number {
   const b3 = vec3Sub(d, c);
   const n1 = vec3Cross(b1, b2);
   const n2 = vec3Cross(b2, b3);
-  const m1 = vec3Cross(n1, [b2[0]/vec3Norm(b2), b2[1]/vec3Norm(b2), b2[2]/vec3Norm(b2)]);
+  const m1 = vec3Cross(n1, [b2[0] / vec3Norm(b2), b2[1] / vec3Norm(b2), b2[2] / vec3Norm(b2)]);
   const x = vec3Dot(n1, n2);
   const y = vec3Dot(m1, n2);
   return Math.atan2(y, x) * (180 / Math.PI);
@@ -430,7 +539,10 @@ function dihedralAngle(a: PDBAtom, b: PDBAtom, c: PDBAtom, d: PDBAtom): number {
  * chi1:  N - CA - CB - CG (or equivalent)
  * chi2:  CA - CB - CG - CD (or equivalent)
  */
-export function computeDihedrals(structure: PDBStructure, chainId?: string): Array<{
+export function computeDihedrals(
+  structure: PDBStructure,
+  chainId?: string,
+): Array<{
   residueNumber: number;
   residueName: string;
   phi: number | null;
@@ -471,15 +583,13 @@ export function computeDihedrals(structure: PDBStructure, chainId?: string): Arr
     // chi1: N - CA - CB - CG (first side-chain torsion)
     if (curr.N && curr.CA && curr.CB && curr.sidechain.length > 0) {
       // Find CG (or equivalent: first heavy side-chain atom after CB)
-      const cg = curr.sidechain.find(a =>
-        ['CG', 'CG1', 'OG', 'OG1', 'SG', 'CG2'].includes(a.name)
-      );
+      const cg = curr.sidechain.find((a) => ["CG", "CG1", "OG", "OG1", "SG", "CG2"].includes(a.name));
       if (cg) {
         chi1 = dihedralAngle(curr.N, curr.CA, curr.CB, cg);
 
         // chi2: CA - CB - CG - CD (or equivalent)
-        const cd = curr.sidechain.find(a =>
-          ['CD', 'CD1', 'OD', 'OD1', 'SD', 'ND', 'ND1', 'NE', 'NE1', 'NZ', 'CE', 'CE1', 'CZ'].includes(a.name)
+        const cd = curr.sidechain.find((a) =>
+          ["CD", "CD1", "OD", "OD1", "SD", "ND", "ND1", "NE", "NE1", "NZ", "CE", "CE1", "CZ"].includes(a.name),
         );
         if (cd) {
           chi2 = dihedralAngle(curr.CA, curr.CB, cg, cd);
@@ -509,7 +619,11 @@ export function computeDihedrals(structure: PDBStructure, chainId?: string): Arr
  * @param chainId - Optional chain to restrict computation
  * @returns Per-residue SASA in Ų
  */
-export function computeSASA(structure: PDBStructure, probeRadius = 1.4, chainId?: string): Array<{
+export function computeSASA(
+  structure: PDBStructure,
+  probeRadius = 1.4,
+  chainId?: string,
+): Array<{
   residueNumber: number;
   residueName: string;
   sasa: number;
@@ -520,30 +634,54 @@ export function computeSASA(structure: PDBStructure, probeRadius = 1.4, chainId?
   const n = 100;
   const goldenRatio = (1 + Math.sqrt(5)) / 2;
   for (let i = 0; i < n; i++) {
-    const theta = 2 * Math.PI * i / goldenRatio;
-    const phi = Math.acos(1 - 2 * (i + 0.5) / n);
+    const theta = (2 * Math.PI * i) / goldenRatio;
+    const phi = Math.acos(1 - (2 * (i + 0.5)) / n);
     spherePoints.push([Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)]);
   }
 
   // Van der Waals radii (Å)
   const vdwRadii: Record<string, number> = {
-    C: 1.7, N: 1.55, O: 1.52, S: 1.8, H: 1.2,
-    P: 1.8, SE: 1.9, FE: 1.47, ZN: 1.39, MG: 1.73,
+    C: 1.7,
+    N: 1.55,
+    O: 1.52,
+    S: 1.8,
+    H: 1.2,
+    P: 1.8,
+    SE: 1.9,
+    FE: 1.47,
+    ZN: 1.39,
+    MG: 1.73,
   };
 
   // Max SASA per residue type (extended tripeptide, Ų) — simplified
   const maxSASA: Record<string, number> = {
-    ALA: 121, ARG: 265, ASN: 187, ASP: 187, CYS: 148,
-    GLU: 214, GLN: 214, GLY: 97, HIS: 216, ILE: 195,
-    LEU: 191, LYS: 230, MET: 203, PHE: 228, PRO: 154,
-    SER: 143, THR: 163, TRP: 264, TYR: 255, VAL: 165,
+    ALA: 121,
+    ARG: 265,
+    ASN: 187,
+    ASP: 187,
+    CYS: 148,
+    GLU: 214,
+    GLN: 214,
+    GLY: 97,
+    HIS: 216,
+    ILE: 195,
+    LEU: 191,
+    LYS: 230,
+    MET: 203,
+    PHE: 228,
+    PRO: 154,
+    SER: 143,
+    THR: 163,
+    TRP: 264,
+    TYR: 255,
+    VAL: 165,
   };
 
-  const atoms = structure.atoms.filter(a => !a.isHetero && (!chainId || a.chainId === chainId));
+  const atoms = structure.atoms.filter((a) => !a.isHetero && (!chainId || a.chainId === chainId));
   const residues = groupByResidue(structure, chainId);
 
   // Pre-compute expanded radii for each atom
-  const atomRadii = atoms.map(a => (vdwRadii[a.element] || 1.7) + probeRadius);
+  const atomRadii = atoms.map((a) => (vdwRadii[a.element] || 1.7) + probeRadius);
 
   // For each atom, count accessible test points
   const atomSASA = new Map<number, number>();
@@ -566,7 +704,7 @@ export function computeSASA(structure: PDBStructure, probeRadius = 1.4, chainId?
         const dx = px - other.x;
         const dy = py - other.y;
         const dz = pz - other.z;
-        if (dx*dx + dy*dy + dz*dz < otherRadius * otherRadius) {
+        if (dx * dx + dy * dy + dz * dz < otherRadius * otherRadius) {
           blocked = true;
           break;
         }
@@ -588,7 +726,7 @@ export function computeSASA(structure: PDBStructure, probeRadius = 1.4, chainId?
     residueSASA.set(key, (residueSASA.get(key) ?? 0) + (atomSASA.get(i) ?? 0));
   }
 
-  return residues.map(r => {
+  return residues.map((r) => {
     const key = `${r.chainId}:${r.residueNumber}:${r.residueName}`;
     const sasa = residueSASA.get(key) ?? 0;
     const max = maxSASA[r.residueName] ?? 180;
@@ -607,28 +745,31 @@ export function computeSASA(structure: PDBStructure, probeRadius = 1.4, chainId?
  * - Sheet (E): phi in [-180, -40], psi in [40, 220] AND sheet propensity > 1.0
  * - Coil (C): everything else
  */
-export function assignSecondaryStructure(structure: PDBStructure, chainId?: string): Array<{
+export function assignSecondaryStructure(
+  structure: PDBStructure,
+  chainId?: string,
+): Array<{
   residueNumber: number;
   residueName: string;
-  ss: 'H' | 'E' | 'C';
+  ss: "H" | "E" | "C";
   phi: number | null;
   psi: number | null;
 }> {
   const dihedrals = computeDihedrals(structure, chainId);
 
-  return dihedrals.map(d => {
-    const aa1 = AA_3_TO_1[d.residueName] ?? 'G';
+  return dihedrals.map((d) => {
+    const aa1 = AA_3_TO_1[d.residueName] ?? "G";
     const helixP = HELIX_PROPENSITY[aa1] ?? 0.8;
     const sheetP = SHEET_PROPENSITY[aa1] ?? 0.8;
 
-    let ss: 'H' | 'E' | 'C' = 'C';
+    let ss: "H" | "E" | "C" = "C";
 
     if (d.phi !== null && d.psi !== null) {
       const inHelixRange = d.phi >= -180 && d.phi <= -20 && d.psi >= -80 && d.psi <= 40;
       const inSheetRange = d.phi >= -180 && d.phi <= -40 && d.psi >= 40 && d.psi <= 220;
 
-      if (inHelixRange && helixP > 1.0) ss = 'H';
-      else if (inSheetRange && sheetP > 1.0) ss = 'E';
+      if (inHelixRange && helixP > 1.0) ss = "H";
+      else if (inSheetRange && sheetP > 1.0) ss = "E";
     }
 
     return {
@@ -648,7 +789,10 @@ export function assignSecondaryStructure(structure: PDBStructure, chainId?: stri
  *
  * Returns backbone and side-chain H-bonds.
  */
-export function detectHydrogenBonds(structure: PDBStructure, chainId?: string): Array<{
+export function detectHydrogenBonds(
+  structure: PDBStructure,
+  chainId?: string,
+): Array<{
   donorResidue: string;
   donorResidueNumber: number;
   donorAtom: string;
@@ -656,11 +800,11 @@ export function detectHydrogenBonds(structure: PDBStructure, chainId?: string): 
   acceptorResidueNumber: number;
   acceptorAtom: string;
   distance: number;
-  type: 'backbone' | 'sidechain';
+  type: "backbone" | "sidechain";
 }> {
-  const atoms = structure.atoms.filter(a => !a.isHetero && (!chainId || a.chainId === chainId));
-  const nAtoms = atoms.filter(a => a.element === 'N');
-  const oAtoms = atoms.filter(a => a.element === 'O');
+  const atoms = structure.atoms.filter((a) => !a.isHetero && (!chainId || a.chainId === chainId));
+  const nAtoms = atoms.filter((a) => a.element === "N");
+  const oAtoms = atoms.filter((a) => a.element === "O");
   const bonds: Array<{
     donorResidue: string;
     donorResidueNumber: number;
@@ -669,7 +813,7 @@ export function detectHydrogenBonds(structure: PDBStructure, chainId?: string): 
     acceptorResidueNumber: number;
     acceptorAtom: string;
     distance: number;
-    type: 'backbone' | 'sidechain';
+    type: "backbone" | "sidechain";
   }> = [];
 
   for (const n of nAtoms) {
@@ -680,10 +824,10 @@ export function detectHydrogenBonds(structure: PDBStructure, chainId?: string): 
       const dx = n.x - o.x;
       const dy = n.y - o.y;
       const dz = n.z - o.z;
-      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
       if (dist < 3.5) {
-        const isBackbone = ['N', 'O'].includes(n.name) && ['N', 'O'].includes(o.name);
+        const isBackbone = ["N", "O"].includes(n.name) && ["N", "O"].includes(o.name);
         bonds.push({
           donorResidue: n.residueName,
           donorResidueNumber: n.residueNumber,
@@ -692,7 +836,7 @@ export function detectHydrogenBonds(structure: PDBStructure, chainId?: string): 
           acceptorResidueNumber: o.residueNumber,
           acceptorAtom: o.name,
           distance: Math.round(dist * 100) / 100,
-          type: isBackbone ? 'backbone' : 'sidechain',
+          type: isBackbone ? "backbone" : "sidechain",
         });
       }
     }
@@ -705,6 +849,6 @@ export function detectHydrogenBonds(structure: PDBStructure, chainId?: string): 
  * Get hydrophobicity score for a residue (0 = hydrophilic, 1 = hydrophobic).
  */
 export function getHydrophobicity(residueName: string): number {
-  const aa1 = AA_3_TO_1[residueName] ?? 'G';
+  const aa1 = AA_3_TO_1[residueName] ?? "G";
   return HYDROPHOBICITY[aa1] ?? 0.5;
 }

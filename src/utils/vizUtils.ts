@@ -12,27 +12,24 @@
  * @returns SVG path string for hexagon
  */
 export function hexPath(cx: number, cy: number, r: number): string {
-  return Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 180) * (60 * i - 30);
-    const x = (cx + r * Math.cos(angle)).toFixed(2);
-    const y = (cy + r * Math.sin(angle)).toFixed(2);
-    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-  }).join(' ') + ' Z';
+  return (
+    Array.from({ length: 6 }, (_, i) => {
+      const angle = (Math.PI / 180) * (60 * i - 30);
+      const x = (cx + r * Math.cos(angle)).toFixed(2);
+      const y = (cy + r * Math.sin(angle)).toFixed(2);
+      return `${i === 0 ? "M" : "L"} ${x} ${y}`;
+    }).join(" ") + " Z"
+  );
 }
 
 /** Convex hull using monotone chain (Andrew's algorithm). O(n log n). */
-export function computeConvexHull(
-  pts: Array<{ sx: number; sy: number }>,
-): Array<{ sx: number; sy: number }> {
+export function computeConvexHull(pts: Array<{ sx: number; sy: number }>): Array<{ sx: number; sy: number }> {
   if (pts.length <= 2) return pts.slice();
 
-  const sorted = [...pts].sort((a, b) => a.sx !== b.sx ? a.sx - b.sx : a.sy - b.sy);
+  const sorted = [...pts].sort((a, b) => (a.sx !== b.sx ? a.sx - b.sx : a.sy - b.sy));
 
-  const cross = (
-    o: { sx: number; sy: number },
-    a: { sx: number; sy: number },
-    b: { sx: number; sy: number },
-  ) => (a.sx - o.sx) * (b.sy - o.sy) - (a.sy - o.sy) * (b.sx - o.sx);
+  const cross = (o: { sx: number; sy: number }, a: { sx: number; sy: number }, b: { sx: number; sy: number }) =>
+    (a.sx - o.sx) * (b.sy - o.sy) - (a.sy - o.sy) * (b.sx - o.sx);
 
   const lower: typeof pts = [];
   for (const p of sorted) {

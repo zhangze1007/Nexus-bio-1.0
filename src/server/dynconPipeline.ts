@@ -23,32 +23,32 @@
  *     - Pareto front uses only settling time and overshoot; ISE/IAE not included in multi-objective ranking
  */
 
-import { solveRK4, type ODESystem } from '../utils/odeSolver';
-import { analyzeStability, type JacobianResult } from './jacobianAnalysis';
-import { computeSensitivity, type SensitivityReport } from './sensitivityAnalysis';
+import { type ODESystem, solveRK4 } from "../utils/odeSolver";
+import { analyzeStability, type JacobianResult } from "./jacobianAnalysis";
+import { computeSensitivity, type SensitivityReport } from "./sensitivityAnalysis";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
 export interface ControlSpec {
-  setpoint: number;           // target product titer (g/L)
-  processGain: number;        // Kp (g/L per unit control)
-  timeConstant: number;       // τ (min)
-  deadTime: number;           // θ (min)
+  setpoint: number; // target product titer (g/L)
+  processGain: number; // Kp (g/L per unit control)
+  timeConstant: number; // τ (min)
+  deadTime: number; // θ (min)
   disturbanceMagnitude: number;
 }
 
 export interface PIDParams {
-  kp: number;                 // proportional gain
-  ki: number;                 // integral gain
-  kd: number;                 // derivative gain
+  kp: number; // proportional gain
+  ki: number; // integral gain
+  kd: number; // derivative gain
 }
 
 export interface ControlPerformance {
-  settlingTime: number;       // min to within 2% of setpoint
-  overshoot: number;          // % overshoot
-  steadyStateError: number;   // |setpoint - final| / setpoint
-  ise: number;                // integral of squared error
-  iae: number;                // integral of absolute error
+  settlingTime: number; // min to within 2% of setpoint
+  overshoot: number; // % overshoot
+  steadyStateError: number; // |setpoint - final| / setpoint
+  ise: number; // integral of squared error
+  iae: number; // integral of absolute error
   isStable: boolean;
   maxEigenvalue: number;
 }
@@ -109,9 +109,7 @@ function fopdtDerivatives(
 
     const disturbance = disturbanceMagnitude * Math.sin(_t / 50);
 
-    return [
-      (processGain * delayedU - current + disturbance) / timeConstant,
-    ];
+    return [(processGain * delayedU - current + disturbance) / timeConstant];
   };
 }
 
@@ -132,21 +130,24 @@ function designControllers(): {
   const Kp = 1.0; // process gain (normalized)
   const tau = 1.0; // time constant (normalized)
   const theta = 0.5; // dead time (normalized)
-  const znKp = 1.2 * tau / (Kp * theta);
+  const znKp = (1.2 * tau) / (Kp * theta);
   const znKi = znKp / (2 * theta);
-  const znKd = znKp * theta / 2;
+  const znKd = (znKp * theta) / 2;
 
   // Generate candidates around ZN estimate
   const candidates: PIDParams[] = [
-    { kp: znKp, ki: znKi, kd: znKd },                    // ZN
+    { kp: znKp, ki: znKi, kd: znKd }, // ZN
     { kp: znKp * 0.5, ki: znKi * 0.5, kd: znKd * 0.5 }, // Conservative
     { kp: znKp * 1.5, ki: znKi * 1.5, kd: znKd * 1.5 }, // Aggressive
-    { kp: znKp, ki: 0, kd: 0 },                           // P-only
-    { kp: znKp, ki: znKi, kd: 0 },                        // PI
-    { kp: znKp * 0.7, ki: znKi * 0.7, kd: znKd * 2 },   // High derivative
+    { kp: znKp, ki: 0, kd: 0 }, // P-only
+    { kp: znKp, ki: znKi, kd: 0 }, // PI
+    { kp: znKp * 0.7, ki: znKi * 0.7, kd: znKd * 2 }, // High derivative
   ];
 
-  solverCalls.push({ solver: 'design::zieglerNichols', description: `${candidates.length} PID candidates from ZN estimate` });
+  solverCalls.push({
+    solver: "design::zieglerNichols",
+    description: `${candidates.length} PID candidates from ZN estimate`,
+  });
   return { candidates, solverCalls };
 }
 
@@ -176,7 +177,7 @@ function simulateControl(
     tEnd: duration,
   };
 
-  solverCalls.push({ solver: 'odeSolver::solveRK4', description: `FOPDT simulation, ${duration} min` });
+  solverCalls.push({ solver: "odeSolver::solveRK4", description: `FOPDT simulation, ${duration} min` });
   const solution = solveRK4(system, { steps: Math.floor(duration / 0.5) });
 
   // Extract trajectory — states[variable_index][time_index]
@@ -188,10 +189,10 @@ function simulateControl(
 
   // Compute performance metrics
   const final = trajectory[trajectory.length - 1].output;
-  const max = Math.max(...trajectory.map(t => t.output));
-  const settlingIdx = trajectory.findIndex(t => Math.abs(t.output - spec.setpoint) / spec.setpoint < 0.02);
+  const max = Math.max(...trajectory.map((t) => t.output));
+  const settlingIdx = trajectory.findIndex((t) => Math.abs(t.output - spec.setpoint) / spec.setpoint < 0.02);
   const settlingTime = settlingIdx >= 0 ? trajectory[settlingIdx].time : duration;
-  const overshoot = spec.setpoint > 0 ? Math.max(0, (max - spec.setpoint) / spec.setpoint * 100) : 0;
+  const overshoot = spec.setpoint > 0 ? Math.max(0, ((max - spec.setpoint) / spec.setpoint) * 100) : 0;
   const steadyStateError = spec.setpoint > 0 ? Math.abs(spec.setpoint - final) / spec.setpoint : 0;
 
   // ISE and IAE
@@ -199,10 +200,7 @@ function simulateControl(
   const iae = trajectory.reduce((s: number, t: { output: number }) => s + Math.abs(spec.setpoint - t.output), 0) * 0.5;
 
   // Stability: check eigenvalue of linearized system
-  const linResult = analyzeStability(
-    fopdtDerivatives(spec, controller),
-    [final],
-  );
+  const linResult = analyzeStability(fopdtDerivatives(spec, controller), [final]);
 
   return {
     trajectory,
@@ -237,7 +235,7 @@ function analyzeControllers(
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
   // Simulate each candidate
-  const results = candidates.map(pid => {
+  const results = candidates.map((pid) => {
     const { performance, solverCalls: simCalls } = simulateControl(spec, pid);
     solverCalls.push(...simCalls);
     return { params: pid, performance };
@@ -252,8 +250,9 @@ function analyzeControllers(
       if (other === candidate || !other.performance.isStable) continue;
       const betterSettling = other.performance.settlingTime <= candidate.performance.settlingTime;
       const betterOvershoot = other.performance.overshoot <= candidate.performance.overshoot;
-      const strictlyBetter = other.performance.settlingTime < candidate.performance.settlingTime ||
-                             other.performance.overshoot < candidate.performance.overshoot;
+      const strictlyBetter =
+        other.performance.settlingTime < candidate.performance.settlingTime ||
+        other.performance.overshoot < candidate.performance.overshoot;
       if (betterSettling && betterOvershoot && strictlyBetter) {
         dominated = true;
         break;
@@ -264,15 +263,21 @@ function analyzeControllers(
 
   // Best by composite: 0.5 * settling + 0.3 * overshoot + 0.2 * sse
   const best = results
-    .filter(r => r.performance.isStable)
+    .filter((r) => r.performance.isStable)
     .reduce((b, r) => {
-      const scoreR = 0.5 * (r.performance.settlingTime / 200) + 0.3 * (r.performance.overshoot / 100) + 0.2 * r.performance.steadyStateError;
-      const scoreB = 0.5 * (b.performance.settlingTime / 200) + 0.3 * (b.performance.overshoot / 100) + 0.2 * b.performance.steadyStateError;
+      const scoreR =
+        0.5 * (r.performance.settlingTime / 200) +
+        0.3 * (r.performance.overshoot / 100) +
+        0.2 * r.performance.steadyStateError;
+      const scoreB =
+        0.5 * (b.performance.settlingTime / 200) +
+        0.3 * (b.performance.overshoot / 100) +
+        0.2 * b.performance.steadyStateError;
       return scoreR < scoreB ? r : b;
     }, results[0]);
 
   // Sensitivity analysis
-  solverCalls.push({ solver: 'sensitivityAnalysis::compute', description: 'PID parameter sensitivity' });
+  solverCalls.push({ solver: "sensitivityAnalysis::compute", description: "PID parameter sensitivity" });
   const sensitivity = computeSensitivity(
     (params) => {
       const pid: PIDParams = { kp: params.kp ?? 1, ki: params.ki ?? 0.5, kd: params.kd ?? 0.25 };
@@ -301,8 +306,13 @@ export function runControlDesignPipeline(spec: ControlSpec): ControlDesignResult
   allSolverCalls.push(...designCalls);
 
   // Agent B + C: Simulate and analyze
-  const { paretoFront, bestParams, bestPerformance, sensitivity, solverCalls: analyzeCalls } =
-    analyzeControllers(spec, candidates);
+  const {
+    paretoFront,
+    bestParams,
+    bestPerformance,
+    sensitivity,
+    solverCalls: analyzeCalls,
+  } = analyzeControllers(spec, candidates);
   allSolverCalls.push(...analyzeCalls);
 
   return { spec, bestParams, performance: bestPerformance, paretoFront, sensitivity, allSolverCalls };

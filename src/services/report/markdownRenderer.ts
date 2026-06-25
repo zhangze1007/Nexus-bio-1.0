@@ -7,7 +7,7 @@
  * @module src/services/report/markdownRenderer
  */
 
-import type { ReportData, ReportSection } from './reportCollector';
+import type { ReportData, ReportSection } from "./reportCollector";
 
 // ── Table Renderer ────────────────────────────────────────────
 
@@ -19,31 +19,26 @@ import type { ReportData, ReportSection } from './reportCollector';
  * @param headers    - Column headers
  * @param rows       - Data rows (array of string arrays)
  */
-function renderTable(
-  tableIndex: number,
-  caption: string,
-  headers: string[],
-  rows: string[][],
-): string {
+function renderTable(tableIndex: number, caption: string, headers: string[], rows: string[][]): string {
   const lines: string[] = [];
 
   // Caption
   lines.push(`**Table ${tableIndex}: ${caption}**`);
-  lines.push('');
+  lines.push("");
 
   // Header row
-  lines.push(`| ${headers.join(' | ')} |`);
+  lines.push(`| ${headers.join(" | ")} |`);
 
   // Separator row
-  lines.push(`| ${headers.map(() => '---').join(' | ')} |`);
+  lines.push(`| ${headers.map(() => "---").join(" | ")} |`);
 
   // Data rows
   for (const row of rows) {
-    lines.push(`| ${row.join(' | ')} |`);
+    lines.push(`| ${row.join(" | ")} |`);
   }
 
-  lines.push('');
-  return lines.join('\n');
+  lines.push("");
+  return lines.join("\n");
 }
 
 // ── Provenance Renderer ───────────────────────────────────────
@@ -51,19 +46,13 @@ function renderTable(
 /**
  * Render provenance metadata as a Markdown blockquote.
  */
-function renderProvenance(provenance: {
-  source: string;
-  validityTier: string;
-  assumptions: string[];
-}): string {
+function renderProvenance(provenance: { source: string; validityTier: string; assumptions: string[] }): string {
   const lines: string[] = [];
   lines.push(`> **Data source:** ${provenance.source}`);
   lines.push(`> **Validity tier:** ${provenance.validityTier}`);
-  lines.push(
-    `> **Assumptions:** ${provenance.assumptions.length > 0 ? provenance.assumptions.join('; ') : ''}`,
-  );
-  lines.push('');
-  return lines.join('\n');
+  lines.push(`> **Assumptions:** ${provenance.assumptions.length > 0 ? provenance.assumptions.join("; ") : ""}`);
+  lines.push("");
+  return lines.join("\n");
 }
 
 // ── Section Renderer ──────────────────────────────────────────
@@ -76,12 +65,12 @@ function renderSection(section: ReportSection): string {
 
   // Section heading
   parts.push(`## ${section.title}`);
-  parts.push('');
+  parts.push("");
 
   // Content text
   if (section.content) {
     parts.push(section.content);
-    parts.push('');
+    parts.push("");
   }
 
   // Tables
@@ -92,7 +81,7 @@ function renderSection(section: ReportSection): string {
   // Provenance
   parts.push(renderProvenance(section.provenance));
 
-  return parts.join('\n');
+  return parts.join("\n");
 }
 
 // ── Public API ────────────────────────────────────────────────
@@ -114,16 +103,14 @@ export function renderMarkdown(report: ReportData): string {
 
   // ── Header ──
   parts.push(`# ${report.metadata.projectTitle}`);
-  parts.push('');
-  parts.push(
-    `**Generated:** ${report.metadata.generatedAt} | **Target:** ${report.metadata.targetProduct}`,
-  );
-  parts.push('');
+  parts.push("");
+  parts.push(`**Generated:** ${report.metadata.generatedAt} | **Target:** ${report.metadata.targetProduct}`);
+  parts.push("");
 
   // ── Summary ──
   if (report.summary) {
     parts.push(report.summary);
-    parts.push('');
+    parts.push("");
   }
 
   // ── Sections ──
@@ -131,5 +118,5 @@ export function renderMarkdown(report: ReportData): string {
     parts.push(renderSection(section));
   }
 
-  return parts.join('\n');
+  return parts.join("\n");
 }

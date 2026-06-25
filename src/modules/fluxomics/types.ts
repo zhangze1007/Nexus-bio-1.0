@@ -28,7 +28,7 @@ export interface FluxExpressionCorrelation {
   geneId: string;
   flux: number;
   expression: number;
-  correlation: number;   // -1 to 1
+  correlation: number; // -1 to 1
   pValue: number;
   significant: boolean;
 }
@@ -37,7 +37,7 @@ export interface BottleneckReaction {
   reactionId: string;
   flux: number;
   maxCapacity: number;
-  utilization: number;   // flux/maxCapacity (0-1)
+  utilization: number; // flux/maxCapacity (0-1)
   expressionLevel: number;
   isBottleneck: boolean;
   recommendation: string;

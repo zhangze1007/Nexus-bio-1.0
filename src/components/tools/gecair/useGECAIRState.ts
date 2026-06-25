@@ -1,11 +1,11 @@
-'use client';
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { CIRCUIT_NODES, hillInhibition } from '../../../data/mockGECAIR';
-import type { GateType } from '../../../data/mockGECAIR';
-import { runGillespie } from '../../../server/gillespieSSA';
-import type { StochasticModel, GillespieResult } from '../../../server/gillespieSSA';
-import { useWorkbenchStore } from '../../../store/workbenchStore';
-import { resolveGateOutput, PROTEIN_DEGRADATION_RATE, GILLESPIE_SEED_OFFSET } from './sharedComponents';
+"use client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { GateType } from "../../../data/mockGECAIR";
+import { CIRCUIT_NODES, hillInhibition } from "../../../data/mockGECAIR";
+import type { GillespieResult, StochasticModel } from "../../../server/gillespieSSA";
+import { runGillespie } from "../../../server/gillespieSSA";
+import { useWorkbenchStore } from "../../../store/workbenchStore";
+import { GILLESPIE_SEED_OFFSET, PROTEIN_DEGRADATION_RATE, resolveGateOutput } from "./sharedComponents";
 
 export interface GECAIRState {
   inputA: number;
@@ -14,10 +14,10 @@ export interface GECAIRState {
   setInputB: (v: number) => void;
   gateType: GateType;
   setGateType: (g: GateType) => void;
-  circuitType: 'repressilator' | 'toggle_switch' | 'logic_cascade';
-  setCircuitType: (c: 'repressilator' | 'toggle_switch' | 'logic_cascade') => void;
-  togglePerturbation: 'A' | 'B';
-  setTogglePerturbation: (p: 'A' | 'B') => void;
+  circuitType: "repressilator" | "toggle_switch" | "logic_cascade";
+  setCircuitType: (c: "repressilator" | "toggle_switch" | "logic_cascade") => void;
+  togglePerturbation: "A" | "B";
+  setTogglePerturbation: (p: "A" | "B") => void;
   activeTab: string;
   setActiveTab: (t: string) => void;
   stochasticMode: boolean;
@@ -27,8 +27,14 @@ export interface GECAIRState {
   simError: string | null;
   setSimError: (e: string | null) => void;
   gillespieErrorRef: React.MutableRefObject<string | null>;
-  pipelineResult: { recommendedGate: string; outputLevel: number; noiseScore: number; stability: string; optimizationSteps: number } | null;
-  setPipelineResult: (r: GECAIRState['pipelineResult']) => void;
+  pipelineResult: {
+    recommendedGate: string;
+    outputLevel: number;
+    noiseScore: number;
+    stability: string;
+    optimizationSteps: number;
+  } | null;
+  setPipelineResult: (r: GECAIRState["pipelineResult"]) => void;
   pipelineLoading: boolean;
   setPipelineLoading: (v: boolean) => void;
   pipelineError: string | null;
@@ -64,10 +70,10 @@ export function useGECAIRState(): GECAIRState {
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const [inputA, setInputA] = useState(0.8);
   const [inputB, setInputB] = useState(0.3);
-  const [gateType, setGateType] = useState<GateType>('NOT');
-  const [circuitType, setCircuitType] = useState<'repressilator' | 'toggle_switch' | 'logic_cascade'>('repressilator');
-  const [togglePerturbation, setTogglePerturbation] = useState<'A' | 'B'>('A');
-  const [activeTab, setActiveTab] = useState('circuit');
+  const [gateType, setGateType] = useState<GateType>("NOT");
+  const [circuitType, setCircuitType] = useState<"repressilator" | "toggle_switch" | "logic_cascade">("repressilator");
+  const [togglePerturbation, setTogglePerturbation] = useState<"A" | "B">("A");
+  const [activeTab, setActiveTab] = useState("circuit");
   const [stochasticMode, setStochasticMode] = useState(false);
   const [ensembleRuns, setEnsembleRuns] = useState(10);
   const [simError, setSimError] = useState<string | null>(null);
@@ -75,17 +81,25 @@ export function useGECAIRState(): GECAIRState {
 
   // Pipeline state
   const [pipelineResult, setPipelineResult] = useState<{
-    recommendedGate: string; outputLevel: number; noiseScore: number;
-    stability: string; optimizationSteps: number;
+    recommendedGate: string;
+    outputLevel: number;
+    noiseScore: number;
+    stability: string;
+    optimizationSteps: number;
   } | null>(null);
   const [pipelineLoading, setPipelineLoading] = useState(false);
   const [pipelineError, setPipelineError] = useState<string | null>(null);
   const recommendedGate = useMemo<GateType>(() => {
-    if ((catalystPayload?.result.totalMetabolicDrain ?? 0) > 0.45) return 'NAND';
-    if (dynconPayload?.result.stable && catalystPayload?.result.isViable) return 'AND';
-    if ((dynconPayload?.result.doRmse ?? 0) > 0.08) return 'OR';
-    return 'NOT';
-  }, [catalystPayload?.result.isViable, catalystPayload?.result.totalMetabolicDrain, dynconPayload?.result.doRmse, dynconPayload?.result.stable]);
+    if ((catalystPayload?.result.totalMetabolicDrain ?? 0) > 0.45) return "NAND";
+    if (dynconPayload?.result.stable && catalystPayload?.result.isViable) return "AND";
+    if ((dynconPayload?.result.doRmse ?? 0) > 0.08) return "OR";
+    return "NOT";
+  }, [
+    catalystPayload?.result.isViable,
+    catalystPayload?.result.totalMetabolicDrain,
+    dynconPayload?.result.doRmse,
+    dynconPayload?.result.stable,
+  ]);
   const recommendedInputA = useMemo(
     () => Math.min(1, Math.max(0, dynconPayload?.controller.setpoint ?? 0.6)),
     [dynconPayload?.controller.setpoint],
@@ -107,48 +121,78 @@ export function useGECAIRState(): GECAIRState {
   function buildRepressilatorStochastic(): StochasticModel {
     return {
       species: [
-        { id: 'mA', initialCount: 10 * OMEGA },
-        { id: 'mB', initialCount: 5 * OMEGA },
-        { id: 'mC', initialCount: 3 * OMEGA },
-        { id: 'pA', initialCount: 100 * OMEGA },
-        { id: 'pB', initialCount: 50 * OMEGA },
-        { id: 'pC', initialCount: 30 * OMEGA },
+        { id: "mA", initialCount: 10 * OMEGA },
+        { id: "mB", initialCount: 5 * OMEGA },
+        { id: "mC", initialCount: 3 * OMEGA },
+        { id: "pA", initialCount: 100 * OMEGA },
+        { id: "pB", initialCount: 50 * OMEGA },
+        { id: "pC", initialCount: 30 * OMEGA },
       ],
       reactions: [
-        { id: 'txnA', reactants: {}, products: { mA: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pC', K: 100 * OMEGA, n: 2 } },
-        { id: 'txnB', reactants: {}, products: { mB: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pA', K: 100 * OMEGA, n: 2 } },
-        { id: 'txnC', reactants: {}, products: { mC: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pB', K: 100 * OMEGA, n: 2 } },
-        { id: 'tlA', reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
-        { id: 'tlB', reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
-        { id: 'tlC', reactants: { mC: 1 }, products: { mC: 1, pC: 1 }, rate: 0.2 },
-        { id: 'deg_mA', reactants: { mA: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_mC', reactants: { mC: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
-        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
-        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        {
+          id: "txnA",
+          reactants: {},
+          products: { mA: 1 },
+          rate: 0.216 * OMEGA,
+          hillRepression: { species: "pC", K: 100 * OMEGA, n: 2 },
+        },
+        {
+          id: "txnB",
+          reactants: {},
+          products: { mB: 1 },
+          rate: 0.216 * OMEGA,
+          hillRepression: { species: "pA", K: 100 * OMEGA, n: 2 },
+        },
+        {
+          id: "txnC",
+          reactants: {},
+          products: { mC: 1 },
+          rate: 0.216 * OMEGA,
+          hillRepression: { species: "pB", K: 100 * OMEGA, n: 2 },
+        },
+        { id: "tlA", reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
+        { id: "tlB", reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
+        { id: "tlC", reactants: { mC: 1 }, products: { mC: 1, pC: 1 }, rate: 0.2 },
+        { id: "deg_mA", reactants: { mA: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_mB", reactants: { mB: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_mC", reactants: { mC: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_pA", reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: "deg_pB", reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: "deg_pC", reactants: { pC: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
       ],
     };
   }
 
   function buildToggleSwitchStochastic(): StochasticModel {
-    const stateA = togglePerturbation === 'A';
+    const stateA = togglePerturbation === "A";
     return {
       species: [
-        { id: 'mA', initialCount: (stateA ? 20 : 2) * OMEGA },
-        { id: 'mB', initialCount: (stateA ? 2 : 20) * OMEGA },
-        { id: 'pA', initialCount: (stateA ? 200 : 20) * OMEGA },
-        { id: 'pB', initialCount: (stateA ? 20 : 200) * OMEGA },
+        { id: "mA", initialCount: (stateA ? 20 : 2) * OMEGA },
+        { id: "mB", initialCount: (stateA ? 2 : 20) * OMEGA },
+        { id: "pA", initialCount: (stateA ? 200 : 20) * OMEGA },
+        { id: "pB", initialCount: (stateA ? 20 : 200) * OMEGA },
       ],
       reactions: [
-        { id: 'txnA', reactants: {}, products: { mA: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pB', K: 100 * OMEGA, n: 2.5 } },
-        { id: 'txnB', reactants: {}, products: { mB: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pA', K: 100 * OMEGA, n: 2.5 } },
-        { id: 'tlA', reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
-        { id: 'tlB', reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
-        { id: 'deg_mA', reactants: { mA: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
-        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        {
+          id: "txnA",
+          reactants: {},
+          products: { mA: 1 },
+          rate: 0.216 * OMEGA,
+          hillRepression: { species: "pB", K: 100 * OMEGA, n: 2.5 },
+        },
+        {
+          id: "txnB",
+          reactants: {},
+          products: { mB: 1 },
+          rate: 0.216 * OMEGA,
+          hillRepression: { species: "pA", K: 100 * OMEGA, n: 2.5 },
+        },
+        { id: "tlA", reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
+        { id: "tlB", reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
+        { id: "deg_mA", reactants: { mA: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_mB", reactants: { mB: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_pA", reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: "deg_pB", reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
       ],
     };
   }
@@ -156,26 +200,38 @@ export function useGECAIRState(): GECAIRState {
   function buildLogicCascadeStochastic(): StochasticModel {
     return {
       species: [
-        { id: 'mA', initialCount: 10 * OMEGA },
-        { id: 'mB', initialCount: 3 * OMEGA },
-        { id: 'mC', initialCount: 1 * OMEGA },
-        { id: 'pA', initialCount: 80 * OMEGA },
-        { id: 'pB', initialCount: 30 * OMEGA },
-        { id: 'pC', initialCount: 10 * OMEGA },
+        { id: "mA", initialCount: 10 * OMEGA },
+        { id: "mB", initialCount: 3 * OMEGA },
+        { id: "mC", initialCount: 1 * OMEGA },
+        { id: "pA", initialCount: 80 * OMEGA },
+        { id: "pB", initialCount: 30 * OMEGA },
+        { id: "pC", initialCount: 10 * OMEGA },
       ],
       reactions: [
-        { id: 'txnA', reactants: {}, products: { mA: 1 }, rate: 1.5 * OMEGA },
-        { id: 'txnB', reactants: {}, products: { mB: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pA', K: 100 * OMEGA, n: 2 } },
-        { id: 'txnC', reactants: {}, products: { mC: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pB', K: 100 * OMEGA, n: 2 } },
-        { id: 'tlA', reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
-        { id: 'tlB', reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
-        { id: 'tlC', reactants: { mC: 1 }, products: { mC: 1, pC: 1 }, rate: 0.2 },
-        { id: 'deg_mA', reactants: { mA: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_mC', reactants: { mC: 1 }, products: {}, rate: 1.0 },
-        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
-        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
-        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: "txnA", reactants: {}, products: { mA: 1 }, rate: 1.5 * OMEGA },
+        {
+          id: "txnB",
+          reactants: {},
+          products: { mB: 1 },
+          rate: 0.216 * OMEGA,
+          hillRepression: { species: "pA", K: 100 * OMEGA, n: 2 },
+        },
+        {
+          id: "txnC",
+          reactants: {},
+          products: { mC: 1 },
+          rate: 0.216 * OMEGA,
+          hillRepression: { species: "pB", K: 100 * OMEGA, n: 2 },
+        },
+        { id: "tlA", reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
+        { id: "tlB", reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
+        { id: "tlC", reactants: { mC: 1 }, products: { mC: 1, pC: 1 }, rate: 0.2 },
+        { id: "deg_mA", reactants: { mA: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_mB", reactants: { mB: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_mC", reactants: { mC: 1 }, products: {}, rate: 1.0 },
+        { id: "deg_pA", reactants: { pA: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: "deg_pB", reactants: { pB: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
+        { id: "deg_pC", reactants: { pC: 1 }, products: {}, rate: PROTEIN_DEGRADATION_RATE },
       ],
     };
   }
@@ -184,9 +240,12 @@ export function useGECAIRState(): GECAIRState {
   const stochasticEnsemble = useMemo(() => {
     if (!stochasticMode) return null;
 
-    const model = circuitType === 'repressilator' ? buildRepressilatorStochastic()
-      : circuitType === 'toggle_switch' ? buildToggleSwitchStochastic()
-      : buildLogicCascadeStochastic();
+    const model =
+      circuitType === "repressilator"
+        ? buildRepressilatorStochastic()
+        : circuitType === "toggle_switch"
+          ? buildToggleSwitchStochastic()
+          : buildLogicCascadeStochastic();
 
     const maxTime = 300;
     const N = ensembleRuns;
@@ -197,7 +256,7 @@ export function useGECAIRState(): GECAIRState {
 
     const gridPoints = 60;
     const dt = maxTime / gridPoints;
-    const speciesIds = model.species.map(s => s.id);
+    const speciesIds = model.species.map((s) => s.id);
 
     const resampled: Record<string, number[][]> = {};
     for (const id of speciesIds) {
@@ -223,7 +282,7 @@ export function useGECAIRState(): GECAIRState {
       const fano: number[] = [];
       const cv: number[] = [];
       for (let g = 0; g <= gridPoints; g++) {
-        const values = resampled[id].map(run => run[g]);
+        const values = resampled[id].map((run) => run[g]);
         const m = values.reduce((a, b) => a + b, 0) / N;
         const v = values.reduce((a, b) => a + (b - m) ** 2, 0) / (N - 1);
         mean.push(m);
@@ -251,24 +310,31 @@ export function useGECAIRState(): GECAIRState {
     Math.abs(resolveGateOutput(outA, hillInhibition(Math.max(0, Math.min(1, inputB - delta))), gateType) - finalOutput),
   );
 
-  const exportData = useMemo(() => ({
-    gateType,
-    inputA: inputA.toFixed(3),
-    inputB: inputB.toFixed(3),
-    output: finalOutput.toFixed(3),
-    noiseScore: noiseScore.toFixed(4),
-  }), [gateType, inputA, inputB, finalOutput, noiseScore]);
-  const figureMeta = useMemo(() => ({
-    eyebrow: 'Circuit figure',
-    title: `${gateType} logic is framed as a control-system figure with parts, response space, and state ledger`,
-    caption: 'The main panel keeps genetic architecture, transfer behavior, and combinatorial output in one evidence surface so gate choice reads like a scientific design decision instead of a toy toggle.',
-  }), [gateType]);
+  const exportData = useMemo(
+    () => ({
+      gateType,
+      inputA: inputA.toFixed(3),
+      inputB: inputB.toFixed(3),
+      output: finalOutput.toFixed(3),
+      noiseScore: noiseScore.toFixed(4),
+    }),
+    [gateType, inputA, inputB, finalOutput, noiseScore],
+  );
+  const figureMeta = useMemo(
+    () => ({
+      eyebrow: "Circuit figure",
+      title: `${gateType} logic is framed as a control-system figure with parts, response space, and state ledger`,
+      caption:
+        "The main panel keeps genetic architecture, transfer behavior, and combinatorial output in one evidence surface so gate choice reads like a scientific design decision instead of a toy toggle.",
+    }),
+    [gateType],
+  );
 
   useEffect(() => {
-    setToolPayload('gecair', {
-      validity: 'partial',
-      toolId: 'gecair',
-      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+    setToolPayload("gecair", {
+      validity: "partial",
+      toolId: "gecair",
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || "Target Product",
       sourceArtifactId: analyzeArtifact?.id,
       gateType,
       inputA,
@@ -298,18 +364,44 @@ export function useGECAIRState(): GECAIRState {
   ]);
 
   return {
-    inputA, setInputA, inputB, setInputB,
-    gateType, setGateType, circuitType, setCircuitType,
-    togglePerturbation, setTogglePerturbation,
-    activeTab, setActiveTab,
-    stochasticMode, setStochasticMode, ensembleRuns, setEnsembleRuns,
-    simError, setSimError, gillespieErrorRef,
-    pipelineResult, setPipelineResult, pipelineLoading, setPipelineLoading, pipelineError, setPipelineError,
-    recommendedGate, recommendedInputA, recommendedInputB,
-    outA, outB, finalOutput, noiseScore,
-    exportData, figureMeta,
+    inputA,
+    setInputA,
+    inputB,
+    setInputB,
+    gateType,
+    setGateType,
+    circuitType,
+    setCircuitType,
+    togglePerturbation,
+    setTogglePerturbation,
+    activeTab,
+    setActiveTab,
+    stochasticMode,
+    setStochasticMode,
+    ensembleRuns,
+    setEnsembleRuns,
+    simError,
+    setSimError,
+    gillespieErrorRef,
+    pipelineResult,
+    setPipelineResult,
+    pipelineLoading,
+    setPipelineLoading,
+    pipelineError,
+    setPipelineError,
+    recommendedGate,
+    recommendedInputA,
+    recommendedInputB,
+    outA,
+    outB,
+    finalOutput,
+    noiseScore,
+    exportData,
+    figureMeta,
     stochasticEnsemble,
-    buildRepressilatorStochastic, buildToggleSwitchStochastic, buildLogicCascadeStochastic,
+    buildRepressilatorStochastic,
+    buildToggleSwitchStochastic,
+    buildLogicCascadeStochastic,
     OMEGA,
   };
 }

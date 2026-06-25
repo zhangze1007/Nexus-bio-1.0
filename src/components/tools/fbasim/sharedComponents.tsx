@@ -3,9 +3,9 @@
  * for FBASim sub-components.
  */
 
-import { THEME } from '../../../theme';
-import type { ToolTab } from '../shared/ToolTabBar';
-import type { ProvenanceEntry } from '../../../types/assumptions';
+import { THEME } from "../../../theme";
+import type { ProvenanceEntry } from "../../../types/assumptions";
+import type { ToolTab } from "../shared/ToolTabBar";
 
 // ── Strain Design Types ─────────────────────────────────────────────────
 
@@ -54,15 +54,15 @@ export interface PipelineResult {
 // ── Tab Configuration ───────────────────────────────────────────────────
 
 export const FBA_TABS: ToolTab[] = [
-  { id: 'flux', label: 'Flux Map', accent: THEME.SKY },
-  { id: 'fva', label: 'FVA', accent: THEME.LILAC },
-  { id: 'gpr', label: 'GPR KO', accent: THEME.CORAL },
-  { id: 'knockout', label: 'Knockout', accent: THEME.CORAL },
-  { id: 'strain', label: 'Strain Design', accent: THEME.MINT },
-  { id: 'shadows', label: 'Sensitivity', accent: THEME.LILAC },
-  { id: 'community', label: 'Community', accent: THEME.MINT },
-  { id: 'consortium', label: 'Consortium', accent: THEME.LILAC },
-  { id: 'custom', label: 'Custom Model', accent: THEME.APRICOT },
+  { id: "flux", label: "Flux Map", accent: THEME.SKY },
+  { id: "fva", label: "FVA", accent: THEME.LILAC },
+  { id: "gpr", label: "GPR KO", accent: THEME.CORAL },
+  { id: "knockout", label: "Knockout", accent: THEME.CORAL },
+  { id: "strain", label: "Strain Design", accent: THEME.MINT },
+  { id: "shadows", label: "Sensitivity", accent: THEME.LILAC },
+  { id: "community", label: "Community", accent: THEME.MINT },
+  { id: "consortium", label: "Consortium", accent: THEME.LILAC },
+  { id: "custom", label: "Custom Model", accent: THEME.APRICOT },
 ];
 
 // ── Re-exports for convenience ──────────────────────────────────────────

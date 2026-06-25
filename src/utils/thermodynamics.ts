@@ -11,7 +11,7 @@
  *   - Eyring (1935) The Activated Complex in Chemical Reactions
  */
 
-import { R as R_GAS, T_REF } from '../services/thermoEngine';
+import { R as R_GAS, T_REF } from "../services/thermoEngine";
 
 /** Universal gas constant in kJ/(mol·K) — re-exported from thermoEngine */
 export const R = R_GAS;
@@ -43,10 +43,10 @@ export function calcDeltaG(
 
   // Check for zero concentrations
   if (reactantProd === 0) {
-    return { dG: -Infinity, warning: 'Zero reactant concentration → ΔG = -∞ (spontaneous)' };
+    return { dG: -Infinity, warning: "Zero reactant concentration → ΔG = -∞ (spontaneous)" };
   }
   if (productProd === 0) {
-    return { dG: Infinity, warning: 'Zero product concentration → ΔG = +∞ (non-spontaneous)' };
+    return { dG: Infinity, warning: "Zero product concentration → ΔG = +∞ (non-spontaneous)" };
   }
 
   const Q = productProd / reactantProd;
@@ -62,7 +62,7 @@ export function calcDeltaG(
 
 /** Calculate equilibrium constant from ΔG°. */
 export function calcKeq(dG0: number, T: number): number {
-  if (T <= 0) throw new Error('Temperature must be positive (K)');
+  if (T <= 0) throw new Error("Temperature must be positive (K)");
   return Math.exp(-dG0 / (R * T));
 }
 
@@ -88,7 +88,10 @@ export function calcKeq(dG0: number, T: number): number {
  * For quantitative predictions, use measured kcat and Km from BRENDA database.
  */
 export function calcMassBalance_DEMO(
-  S0: number, dG: number, Keq: number, steps: number
+  S0: number,
+  dG: number,
+  Keq: number,
+  steps: number,
 ): { time: number[]; S: number[]; P: number[] } {
   const time = [0];
   const S = [S0];
@@ -100,7 +103,7 @@ export function calcMassBalance_DEMO(
   // Eyring equation: k_cat = (kB·T/h) · exp(-ΔG‡/RT)
   // ΔG‡ = 60 kJ/mol (typical enzymatic barrier; Alberty 2003)
   const deltaGActivation = 60; // kJ/mol
-  const kCat = (kBOLTZMANN * T / h_PLANCK) * Math.exp(-deltaGActivation / (R_GAS * T));
+  const kCat = ((kBOLTZMANN * T) / h_PLANCK) * Math.exp(-deltaGActivation / (R_GAS * T));
 
   // Vmax = k_cat × [E_total]; Et scaled for simulation dynamics
   const Et = 0.01;
@@ -112,7 +115,8 @@ export function calcMassBalance_DEMO(
   // Reverse Vmax from Haldane relationship: Keq = Vmax_f / Vmax_r
   const VmaxReverse = Keq > 0 ? Vmax / Keq : 0;
 
-  let s = S0, p = 0;
+  let s = S0,
+    p = 0;
 
   for (let i = 0; i < steps; i++) {
     // Michaelis-Menten: v = Vmax·S / (Km + S)

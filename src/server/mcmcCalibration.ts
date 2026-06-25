@@ -167,12 +167,7 @@ export function calibrateParameters(
   config: CalibrationConfig,
   modelFn: (params: Record<string, number>) => Record<string, number[]>,
 ): CalibrationResult {
-  const {
-    nSamples,
-    burnIn,
-    priorRanges,
-    noiseVariance = 1.0,
-  } = config;
+  const { nSamples, burnIn, priorRanges, noiseVariance = 1.0 } = config;
 
   const paramNames = Object.keys(priorRanges);
   const nParams = paramNames.length;
@@ -183,14 +178,11 @@ export function calibrateParameters(
   const proposalStdMap: Record<string, number> = {};
   for (const p of paramNames) {
     const [lo, hi] = priorRanges[p];
-    proposalStdMap[p] =
-      config.proposalStd?.[p] ?? (hi - lo) * 0.10;
+    proposalStdMap[p] = config.proposalStd?.[p] ?? (hi - lo) * 0.1;
   }
 
   // ── log-likelihood (Gaussian, independent observations) ────────────────
-  function logLikelihood(
-    params: Record<string, number>,
-  ): number {
+  function logLikelihood(params: Record<string, number>): number {
     const predictions = modelFn(params);
     let ll = 0;
     for (const varName of Object.keys(data.observations)) {
@@ -287,11 +279,7 @@ export function calibrateParameters(
     // Propose new parameters
     const proposed: Record<string, number> = {};
     for (const p of paramNames) {
-      proposed[p] = reflect(
-        current[p] + randn() * proposalStdMap[p],
-        priorRanges[p][0],
-        priorRanges[p][1],
-      );
+      proposed[p] = reflect(current[p] + randn() * proposalStdMap[p], priorRanges[p][0], priorRanges[p][1]);
     }
 
     // Evaluate proposed state

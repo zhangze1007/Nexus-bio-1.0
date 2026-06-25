@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useWorkbenchStore } from '../../store/workbenchStore';
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useWorkbenchStore } from "../../store/workbenchStore";
 
 const SYNC_DEBOUNCE_MS = 650;
 
 export default function WorkbenchSyncProvider() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const artifactId = searchParams.get('artifact');
+  const artifactId = searchParams.get("artifact");
   const hydratedFromServer = useWorkbenchStore((s) => s.hydratedFromServer);
   const revision = useWorkbenchStore((s) => s.revision);
   const lastServerSyncedRevision = useWorkbenchStore((s) => s.lastServerSyncedRevision);
@@ -17,8 +17,8 @@ export default function WorkbenchSyncProvider() {
   const loadFromServer = useWorkbenchStore((s) => s.loadFromServer);
   const syncToServer = useWorkbenchStore((s) => s.syncToServer);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isLegacyToolRoute = pathname.startsWith('/tools') && !artifactId;
-  const isCanonicalArtifactRoute = Boolean(artifactId && (pathname === '/analyze' || pathname.startsWith('/tools')));
+  const isLegacyToolRoute = pathname.startsWith("/tools") && !artifactId;
+  const isCanonicalArtifactRoute = Boolean(artifactId && (pathname === "/analyze" || pathname.startsWith("/tools")));
   const shouldHydrate = isCanonicalArtifactRoute || isLegacyToolRoute;
 
   useEffect(() => {
@@ -40,9 +40,9 @@ export default function WorkbenchSyncProvider() {
 
   useEffect(() => {
     if (!shouldHydrate) return;
-    if (syncStatus !== 'conflict' || !hydratedFromServer) return;
+    if (syncStatus !== "conflict" || !hydratedFromServer) return;
     // Exponential backoff before retrying on conflict: 200ms, 800ms, 3200ms
-    const retryDelay = Math.min(200 * Math.pow(4, 0), 5000);
+    const retryDelay = Math.min(200 * 4 ** 0, 5000);
     const timer = setTimeout(() => {
       syncToServer({ artifactId });
     }, retryDelay);

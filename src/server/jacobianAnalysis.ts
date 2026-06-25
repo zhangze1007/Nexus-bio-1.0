@@ -52,12 +52,7 @@ export interface JacobianResult {
  * @param h - Finite difference step size (default 1e-6)
  * @returns Jacobian matrix [dim × dim]
  */
-export function computeJacobian(
-  f: (t: number, y: number[]) => number[],
-  y0: number[],
-  t0 = 0,
-  h = 1e-6,
-): number[][] {
+export function computeJacobian(f: (t: number, y: number[]) => number[], y0: number[], t0 = 0, h = 1e-6): number[][] {
   const dim = y0.length;
   const f0 = f(t0, y0);
   const jacobian: number[][] = [];
@@ -97,17 +92,13 @@ export function computeJacobian(
  * @param tolerance - Convergence tolerance (default 1e-10)
  * @returns Array of eigenvalue real parts
  */
-export function findEigenvalues(
-  matrix: number[][],
-  maxIterations = 100,
-  tolerance = 1e-10,
-): number[] {
+export function findEigenvalues(matrix: number[][], maxIterations = 100, tolerance = 1e-10): number[] {
   const dim = matrix.length;
   if (dim === 0) return [];
   if (dim === 1) return [matrix[0][0]];
 
   // Make a working copy
-  let A = matrix.map(row => [...row]);
+  let A = matrix.map((row) => [...row]);
 
   // QR iteration with Wilkinson shift
   for (let iter = 0; iter < maxIterations; iter++) {
@@ -129,7 +120,7 @@ export function findEigenvalues(
     const d = A[n - 1][n - 1];
     const trace = a + d;
     const det = a * d - b * c;
-    const disc = Math.sqrt(Math.max(0, trace * trace / 4 - det));
+    const disc = Math.sqrt(Math.max(0, (trace * trace) / 4 - det));
     const lambda1 = trace / 2 + disc;
     const lambda2 = trace / 2 - disc;
     const shift = Math.abs(lambda1 - d) < Math.abs(lambda2 - d) ? lambda1 : lambda2;
@@ -160,14 +151,14 @@ function qrDecomposition(A: number[][]): { Q: number[][]; R: number[][] } {
   // Copy columns of A
   const columns: number[][] = [];
   for (let j = 0; j < n; j++) {
-    columns.push(A.map(row => row[j]));
+    columns.push(A.map((row) => row[j]));
   }
 
   for (let j = 0; j < n; j++) {
     let v = [...columns[j]];
 
     for (let i = 0; i < j; i++) {
-      const qi = Q.map(row => row[i]);
+      const qi = Q.map((row) => row[i]);
       const dot = v.reduce((s, val, k) => s + val * qi[k], 0);
       R[i][j] = dot;
       v = v.map((val, k) => val - dot * qi[k]);
@@ -209,15 +200,11 @@ function multiplyMatrices(A: number[][], B: number[][]): number[][] {
  * @param t0 - Time (default 0)
  * @returns Full Jacobian analysis result
  */
-export function analyzeStability(
-  f: (t: number, y: number[]) => number[],
-  y0: number[],
-  t0 = 0,
-): JacobianResult {
+export function analyzeStability(f: (t: number, y: number[]) => number[], y0: number[], t0 = 0): JacobianResult {
   const jacobian = computeJacobian(f, y0, t0);
   const eigenvalues = findEigenvalues(jacobian);
   const maxEigenvalue = Math.max(...eigenvalues);
-  const isStable = eigenvalues.every(ev => ev < 0);
+  const isStable = eigenvalues.every((ev) => ev < 0);
 
   // Check for oscillatory behavior: significant imaginary components
   // We approximate this by checking if the Jacobian has asymmetric parts
@@ -231,10 +218,8 @@ export function analyzeStability(
   const isOscillatory = asymmetry > 0.1 * dim;
 
   // Condition number
-  const absEigenvalues = eigenvalues.map(Math.abs).filter(v => v > 1e-15);
-  const conditionNumber = absEigenvalues.length > 1
-    ? Math.max(...absEigenvalues) / Math.min(...absEigenvalues)
-    : 1;
+  const absEigenvalues = eigenvalues.map(Math.abs).filter((v) => v > 1e-15);
+  const conditionNumber = absEigenvalues.length > 1 ? Math.max(...absEigenvalues) / Math.min(...absEigenvalues) : 1;
 
   return {
     jacobian,

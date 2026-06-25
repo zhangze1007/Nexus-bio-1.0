@@ -35,7 +35,7 @@
  *       ignoring epistatic (non-additive) effects between mutations.
  */
 
-import { parsePDB, PDBAtom, PDBStructure } from '../utils/pdbParser';
+import { type PDBAtom, type PDBStructure, parsePDB } from "../utils/pdbParser";
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -92,23 +92,46 @@ const AA_PROPERTIES: Record<string, AAProperties> = {
 
 // 3-letter to 1-letter amino acid code mapping
 const THREE_TO_ONE: Record<string, string> = {
-  GLY: 'G', ALA: 'A', VAL: 'V', LEU: 'L', ILE: 'I',
-  PHE: 'F', TRP: 'W', TYR: 'Y',
-  ASP: 'D', GLU: 'E', LYS: 'K', ARG: 'R', HIS: 'H',
-  SER: 'S', THR: 'T', CYS: 'C', MET: 'M',
-  ASN: 'N', GLN: 'Q', PRO: 'P',
+  GLY: "G",
+  ALA: "A",
+  VAL: "V",
+  LEU: "L",
+  ILE: "I",
+  PHE: "F",
+  TRP: "W",
+  TYR: "Y",
+  ASP: "D",
+  GLU: "E",
+  LYS: "K",
+  ARG: "R",
+  HIS: "H",
+  SER: "S",
+  THR: "T",
+  CYS: "C",
+  MET: "M",
+  ASN: "N",
+  GLN: "Q",
+  PRO: "P",
 };
 
 // ─── LJ 6-12 Parameters (unified atom, kcal/mol, Angstroms) ─────────────────
 
 // Van der Waals radii for common atoms (Angstroms)
 const VDW_RADII: Record<string, number> = {
-  C: 1.7, N: 1.55, O: 1.52, S: 1.8, H: 1.2,
+  C: 1.7,
+  N: 1.55,
+  O: 1.52,
+  S: 1.8,
+  H: 1.2,
 };
 
 // LJ well depths (kcal/mol)
 const LJ_EPSILON: Record<string, number> = {
-  C: 0.066, N: 0.170, O: 0.170, S: 0.250, H: 0.020,
+  C: 0.066,
+  N: 0.17,
+  O: 0.17,
+  S: 0.25,
+  H: 0.02,
 };
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
@@ -161,7 +184,7 @@ function computeVdW(
       const epsilon = Math.sqrt(pA.epsilon * pB.epsilon);
 
       // LJ 6-12: 4 * epsilon * [(sigma/r)^12 - (sigma/r)^6]
-      const sr6 = Math.pow(sigma / dist, 6);
+      const sr6 = (sigma / dist) ** 6;
       const sr12 = sr6 * sr6;
       const eLJ = 4 * epsilon * (sr12 - sr6);
 
@@ -178,7 +201,7 @@ function computeVdW(
   const volumeDelta = mutProps.volume - wtProps.volume;
   const stericPenalty = volumeDelta > 0 ? 0.02 * volumeDelta * Math.abs(eWt) : 0;
 
-  return (eMut - eWt) + stericPenalty;
+  return eMut - eWt + stericPenalty;
 }
 
 /**
@@ -198,7 +221,7 @@ function computeSolvation(
   let nonPolarNeighbors = 0;
   let totalNeighbors = 0;
 
-  const hydrophobicResidues = new Set(['G', 'A', 'V', 'L', 'I', 'F', 'W', 'Y', 'C', 'M', 'P']);
+  const hydrophobicResidues = new Set(["G", "A", "V", "L", "I", "F", "W", "Y", "C", "M", "P"]);
 
   for (const nA of neighborAtoms) {
     const dist = euclidean(mutationAtoms[0], nA);
@@ -213,9 +236,7 @@ function computeSolvation(
   }
 
   // Burial score: 0 = fully exposed, 1 = deeply buried
-  const burialScore = totalNeighbors > 0
-    ? Math.min(nonPolarNeighbors / Math.max(totalNeighbors, 1), 1.0)
-    : 0;
+  const burialScore = totalNeighbors > 0 ? Math.min(nonPolarNeighbors / Math.max(totalNeighbors, 1), 1.0) : 0;
 
   // Lazaridis-Karplus style: charged residues in hydrophobic burial are penalized
   // Reference energy scale: ~1 kcal/mol per unit charge per unit burial
@@ -225,15 +246,13 @@ function computeSolvation(
   const mutSolvation = mutProps.charge * mutProps.charge * burialScore * solvationScale;
 
   // Also account for hydrophobic mismatch: polar in nonpolar core
-  const hydrophobicMismatch = (mutProps.hydrophobicity < 0 && burialScore > 0.5)
-    ? Math.abs(mutProps.hydrophobicity) * burialScore * 0.8
-    : 0;
+  const hydrophobicMismatch =
+    mutProps.hydrophobicity < 0 && burialScore > 0.5 ? Math.abs(mutProps.hydrophobicity) * burialScore * 0.8 : 0;
 
-  const wtHydrophobicMismatch = (wtProps.hydrophobicity < 0 && burialScore > 0.5)
-    ? Math.abs(wtProps.hydrophobicity) * burialScore * 0.8
-    : 0;
+  const wtHydrophobicMismatch =
+    wtProps.hydrophobicity < 0 && burialScore > 0.5 ? Math.abs(wtProps.hydrophobicity) * burialScore * 0.8 : 0;
 
-  return (mutSolvation - wtSolvation) + (hydrophobicMismatch - wtHydrophobicMismatch);
+  return mutSolvation - wtSolvation + (hydrophobicMismatch - wtHydrophobicMismatch);
 }
 
 /**
@@ -252,7 +271,7 @@ function computeHBond(
 
   // Count potential H-bond partners near mutation site
   let hbondPartners = 0;
-  const polarElements = new Set(['N', 'O']);
+  const polarElements = new Set(["N", "O"]);
 
   for (const mA of mutationAtoms) {
     const el = getElement(mA);
@@ -273,8 +292,8 @@ function computeHBond(
   const hbondEnergy = -1.5; // kcal/mol per H-bond (favorable)
 
   // Charged residues form stronger H-bonds
-  const wtHBondCapacity = Math.abs(wtProps.charge) > 0 ? 3 : (wtProps.isSmall ? 0 : 1);
-  const mutHBondCapacity = Math.abs(mutProps.charge) > 0 ? 3 : (mutProps.isSmall ? 0 : 1);
+  const wtHBondCapacity = Math.abs(wtProps.charge) > 0 ? 3 : wtProps.isSmall ? 0 : 1;
+  const mutHBondCapacity = Math.abs(mutProps.charge) > 0 ? 3 : mutProps.isSmall ? 0 : 1;
 
   // If mutation removes H-bond donors/acceptors, it's destabilizing
   const hbondDelta = (mutHBondCapacity - wtHBondCapacity) * hbondEnergy;
@@ -289,25 +308,54 @@ function computeHBond(
  * Compute backbone strain energy change.
  * Uses amino acid helix/sheet propensity as proxy for Ramachandran penalty.
  */
-function computeBackbone(
-  wtResidue: string,
-  mutResidue: string,
-): number {
+function computeBackbone(wtResidue: string, mutResidue: string): number {
   // Helix propensity (kcal/mol, Chou-Fasman derived)
   // Lower = more favorable in helix
   const helixPropensity: Record<string, number> = {
-    A: -0.5, L: -0.4, E: -0.3, M: -0.3, Q: -0.2,
-    K: -0.2, R: -0.1, H: -0.1, V: 0.0, I: 0.0,
-    D: 0.1, F: 0.1, W: 0.1, Y: 0.2, S: 0.2,
-    T: 0.3, C: 0.3, N: 0.3, P: 1.5, G: 0.6,
+    A: -0.5,
+    L: -0.4,
+    E: -0.3,
+    M: -0.3,
+    Q: -0.2,
+    K: -0.2,
+    R: -0.1,
+    H: -0.1,
+    V: 0.0,
+    I: 0.0,
+    D: 0.1,
+    F: 0.1,
+    W: 0.1,
+    Y: 0.2,
+    S: 0.2,
+    T: 0.3,
+    C: 0.3,
+    N: 0.3,
+    P: 1.5,
+    G: 0.6,
   };
 
   // Beta-sheet propensity (kcal/mol)
   const sheetPropensity: Record<string, number> = {
-    V: -0.4, I: -0.3, Y: -0.2, F: -0.2, W: -0.1,
-    L: -0.1, T: 0.0, C: 0.0, M: 0.0, A: 0.1,
-    R: 0.1, G: 0.2, D: 0.2, K: 0.2, S: 0.3,
-    H: 0.3, N: 0.3, Q: 0.3, E: 0.4, P: 0.8,
+    V: -0.4,
+    I: -0.3,
+    Y: -0.2,
+    F: -0.2,
+    W: -0.1,
+    L: -0.1,
+    T: 0.0,
+    C: 0.0,
+    M: 0.0,
+    A: 0.1,
+    R: 0.1,
+    G: 0.2,
+    D: 0.2,
+    K: 0.2,
+    S: 0.3,
+    H: 0.3,
+    N: 0.3,
+    Q: 0.3,
+    E: 0.4,
+    P: 0.8,
   };
 
   const wtHelix = helixPropensity[wtResidue] || 0;
@@ -322,13 +370,13 @@ function computeBackbone(
 
   // Proline and glycine have special backbone effects
   let specialPenalty = 0;
-  if (mutResidue === 'P') {
+  if (mutResidue === "P") {
     specialPenalty += 1.0; // Proline restricts phi angle
   }
-  if (wtResidue === 'P') {
+  if (wtResidue === "P") {
     specialPenalty -= 1.0; // Removing proline relieves restriction
   }
-  if (mutResidue === 'G') {
+  if (mutResidue === "G") {
     specialPenalty -= 0.3; // Glycine increases flexibility
   }
 
@@ -339,19 +387,30 @@ function computeBackbone(
  * Compute entropy loss upon mutation.
  * Larger residues have fewer accessible rotamers in a constrained environment.
  */
-function computeEntropy(
-  wtProps: AAProperties,
-  mutProps: AAProperties,
-  burialScore: number,
-): number {
+function computeEntropy(wtProps: AAProperties, mutProps: AAProperties, burialScore: number): number {
   // Rotamer entropy (R*ln(rotamers), kcal/mol at 298K)
   // Approximate number of rotamers for each amino acid
   const rotamerCount: Record<string, number> = {
-    G: 1, A: 1, V: 3, L: 9, I: 8,
-    F: 7, W: 6, Y: 8,
-    D: 6, E: 9, K: 27, R: 36, H: 6,
-    S: 3, T: 3, C: 3, M: 9,
-    N: 6, Q: 9, P: 2,
+    G: 1,
+    A: 1,
+    V: 3,
+    L: 9,
+    I: 8,
+    F: 7,
+    W: 6,
+    Y: 8,
+    D: 6,
+    E: 9,
+    K: 27,
+    R: 36,
+    H: 6,
+    S: 3,
+    T: 3,
+    C: 3,
+    M: 9,
+    N: 6,
+    Q: 9,
+    P: 2,
   };
 
   const R = 1.987e-3; // kcal/(mol*K)
@@ -363,14 +422,15 @@ function computeEntropy(
 
   // The entropy cost comes from restricting the mutant side chain
   // Buried residues have more restricted rotamers
-  const wtEntropy = R * T * Math.log(Math.max(rotamerCount['L'] || 1, 1));
-  const mutEntropy = R * T * Math.log(Math.max(rotamerCount['L'] || 1, 1));
+  const wtEntropy = R * T * Math.log(Math.max(rotamerCount["L"] || 1, 1));
+  const mutEntropy = R * T * Math.log(Math.max(rotamerCount["L"] || 1, 1));
 
   // Volume change entropy: larger residues lose more entropy when constrained
   const volumeChange = mutProps.volume - wtProps.volume;
-  const entropyPenalty = volumeChange > 0
-    ? 0.01 * volumeChange * burialScore // positive = unfavorable
-    : 0.005 * volumeChange * burialScore; // negative = favorable (smaller = more flexible)
+  const entropyPenalty =
+    volumeChange > 0
+      ? 0.01 * volumeChange * burialScore // positive = unfavorable
+      : 0.005 * volumeChange * burialScore; // negative = favorable (smaller = more flexible)
 
   // Charged residues have additional desolvation entropy cost
   const chargeEntropy = (Math.abs(mutProps.charge) - Math.abs(wtProps.charge)) * burialScore * 0.5;
@@ -391,13 +451,10 @@ function computeEntropy(
  * @returns DDGResult with total ddG, confidence, and component breakdown
  * @throws Error if PDB is invalid, residue not found, or mutation is invalid
  */
-export function predictDDG(
-  pdbText: string,
-  mutation: DDGMutation,
-): DDGResult {
+export function predictDDG(pdbText: string, mutation: DDGMutation): DDGResult {
   // Validate inputs
   if (!pdbText || pdbText.trim().length === 0) {
-    throw new Error('PDB text is empty');
+    throw new Error("PDB text is empty");
   }
 
   const wtOneLetter = mutation.wtResidue.toUpperCase();
@@ -414,9 +471,7 @@ export function predictDDG(
   const structure = parsePDB(pdbText);
 
   // Find mutation site atoms
-  const mutationAtoms = structure.atoms.filter(
-    (a) => a.residueNumber === mutation.position,
-  );
+  const mutationAtoms = structure.atoms.filter((a) => a.residueNumber === mutation.position);
 
   if (mutationAtoms.length === 0) {
     throw new Error(`No atoms found at residue position ${mutation.position}`);
@@ -462,7 +517,7 @@ export function predictDDG(
 
   // Compute burial score for confidence and entropy calculations
   const burialCutoff = 6.0;
-  const hydrophobicResidues = new Set(['G', 'A', 'V', 'L', 'I', 'F', 'W', 'Y', 'C', 'M', 'P']);
+  const hydrophobicResidues = new Set(["G", "A", "V", "L", "I", "F", "W", "Y", "C", "M", "P"]);
   let nonPolarNeighbors = 0;
   let totalNeighbors = 0;
   for (const nA of neighborAtoms) {
@@ -475,9 +530,7 @@ export function predictDDG(
       }
     }
   }
-  const burialScore = totalNeighbors > 0
-    ? Math.min(nonPolarNeighbors / Math.max(totalNeighbors, 1), 1.0)
-    : 0;
+  const burialScore = totalNeighbors > 0 ? Math.min(nonPolarNeighbors / Math.max(totalNeighbors, 1), 1.0) : 0;
 
   // Compute each energy component
   const vdw = computeVdW(structure, mutationAtoms, neighborAtoms, wtProps, mutProps);
@@ -494,7 +547,7 @@ export function predictDDG(
   const avgBFactor = mutationAtoms.reduce((s, a) => s + a.bFactor, 0) / mutationAtoms.length;
   const bfactorConfidence = Math.max(0, 1 - avgBFactor / 100); // B-factor penalty
   const neighborConfidence = Math.min(totalNeighbors / 10, 1.0); // more neighbors = more context
-  const confidence = Math.min(0.95, (bfactorConfidence * 0.4 + neighborConfidence * 0.6 + 0.1));
+  const confidence = Math.min(0.95, bfactorConfidence * 0.4 + neighborConfidence * 0.6 + 0.1);
 
   return {
     ddG: Math.round(ddG * 1000) / 1000,
@@ -514,15 +567,12 @@ export function predictDDG(
  * Sums individual single-point ΔΔG values. This is a simplification —
  * real epistatic effects require Rosetta/FoldX multi-mutant scoring.
  */
-export function predictMultiDDG(
-  pdbText: string,
-  mutations: DDGMutation[],
-): DDGResult {
+export function predictMultiDDG(pdbText: string, mutations: DDGMutation[]): DDGResult {
   if (mutations.length === 0) {
     return { ddG: 0, confidence: 1, components: { vdw: 0, solvation: 0, hbond: 0, backbone: 0, entropy: 0 } };
   }
 
-  const results = mutations.map(m => predictDDG(pdbText, m));
+  const results = mutations.map((m) => predictDDG(pdbText, m));
   const totalDDG = results.reduce((s, r) => s + r.ddG, 0);
   const avgConfidence = results.reduce((s, r) => s + r.confidence, 0) / results.length;
 
@@ -557,7 +607,7 @@ export function scanAllMutations(
   heatmap: number[][]; // [position][amino acid] → ΔΔG
   aminoAcids: string[];
 } {
-  const AA_CODES = 'ACDEFGHIKLMNPQRSTVWY';
+  const AA_CODES = "ACDEFGHIKLMNPQRSTVWY";
   const results: Array<{ position: number; wt: string; mut: string; ddg: number; confidence: number }> = [];
   const heatmap: number[][] = [];
 
@@ -587,5 +637,5 @@ export function scanAllMutations(
     heatmap.push(row);
   }
 
-  return { results, heatmap, aminoAcids: AA_CODES.split('') };
+  return { results, heatmap, aminoAcids: AA_CODES.split("") };
 }

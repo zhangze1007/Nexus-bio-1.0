@@ -1,17 +1,12 @@
-import type {
-  ClaimSurface,
-  GateDecision,
-  GateStatus,
-  ValidityTier,
-} from '../protocol/nexusTrustRuntime';
+import type { ClaimSurface, GateDecision, GateStatus, ValidityTier } from "../protocol/nexusTrustRuntime";
 import type {
   PolicyDslCondition,
   PolicyDslConditionField,
   PolicyDslDocument,
   PolicyDslEffect,
   PolicyDslRule,
-} from '../types/policyDsl';
-import { validatePolicyDslDocument } from './policyDslValidator';
+} from "../types/policyDsl";
+import { validatePolicyDslDocument } from "./policyDslValidator";
 
 export interface PolicyDslEvaluationInput {
   toolId: string;
@@ -22,14 +17,14 @@ export interface PolicyDslEvaluationInput {
   evidenceIds?: string[];
   assumptionIds?: string[];
   requiresHumanGate?: boolean;
-  humanGateStatus?: 'not-required' | 'pending' | 'approved' | 'rejected';
+  humanGateStatus?: "not-required" | "pending" | "approved" | "rejected";
 }
 
 function statusFromEffect(effect: PolicyDslEffect): GateStatus {
-  if (effect === 'allow') return 'ok';
-  if (effect === 'block') return 'blocked';
-  if (effect === 'gate') return 'gated';
-  return 'demoOnly';
+  if (effect === "allow") return "ok";
+  if (effect === "block") return "blocked";
+  if (effect === "gate") return "gated";
+  return "demoOnly";
 }
 
 function decisionForStatus(args: {
@@ -37,9 +32,9 @@ function decisionForStatus(args: {
   surface: ClaimSurface;
   reason: string;
   blockCode?: string;
-  overridePath?: 'human-review' | 'not-allowed';
+  overridePath?: "human-review" | "not-allowed";
 }): GateDecision {
-  const allowed = args.status === 'ok' || args.status === 'demoOnly';
+  const allowed = args.status === "ok" || args.status === "demoOnly";
 
   return {
     status: args.status,
@@ -51,109 +46,89 @@ function decisionForStatus(args: {
   };
 }
 
-function invalidPolicyDecision(
-  input: PolicyDslEvaluationInput,
-  validationSummary: string,
-): GateDecision {
+function invalidPolicyDecision(input: PolicyDslEvaluationInput, validationSummary: string): GateDecision {
   return decisionForStatus({
-    status: 'blocked',
+    status: "blocked",
     surface: input.surface,
-    blockCode: 'MISSING_POLICY',
+    blockCode: "MISSING_POLICY",
     reason: `Policy DSL document is invalid: ${validationSummary}`,
-    overridePath: 'not-allowed',
+    overridePath: "not-allowed",
   });
 }
 
-function fieldValue(
-  input: PolicyDslEvaluationInput,
-  field: PolicyDslConditionField,
-): unknown {
+function fieldValue(input: PolicyDslEvaluationInput, field: PolicyDslConditionField): unknown {
   switch (field) {
-    case 'toolId':
+    case "toolId":
       return input.toolId;
-    case 'surface':
+    case "surface":
       return input.surface;
-    case 'validityTier':
+    case "validityTier":
       return input.validityTier;
-    case 'isDraft':
+    case "isDraft":
       return input.isDraft;
-    case 'provenanceIds':
+    case "provenanceIds":
       return input.provenanceIds;
-    case 'evidenceIds':
+    case "evidenceIds":
       return input.evidenceIds;
-    case 'assumptionIds':
+    case "assumptionIds":
       return input.assumptionIds;
-    case 'requiresHumanGate':
+    case "requiresHumanGate":
       return input.requiresHumanGate;
-    case 'humanGateStatus':
+    case "humanGateStatus":
       return input.humanGateStatus;
   }
 }
 
 function isEmptyValue(value: unknown): boolean {
   if (value === undefined || value === null) return true;
-  if (typeof value === 'string') return value.length === 0;
+  if (typeof value === "string") return value.length === 0;
   if (Array.isArray(value)) return value.length === 0;
   return false;
 }
 
 function valueAsStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
-    : [];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
-function conditionMatches(
-  condition: PolicyDslCondition,
-  input: PolicyDslEvaluationInput,
-): boolean {
+function conditionMatches(condition: PolicyDslCondition, input: PolicyDslEvaluationInput): boolean {
   const candidate = fieldValue(input, condition.field);
 
   switch (condition.operator) {
-    case 'equals':
+    case "equals":
       return candidate === condition.value;
-    case 'notEquals':
+    case "notEquals":
       return candidate !== condition.value;
-    case 'in':
+    case "in":
       return (
-        (typeof candidate === 'string' || typeof candidate === 'boolean')
-        && valueAsStringArray(condition.value).includes(String(candidate))
+        (typeof candidate === "string" || typeof candidate === "boolean") &&
+        valueAsStringArray(condition.value).includes(String(candidate))
       );
-    case 'notIn':
+    case "notIn":
       return !(
-        (typeof candidate === 'string' || typeof candidate === 'boolean')
-        && valueAsStringArray(condition.value).includes(String(candidate))
+        (typeof candidate === "string" || typeof candidate === "boolean") &&
+        valueAsStringArray(condition.value).includes(String(candidate))
       );
-    case 'exists':
+    case "exists":
       return candidate !== undefined && candidate !== null;
-    case 'empty':
+    case "empty":
       return isEmptyValue(candidate);
-    case 'notEmpty':
+    case "notEmpty":
       return !isEmptyValue(candidate);
   }
 }
 
-function ruleMatches(
-  rule: PolicyDslRule,
-  input: PolicyDslEvaluationInput,
-): boolean {
+function ruleMatches(rule: PolicyDslRule, input: PolicyDslEvaluationInput): boolean {
   return rule.when.every((condition) => conditionMatches(condition, input));
 }
 
 function sortedRules(document: PolicyDslDocument): PolicyDslRule[] {
   return document.rules
     .map((rule, index) => ({ rule, index }))
-    .sort((left, right) => (
-      left.rule.priority - right.rule.priority
-      || left.index - right.index
-    ))
+    .sort((left, right) => left.rule.priority - right.rule.priority || left.index - right.index)
     .map(({ rule }) => rule);
 }
 
-function decisionForRule(
-  rule: PolicyDslRule,
-  input: PolicyDslEvaluationInput,
-): GateDecision {
+function decisionForRule(rule: PolicyDslRule, input: PolicyDslEvaluationInput): GateDecision {
   return decisionForStatus({
     status: statusFromEffect(rule.effect),
     surface: input.surface,
@@ -163,31 +138,25 @@ function decisionForRule(
   });
 }
 
-function defaultDecision(
-  document: PolicyDslDocument,
-  input: PolicyDslEvaluationInput,
-): GateDecision {
+function defaultDecision(document: PolicyDslDocument, input: PolicyDslEvaluationInput): GateDecision {
   return decisionForStatus({
-    status: 'blocked',
+    status: "blocked",
     surface: input.surface,
     blockCode: document.defaultDecision.blockCode,
     reason: document.defaultDecision.reason,
   });
 }
 
-export function evaluatePolicyDsl(
-  policy: unknown,
-  input: PolicyDslEvaluationInput,
-): GateDecision {
+export function evaluatePolicyDsl(policy: unknown, input: PolicyDslEvaluationInput): GateDecision {
   const validation = validatePolicyDslDocument(policy);
 
   if (!validation.ok) {
     const summary = validation.issues
-      .filter((issue) => issue.severity === 'error')
+      .filter((issue) => issue.severity === "error")
       .slice(0, 3)
       .map((issue) => `${issue.field}:${issue.code}`)
-      .join(', ');
-    return invalidPolicyDecision(input, summary || 'unknown validation failure');
+      .join(", ");
+    return invalidPolicyDecision(input, summary || "unknown validation failure");
   }
 
   const document = policy as PolicyDslDocument;

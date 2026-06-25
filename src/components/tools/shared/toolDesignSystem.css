@@ -10,17 +10,17 @@
 
 :root {
   /* ── Typography Scale (Tufte-inspired 5-stop) ── */
-  --nb-font-sans: 'Public Sans', -apple-system, sans-serif;
-  --nb-font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', monospace;
-  --nb-font-brand: 'Space Grotesk', -apple-system, sans-serif;
+  --nb-font-sans: "Public Sans", -apple-system, sans-serif;
+  --nb-font-mono: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
+  --nb-font-brand: "Space Grotesk", -apple-system, sans-serif;
 
-  --nb-fs-xxs: 9px;   /* micro labels, badges, data source tags */
-  --nb-fs-xs: 11px;   /* metadata, captions — Apple HIG minimum (was 10px) */
-  --nb-fs-sm: 12px;   /* body, descriptions, secondary labels */
-  --nb-fs-md: 14px;   /* primary labels, controls */
-  --nb-fs-lg: 18px;   /* section headings */
-  --nb-fs-xl: 24px;   /* hero titles */
-  --nb-fs-xxl: 32px;  /* page hero titles */
+  --nb-fs-xxs: 9px; /* micro labels, badges, data source tags */
+  --nb-fs-xs: 11px; /* metadata, captions — Apple HIG minimum (was 10px) */
+  --nb-fs-sm: 12px; /* body, descriptions, secondary labels */
+  --nb-fs-md: 14px; /* primary labels, controls */
+  --nb-fs-lg: 18px; /* section headings */
+  --nb-fs-xl: 24px; /* hero titles */
+  --nb-fs-xxl: 32px; /* page hero titles */
 
   /* ── Spacing Scale (5-stop) ── */
   --nb-space-xs: 4px;
@@ -57,11 +57,11 @@
   --nb-text-muted: rgba(217, 225, 235, 0.4);
 
   /* ── Accent Palette (5-color scientific) ── */
-  --nb-mint: #BFDCCD;
-  --nb-sky: #AFC3D6;
-  --nb-lilac: #CFC4E3;
-  --nb-apricot: #E7C7A9;
-  --nb-coral: #E8A3A1;
+  --nb-mint: #bfdccd;
+  --nb-sky: #afc3d6;
+  --nb-lilac: #cfc4e3;
+  --nb-apricot: #e7c7a9;
+  --nb-coral: #e8a3a1;
 
   /* ── Interaction Colors ── */
   --nb-hover-bg: rgba(255, 255, 255, 0.04);
@@ -81,7 +81,12 @@
   font-size: var(--nb-fs-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: background 80ms, border-color 80ms, color 80ms, transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    background 80ms,
+    border-color 80ms,
+    color 80ms,
+    transform 120ms ease,
+    box-shadow 120ms ease;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -118,7 +123,7 @@
 }
 
 .nb-btn--primary:hover:not(:disabled) {
-  background: #A8CDB9;
+  background: #a8cdb9;
   border-color: transparent;
   color: #0a0a0a;
 }
@@ -134,9 +139,24 @@
   border-color: rgba(232, 163, 161, 0.25);
 }
 
-.nb-btn--sm { height: 28px; padding: 0 10px; gap: 5px; border-radius: var(--nb-radius-sm); }
-.nb-btn--md { height: 36px; padding: 0 14px; gap: 6px; border-radius: var(--nb-radius-md); }
-.nb-btn--lg { height: 44px; padding: 0 20px; gap: 8px; border-radius: var(--nb-radius-md); }
+.nb-btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  gap: 5px;
+  border-radius: var(--nb-radius-sm);
+}
+.nb-btn--md {
+  height: 36px;
+  padding: 0 14px;
+  gap: 6px;
+  border-radius: var(--nb-radius-md);
+}
+.nb-btn--lg {
+  height: 44px;
+  padding: 0 20px;
+  gap: 8px;
+  border-radius: var(--nb-radius-md);
+}
 
 /* ── Tool Toggle Button ── */
 .nb-tool-toggle {
@@ -149,7 +169,12 @@
   font-family: var(--nb-font-sans);
   font-size: var(--nb-fs-sm);
   cursor: pointer;
-  transition: background 80ms, border-color 80ms, color 80ms, transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    background 80ms,
+    border-color 80ms,
+    color 80ms,
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .nb-tool-toggle:hover {
@@ -192,7 +217,9 @@
   color: var(--nb-text-label);
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .nb-focus-summary:hover {

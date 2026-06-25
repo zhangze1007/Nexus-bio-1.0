@@ -15,7 +15,7 @@
  * Reference: Hastie et al. (2009) The Elements of Statistical Learning
  */
 
-import type { ModelMetrics } from './types';
+import type { ModelMetrics } from "./types";
 
 // ── Extended Metric Types ──────────────────────────────────────────────────
 
@@ -166,7 +166,7 @@ function computeAUC(yTrue: number[], yScores: number[]): number {
     const fpr = fp / nNeg;
 
     // Trapezoidal rule: area = (fpr - prevFPR) * (tpr + prevTPR) / 2
-    auc += (fpr - prevFPR) * (tpr + prevTPR) / 2;
+    auc += ((fpr - prevFPR) * (tpr + prevTPR)) / 2;
 
     prevTPR = tpr;
     prevFPR = fpr;
@@ -190,10 +190,7 @@ function computeAUC(yTrue: number[], yScores: number[]): number {
  * @param yPred - Predicted values
  * @returns RegressionMetrics with MAE, RMSE, R², and explained variance
  */
-export function computeRegressionMetrics(
-  yTrue: number[],
-  yPred: number[],
-): RegressionMetrics {
+export function computeRegressionMetrics(yTrue: number[], yPred: number[]): RegressionMetrics {
   const n = yTrue.length;
   if (n === 0) {
     return { mae: 0, rmse: 0, r2: 0, explainedVariance: 0 };
@@ -252,10 +249,7 @@ export function computeRegressionMetrics(
  * @param yPred - Predicted class labels
  * @returns ClassificationMetrics with accuracy, precision, recall, F1, and optional ROC-AUC
  */
-export function computeClassificationMetrics(
-  yTrue: number[],
-  yPred: number[],
-): ClassificationMetrics {
+export function computeClassificationMetrics(yTrue: number[], yPred: number[]): ClassificationMetrics {
   const n = yTrue.length;
   if (n === 0) {
     return { mae: 0, rmse: 0, r2: 0, accuracy: 0, precision: 0, recall: 0, f1: 0 };
@@ -276,7 +270,9 @@ export function computeClassificationMetrics(
   let f1Sum = 0;
 
   for (const cls of classes) {
-    let tp = 0, fp = 0, fn = 0;
+    let tp = 0,
+      fp = 0,
+      fn = 0;
     for (let i = 0; i < n; i++) {
       if (yPred[i] === cls && yTrue[i] === cls) tp++;
       else if (yPred[i] === cls && yTrue[i] !== cls) fp++;
@@ -284,7 +280,7 @@ export function computeClassificationMetrics(
     }
     const prec = tp + fp > 0 ? tp / (tp + fp) : 0;
     const rec = tp + fn > 0 ? tp / (tp + fn) : 0;
-    const f1 = prec + rec > 0 ? 2 * prec * rec / (prec + rec) : 0;
+    const f1 = prec + rec > 0 ? (2 * prec * rec) / (prec + rec) : 0;
 
     precisionSum += prec;
     recallSum += rec;
@@ -333,10 +329,7 @@ export function computeROCAUC(yTrue: number[], yScores: number[]): number {
  * @param yPred - Predicted values
  * @returns ResidualAnalysis with raw and standardized residuals
  */
-export function computeResiduals(
-  yTrue: number[],
-  yPred: number[],
-): ResidualAnalysis {
+export function computeResiduals(yTrue: number[], yPred: number[]): ResidualAnalysis {
   const n = yTrue.length;
   if (n === 0) {
     return { residuals: [], standardizedResiduals: [], meanResidual: 0, stdResidual: 0 };
@@ -388,7 +381,7 @@ export function aggregateMetrics(metricsList: ModelMetrics[]): AggregatedMetrics
     return { mean: empty, std: empty, min: empty, max: empty };
   }
 
-  const keys: (keyof ModelMetrics)[] = ['mae', 'rmse', 'r2', 'accuracy', 'f1'];
+  const keys: (keyof ModelMetrics)[] = ["mae", "rmse", "r2", "accuracy", "f1"];
 
   // Use Record<string, number> so we can dynamically index by metric key.
   const meanMetrics = { mae: 0, rmse: 0, r2: 0 } as ModelMetrics & Record<string, number>;
@@ -400,7 +393,7 @@ export function aggregateMetrics(metricsList: ModelMetrics[]): AggregatedMetrics
     const values: number[] = [];
     for (const m of metricsList) {
       const val = m[key];
-      if (typeof val === 'number') {
+      if (typeof val === "number") {
         values.push(val);
       }
     }
@@ -433,10 +426,7 @@ export function aggregateMetrics(metricsList: ModelMetrics[]): AggregatedMetrics
  * @param yPred - Predicted class labels
  * @returns ConfusionMatrixResult with matrix and sorted labels
  */
-export function computeConfusionMatrix(
-  yTrue: number[],
-  yPred: number[],
-): ConfusionMatrixResult {
+export function computeConfusionMatrix(yTrue: number[], yPred: number[]): ConfusionMatrixResult {
   const n = yTrue.length;
   if (n === 0) {
     return { matrix: [], labels: [] };

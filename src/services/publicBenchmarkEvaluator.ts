@@ -1,26 +1,19 @@
-import type { ClaimSurface } from '../protocol/nexusTrustRuntime';
-import { evaluateClaimSurfacePolicy, type HumanGateStatus } from './trustPolicyEngine';
-import { parseBenchmarkCaseFile } from './trustMetricsReport';
-import type {
-  TrustBenchmarkExpectedLabel,
-  TrustBenchmarkMetricCase,
-} from '../types/trustMetrics';
-import type {
-  BenchmarkDecisionStatus,
-  BenchmarkMode,
-  PublicBenchmarkCaseResult,
-} from '../types/publicBenchmark';
-import { BENCHMARK_MODES } from '../types/publicBenchmark';
+import type { ClaimSurface } from "../protocol/nexusTrustRuntime";
+import type { BenchmarkDecisionStatus, BenchmarkMode, PublicBenchmarkCaseResult } from "../types/publicBenchmark";
+import { BENCHMARK_MODES } from "../types/publicBenchmark";
+import type { TrustBenchmarkExpectedLabel, TrustBenchmarkMetricCase } from "../types/trustMetrics";
+import { parseBenchmarkCaseFile } from "./trustMetricsReport";
+import { evaluateClaimSurfacePolicy, type HumanGateStatus } from "./trustPolicyEngine";
 
 export const FORMAL_PUBLIC_BENCHMARK_SURFACES: readonly ClaimSurface[] = [
-  'export',
-  'recommendation',
-  'protocol',
-  'external-handoff',
+  "export",
+  "recommendation",
+  "protocol",
+  "external-handoff",
 ] as const;
 
 function parseSingleBenchmarkCase(benchmarkCase: unknown): TrustBenchmarkMetricCase {
-  const parsed = parseBenchmarkCaseFile({ cases: [benchmarkCase] }, 'publicBenchmarkCase');
+  const parsed = parseBenchmarkCaseFile({ cases: [benchmarkCase] }, "publicBenchmarkCase");
   return parsed.cases[0];
 }
 
@@ -31,8 +24,8 @@ function isFormalSurface(surface: ClaimSurface): boolean {
 function humanGateStatus(testCase: TrustBenchmarkMetricCase): HumanGateStatus {
   const explicit = testCase.input.humanGateStatus;
   if (explicit) return explicit;
-  if (!testCase.input.humanGateRequired) return 'not-required';
-  return testCase.input.humanGateSatisfied ? 'approved' : 'pending';
+  if (!testCase.input.humanGateRequired) return "not-required";
+  return testCase.input.humanGateSatisfied ? "approved" : "pending";
 }
 
 function provenanceIds(testCase: TrustBenchmarkMetricCase): string[] {
@@ -40,7 +33,7 @@ function provenanceIds(testCase: TrustBenchmarkMetricCase): string[] {
 }
 
 function evidenceIds(testCase: TrustBenchmarkMetricCase): string[] {
-  return testCase.input.evidenceState === 'present' ? [`${testCase.caseId}:evidence`] : [];
+  return testCase.input.evidenceState === "present" ? [`${testCase.caseId}:evidence`] : [];
 }
 
 function expectedBlockCode(
@@ -59,9 +52,9 @@ function expectedStatus(
 
 function hasDemoSignal(testCase: TrustBenchmarkMetricCase): boolean {
   return (
-    testCase.input.validityTier === 'demo'
-    || testCase.category.includes('demo')
-    || testCase.riskTags.some((tag) => tag.includes('demo'))
+    testCase.input.validityTier === "demo" ||
+    testCase.category.includes("demo") ||
+    testCase.riskTags.some((tag) => tag.includes("demo"))
   );
 }
 
@@ -71,19 +64,19 @@ function hasMissingProvenanceSignal(
   actualBlockCode: string | undefined,
 ): boolean {
   return (
-    !testCase.input.hasProvenance
-    || testCase.riskTags.some((tag) => tag.includes('missing-provenance'))
-    || expectedBlockCodeValue === 'PROVENANCE_REQUIRED'
-    || actualBlockCode === 'PROVENANCE_REQUIRED'
+    !testCase.input.hasProvenance ||
+    testCase.riskTags.some((tag) => tag.includes("missing-provenance")) ||
+    expectedBlockCodeValue === "PROVENANCE_REQUIRED" ||
+    actualBlockCode === "PROVENANCE_REQUIRED"
   );
 }
 
 function baselineNotes(mode: BenchmarkMode): string {
-  if (mode === 'no-gating') {
-    return 'No-governance baseline: every output is allowed through; trust labels and gate decisions do not enforce claim-surface use.';
+  if (mode === "no-gating") {
+    return "No-governance baseline: every output is allowed through; trust labels and gate decisions do not enforce claim-surface use.";
   }
 
-  return 'Badge-only baseline: validity, provenance, and assumption labels may be visible, but they do not enforce claim-surface use.';
+  return "Badge-only baseline: validity, provenance, and assumption labels may be visible, but they do not enforce claim-surface use.";
 }
 
 function evaluateRuntimeDecision(testCase: TrustBenchmarkMetricCase): {
@@ -118,16 +111,17 @@ function evaluateParsedCaseForBenchmarkMode(
   const expectedStatusValue = expectedStatus(testCase, expectedLabel);
   const expectedBlockCodeValue = expectedBlockCode(testCase, expectedLabel);
 
-  const modeDecision = mode === 'runtime-gating'
-    ? evaluateRuntimeDecision(testCase)
-    : {
-      actualStatus: 'ok' as BenchmarkDecisionStatus,
-      actualBlockCode: undefined,
-      notes: baselineNotes(mode),
-    };
+  const modeDecision =
+    mode === "runtime-gating"
+      ? evaluateRuntimeDecision(testCase)
+      : {
+          actualStatus: "ok" as BenchmarkDecisionStatus,
+          actualBlockCode: undefined,
+          notes: baselineNotes(mode),
+        };
 
   const formalSurface = isFormalSurface(testCase.surface);
-  const unsafeExpected = expectedStatusValue !== 'ok';
+  const unsafeExpected = expectedStatusValue !== "ok";
   const demoSignal = hasDemoSignal(testCase);
   const missingProvenanceSignal = hasMissingProvenanceSignal(
     testCase,
@@ -135,26 +129,11 @@ function evaluateParsedCaseForBenchmarkMode(
     modeDecision.actualBlockCode,
   );
 
-  const unsafePropagation = (
-    formalSurface
-    && unsafeExpected
-    && modeDecision.actualStatus === 'ok'
-  );
-  const falseTrust = (
-    modeDecision.actualStatus === 'ok'
-    && (testCase.knownBad || unsafeExpected)
-  );
-  const falseBlock = expectedStatusValue === 'ok' && modeDecision.actualStatus === 'blocked';
-  const demoLeakage = (
-    demoSignal
-    && modeDecision.actualStatus === 'ok'
-    && (formalSurface || unsafeExpected)
-  );
-  const missingProvenanceLeakage = (
-    formalSurface
-    && missingProvenanceSignal
-    && modeDecision.actualStatus === 'ok'
-  );
+  const unsafePropagation = formalSurface && unsafeExpected && modeDecision.actualStatus === "ok";
+  const falseTrust = modeDecision.actualStatus === "ok" && (testCase.knownBad || unsafeExpected);
+  const falseBlock = expectedStatusValue === "ok" && modeDecision.actualStatus === "blocked";
+  const demoLeakage = demoSignal && modeDecision.actualStatus === "ok" && (formalSurface || unsafeExpected);
+  const missingProvenanceLeakage = formalSurface && missingProvenanceSignal && modeDecision.actualStatus === "ok";
 
   return {
     caseId: testCase.caseId,
@@ -176,9 +155,7 @@ function evaluateParsedCaseForBenchmarkMode(
   };
 }
 
-function labelMap(
-  expectedLabels: readonly TrustBenchmarkExpectedLabel[],
-): Map<string, TrustBenchmarkExpectedLabel> {
+function labelMap(expectedLabels: readonly TrustBenchmarkExpectedLabel[]): Map<string, TrustBenchmarkExpectedLabel> {
   const labels = new Map<string, TrustBenchmarkExpectedLabel>();
   for (const label of expectedLabels) {
     if (labels.has(label.caseId)) {
@@ -190,7 +167,7 @@ function labelMap(
 }
 
 function blockCodeForComparison(value: string | null | undefined): string {
-  return value ?? '';
+  return value ?? "";
 }
 
 export function validateExpectedLabelsForBenchmarkCases(
@@ -211,10 +188,7 @@ export function validateExpectedLabelsForBenchmarkCases(
     if (label.expectedStatus !== testCase.expected.status) {
       errors.push(`${testCase.caseId}: expectedStatus CSV/JSON mismatch`);
     }
-    if (
-      blockCodeForComparison(label.expectedBlockCode)
-      !== blockCodeForComparison(testCase.expected.blockCode)
-    ) {
+    if (blockCodeForComparison(label.expectedBlockCode) !== blockCodeForComparison(testCase.expected.blockCode)) {
       errors.push(`${testCase.caseId}: expectedBlockCode CSV/JSON mismatch`);
     }
     if (label.category !== testCase.category) {
@@ -238,14 +212,11 @@ export function validateExpectedLabelsForBenchmarkCases(
   }
 
   if (errors.length > 0) {
-    throw new Error(`Public benchmark expected label validation failed:\n${errors.join('\n')}`);
+    throw new Error(`Public benchmark expected label validation failed:\n${errors.join("\n")}`);
   }
 }
 
-export function evaluateCaseForBenchmarkMode(
-  benchmarkCase: unknown,
-  mode: BenchmarkMode,
-): PublicBenchmarkCaseResult {
+export function evaluateCaseForBenchmarkMode(benchmarkCase: unknown, mode: BenchmarkMode): PublicBenchmarkCaseResult {
   return evaluateParsedCaseForBenchmarkMode(parseSingleBenchmarkCase(benchmarkCase), mode);
 }
 
@@ -258,11 +229,7 @@ export function evaluateBenchmarkCasesForModes(
   validateExpectedLabelsForBenchmarkCases(cases, expectedLabels);
   const labelsById = labelMap(expectedLabels);
 
-  return cases.flatMap((testCase) => (
-    modes.map((mode) => evaluateParsedCaseForBenchmarkMode(
-      testCase,
-      mode,
-      labelsById.get(testCase.caseId),
-    ))
-  ));
+  return cases.flatMap((testCase) =>
+    modes.map((mode) => evaluateParsedCaseForBenchmarkMode(testCase, mode, labelsById.get(testCase.caseId))),
+  );
 }

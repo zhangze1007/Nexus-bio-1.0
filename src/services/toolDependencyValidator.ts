@@ -6,15 +6,16 @@
  * requiredInputs for each tool. Returns a structured validation result
  * indicating which dependencies are missing or stale.
  */
-import { WORKFLOW_CONTRACTS } from './workflowRegistry';
-import type { ToolId } from '../domain/workflowContract';
+
+import type { ToolId } from "../domain/workflowContract";
+import { WORKFLOW_CONTRACTS } from "./workflowRegistry";
 
 /** Payloads may be any shape; we only check existence and freshness. */
 type PayloadRecord = Record<string, { updatedAt?: number } | undefined>;
 
 export interface DependencyValidation {
   /** 'ok' when all required inputs are present and fresh. */
-  status: 'ok' | 'missing' | 'stale';
+  status: "ok" | "missing" | "stale";
   /** Tool ids whose payloads are entirely absent. */
   missing: string[];
   /** Tool ids whose payloads exist but are older than the staleness threshold. */
@@ -36,22 +37,19 @@ const STALE_THRESHOLD_MS = 30 * 60 * 1000;
  * @param payloads — the current `toolPayloads` map from the workbench store
  * @returns structured validation with missing/stale lists
  */
-export function validateDependencies(
-  toolId: string,
-  payloads: PayloadRecord,
-): DependencyValidation {
+export function validateDependencies(toolId: string, payloads: PayloadRecord): DependencyValidation {
   const contract = (WORKFLOW_CONTRACTS as Record<string, { requiredInputs?: Array<{ toolId: string }> }>)[toolId];
 
   // Unknown tool or tool with no contract — nothing to validate.
   if (!contract) {
-    return { status: 'ok', missing: [], stale: [] };
+    return { status: "ok", missing: [], stale: [] };
   }
 
   const requiredInputs = contract.requiredInputs ?? [];
 
   // Tool has no required inputs — always ok.
   if (requiredInputs.length === 0) {
-    return { status: 'ok', missing: [], stale: [] };
+    return { status: "ok", missing: [], stale: [] };
   }
 
   const missing: string[] = [];
@@ -64,21 +62,18 @@ export function validateDependencies(
 
     if (!payload) {
       missing.push(upstreamId);
-    } else if (
-      typeof payload.updatedAt === 'number' &&
-      now - payload.updatedAt > STALE_THRESHOLD_MS
-    ) {
+    } else if (typeof payload.updatedAt === "number" && now - payload.updatedAt > STALE_THRESHOLD_MS) {
       stale.push(upstreamId);
     }
   }
 
   if (missing.length > 0) {
-    return { status: 'missing', missing, stale };
+    return { status: "missing", missing, stale };
   }
   if (stale.length > 0) {
-    return { status: 'stale', missing, stale };
+    return { status: "stale", missing, stale };
   }
-  return { status: 'ok', missing: [], stale: [] };
+  return { status: "ok", missing: [], stale: [] };
 }
 
 /**

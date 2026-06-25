@@ -7,7 +7,7 @@
  * Pyodide is loaded lazily on first use to avoid blocking app startup.
  * The initial load downloads ~15MB of WASM + Python standard library.
  */
-import type { PyodideInterface } from 'pyodide';
+import type { PyodideInterface } from "pyodide";
 
 let pyodideInstance: PyodideInterface | null = null;
 let loadPromise: Promise<PyodideInterface> | null = null;
@@ -20,9 +20,9 @@ export async function loadPyodide(): Promise<PyodideInterface> {
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
-    const { loadPyodide: loadPyodideFn } = await import('pyodide');
+    const { loadPyodide: loadPyodideFn } = await import("pyodide");
     const pyodide = await loadPyodideFn({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/',
+      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/",
     });
     pyodideInstance = pyodide;
     return pyodide;
@@ -45,7 +45,7 @@ export async function runPython<T = unknown>(code: string): Promise<T> {
  */
 export async function installPackage(packageName: string): Promise<void> {
   const pyodide = await loadPyodide();
-  await pyodide.loadPackage('micropip');
+  await pyodide.loadPackage("micropip");
   await pyodide.runPythonAsync(`
     import micropip
     await micropip.install('${packageName}')
@@ -72,7 +72,7 @@ export async function isPackageInstalled(packageName: string): Promise<boolean> 
  * Get Pyodide version info.
  */
 export async function getPyodideVersion(): Promise<string> {
-  return await runPython<string>('import sys; sys.version');
+  return await runPython<string>("import sys; sys.version");
 }
 
 /**

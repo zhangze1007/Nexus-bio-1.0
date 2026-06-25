@@ -1,42 +1,27 @@
-import type {
-  GateOverridePath,
-} from '../protocol/nexusTrustRuntime';
+import type { GateOverridePath } from "../protocol/nexusTrustRuntime";
 
-export const POLICY_DSL_SCHEMA_VERSION = 'policy-dsl-v1' as const;
+export const POLICY_DSL_SCHEMA_VERSION = "policy-dsl-v1" as const;
 
 export type PolicyDslVersion = typeof POLICY_DSL_SCHEMA_VERSION;
 
-export const POLICY_DSL_EFFECTS = [
-  'allow',
-  'block',
-  'gate',
-  'demoOnly',
-] as const;
+export const POLICY_DSL_EFFECTS = ["allow", "block", "gate", "demoOnly"] as const;
 
 export type PolicyDslEffect = (typeof POLICY_DSL_EFFECTS)[number];
 
-export const POLICY_DSL_OPERATORS = [
-  'equals',
-  'notEquals',
-  'in',
-  'notIn',
-  'exists',
-  'empty',
-  'notEmpty',
-] as const;
+export const POLICY_DSL_OPERATORS = ["equals", "notEquals", "in", "notIn", "exists", "empty", "notEmpty"] as const;
 
 export type PolicyDslOperator = (typeof POLICY_DSL_OPERATORS)[number];
 
 export const POLICY_DSL_CONDITION_FIELDS = [
-  'toolId',
-  'surface',
-  'validityTier',
-  'isDraft',
-  'provenanceIds',
-  'evidenceIds',
-  'assumptionIds',
-  'requiresHumanGate',
-  'humanGateStatus',
+  "toolId",
+  "surface",
+  "validityTier",
+  "isDraft",
+  "provenanceIds",
+  "evidenceIds",
+  "assumptionIds",
+  "requiresHumanGate",
+  "humanGateStatus",
 ] as const;
 
 export type PolicyDslConditionField = (typeof POLICY_DSL_CONDITION_FIELDS)[number];
@@ -66,8 +51,8 @@ export interface PolicyDslDocument {
   description: string;
   rules: PolicyDslRule[];
   defaultDecision: {
-    effect: 'block';
-    blockCode: 'MISSING_POLICY' | string;
+    effect: "block";
+    blockCode: "MISSING_POLICY" | string;
     reason: string;
   };
 }

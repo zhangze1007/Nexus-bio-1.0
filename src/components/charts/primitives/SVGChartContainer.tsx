@@ -1,7 +1,7 @@
-'use client';
-import React from 'react';
-import { colors } from '../../../design-system/tokens';
-import { PAPER_THEME } from '../chartTheme';
+"use client";
+import type React from "react";
+import { colors } from "../../../design-system/tokens";
+import { PAPER_THEME } from "../chartTheme";
 
 /**
  * SVGChartContainer — canonical SVG wrapper for all inline charts.
@@ -24,7 +24,7 @@ export interface SVGChartContainerProps {
   /** Accessible label for the chart */
   ariaLabel?: string;
   /** Chart style variant — 'dark' (default) or 'paper' (white bg) */
-  variant?: 'dark' | 'paper';
+  variant?: "dark" | "paper";
   /** Corner radius for the background rect (default: 12 dark, 2 paper) */
   rx?: number;
   /** Background fill (default: #050505 dark, #FAFAF8 paper) */
@@ -39,15 +39,15 @@ export interface SVGChartContainerProps {
 export default function SVGChartContainer({
   W,
   H,
-  ariaLabel = 'Chart',
-  variant = 'dark',
+  ariaLabel = "Chart",
+  variant = "dark",
   rx,
   fill,
   style,
   svgRef,
   children,
 }: SVGChartContainerProps) {
-  const isPaper = variant === 'paper';
+  const isPaper = variant === "paper";
   const resolvedFill = fill ?? (isPaper ? PAPER_THEME.bg : colors.bg.primary);
   const resolvedRx = rx ?? (isPaper ? PAPER_THEME.borderRadius : 12);
 
@@ -58,8 +58,8 @@ export default function SVGChartContainer({
       aria-label={ariaLabel}
       viewBox={`0 0 ${W} ${H}`}
       style={{
-        width: '100%',
-        height: '100%',
+        width: "100%",
+        height: "100%",
         ...(isPaper ? { border: `1px solid ${PAPER_THEME.border}` } : {}),
         ...style,
       }}

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 /**
  * Simple media query hook for responsive layouts.
@@ -13,8 +13,8 @@ export function useMediaQuery(query: string): boolean {
     const mql = window.matchMedia(query);
     setMatches(mql.matches);
     const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
   }, [query]);
 
   return matches;

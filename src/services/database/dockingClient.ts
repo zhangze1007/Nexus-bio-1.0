@@ -1,4 +1,4 @@
-import { fetchWithFallback, type FallbackResult } from './fetchWithFallback';
+import { type FallbackResult, fetchWithFallback } from "./fetchWithFallback";
 
 export interface DockingResult {
   protein: string;
@@ -40,9 +40,9 @@ export async function runDocking(
         payload.uniprotId = options.uniprotId;
       }
 
-      const res = await fetch('/api/docking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/docking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(30000),
       });
@@ -56,7 +56,7 @@ export async function runDocking(
         contactsFound: number;
         source: string;
       };
-      if (!data.ok) throw new Error('Docking request failed');
+      if (!data.ok) throw new Error("Docking request failed");
       return {
         protein: data.protein,
         ligand: data.ligand,
@@ -72,8 +72,8 @@ export async function runDocking(
       dockingScore: -5.0,
       bindingEnergy: -6.0,
       contactsFound: 0,
-      source: 'mock',
+      source: "mock",
     },
-    'Docking',
+    "Docking",
   );
 }

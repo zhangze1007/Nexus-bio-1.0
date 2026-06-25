@@ -79,15 +79,12 @@ function createRNG(seed: number): () => number {
  * @param options - Simulation parameters (maxTime required, seed and maxSteps optional)
  * @returns Trajectories, timestamps, reaction event counts, and final state
  */
-export function runGillespie(
-  model: StochasticModel,
-  options: GillespieOptions,
-): GillespieResult {
+export function runGillespie(model: StochasticModel, options: GillespieOptions): GillespieResult {
   const { maxTime, seed = 0, maxSteps } = options;
   const rng = createRNG(seed);
 
   // Initialize species counts
-  const speciesIds = model.species.map(s => s.id);
+  const speciesIds = model.species.map((s) => s.id);
   const state: Record<string, number> = {};
   for (const sp of model.species) {
     state[sp.id] = sp.initialCount;
@@ -137,7 +134,7 @@ export function runGillespie(
         // For first-order reactions, propensity = rate * count
         // For higher-order, use falling factorial: n * (n-1) * ... * (n-k+1)
         for (let k = 0; k < stoich; k++) {
-          propensity *= (count - k);
+          propensity *= count - k;
         }
       }
 
@@ -145,8 +142,8 @@ export function runGillespie(
       if (propensity > 0 && (rxn.hillRepression || rxn.hillActivation)) {
         const hill = rxn.hillRepression ?? rxn.hillActivation!;
         const x = state[hill.species] ?? 0;
-        const Kn = Math.pow(hill.K, hill.n);
-        const xn = Math.pow(x, hill.n);
+        const Kn = hill.K ** hill.n;
+        const xn = x ** hill.n;
         if (rxn.hillRepression) {
           // Repression: propensity = rate * K^n / (K^n + x^n)
           propensity *= Kn / (Kn + xn);

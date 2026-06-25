@@ -10,9 +10,9 @@
  * Reference: Hastie et al. (2009) The Elements of Statistical Learning
  */
 
-import type { Dataset, ModelMetrics, ModelType } from './types';
-import type { MLModel } from './models';
-import { createModel } from './models';
+import type { MLModel } from "./models";
+import { createModel } from "./models";
+import type { Dataset, ModelMetrics, ModelType } from "./types";
 
 // ── Helper Types ───────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ export function trainTestSplit(
   const nTest = Math.max(1, Math.floor(n * testFraction));
   const rng = seed !== undefined ? seededRNG(seed) : Math.random;
 
-  if (stratify && dataset.taskType === 'classification') {
+  if (stratify && dataset.taskType === "classification") {
     // Group indices by class label
     const byClass = new Map<number, number[]>();
     for (let i = 0; i < n; i++) {
@@ -144,7 +144,7 @@ export function crossValidate(
   y: number[],
   k: number = 5,
   metrics?: (yTrue: number[], yPred: number[]) => ModelMetrics,
-  taskType?: 'regression' | 'classification',
+  taskType?: "regression" | "classification",
 ): { foldMetrics: ModelMetrics[]; meanMetrics: ModelMetrics } {
   const n = X.length;
   if (n === 0) {
@@ -155,8 +155,8 @@ export function crossValidate(
   // Auto-detect task type if not explicitly provided
   if (!taskType) {
     const uniqueLabels = new Set(y);
-    const allInteger = y.every(v => v === Math.round(v));
-    taskType = allInteger && uniqueLabels.size <= 10 ? 'classification' : 'regression';
+    const allInteger = y.every((v) => v === Math.round(v));
+    taskType = allInteger && uniqueLabels.size <= 10 ? "classification" : "regression";
   }
 
   // Cap k at sample count
@@ -165,9 +165,7 @@ export function crossValidate(
   const metricsFn = metrics ?? computeAllMetrics;
 
   // Build fold indices (stratified for classification)
-  const folds: number[][] = taskType === 'classification'
-    ? buildStratifiedFolds(y, k)
-    : buildFolds(n, k);
+  const folds: number[][] = taskType === "classification" ? buildStratifiedFolds(y, k) : buildFolds(n, k);
 
   const foldMetrics: ModelMetrics[] = [];
 
@@ -179,10 +177,10 @@ export function crossValidate(
       if (j !== i) trainIndices.push(...folds[j]);
     }
 
-    const trainX = trainIndices.map(idx => X[idx]);
-    const trainY = trainIndices.map(idx => y[idx]);
-    const valX = valIndices.map(idx => X[idx]);
-    const valY = valIndices.map(idx => y[idx]);
+    const trainX = trainIndices.map((idx) => X[idx]);
+    const trainY = trainIndices.map((idx) => y[idx]);
+    const valX = valIndices.map((idx) => X[idx]);
+    const valY = valIndices.map((idx) => y[idx]);
 
     model.fit(trainX, trainY);
     const preds = model.predict(valX);
@@ -320,9 +318,7 @@ export function trainWithEarlyStopping(
     }
 
     // Clip gradients to prevent divergence (threshold scaled by feature count)
-    const gradNorm = Math.sqrt(
-      gradW.reduce((s, g) => s + g * g, 0) + gradB * gradB,
-    );
+    const gradNorm = Math.sqrt(gradW.reduce((s, g) => s + g * g, 0) + gradB * gradB);
     const clipThreshold = Math.max(10, nFeatures * 5);
     if (gradNorm > clipThreshold) {
       const scale = clipThreshold / gradNorm;
@@ -339,14 +335,14 @@ export function trainWithEarlyStopping(
     bias -= learningRate * gradB;
 
     // --- Evaluate ---
-    const valPreds = XVal.map(x => {
+    const valPreds = XVal.map((x) => {
       let pred = bias;
       for (let j = 0; j < nFeatures; j++) pred += weights[j] * x[j];
       return pred;
     });
     const valLoss = XVal.length > 0 ? mseLoss(yVal, valPreds) : 0;
 
-    const trainPreds = XTrain.map(x => {
+    const trainPreds = XTrain.map((x) => {
       let pred = bias;
       for (let j = 0; j < nFeatures; j++) pred += weights[j] * x[j];
       return pred;
@@ -549,8 +545,8 @@ export function computeAllMetrics(yTrue: number[], yPred: number[]): ModelMetric
   const r2 = ssTot < 1e-12 ? 1 : 1 - sumSqErr / ssTot;
 
   // Classification metrics: check if predictions are approximately integers
-  const isClassification = yPred.some(p => Math.abs(p - Math.round(p)) > 0.01) === false
-    && yTrue.every(t => t === Math.round(t));
+  const isClassification =
+    yPred.some((p) => Math.abs(p - Math.round(p)) > 0.01) === false && yTrue.every((t) => t === Math.round(t));
 
   if (isClassification) {
     const rounded = yPred.map(Math.round);
@@ -568,7 +564,9 @@ export function computeAllMetrics(yTrue: number[], yPred: number[]): ModelMetric
 
     let f1Sum = 0;
     for (const cls of classes) {
-      let tp = 0, fp = 0, fn = 0;
+      let tp = 0,
+        fp = 0,
+        fn = 0;
       for (let i = 0; i < n; i++) {
         if (rounded[i] === cls && yTrue[i] === cls) tp++;
         else if (rounded[i] === cls && yTrue[i] !== cls) fp++;
@@ -576,7 +574,7 @@ export function computeAllMetrics(yTrue: number[], yPred: number[]): ModelMetric
       }
       const precision = tp + fp > 0 ? tp / (tp + fp) : 0;
       const recall = tp + fn > 0 ? tp / (tp + fn) : 0;
-      f1Sum += precision + recall > 0 ? 2 * precision * recall / (precision + recall) : 0;
+      f1Sum += precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
     }
     const f1 = f1Sum / classes.length;
 
@@ -589,9 +587,7 @@ export function computeAllMetrics(yTrue: number[], yPred: number[]): ModelMetric
 // ── Internal Helpers ───────────────────────────────────────────────────────
 
 /** Linear model class names — used for primary detection. */
-const LINEAR_MODEL_NAMES = new Set([
-  'LinearRegression', 'RidgeRegression', 'LassoRegression',
-]);
+const LINEAR_MODEL_NAMES = new Set(["LinearRegression", "RidgeRegression", "LassoRegression"]);
 
 /**
  * Check if a model is a linear model type (supports iterative gradient descent).
@@ -609,7 +605,7 @@ function isLinearModel(model: MLModel): boolean {
   try {
     const json = model.serialize();
     const parsed = JSON.parse(json);
-    return parsed.type === 'linear' || parsed.type === 'ridge' || parsed.type === 'lasso';
+    return parsed.type === "linear" || parsed.type === "ridge" || parsed.type === "lasso";
   } catch {
     return false;
   }
@@ -620,7 +616,7 @@ function getRegularizationAlpha(model: MLModel): number {
   try {
     const json = model.serialize();
     const parsed = JSON.parse(json);
-    if (parsed.type === 'ridge' || parsed.type === 'lasso') {
+    if (parsed.type === "ridge" || parsed.type === "lasso") {
       return parsed.alpha ?? 0;
     }
   } catch {

@@ -1,5 +1,5 @@
-import type { LearnedDeltaPack } from '../types/learnedDelta';
-import { validateLearnedDeltaPack } from '../validation/learnedDeltaValidator';
+import type { LearnedDeltaPack } from "../types/learnedDelta";
+import { validateLearnedDeltaPack } from "../validation/learnedDeltaValidator";
 
 export interface LearnedDeltaApplicationDecision {
   canApply: boolean;
@@ -7,20 +7,18 @@ export interface LearnedDeltaApplicationDecision {
   appliedDeltaPackId?: string;
 }
 
-export function canApplyLearnedDeltaPack(
-  deltaPack: unknown,
-): LearnedDeltaApplicationDecision {
+export function canApplyLearnedDeltaPack(deltaPack: unknown): LearnedDeltaApplicationDecision {
   const validation = validateLearnedDeltaPack(deltaPack);
   if (!validation.ok) {
-    const firstError = validation.issues.find((issue) => issue.severity === 'error');
+    const firstError = validation.issues.find((issue) => issue.severity === "error");
     return {
       canApply: false,
-      reason: firstError?.message ?? 'LearnedDeltaPack failed validation.',
+      reason: firstError?.message ?? "LearnedDeltaPack failed validation.",
     };
   }
 
   const typedPack = deltaPack as LearnedDeltaPack;
-  if (typedPack.humanGateStatus !== 'approved') {
+  if (typedPack.humanGateStatus !== "approved") {
     return {
       canApply: false,
       reason: `LearnedDeltaPack ${typedPack.deltaPackId} is ${typedPack.humanGateStatus}; only approved deltas can apply.`,
@@ -30,14 +28,14 @@ export function canApplyLearnedDeltaPack(
   if (!typedPack.sourceDbtlRunId.trim()) {
     return {
       canApply: false,
-      reason: 'LearnedDeltaPack is missing sourceDbtlRunId.',
+      reason: "LearnedDeltaPack is missing sourceDbtlRunId.",
     };
   }
 
   if (typedPack.sourceExperimentRecordIds.length === 0) {
     return {
       canApply: false,
-      reason: 'LearnedDeltaPack is missing sourceExperimentRecordIds.',
+      reason: "LearnedDeltaPack is missing sourceExperimentRecordIds.",
     };
   }
 
@@ -48,10 +46,6 @@ export function canApplyLearnedDeltaPack(
   };
 }
 
-export function filterApprovedLearnedDeltaPacks(
-  deltaPacks: unknown[],
-): LearnedDeltaPack[] {
-  return deltaPacks.filter((deltaPack): deltaPack is LearnedDeltaPack => (
-    canApplyLearnedDeltaPack(deltaPack).canApply
-  ));
+export function filterApprovedLearnedDeltaPacks(deltaPacks: unknown[]): LearnedDeltaPack[] {
+  return deltaPacks.filter((deltaPack): deltaPack is LearnedDeltaPack => canApplyLearnedDeltaPack(deltaPack).canApply);
 }

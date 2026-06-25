@@ -7,8 +7,8 @@
  * Reference: Ma et al. (2020) Nat Mach Intell 2:236-245
  */
 
-export type TaskType = 'regression' | 'classification';
-export type ModelType = 'linear' | 'ridge' | 'lasso' | 'decision_tree' | 'random_forest';
+export type TaskType = "regression" | "classification";
+export type ModelType = "linear" | "ridge" | "lasso" | "decision_tree" | "random_forest";
 
 export interface TrainingSample {
   /** Feature vector */

@@ -21,24 +21,23 @@
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
-export * from './types';
-export * from './training';
-export * from './models';
-export * from './evaluation';
-export * from './interpretability';
-
+export * from "./evaluation";
 // features.ts: export everything except trainTestSplit (training.ts has the
 // canonical version with stratify/seed support).
-export { extractFeatures, getFeatureNames, buildDataset } from './features';
+export { buildDataset, extractFeatures, getFeatureNames } from "./features";
+export * from "./interpretability";
+export * from "./models";
+export * from "./training";
+export * from "./types";
 
 // ── Imports for pipeline functions ───────────────────────────────────────────
 
-import type { Dataset, ModelMetrics, FeatureImportance, ModelType } from './types';
-import type { MLModel } from './models';
-import { extractFeatures, getFeatureNames, buildDataset } from './features';
-import { createModel } from './models';
-import { trainTestSplit, crossValidate, computeAllMetrics } from './training';
-import { getLinearImportances, getTreeImportances } from './interpretability';
+import { buildDataset, extractFeatures, getFeatureNames } from "./features";
+import { getLinearImportances, getTreeImportances } from "./interpretability";
+import type { MLModel } from "./models";
+import { createModel } from "./models";
+import { computeAllMetrics, crossValidate, trainTestSplit } from "./training";
+import type { Dataset, FeatureImportance, ModelMetrics, ModelType } from "./types";
 
 // ── CSV/TSV Data Loader ─────────────────────────────────────────────────────
 
@@ -66,14 +65,14 @@ import { getLinearImportances, getTreeImportances } from './interpretability';
 export function loadEnzymeDataFromCSV(
   csvContent: string,
   options?: {
-    delimiter?: ',' | '\t';
+    delimiter?: "," | "\t";
     hasHeader?: boolean;
     sequenceColumn?: number;
     activityColumn?: number;
     skipRows?: number;
   },
 ): Array<{ sequence: string; activity: number; metadata?: Record<string, unknown> }> {
-  const delimiter = options?.delimiter ?? ',';
+  const delimiter = options?.delimiter ?? ",";
   const hasHeader = options?.hasHeader ?? true;
   const seqCol = options?.sequenceColumn ?? 0;
   const actCol = options?.activityColumn ?? 1;
@@ -82,8 +81,8 @@ export function loadEnzymeDataFromCSV(
   // Split into lines, trim, remove empty
   const lines = csvContent
     .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
 
   if (lines.length === 0) return [];
 
@@ -93,7 +92,7 @@ export function loadEnzymeDataFromCSV(
     const firstLine = lines[0];
     const tabCount = (firstLine.match(/\t/g) || []).length;
     const commaCount = (firstLine.match(/,/g) || []).length;
-    if (tabCount > commaCount) effectiveDelimiter = '\t';
+    if (tabCount > commaCount) effectiveDelimiter = "\t";
   }
 
   let startIndex = 0;
@@ -114,8 +113,8 @@ export function loadEnzymeDataFromCSV(
     // Skip rows that don't have enough columns
     if (fields.length <= Math.max(seqCol, actCol)) continue;
 
-    const sequence = fields[seqCol]?.trim() ?? '';
-    const activityStr = fields[actCol]?.trim() ?? '';
+    const sequence = fields[seqCol]?.trim() ?? "";
+    const activityStr = fields[actCol]?.trim() ?? "";
 
     // Skip rows with missing sequence or activity
     if (!sequence || !activityStr) continue;
@@ -130,7 +129,7 @@ export function loadEnzymeDataFromCSV(
         if (j === seqCol || j === actCol) continue;
         const key = headerFields[j] ?? `col_${j}`;
         const val = fields[j]?.trim();
-        if (val !== undefined && val !== '') {
+        if (val !== undefined && val !== "") {
           metadata[key] = isNaN(Number(val)) ? val : Number(val);
         }
       }
@@ -151,7 +150,7 @@ export function loadEnzymeDataFromCSV(
  */
 function parseLine(line: string, delimiter: string): string[] {
   const fields: string[] = [];
-  let current = '';
+  let current = "";
   let inQuotes = false;
 
   for (let i = 0; i < line.length; i++) {
@@ -167,7 +166,7 @@ function parseLine(line: string, delimiter: string): string[] {
       }
     } else if (ch === delimiter && !inQuotes) {
       fields.push(current);
-      current = '';
+      current = "";
     } else {
       current += ch;
     }
@@ -242,7 +241,7 @@ export function runEnzymeActivityPrediction(
   csvContent: string,
   modelType: ModelType,
   options?: {
-    delimiter?: ',' | '\t';
+    delimiter?: "," | "\t";
     testFraction?: number;
     k?: number;
   },
@@ -268,22 +267,22 @@ export function runEnzymeActivityPrediction(
 
   // 3. Train model
   const model = createModel(modelType);
-  const trainX = train.samples.map(s => s.features);
-  const trainY = train.samples.map(s => s.label);
+  const trainX = train.samples.map((s) => s.features);
+  const trainY = train.samples.map((s) => s.label);
   model.fit(trainX, trainY);
 
   // 4. Evaluate on train and test
   const trainPreds = model.predict(trainX);
   const trainMetrics = computeAllMetrics(trainY, trainPreds);
 
-  const testX = test.samples.map(s => s.features);
-  const testY = test.samples.map(s => s.label);
+  const testX = test.samples.map((s) => s.features);
+  const testY = test.samples.map((s) => s.label);
   const testPreds = model.predict(testX);
   const testMetrics = computeAllMetrics(testY, testPreds);
 
   // 5. Feature importances
   let featureImportances: FeatureImportance[];
-  if (modelType === 'decision_tree' || modelType === 'random_forest') {
+  if (modelType === "decision_tree" || modelType === "random_forest") {
     featureImportances = getTreeImportances(model, featureNames);
   } else {
     featureImportances = getLinearImportances(model, featureNames);
@@ -291,8 +290,8 @@ export function runEnzymeActivityPrediction(
 
   // 6. Cross-validate on full dataset
   const fullDataset = buildDataset(rawData);
-  const fullX = fullDataset.samples.map(s => s.features);
-  const fullY = fullDataset.samples.map(s => s.label);
+  const fullX = fullDataset.samples.map((s) => s.features);
+  const fullY = fullDataset.samples.map((s) => s.label);
   const cvModel = createModel(modelType);
   const { meanMetrics: crossValidationMetrics } = crossValidate(cvModel, fullX, fullY, k);
 

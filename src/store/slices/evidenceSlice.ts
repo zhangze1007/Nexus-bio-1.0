@@ -4,29 +4,22 @@
  * State: evidenceItems, selectedEvidenceIds, draftAnalyzeInput
  * Actions: upsertEvidence, toggleEvidenceSelection, prepareAnalyzeFromEvidence, setDraftAnalyzeInput
  */
-import type { StateCreator } from 'zustand';
-import type { WorkbenchState } from './types';
-import type {
-  WorkbenchEvidenceItem,
-  WorkbenchWorkflowControlSnapshot,
-} from '../workbenchTypes';
+import type { StateCreator } from "zustand";
+import { buildCheckpoints, composeEvidenceText, createId } from "../workbenchStoreHelpers";
+import type { WorkbenchEvidenceItem, WorkbenchWorkflowControlSnapshot } from "../workbenchTypes";
 import {
-  createId,
-  buildCheckpoints,
-  composeEvidenceText,
-} from '../workbenchStoreHelpers';
-import {
-  touchState,
   buildWorkflowControlSnapshot,
   dispatchEvidenceAdded,
   getAnalyzeArtifactForState,
-} from './sharedHelpers';
+  touchState,
+} from "./sharedHelpers";
+import type { WorkbenchState } from "./types";
 
 export interface EvidenceSlice {
   evidenceItems: WorkbenchEvidenceItem[];
   selectedEvidenceIds: string[];
   draftAnalyzeInput: string;
-  upsertEvidence: (item: Omit<WorkbenchEvidenceItem, 'id' | 'savedAt'>, options?: { select?: boolean }) => string;
+  upsertEvidence: (item: Omit<WorkbenchEvidenceItem, "id" | "savedAt">, options?: { select?: boolean }) => string;
   toggleEvidenceSelection: (id: string) => void;
   prepareAnalyzeFromEvidence: (ids?: string[]) => string;
   setDraftAnalyzeInput: (text: string) => void;
@@ -35,7 +28,7 @@ export interface EvidenceSlice {
 export const evidenceInitialState = {
   evidenceItems: [],
   selectedEvidenceIds: [],
-  draftAnalyzeInput: '',
+  draftAnalyzeInput: "",
 };
 
 export const createEvidenceSlice: StateCreator<WorkbenchState, [], [], EvidenceSlice> = (set, get) => ({
@@ -44,14 +37,14 @@ export const createEvidenceSlice: StateCreator<WorkbenchState, [], [], EvidenceS
   upsertEvidence: (item, options) => {
     const now = Date.now();
     const key = `${item.doi || item.url || item.title}`.toLowerCase();
-    let finalId = '';
+    let finalId = "";
 
     set((state) => {
-      const existing = state.evidenceItems.find((entry) =>
-        `${entry.doi || entry.url || entry.title}`.toLowerCase() === key,
+      const existing = state.evidenceItems.find(
+        (entry) => `${entry.doi || entry.url || entry.title}`.toLowerCase() === key,
       );
 
-      const evidenceId = existing?.id ?? createId('evidence');
+      const evidenceId = existing?.id ?? createId("evidence");
       finalId = evidenceId;
 
       const nextEvidence: WorkbenchEvidenceItem = {
@@ -70,11 +63,11 @@ export const createEvidenceSlice: StateCreator<WorkbenchState, [], [], EvidenceS
         : state.selectedEvidenceIds;
 
       const project = state.project ?? {
-        id: createId('project'),
-        title: item.query ? `Research: ${item.query}` : 'Synthetic Biology Program',
-        summary: 'Evidence-led project seeded from literature.',
-        targetProduct: 'Target Product',
-        status: 'draft' as const,
+        id: createId("project"),
+        title: item.query ? `Research: ${item.query}` : "Synthetic Biology Program",
+        summary: "Evidence-led project seeded from literature.",
+        targetProduct: "Target Product",
+        status: "draft" as const,
         isDemo: false,
         createdAt: now,
         updatedAt: now,
@@ -100,11 +93,13 @@ export const createEvidenceSlice: StateCreator<WorkbenchState, [], [], EvidenceS
   },
 
   toggleEvidenceSelection: (id) => {
-    set((state) => touchState(state, {
-      selectedEvidenceIds: state.selectedEvidenceIds.includes(id)
-        ? state.selectedEvidenceIds.filter((entry) => entry !== id)
-        : [...state.selectedEvidenceIds, id],
-    }));
+    set((state) =>
+      touchState(state, {
+        selectedEvidenceIds: state.selectedEvidenceIds.includes(id)
+          ? state.selectedEvidenceIds.filter((entry) => entry !== id)
+          : [...state.selectedEvidenceIds, id],
+      }),
+    );
   },
 
   prepareAnalyzeFromEvidence: (ids) => {
@@ -114,26 +109,29 @@ export const createEvidenceSlice: StateCreator<WorkbenchState, [], [], EvidenceS
     const composed = composeEvidenceText(selectedItems);
 
     if (selectedItems.length) {
-      const title = state.project?.title && !state.project.isDemo
-        ? state.project.title
-        : selectedItems[0]?.query
-          ? `Research: ${selectedItems[0].query}`
-          : selectedItems[0].title;
+      const title =
+        state.project?.title && !state.project.isDemo
+          ? state.project.title
+          : selectedItems[0]?.query
+            ? `Research: ${selectedItems[0].query}`
+            : selectedItems[0].title;
       get().ensureProject({
         title,
         summary: `Evidence bundle with ${selectedItems.length} literature item(s).`,
-        status: 'active',
+        status: "active",
         isDemo: false,
       });
     }
 
-    set((currentState) => touchState(currentState, {
-      draftAnalyzeInput: composed,
-      selectedEvidenceIds: targetIds,
-      checkpoints: buildCheckpoints('stage-1', getAnalyzeArtifactForState(currentState), currentState.toolRuns),
-    }));
+    set((currentState) =>
+      touchState(currentState, {
+        draftAnalyzeInput: composed,
+        selectedEvidenceIds: targetIds,
+        checkpoints: buildCheckpoints("stage-1", getAnalyzeArtifactForState(currentState), currentState.toolRuns),
+      }),
+    );
 
-    set({ currentStageId: 'stage-1' });
+    set({ currentStageId: "stage-1" });
     return composed;
   },
 

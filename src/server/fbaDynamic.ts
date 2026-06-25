@@ -24,7 +24,7 @@
  *     Metabolic Engineering, 4(3), 225-233.
  */
 
-import { solveLP, type LPModel } from './highsSolver';
+import { type LPModel, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                  */
@@ -47,7 +47,7 @@ export interface DynamicFBAModel {
   /** Half-saturation constant for Monod uptake kinetics (default 0.1 mM) */
   Ks?: number;
   /** Integration method: 'euler' (default) or 'rk4' */
-  method?: 'euler' | 'rk4';
+  method?: "euler" | "rk4";
 }
 
 export interface DynamicFBAResult {
@@ -83,10 +83,7 @@ interface MetaboliteInfo {
   biomassMetIds: Set<string>;
 }
 
-function classifyMetabolites(
-  reactions: DynamicFBAReaction[],
-  objectiveId: string,
-): MetaboliteInfo {
+function classifyMetabolites(reactions: DynamicFBAReaction[], objectiveId: string): MetaboliteInfo {
   const exchangeMetIds = new Map<string, string>();
   for (const r of reactions) {
     if (r.isExchange) {
@@ -97,7 +94,7 @@ function classifyMetabolites(
   }
 
   const biomassMetIds = new Set<string>();
-  const objectiveRxn = reactions.find(r => r.id === objectiveId);
+  const objectiveRxn = reactions.find((r) => r.id === objectiveId);
   if (objectiveRxn) {
     for (const [metId, coef] of Object.entries(objectiveRxn.stoichiometry)) {
       if (coef > 0) biomassMetIds.add(metId);
@@ -139,11 +136,11 @@ async function solveStep(
   }
 
   // Build stoichiometric constraints: S * v = 0
-  const constraints = Array.from(allMetIds).map(metId => ({
+  const constraints = Array.from(allMetIds).map((metId) => ({
     name: `${metId}_balance`,
     vars: reactions
-      .filter(r => r.stoichiometry[metId] !== undefined)
-      .map(r => ({ name: r.id, coef: r.stoichiometry[metId] })),
+      .filter((r) => r.stoichiometry[metId] !== undefined)
+      .map((r) => ({ name: r.id, coef: r.stoichiometry[metId] })),
     lb: 0,
     ub: 0,
   }));
@@ -151,7 +148,7 @@ async function solveStep(
   // Build variable bounds with Monod-scaled exchange reactions
   const objective = [{ name: objectiveId, coef: 1 }];
 
-  const bounds = reactions.map(r => {
+  const bounds = reactions.map((r) => {
     let lb = r.lb;
 
     if (r.isExchange) {
@@ -168,8 +165,8 @@ async function solveStep(
   });
 
   const model: LPModel = {
-    name: 'dynamic_fba_step',
-    sense: 'maximize',
+    name: "dynamic_fba_step",
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -177,7 +174,7 @@ async function solveStep(
 
   const result = await solveLP(model);
 
-  if (result.status !== 'optimal' || result.objectiveValue <= 1e-9) {
+  if (result.status !== "optimal" || result.objectiveValue <= 1e-9) {
     return null;
   }
 
@@ -254,15 +251,7 @@ function computeDerivative(
  * @returns Time-series of concentrations, fluxes, and growth rates
  */
 export async function runDynamicFBA(model: DynamicFBAModel): Promise<DynamicFBAResult> {
-  const {
-    reactions,
-    objectiveId,
-    initialConcentrations,
-    maxTime,
-    dt,
-    Ks = 0.1,
-    method = 'euler',
-  } = model;
+  const { reactions, objectiveId, initialConcentrations, maxTime, dt, Ks = 0.1, method = "euler" } = model;
 
   // Classify metabolites
   const metInfo = classifyMetabolites(reactions, objectiveId);
@@ -324,11 +313,9 @@ export async function runDynamicFBA(model: DynamicFBAModel): Promise<DynamicFBAR
 
       // Compute derivative and integrate concentrations for next step
       if (step < nSteps) {
-        const dS = computeDerivative(
-          reactions, stepResult.fluxes, metIds, objectiveId, currentConc, metInfo,
-        );
+        const dS = computeDerivative(reactions, stepResult.fluxes, metIds, objectiveId, currentConc, metInfo);
 
-        if (method === 'rk4') {
+        if (method === "rk4") {
           // Heun's method (improved Euler / RK2 approximation):
           //   k1 = f(t, S) at current point
           //   k2 = f(t+dt, S + dt*k1) — estimated via Monod scaling
@@ -365,13 +352,9 @@ export async function runDynamicFBA(model: DynamicFBAModel): Promise<DynamicFBAR
             if (metInfo.biomassMetIds.has(metId)) {
               // Biomass: exact exponential integration
               const mu = stepResult.growthRate;
-              currentConc[metId] = clampNonNeg(
-                currentConc[metId] * Math.exp(mu * dt),
-              );
+              currentConc[metId] = clampNonNeg(currentConc[metId] * Math.exp(mu * dt));
             } else {
-              currentConc[metId] = clampNonNeg(
-                currentConc[metId] + dt * dS[metId],
-              );
+              currentConc[metId] = clampNonNeg(currentConc[metId] + dt * dS[metId]);
             }
           }
         }

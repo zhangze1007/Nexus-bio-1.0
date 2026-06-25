@@ -1,7 +1,7 @@
-'use client';
-import React from 'react';
-import { colors, typography } from '../../../design-system/tokens';
-import { THEME } from '../../../theme';
+"use client";
+import React from "react";
+import { colors, typography } from "../../../design-system/tokens";
+import { THEME } from "../../../theme";
 
 /**
  * ChartAxisLabels — axis title labels for SVG charts.

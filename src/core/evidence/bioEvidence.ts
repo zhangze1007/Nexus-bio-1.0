@@ -9,14 +9,14 @@
  */
 
 export type EvidenceSourceType =
-  | 'literature'      // Published peer-reviewed paper
-  | 'database'        // Curated database (BRENDA, KEGG, UniProt)
-  | 'predicted'       // ML/computational prediction
-  | 'simulated'       // In-silico simulation (ODE, FBA, etc.)
-  | 'experimental'    // Wet-lab measurement
-  | 'manual';         // Expert curation
+  | "literature" // Published peer-reviewed paper
+  | "database" // Curated database (BRENDA, KEGG, UniProt)
+  | "predicted" // ML/computational prediction
+  | "simulated" // In-silico simulation (ODE, FBA, etc.)
+  | "experimental" // Wet-lab measurement
+  | "manual"; // Expert curation
 
-export type EvidenceConfidence = 'high' | 'medium' | 'low' | 'uncertain';
+export type EvidenceConfidence = "high" | "medium" | "low" | "uncertain";
 
 export interface BioEvidence {
   /** Unique evidence ID */
@@ -51,43 +51,35 @@ export interface BioEvidence {
 /**
  * Create a literature evidence entry.
  */
-export function literatureEvidence(
-  title: string,
-  doi: string,
-  organism?: string,
-): BioEvidence {
+export function literatureEvidence(title: string, doi: string, organism?: string): BioEvidence {
   return {
     id: `ev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-    source: doi.split('/')[0] || 'unknown',
-    sourceType: 'literature',
+    source: doi.split("/")[0] || "unknown",
+    sourceType: "literature",
     title,
     doi,
     organism,
-    confidence: 'high',
+    confidence: "high",
     timestamp: Date.now(),
     isValidated: true,
-    validationMethod: 'peer-reviewed publication',
+    validationMethod: "peer-reviewed publication",
   };
 }
 
 /**
  * Create a database evidence entry.
  */
-export function databaseEvidence(
-  source: string,
-  title: string,
-  url?: string,
-): BioEvidence {
+export function databaseEvidence(source: string, title: string, url?: string): BioEvidence {
   return {
     id: `ev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
     source,
-    sourceType: 'database',
+    sourceType: "database",
     title,
     url,
-    confidence: 'high',
+    confidence: "high",
     timestamp: Date.now(),
     isValidated: true,
-    validationMethod: 'curated database entry',
+    validationMethod: "curated database entry",
   };
 }
 
@@ -97,35 +89,32 @@ export function databaseEvidence(
 export function predictionEvidence(
   source: string,
   title: string,
-  confidence: EvidenceConfidence = 'medium',
+  confidence: EvidenceConfidence = "medium",
 ): BioEvidence {
   return {
     id: `ev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
     source,
-    sourceType: 'predicted',
+    sourceType: "predicted",
     title,
     confidence,
     timestamp: Date.now(),
     isValidated: false,
-    notes: 'Predicted value — requires experimental validation',
+    notes: "Predicted value — requires experimental validation",
   };
 }
 
 /**
  * Create a simulation evidence entry.
  */
-export function simulationEvidence(
-  source: string,
-  title: string,
-): BioEvidence {
+export function simulationEvidence(source: string, title: string): BioEvidence {
   return {
     id: `ev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
     source,
-    sourceType: 'simulated',
+    sourceType: "simulated",
     title,
-    confidence: 'medium',
+    confidence: "medium",
     timestamp: Date.now(),
     isValidated: false,
-    notes: 'Simulated value — in-silico computation only',
+    notes: "Simulated value — in-silico computation only",
   };
 }

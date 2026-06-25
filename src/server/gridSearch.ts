@@ -12,7 +12,7 @@
  *   - Random: Monte Carlo sampling for large spaces
  */
 
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -91,9 +91,7 @@ export function latinHypercubeSample(
 /**
  * Grid sampling: exhaustive enumeration for small parameter spaces.
  */
-export function gridSample(
-  ranges: ParameterRange[],
-): Array<Record<string, number>> {
+export function gridSample(ranges: ParameterRange[]): Array<Record<string, number>> {
   if (ranges.length === 0) return [{}];
 
   const [first, ...rest] = ranges;
@@ -114,11 +112,7 @@ export function gridSample(
 /**
  * Random Monte Carlo sampling.
  */
-export function randomSample(
-  ranges: ParameterRange[],
-  nSamples: number,
-  seed = 42,
-): Array<Record<string, number>> {
+export function randomSample(ranges: ParameterRange[], nSamples: number, seed = 42): Array<Record<string, number>> {
   const rng = new SeededRNG(seed);
   const samples: Array<Record<string, number>> = [];
 
@@ -140,10 +134,8 @@ export function randomSample(
  * A candidate is Pareto-optimal if no other candidate dominates it
  * (better in ALL objectives).
  */
-export function buildParetoFront(
-  candidates: CandidateEvaluation[],
-): CandidateEvaluation[] {
-  const feasible = candidates.filter(c => c.feasible);
+export function buildParetoFront(candidates: CandidateEvaluation[]): CandidateEvaluation[] {
+  const feasible = candidates.filter((c) => c.feasible);
   const front: CandidateEvaluation[] = [];
 
   for (const c of feasible) {
@@ -168,7 +160,7 @@ export function buildParetoFront(
 
       if (betterInAll && strictlyBetter) {
         dominated = true;
-        c.dominatedBy.push('candidate_' + feasible.indexOf(other));
+        c.dominatedBy.push("candidate_" + feasible.indexOf(other));
         break;
       }
     }
@@ -201,7 +193,7 @@ export function runGridSearch(
     objectives: Record<string, number>;
     constraints: Record<string, { value: number; satisfied: boolean; threshold: number }>;
   },
-  samplingStrategy: 'lhs' | 'grid' | 'random' = 'lhs',
+  samplingStrategy: "lhs" | "grid" | "random" = "lhs",
   nSamples = 50,
   compositeWeights?: Record<string, number>,
   seed = 42,
@@ -209,10 +201,10 @@ export function runGridSearch(
   // Generate samples
   let samples: Array<Record<string, number>>;
   switch (samplingStrategy) {
-    case 'grid':
+    case "grid":
       samples = gridSample(ranges);
       break;
-    case 'random':
+    case "random":
       samples = randomSample(ranges, nSamples, seed);
       break;
     default:
@@ -220,10 +212,10 @@ export function runGridSearch(
   }
 
   // Evaluate each sample
-  const candidates: CandidateEvaluation[] = samples.map(params => {
+  const candidates: CandidateEvaluation[] = samples.map((params) => {
     const { objectives, constraints } = evaluate(params);
 
-    const allConstraintsSatisfied = Object.values(constraints).every(c => c.satisfied);
+    const allConstraintsSatisfied = Object.values(constraints).every((c) => c.satisfied);
 
     return {
       parameters: params,
@@ -240,14 +232,13 @@ export function runGridSearch(
 
   // Rank by composite score
   const objectiveNames = Object.keys(candidates[0]?.objectives ?? {});
-  const weights = compositeWeights ?? Object.fromEntries(
-    objectiveNames.map((name, i) => [name, 1 / objectiveNames.length])
-  );
+  const weights =
+    compositeWeights ?? Object.fromEntries(objectiveNames.map((name, i) => [name, 1 / objectiveNames.length]));
 
   // Normalize objectives to [0, 1]
   const ranges_: Record<string, { min: number; max: number }> = {};
   for (const obj of objectiveNames) {
-    const values = candidates.filter(c => c.feasible).map(c => c.objectives[obj] ?? 0);
+    const values = candidates.filter((c) => c.feasible).map((c) => c.objectives[obj] ?? 0);
     ranges_[obj] = {
       min: Math.min(...values),
       max: Math.max(...values),
@@ -258,22 +249,23 @@ export function runGridSearch(
     let composite = 0;
     for (const obj of objectiveNames) {
       const range = ranges_[obj];
-      const normalized = range.max > range.min
-        ? ((c.objectives[obj] ?? 0) - range.min) / (range.max - range.min)
-        : 0.5;
+      const normalized = range.max > range.min ? ((c.objectives[obj] ?? 0) - range.min) / (range.max - range.min) : 0.5;
       composite += (weights[obj] ?? 0) * normalized;
     }
     (c as CandidateEvaluation & { composite?: number }).composite = composite;
   }
 
   // Find best by composite
-  const feasibleCandidates = candidates.filter(c => c.feasible);
-  const bestByComposite = feasibleCandidates.length > 0
-    ? feasibleCandidates.reduce((best, c) =>
-        ((c as CandidateEvaluation & { composite?: number }).composite ?? 0) >
-        ((best as CandidateEvaluation & { composite?: number }).composite ?? 0) ? c : best
-      )
-    : candidates[0];
+  const feasibleCandidates = candidates.filter((c) => c.feasible);
+  const bestByComposite =
+    feasibleCandidates.length > 0
+      ? feasibleCandidates.reduce((best, c) =>
+          ((c as CandidateEvaluation & { composite?: number }).composite ?? 0) >
+          ((best as CandidateEvaluation & { composite?: number }).composite ?? 0)
+            ? c
+            : best,
+        )
+      : candidates[0];
 
   const stats = {
     totalEvaluated: candidates.length,
@@ -282,9 +274,7 @@ export function runGridSearch(
     paretoFrontSize: paretoFront.length,
   };
 
-  const compositeFormula = objectiveNames
-    .map(obj => `${weights[obj]?.toFixed(2) ?? '?'}×${obj}`)
-    .join(' + ');
+  const compositeFormula = objectiveNames.map((obj) => `${weights[obj]?.toFixed(2) ?? "?"}×${obj}`).join(" + ");
 
   return {
     candidates,

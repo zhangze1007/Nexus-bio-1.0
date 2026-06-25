@@ -72,7 +72,7 @@ export interface InverseFoldingInput {
   /** Fixed positions that must not be mutated (0-indexed) */
   fixedPositions?: number[];
   /** Target organism for codon bias */
-  targetOrganism?: 'ecoli' | 'yeast' | 'human' | 'general';
+  targetOrganism?: "ecoli" | "yeast" | "human" | "general";
   /** k for k-NN graph */
   kNeighbors?: number;
   /** Number of message passing rounds */
@@ -108,7 +108,7 @@ export interface InverseFoldingResult {
   conservationEntropy: number[];
   /** Structural motifs identified */
   structuralMotifs: Array<{
-    type: 'helix' | 'sheet' | 'loop' | 'turn';
+    type: "helix" | "sheet" | "loop" | "turn";
     start: number;
     end: number;
     confidence: number;
@@ -118,72 +118,98 @@ export interface InverseFoldingResult {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY';
+const AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY";
 const AA_INDEX: Record<string, number> = {};
-AMINO_ACIDS.split('').forEach((aa, i) => { AA_INDEX[aa] = i; });
+AMINO_ACIDS.split("").forEach((aa, i) => {
+  AA_INDEX[aa] = i;
+});
 
 /** BLOSUM62 substitution matrix (standard 20×20 matrix) */
 const BLOSUM62: number[][] = [
   //  A   C   D   E   F   G   H   I   K   L   M   N   P   Q   R   S   T   V   W   Y
-  [  4,  0, -2, -1, -2,  0, -2, -1, -1, -1, -1, -2, -1, -1, -1,  1,  0,  0, -3, -2], // A
-  [  0,  9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2], // C
-  [ -2, -3,  6,  2, -3, -1, -1, -3, -1, -4, -3,  1, -1,  0, -2,  0, -1, -3, -4, -3], // D
-  [ -1, -4,  2,  5, -3, -2,  0, -3,  1, -3, -2,  0, -1,  2,  0,  0, -1, -2, -3, -2], // E
-  [ -2, -2, -3, -3,  6, -3, -1,  0, -3,  0,  0, -3, -4, -3, -3, -2, -2, -1,  1,  3], // F
-  [  0, -3, -1, -2, -3,  6, -2, -4, -2, -4, -3,  0, -2, -2, -2,  0, -2, -3, -2, -3], // G
-  [ -2, -3, -1,  0, -1, -2,  8, -3, -1, -3, -2,  1, -2,  0,  0, -1, -2, -3, -2,  2], // H
-  [ -1, -1, -3, -3,  0, -4, -3,  4, -3,  2,  1, -3, -3, -3, -3, -2, -1,  3, -3, -1], // I
-  [ -1, -3, -1,  1, -3, -2, -1, -3,  5, -2, -1,  0, -1,  1,  2,  0, -1, -2, -3, -2], // K
-  [ -1, -1, -4, -3,  0, -4, -3,  2, -2,  4,  2, -3, -3, -2, -2, -2, -1,  1, -2, -1], // L
-  [ -1, -1, -3, -2,  0, -3, -2,  1, -1,  2,  5, -2, -2,  0, -1, -1, -1,  1, -1, -1], // M
-  [ -2, -3,  1,  0, -3,  0,  1, -3,  0, -3, -2,  6, -2,  0,  0,  1,  0, -3, -4, -2], // N
-  [ -1, -3, -1, -1, -4, -2, -2, -3, -1, -3, -2, -2,  7, -1, -2, -1, -1, -2, -4, -3], // P
-  [ -1, -3,  0,  2, -3, -2,  0, -3,  1, -2,  0,  0, -1,  5,  1,  0, -1, -2, -2, -1], // Q
-  [ -1, -3, -2,  0, -3, -2,  0, -3,  2, -2, -1,  0, -2,  1,  5, -1, -1, -3, -3, -2], // R
-  [  1, -1,  0,  0, -2,  0, -1, -2,  0, -2, -1,  1, -1,  0, -1,  4,  1, -2, -3, -2], // S
-  [  0, -1, -1, -1, -2, -2, -2, -1, -1, -1, -1,  0, -1, -1, -1,  1,  5,  0, -2, -2], // T
-  [  0, -1, -3, -2, -1, -3, -3,  3, -2,  1,  1, -3, -2, -2, -3, -2,  0,  4, -3, -1], // V
-  [ -3, -2, -4, -3,  1, -2, -2, -3, -3, -2, -1, -4, -4, -2, -3, -3, -2, -3, 11,  2], // W
-  [ -2, -2, -3, -2,  3, -3,  2, -1, -2, -1, -1, -2, -3, -1, -2, -2, -2, -1,  2,  7], // Y
+  [4, 0, -2, -1, -2, 0, -2, -1, -1, -1, -1, -2, -1, -1, -1, 1, 0, 0, -3, -2], // A
+  [0, 9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2], // C
+  [-2, -3, 6, 2, -3, -1, -1, -3, -1, -4, -3, 1, -1, 0, -2, 0, -1, -3, -4, -3], // D
+  [-1, -4, 2, 5, -3, -2, 0, -3, 1, -3, -2, 0, -1, 2, 0, 0, -1, -2, -3, -2], // E
+  [-2, -2, -3, -3, 6, -3, -1, 0, -3, 0, 0, -3, -4, -3, -3, -2, -2, -1, 1, 3], // F
+  [0, -3, -1, -2, -3, 6, -2, -4, -2, -4, -3, 0, -2, -2, -2, 0, -2, -3, -2, -3], // G
+  [-2, -3, -1, 0, -1, -2, 8, -3, -1, -3, -2, 1, -2, 0, 0, -1, -2, -3, -2, 2], // H
+  [-1, -1, -3, -3, 0, -4, -3, 4, -3, 2, 1, -3, -3, -3, -3, -2, -1, 3, -3, -1], // I
+  [-1, -3, -1, 1, -3, -2, -1, -3, 5, -2, -1, 0, -1, 1, 2, 0, -1, -2, -3, -2], // K
+  [-1, -1, -4, -3, 0, -4, -3, 2, -2, 4, 2, -3, -3, -2, -2, -2, -1, 1, -2, -1], // L
+  [-1, -1, -3, -2, 0, -3, -2, 1, -1, 2, 5, -2, -2, 0, -1, -1, -1, 1, -1, -1], // M
+  [-2, -3, 1, 0, -3, 0, 1, -3, 0, -3, -2, 6, -2, 0, 0, 1, 0, -3, -4, -2], // N
+  [-1, -3, -1, -1, -4, -2, -2, -3, -1, -3, -2, -2, 7, -1, -2, -1, -1, -2, -4, -3], // P
+  [-1, -3, 0, 2, -3, -2, 0, -3, 1, -2, 0, 0, -1, 5, 1, 0, -1, -2, -2, -1], // Q
+  [-1, -3, -2, 0, -3, -2, 0, -3, 2, -2, -1, 0, -2, 1, 5, -1, -1, -3, -3, -2], // R
+  [1, -1, 0, 0, -2, 0, -1, -2, 0, -2, -1, 1, -1, 0, -1, 4, 1, -2, -3, -2], // S
+  [0, -1, -1, -1, -2, -2, -2, -1, -1, -1, -1, 0, -1, -1, -1, 1, 5, 0, -2, -2], // T
+  [0, -1, -3, -2, -1, -3, -3, 3, -2, 1, 1, -3, -2, -2, -3, -2, 0, 4, -3, -1], // V
+  [-3, -2, -4, -3, 1, -2, -2, -3, -3, -2, -1, -4, -4, -2, -3, -3, -2, -3, 11, 2], // W
+  [-2, -2, -3, -2, 3, -3, 2, -1, -2, -1, -1, -2, -3, -1, -2, -2, -2, -1, 2, 7], // Y
 ];
 
 /** Amino acid properties for structural compatibility scoring */
-const AA_PROPERTIES: Record<string, {
-  hydrophobic: boolean;
-  charge: number;
-  volume: number;
-  flexibility: number;
-  helixPropensity: number;
-  sheetPropensity: number;
-}> = {
+const AA_PROPERTIES: Record<
+  string,
+  {
+    hydrophobic: boolean;
+    charge: number;
+    volume: number;
+    flexibility: number;
+    helixPropensity: number;
+    sheetPropensity: number;
+  }
+> = {
   // Flexibility: Bhaskaran & Ponnuswamy (1988) Int J Pept Protein Res 32:241-255
   // Volume: Chothia (1975) J Mol Biol 105:1-14
   // Helix/Sheet propensity: Chou & Fasman (1978) Annu Rev Biochem 47:251-276
-  A: { hydrophobic: true,  charge: 0, volume: 88.6,  flexibility: 0.357, helixPropensity: 1.42, sheetPropensity: 0.83 },
-  C: { hydrophobic: false, charge: 0, volume: 108.5, flexibility: 0.345, helixPropensity: 0.70, sheetPropensity: 1.19 },
-  D: { hydrophobic: false, charge: -1, volume: 111.1, flexibility: 0.511, helixPropensity: 1.01, sheetPropensity: 0.54 },
-  E: { hydrophobic: false, charge: -1, volume: 138.4, flexibility: 0.497, helixPropensity: 1.51, sheetPropensity: 0.37 },
-  F: { hydrophobic: true,  charge: 0, volume: 189.9, flexibility: 0.314, helixPropensity: 1.13, sheetPropensity: 1.38 },
-  G: { hydrophobic: false, charge: 0, volume: 60.1,  flexibility: 0.544, helixPropensity: 0.57, sheetPropensity: 0.75 },
-  H: { hydrophobic: false, charge: 0.5, volume: 153.2, flexibility: 0.397, helixPropensity: 1.00, sheetPropensity: 0.87 },
-  I: { hydrophobic: true,  charge: 0, volume: 166.7, flexibility: 0.326, helixPropensity: 1.08, sheetPropensity: 1.60 },
+  A: { hydrophobic: true, charge: 0, volume: 88.6, flexibility: 0.357, helixPropensity: 1.42, sheetPropensity: 0.83 },
+  C: { hydrophobic: false, charge: 0, volume: 108.5, flexibility: 0.345, helixPropensity: 0.7, sheetPropensity: 1.19 },
+  D: {
+    hydrophobic: false,
+    charge: -1,
+    volume: 111.1,
+    flexibility: 0.511,
+    helixPropensity: 1.01,
+    sheetPropensity: 0.54,
+  },
+  E: {
+    hydrophobic: false,
+    charge: -1,
+    volume: 138.4,
+    flexibility: 0.497,
+    helixPropensity: 1.51,
+    sheetPropensity: 0.37,
+  },
+  F: { hydrophobic: true, charge: 0, volume: 189.9, flexibility: 0.314, helixPropensity: 1.13, sheetPropensity: 1.38 },
+  G: { hydrophobic: false, charge: 0, volume: 60.1, flexibility: 0.544, helixPropensity: 0.57, sheetPropensity: 0.75 },
+  H: {
+    hydrophobic: false,
+    charge: 0.5,
+    volume: 153.2,
+    flexibility: 0.397,
+    helixPropensity: 1.0,
+    sheetPropensity: 0.87,
+  },
+  I: { hydrophobic: true, charge: 0, volume: 166.7, flexibility: 0.326, helixPropensity: 1.08, sheetPropensity: 1.6 },
   K: { hydrophobic: false, charge: 1, volume: 168.6, flexibility: 0.466, helixPropensity: 1.16, sheetPropensity: 0.74 },
-  L: { hydrophobic: true,  charge: 0, volume: 166.7, flexibility: 0.365, helixPropensity: 1.21, sheetPropensity: 1.30 },
-  M: { hydrophobic: true,  charge: 0, volume: 162.9, flexibility: 0.295, helixPropensity: 1.45, sheetPropensity: 1.05 },
+  L: { hydrophobic: true, charge: 0, volume: 166.7, flexibility: 0.365, helixPropensity: 1.21, sheetPropensity: 1.3 },
+  M: { hydrophobic: true, charge: 0, volume: 162.9, flexibility: 0.295, helixPropensity: 1.45, sheetPropensity: 1.05 },
   N: { hydrophobic: false, charge: 0, volume: 114.1, flexibility: 0.464, helixPropensity: 0.67, sheetPropensity: 0.89 },
   P: { hydrophobic: false, charge: 0, volume: 112.7, flexibility: 0.196, helixPropensity: 0.57, sheetPropensity: 0.55 },
-  Q: { hydrophobic: false, charge: 0, volume: 143.8, flexibility: 0.493, helixPropensity: 1.11, sheetPropensity: 1.10 },
+  Q: { hydrophobic: false, charge: 0, volume: 143.8, flexibility: 0.493, helixPropensity: 1.11, sheetPropensity: 1.1 },
   R: { hydrophobic: false, charge: 1, volume: 173.4, flexibility: 0.529, helixPropensity: 0.98, sheetPropensity: 0.93 },
-  S: { hydrophobic: false, charge: 0, volume: 89.0,  flexibility: 0.467, helixPropensity: 0.77, sheetPropensity: 0.75 },
+  S: { hydrophobic: false, charge: 0, volume: 89.0, flexibility: 0.467, helixPropensity: 0.77, sheetPropensity: 0.75 },
   T: { hydrophobic: false, charge: 0, volume: 116.1, flexibility: 0.413, helixPropensity: 0.83, sheetPropensity: 1.19 },
-  V: { hydrophobic: true,  charge: 0, volume: 140.0, flexibility: 0.334, helixPropensity: 1.06, sheetPropensity: 1.70 },
-  W: { hydrophobic: true,  charge: 0, volume: 227.8, flexibility: 0.246, helixPropensity: 1.08, sheetPropensity: 1.37 },
-  Y: { hydrophobic: true,  charge: 0, volume: 193.6, flexibility: 0.353, helixPropensity: 0.69, sheetPropensity: 1.47 },
+  V: { hydrophobic: true, charge: 0, volume: 140.0, flexibility: 0.334, helixPropensity: 1.06, sheetPropensity: 1.7 },
+  W: { hydrophobic: true, charge: 0, volume: 227.8, flexibility: 0.246, helixPropensity: 1.08, sheetPropensity: 1.37 },
+  Y: { hydrophobic: true, charge: 0, volume: 193.6, flexibility: 0.353, helixPropensity: 0.69, sheetPropensity: 1.47 },
 };
 
 /** Distance thresholds for secondary structure classification */
-const SS_HELIX_CA_DIST = 3.8;  // Å, typical Cα-Cα distance in α-helix
-const SS_SHEET_CA_DIST = 6.5;  // Å, typical Cα-Cα distance in β-sheet
+const SS_HELIX_CA_DIST = 3.8; // Å, typical Cα-Cα distance in α-helix
+const SS_SHEET_CA_DIST = 6.5; // Å, typical Cα-Cα distance in β-sheet
 
 // ── Geometry Utilities ─────────────────────────────────────────────────────
 
@@ -203,11 +229,7 @@ function dotProduct(a: [number, number, number], b: [number, number, number]): n
 }
 
 function crossProduct(a: [number, number, number], b: [number, number, number]): [number, number, number] {
-  return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
-  ];
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
 function vectorNorm(a: [number, number, number]): number {
@@ -258,12 +280,9 @@ function dihedralAngle(
  *   - Relative orientation vector
  *   - Sequence separation penalty
  */
-function buildStructuralGraph(
-  backbone: BackboneAtom[],
-  kNeighbors: number = 16,
-): GraphRepresentation {
+function buildStructuralGraph(backbone: BackboneAtom[], kNeighbors: number = 16): GraphRepresentation {
   const n = backbone.length;
-  const coords: [number, number, number][] = backbone.map(a => [a.x, a.y, a.z]);
+  const coords: [number, number, number][] = backbone.map((a) => [a.x, a.y, a.z]);
 
   // Build k-NN adjacency
   const adjacency = new Map<number, number[]>();
@@ -283,7 +302,10 @@ function buildStructuralGraph(
     }
     distances.sort((a, b) => a.d - b.d);
     const neighbors = distances.slice(0, kNeighbors);
-    adjacency.set(i, neighbors.map(n => n.j));
+    adjacency.set(
+      i,
+      neighbors.map((n) => n.j),
+    );
 
     for (const { j, d } of neighbors) {
       const spatialDist = euclideanDistance(coords[i], coords[j]);
@@ -294,9 +316,7 @@ function buildStructuralGraph(
         const v1 = vectorSubtract(coords[i], coords[Math.max(0, i - 1)]);
         const v2 = vectorSubtract(coords[Math.min(n - 1, i + 1)], coords[i]);
         const v3 = vectorSubtract(coords[j], coords[Math.max(0, j - 1)]);
-        orientationAngle = Math.acos(Math.max(-1, Math.min(1,
-          dotProduct(normalize(v1), normalize(v3))
-        )));
+        orientationAngle = Math.acos(Math.max(-1, Math.min(1, dotProduct(normalize(v1), normalize(v3)))));
       }
 
       edges.push({
@@ -309,7 +329,7 @@ function buildStructuralGraph(
           delta[1],
           delta[2],
           orientationAngle,
-          Math.abs(i - j),  // sequence separation
+          Math.abs(i - j), // sequence separation
         ],
       });
     }
@@ -319,7 +339,9 @@ function buildStructuralGraph(
   const nodes: StructuralNode[] = [];
   for (let i = 0; i < n; i++) {
     // Estimate backbone angles from Cα positions
-    let phi = 0, psi = 0, omega = 0;
+    let phi = 0,
+      psi = 0,
+      omega = 0;
     if (i > 0 && i < n - 1) {
       // Approximate φ from Cα(i-1)-Cα(i)-Cα(i+1) angle
       const v1 = vectorSubtract(coords[i - 1], coords[i]);
@@ -348,22 +370,22 @@ function buildStructuralGraph(
     const sasa = Math.max(0, 1.0 - localDensity / 10.0); // normalized 0-1
 
     // Secondary structure classification from local geometry
-    let ssType = 'loop';
+    let ssType = "loop";
     if (i > 0 && i < n - 1) {
       const d1 = euclideanDistance(coords[i - 1], coords[i]);
       const d2 = euclideanDistance(coords[i], coords[i + 1]);
       const avgDist = (d1 + d2) / 2;
-      if (avgDist < SS_HELIX_CA_DIST + 0.3) ssType = 'helix';
-      else if (avgDist > SS_SHEET_CA_DIST - 1.0) ssType = 'sheet';
+      if (avgDist < SS_HELIX_CA_DIST + 0.3) ssType = "helix";
+      else if (avgDist > SS_SHEET_CA_DIST - 1.0) ssType = "sheet";
     }
 
     nodes.push({
       residueIndex: i,
-      residueName: backbone[i].residueName || 'ALA',
+      residueName: backbone[i].residueName || "ALA",
       coords: coords[i],
-      features: [phi, psi, omega, sasa, 0, ssType === 'helix' ? 1 : 0, ssType === 'sheet' ? 1 : 0],
+      features: [phi, psi, omega, sasa, 0, ssType === "helix" ? 1 : 0, ssType === "sheet" ? 1 : 0],
       neighbors: adjacency.get(i) || [],
-      neighborDistances: (adjacency.get(i) || []).map(j => euclideanDistance(coords[i], coords[j])),
+      neighborDistances: (adjacency.get(i) || []).map((j) => euclideanDistance(coords[i], coords[j])),
     });
   }
 
@@ -382,10 +404,7 @@ function buildStructuralGraph(
  *
  * This is an efficient implementation of the MPNN framework (Gilmer et al., 2017).
  */
-function messagePassing(
-  graph: GraphRepresentation,
-  rounds: number = 3,
-): Map<number, number[]> {
+function messagePassing(graph: GraphRepresentation, rounds: number = 3): Map<number, number[]> {
   const n = graph.nodes.length;
   const featureDim = 32;
 
@@ -404,7 +423,7 @@ function messagePassing(
     emb[5] = node.features[6]; // sheet
 
     // Encode position information
-    emb[6] = i / n;  // relative position
+    emb[6] = i / n; // relative position
     emb[7] = node.neighbors.length / 16; // normalized degree
 
     // Encode distance statistics
@@ -442,7 +461,7 @@ function messagePassing(
         const nodeJ = graph.nodes[j];
         const dist = euclideanDistance(nodeI.coords, nodeJ.coords);
         // Gaussian distance weight
-        const distWeight = Math.exp(-dist * dist / (2 * 8.0 * 8.0)); // σ = 8Å
+        const distWeight = Math.exp((-dist * dist) / (2 * 8.0 * 8.0)); // σ = 8Å
         // Sequence separation penalty (prefer local contacts)
         const seqSep = Math.abs(i - j);
         const seqWeight = Math.exp(-seqSep / 20.0);
@@ -547,10 +566,11 @@ function computePSSM(
       let contextScore = 0;
       if (emb.length > 0) {
         // Use embedding dimensions to modulate AA preferences
-        const hydrophobicSignal = (emb[3] || 0); // sasa signal
+        const hydrophobicSignal = emb[3] || 0; // sasa signal
         const ssSignal = (emb[4] || 0) + (emb[5] || 0); // secondary structure signal
-        contextScore = (props.hydrophobic ? hydrophobicSignal : -hydrophobicSignal) * 0.3
-                     + ssSignal * (isHelix ? props.helixPropensity : isSheet ? props.sheetPropensity : 0) * 0.2;
+        contextScore =
+          (props.hydrophobic ? hydrophobicSignal : -hydrophobicSignal) * 0.3 +
+          ssSignal * (isHelix ? props.helixPropensity : isSheet ? props.sheetPropensity : 0) * 0.2;
       }
 
       scores[a] = bgFreq[a] + 0.3 * ssScore + 0.2 * packingScore + 0.15 * neighborCompat + 0.15 * contextScore;
@@ -558,9 +578,9 @@ function computePSSM(
 
     // Apply temperature scaling
     const maxScore = Math.max(...scores);
-    const expScores = scores.map(s => Math.exp((s - maxScore) / temperature));
+    const expScores = scores.map((s) => Math.exp((s - maxScore) / temperature));
     const sumExp = expScores.reduce((a, b) => a + b, 0);
-    const probs = expScores.map(e => e / sumExp);
+    const probs = expScores.map((e) => e / sumExp);
 
     pssm.push(probs);
   }
@@ -578,12 +598,12 @@ function sampleSequence(
   temperature: number = 0.5,
 ): { sequence: string; perPositionScores: number[] } {
   const n = pssm.length;
-  let sequence = '';
+  let sequence = "";
   const perPositionScores: number[] = [];
 
   for (let i = 0; i < n; i++) {
     if (fixedPositions?.includes(i) && wildType) {
-      sequence += wildType[i] || 'A';
+      sequence += wildType[i] || "A";
       perPositionScores.push(1.0);
       continue;
     }
@@ -724,10 +744,10 @@ function computeDesignScore(
 
   // Weighted combination
   const score =
-    0.30 * metrics.packingQuality +
+    0.3 * metrics.packingQuality +
     0.15 * metrics.loopCompatibility +
     0.25 * metrics.secondaryStructureMatch +
-    0.30 * metrics.hydrophobicCoreIntegrity;
+    0.3 * metrics.hydrophobicCoreIntegrity;
 
   // Penalize low-confidence positions
   const avgConfidence = perPositionScores.reduce((a, b) => a + b, 0) / perPositionScores.length;
@@ -740,7 +760,7 @@ function computeDesignScore(
  * Compute Shannon entropy at each position (conservation measure).
  */
 function computeConservationEntropy(pssm: number[][]): number[] {
-  return pssm.map(probs => {
+  return pssm.map((probs) => {
     let entropy = 0;
     for (const p of probs) {
       if (p > 1e-10) entropy -= p * Math.log2(p);
@@ -755,29 +775,27 @@ function computeConservationEntropy(pssm: number[][]): number[] {
 /**
  * Detect structural motifs from backbone geometry.
  */
-function detectStructuralMotifs(
-  graph: GraphRepresentation,
-): Array<{
-  type: 'helix' | 'sheet' | 'loop' | 'turn';
+function detectStructuralMotifs(graph: GraphRepresentation): Array<{
+  type: "helix" | "sheet" | "loop" | "turn";
   start: number;
   end: number;
   confidence: number;
 }> {
   const n = graph.nodes.length;
   const motifs: Array<{
-    type: 'helix' | 'sheet' | 'loop' | 'turn';
+    type: "helix" | "sheet" | "loop" | "turn";
     start: number;
     end: number;
     confidence: number;
   }> = [];
 
   // Classify each residue
-  const classifications: string[] = graph.nodes.map(node => {
+  const classifications: string[] = graph.nodes.map((node) => {
     const isHelix = node.features[5] > 0.5;
     const isSheet = node.features[6] > 0.5;
-    if (isHelix) return 'helix';
-    if (isSheet) return 'sheet';
-    return 'loop';
+    if (isHelix) return "helix";
+    if (isSheet) return "sheet";
+    return "loop";
   });
 
   // Merge consecutive same-type residues into segments
@@ -790,8 +808,8 @@ function detectStructuralMotifs(
       const segLength = segEnd - segStart + 1;
 
       // Classify short loops as turns
-      let motifType = currentType as 'helix' | 'sheet' | 'loop' | 'turn';
-      if (currentType === 'loop' && segLength <= 4) motifType = 'turn';
+      let motifType = currentType as "helix" | "sheet" | "loop" | "turn";
+      if (currentType === "loop" && segLength <= 4) motifType = "turn";
 
       // Only report segments of length >= 2
       if (segLength >= 2) {
@@ -820,7 +838,7 @@ function detectStructuralMotifs(
   const segLength = segEnd - segStart + 1;
   if (segLength >= 2) {
     motifs.push({
-      type: currentType as 'helix' | 'sheet' | 'loop' | 'turn',
+      type: currentType as "helix" | "sheet" | "loop" | "turn",
       start: segStart,
       end: segEnd,
       confidence: 0.7,
@@ -853,15 +871,15 @@ function detectStructuralMotifs(
 function fetchESM2Embeddings(backbone: BackboneAtom[]): Map<number, number[]> | null {
   // Generate a placeholder sequence from backbone geometry
   // In real use, this would be the current best-guess sequence
-  const seq = backbone.map(() => 'A').join('');
+  const seq = backbone.map(() => "A").join("");
 
   try {
     // Use child_process to make sync HTTP call (Node.js only)
     // In browser, this would use the client-side esm2Client
-    const { execSync } = require('child_process');
+    const { execSync } = require("child_process");
     const result = execSync(
       `curl -s -X POST http://localhost:3000/api/esm2 -H "Content-Type: application/json" -d '{"sequence":"${seq}"}'`,
-      { timeout: 15000, encoding: 'utf-8' },
+      { timeout: 15000, encoding: "utf-8" },
     );
     const data = JSON.parse(result);
     if (data.ok && data.embeddings) {
@@ -869,7 +887,11 @@ function fetchESM2Embeddings(backbone: BackboneAtom[]): Map<number, number[]> | 
       data.embeddings.forEach((emb: number[], i: number) => embMap.set(i, emb));
       return embMap;
     }
-  } catch (e) { console.warn('[InverseFolding] ESM-2 unavailable, using local computation only:', e instanceof Error ? e.message : e);
+  } catch (e) {
+    console.warn(
+      "[InverseFolding] ESM-2 unavailable, using local computation only:",
+      e instanceof Error ? e.message : e,
+    );
     // API unavailable — fall back to local
   }
   return null;
@@ -929,17 +951,25 @@ function runInverseFoldingWithEmbeddings(
 
     const metrics = computeStatisticalPotential(sequence, graph);
     const score = computeDesignScore(sequence, graph, pssm, perPositionScores);
-    sequences.push({ sequence, score, confidence: perPositionScores, pssmScores: pssm.map(probs => Math.max(...probs)), metrics });
+    sequences.push({
+      sequence,
+      score,
+      confidence: perPositionScores,
+      pssmScores: pssm.map((probs) => Math.max(...probs)),
+      metrics,
+    });
   }
 
   sequences.sort((a, b) => b.score - a.score);
 
   let avgRecovery = 0;
   if (sequences.length > 1) {
-    let totalPairs = 0, totalMatches = 0;
+    let totalPairs = 0,
+      totalMatches = 0;
     for (let i = 0; i < sequences.length; i++) {
       for (let j = i + 1; j < sequences.length; j++) {
-        const seq1 = sequences[i].sequence, seq2 = sequences[j].sequence;
+        const seq1 = sequences[i].sequence,
+          seq2 = sequences[j].sequence;
         let matches = 0;
         for (let k = 0; k < Math.min(seq1.length, seq2.length); k++) {
           if (seq1[k] === seq2[k]) matches++;
@@ -987,17 +1017,21 @@ export function runInverseFolding(input: InverseFoldingInput): InverseFoldingRes
       if (esm2Result) {
         return runInverseFoldingWithEmbeddings(input, esm2Result);
       }
-    } catch (e) { console.warn('[InverseFolding] ESM-2 fetch failed, falling back to local computation:', e instanceof Error ? e.message : e);
+    } catch (e) {
+      console.warn(
+        "[InverseFolding] ESM-2 fetch failed, falling back to local computation:",
+        e instanceof Error ? e.message : e,
+      );
       // Fallback to local computation if API unavailable
     }
   }
 
   // Validate input
   if (backbone.length < 10) {
-    throw new Error('Inverse folding requires at least 10 residues');
+    throw new Error("Inverse folding requires at least 10 residues");
   }
   if (backbone.length > 2000) {
-    throw new Error('Inverse folding supports up to 2000 residues');
+    throw new Error("Inverse folding supports up to 2000 residues");
   }
 
   // 1. Build structural graph
@@ -1039,7 +1073,7 @@ export function runInverseFolding(input: InverseFoldingInput): InverseFoldingRes
       sequence,
       score,
       confidence: perPositionScores,
-      pssmScores: pssm.map(probs => Math.max(...probs)),
+      pssmScores: pssm.map((probs) => Math.max(...probs)),
       metrics,
     });
   }
@@ -1076,7 +1110,9 @@ export function runInverseFolding(input: InverseFoldingInput): InverseFoldingRes
   ];
 
   if (sequences.length > 0) {
-    designNotes.push(`Top score: ${sequences[0].score} (${sequences[0].metrics.packingQuality} packing, ${sequences[0].metrics.secondaryStructureMatch} SS-match)`);
+    designNotes.push(
+      `Top score: ${sequences[0].score} (${sequences[0].metrics.packingQuality} packing, ${sequences[0].metrics.secondaryStructureMatch} SS-match)`,
+    );
   }
 
   return {
@@ -1105,7 +1141,7 @@ export function designSingleSequence(
 
   const best = result.sequences[0];
   return {
-    sequence: best?.sequence || '',
+    sequence: best?.sequence || "",
     score: best?.score || 0,
     confidence: best?.confidence || [],
   };

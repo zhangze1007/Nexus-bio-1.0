@@ -1,12 +1,12 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import type {
   ScSpatialDatasetMeta,
   ScSpatialQueryResponse,
   ScSpatialValidity,
   ScSpatialViewMode,
-} from '../types/scspatial';
+} from "../types/scspatial";
 
-type ScSpatialLoadState = 'idle' | 'uploading' | 'querying' | 'ready' | 'error';
+type ScSpatialLoadState = "idle" | "uploading" | "querying" | "ready" | "error";
 
 interface ScSpatialState {
   artifactId: string | null;
@@ -50,17 +50,17 @@ const EMPTY_STATE = {
   datasetMeta: null,
   availableGenes: [],
   availableClusters: [],
-  selectedGene: '',
-  compareGene: '',
+  selectedGene: "",
+  compareGene: "",
   selectedCluster: null,
   selectedCellId: null,
-  viewMode: 'spatial-2d' as const,
+  viewMode: "spatial-2d" as const,
   developerMode: false,
   helpOpen: false,
   showKde: false,
   showNeighbors: false,
   neighborK: 6,
-  loadState: 'idle' as const,
+  loadState: "idle" as const,
   error: null,
   query: null,
 };
@@ -68,94 +68,109 @@ const EMPTY_STATE = {
 export const useScSpatialStore = create<ScSpatialState>((set) => ({
   ...EMPTY_STATE,
 
-  beginUpload: () => set((state) => ({
-    ...state,
-    loadState: 'uploading',
-    error: null,
-  })),
+  beginUpload: () =>
+    set((state) => ({
+      ...state,
+      loadState: "uploading",
+      error: null,
+    })),
 
-  beginQuery: () => set((state) => ({
-    ...state,
-    loadState: state.artifactId ? 'querying' : state.loadState,
-    error: null,
-  })),
+  beginQuery: () =>
+    set((state) => ({
+      ...state,
+      loadState: state.artifactId ? "querying" : state.loadState,
+      error: null,
+    })),
 
-  fail: (message) => set((state) => ({
-    ...state,
-    loadState: 'error',
-    error: message,
-  })),
+  fail: (message) =>
+    set((state) => ({
+      ...state,
+      loadState: "error",
+      error: message,
+    })),
 
-  hydrateFromQuery: (query) => set((state) => ({
-    ...state,
-    artifactId: query.artifactId,
-    validity: query.validity,
-    datasetMeta: query.datasetMeta,
-    availableGenes: query.availableGenes,
-    availableClusters: query.availableClusters,
-    selectedGene: query.selection.selectedGene,
-    selectedCluster: query.selection.selectedCluster,
-    selectedCellId: query.selection.selectedCellId,
-    viewMode: query.selection.viewMode,
-    developerMode: query.selection.developerMode,
-    loadState: 'ready',
-    error: null,
-    query,
-  })),
+  hydrateFromQuery: (query) =>
+    set((state) => ({
+      ...state,
+      artifactId: query.artifactId,
+      validity: query.validity,
+      datasetMeta: query.datasetMeta,
+      availableGenes: query.availableGenes,
+      availableClusters: query.availableClusters,
+      selectedGene: query.selection.selectedGene,
+      selectedCluster: query.selection.selectedCluster,
+      selectedCellId: query.selection.selectedCellId,
+      viewMode: query.selection.viewMode,
+      developerMode: query.selection.developerMode,
+      loadState: "ready",
+      error: null,
+      query,
+    })),
 
-  setSelectedGene: (selectedGene) => set((state) => ({
-    ...state,
-    selectedGene,
-    selectedCellId: null,
-  })),
+  setSelectedGene: (selectedGene) =>
+    set((state) => ({
+      ...state,
+      selectedGene,
+      selectedCellId: null,
+    })),
 
-  setCompareGene: (compareGene) => set((state) => ({
-    ...state,
-    compareGene,
-  })),
+  setCompareGene: (compareGene) =>
+    set((state) => ({
+      ...state,
+      compareGene,
+    })),
 
-  setSelectedCluster: (selectedCluster) => set((state) => ({
-    ...state,
-    selectedCluster,
-    selectedCellId: null,
-  })),
+  setSelectedCluster: (selectedCluster) =>
+    set((state) => ({
+      ...state,
+      selectedCluster,
+      selectedCellId: null,
+    })),
 
-  setSelectedCellId: (selectedCellId) => set((state) => ({
-    ...state,
-    selectedCellId,
-  })),
+  setSelectedCellId: (selectedCellId) =>
+    set((state) => ({
+      ...state,
+      selectedCellId,
+    })),
 
-  setViewMode: (viewMode) => set((state) => ({
-    ...state,
-    viewMode,
-  })),
+  setViewMode: (viewMode) =>
+    set((state) => ({
+      ...state,
+      viewMode,
+    })),
 
-  toggleDeveloperMode: () => set((state) => ({
-    ...state,
-    developerMode: !state.developerMode,
-  })),
+  toggleDeveloperMode: () =>
+    set((state) => ({
+      ...state,
+      developerMode: !state.developerMode,
+    })),
 
-  toggleHelp: () => set((state) => ({
-    ...state,
-    helpOpen: !state.helpOpen,
-  })),
+  toggleHelp: () =>
+    set((state) => ({
+      ...state,
+      helpOpen: !state.helpOpen,
+    })),
 
-  toggleKde: () => set((state) => ({
-    ...state,
-    showKde: !state.showKde,
-  })),
+  toggleKde: () =>
+    set((state) => ({
+      ...state,
+      showKde: !state.showKde,
+    })),
 
-  toggleNeighbors: () => set((state) => ({
-    ...state,
-    showNeighbors: !state.showNeighbors,
-  })),
+  toggleNeighbors: () =>
+    set((state) => ({
+      ...state,
+      showNeighbors: !state.showNeighbors,
+    })),
 
-  setNeighborK: (neighborK) => set((state) => ({
-    ...state,
-    neighborK,
-  })),
+  setNeighborK: (neighborK) =>
+    set((state) => ({
+      ...state,
+      neighborK,
+    })),
 
-  reset: () => set(() => ({
-    ...EMPTY_STATE,
-  })),
+  reset: () =>
+    set(() => ({
+      ...EMPTY_STATE,
+    })),
 }));

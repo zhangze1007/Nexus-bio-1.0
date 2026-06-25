@@ -13,8 +13,17 @@ declare global {
     removeAllLabels: () => void;
     removeAllShapes: () => void;
     selectedAtoms: (sel?: Record<string, unknown>) => Record<string, unknown>[];
-    setHoverable: (sel: Record<string, unknown>, hoverable: boolean, hoverCallback?: (atom: Record<string, unknown>, viewer: $3DmolViewer, event: Record<string, unknown>) => void, unhoverCallback?: () => void) => void;
-    setClickable: (sel: Record<string, unknown>, clickable: boolean, callback?: (atom: Record<string, unknown>, viewer: $3DmolViewer, event: Record<string, unknown>) => void) => void;
+    setHoverable: (
+      sel: Record<string, unknown>,
+      hoverable: boolean,
+      hoverCallback?: (atom: Record<string, unknown>, viewer: $3DmolViewer, event: Record<string, unknown>) => void,
+      unhoverCallback?: () => void,
+    ) => void;
+    setClickable: (
+      sel: Record<string, unknown>,
+      clickable: boolean,
+      callback?: (atom: Record<string, unknown>, viewer: $3DmolViewer, event: Record<string, unknown>) => void,
+    ) => void;
     zoomTo: (sel?: Record<string, unknown>) => void;
     zoom: (factor: number) => void;
     render: () => void;

@@ -7,18 +7,12 @@
 // Groq: primary (1000 req/day, very stable)
 // Gemini: fallback (250 req/day)
 
-export const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',
-  'llama3-70b-8192',
-] as const;
+export const GROQ_MODELS = ["llama-3.3-70b-versatile", "llama3-70b-8192"] as const;
 
-export const GEMINI_MODELS = [
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-flash',
-] as const;
+export const GEMINI_MODELS = ["gemini-2.0-flash-lite", "gemini-1.5-flash"] as const;
 
-export const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
-export const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+export const GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions";
+export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 export const TIMEOUT_MS = 12_000;
 
 // ── Input safety limits ──
@@ -39,7 +33,7 @@ export type GeminiPart = {
 };
 
 export type GeminiContent = {
-  role?: 'user' | 'model';
+  role?: "user" | "model";
   parts?: GeminiPart[];
 };
 
@@ -54,6 +48,6 @@ export type GeminiRequestBody = {
 export type JsonRecord = Record<string, unknown>;
 
 export interface ConversationTurn {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }

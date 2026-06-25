@@ -1,13 +1,11 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
-import { PAPER_THEME, PAPER_TOOLTIP_STYLE, FONT, SCI_SERIES } from '../../../charts/chartTheme';
-import { PROEVOL_THEME } from '../shared';
-import type { ChartTooltipProps, ChartEntryProps } from '../../../../types/charts';
-import type { familyShareCurve } from '../../../../services/proevolAnalysis';
+import { useMemo } from "react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import type { familyShareCurve } from "../../../../services/proevolAnalysis";
+import type { ChartEntryProps, ChartTooltipProps } from "../../../../types/charts";
+import { FONT, PAPER_THEME, PAPER_TOOLTIP_STYLE, SCI_SERIES } from "../../../charts/chartTheme";
+import { PROEVOL_THEME } from "../shared";
 
 type FamilyShareCurve = ReturnType<typeof familyShareCurve>;
 
@@ -52,9 +50,9 @@ export default function MullerPlot({ data }: MullerPlotProps) {
       <div
         style={{
           height: 220,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           fontFamily: FONT.SANS,
           fontSize: 12,
           color: PROEVOL_THEME.muted,
@@ -66,7 +64,15 @@ export default function MullerPlot({ data }: MullerPlotProps) {
   }
 
   return (
-    <div style={{ width: '100%', height: 240, background: PAPER_THEME.bg, border: `1px solid ${PAPER_THEME.border}`, borderRadius: PAPER_THEME.borderRadius }}>
+    <div
+      style={{
+        width: "100%",
+        height: 240,
+        background: PAPER_THEME.bg,
+        border: `1px solid ${PAPER_THEME.border}`,
+        borderRadius: PAPER_THEME.borderRadius,
+      }}
+    >
       <ResponsiveContainer>
         <AreaChart data={rows} margin={{ top: 10, right: 16, left: 0, bottom: 4 }} stackOffset="expand">
           <CartesianGrid stroke={PAPER_THEME.grid} strokeDasharray="2 4" />
@@ -75,8 +81,8 @@ export default function MullerPlot({ data }: MullerPlotProps) {
             tick={{ fontSize: PAPER_THEME.tickSize, fontFamily: PAPER_THEME.tickFont, fill: PAPER_THEME.tickColor }}
             stroke={PAPER_THEME.axis}
             label={{
-              value: 'Selection round',
-              position: 'insideBottom',
+              value: "Selection round",
+              position: "insideBottom",
               offset: -2,
               fill: PAPER_THEME.labelColor,
               fontSize: PAPER_THEME.labelSize,
@@ -88,9 +94,9 @@ export default function MullerPlot({ data }: MullerPlotProps) {
             tick={{ fontSize: PAPER_THEME.tickSize, fontFamily: PAPER_THEME.tickFont, fill: PAPER_THEME.tickColor }}
             stroke={PAPER_THEME.axis}
             label={{
-              value: 'Family share',
+              value: "Family share",
               angle: -90,
-              position: 'insideLeft',
+              position: "insideLeft",
               fill: PAPER_THEME.labelColor,
               fontSize: PAPER_THEME.labelSize,
               fontFamily: PAPER_THEME.labelFont,

@@ -1,4 +1,5 @@
-'use client';
+"use client";
+import { motion } from "framer-motion";
 /**
  * PromptInput — Plain-language research prompt surface.
  *
@@ -16,10 +17,10 @@
  *   onSubmit(query) fires on Enter (without Shift), or when the send
  *   button is clicked. Parent owns loading and query state.
  */
-import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import { THEME } from '../../../theme';
+import { useEffect, useRef, useState } from "react";
+import { THEME } from "../../../theme";
+import { TOOL_TOKENS as T } from "../shared/ToolShell";
+
 const AXON_ACCENT = THEME.SKY;
 
 export interface PromptInputProps {
@@ -37,13 +38,12 @@ export interface PromptInputProps {
   hideExamples?: boolean;
 }
 
-const DEFAULT_PLACEHOLDER =
-  'Describe your research question — e.g. "Which bottleneck should we redesign first?"';
+const DEFAULT_PLACEHOLDER = 'Describe your research question — e.g. "Which bottleneck should we redesign first?"';
 
 const DEFAULT_EXAMPLES = [
-  'Summarise the current pathway bottlenecks and recommend the next tool to run.',
-  'Compare the evidence for two candidate enzymes in the active workbench.',
-  'Explain the thermodynamic risk in the current pathway using the attached evidence.',
+  "Summarise the current pathway bottlenecks and recommend the next tool to run.",
+  "Compare the evidence for two candidate enzymes in the active workbench.",
+  "Explain the thermodynamic risk in the current pathway using the attached evidence.",
 ];
 
 export default function PromptInput({
@@ -63,33 +63,33 @@ export default function PromptInput({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === '/' && e.target === document.body) {
+      if (e.key === "/" && e.target === document.body) {
         e.preventDefault();
         textareaRef.current?.focus();
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229) return;
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       onSubmit();
       return;
     }
-    if (e.key === 'ArrowUp' && e.currentTarget.selectionStart === 0) {
+    if (e.key === "ArrowUp" && e.currentTarget.selectionStart === 0) {
       e.preventDefault();
       const next = Math.min(histIdx + 1, history.length - 1);
       setHistIdx(next);
       if (history[next]) setQuery(history[next]);
     }
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       const next = Math.max(histIdx - 1, -1);
       setHistIdx(next);
-      setQuery(next < 0 ? '' : (history[next] ?? ''));
+      setQuery(next < 0 ? "" : (history[next] ?? ""));
     }
   };
 
@@ -100,41 +100,41 @@ export default function PromptInput({
     <div
       data-testid="nexai-prompt-input"
       style={{
-        display: 'grid',
-        gap: '10px',
-        padding: '12px',
-        borderRadius: 'var(--nb-radius-xl)',
-        border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : 'rgba(255,255,255,0.12)'}`,
-        background: 'rgba(16,19,26,0.9)',
-        boxShadow: '0 18px 48px rgba(4,10,16,0.26)',
+        display: "grid",
+        gap: "10px",
+        padding: "12px",
+        borderRadius: "var(--nb-radius-xl)",
+        border: `1px solid ${loading ? "rgba(175,195,214,0.34)" : "rgba(255,255,255,0.12)"}`,
+        background: "rgba(16,19,26,0.9)",
+        boxShadow: "0 18px 48px rgba(4,10,16,0.26)",
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
         <div
           aria-hidden
           style={{
             flexShrink: 0,
-            minWidth: '36px',
-            height: '36px',
-            borderRadius: 'var(--nb-radius-md)',
-            display: 'grid',
-            placeItems: 'center',
-            background: loading ? 'rgba(175,195,214,0.12)' : 'rgba(175,195,214,0.08)',
-            border: '1px solid rgba(175,195,214,0.18)',
+            minWidth: "36px",
+            height: "36px",
+            borderRadius: "var(--nb-radius-md)",
+            display: "grid",
+            placeItems: "center",
+            background: loading ? "rgba(175,195,214,0.12)" : "rgba(175,195,214,0.08)",
+            border: "1px solid rgba(175,195,214,0.18)",
           }}
         >
           {loading ? (
-            <span style={{ display: 'flex', gap: '3px' }}>
+            <span style={{ display: "flex", gap: "3px" }}>
               {[0, 1, 2].map((i) => (
                 <motion.span
                   key={i}
                   animate={{ opacity: [0.2, 1, 0.2] }}
                   transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.22 }}
                   style={{
-                    display: 'block',
-                    width: '4px',
-                    height: '4px',
-                    borderRadius: '50%',
+                    display: "block",
+                    width: "4px",
+                    height: "4px",
+                    borderRadius: "50%",
                     background: AXON_ACCENT,
                   }}
                 />
@@ -144,7 +144,7 @@ export default function PromptInput({
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: 'var(--nb-fs-sm)',
+                fontSize: "var(--nb-fs-sm)",
                 fontWeight: 700,
                 color: THEME.LABEL,
               }}
@@ -162,26 +162,31 @@ export default function PromptInput({
             setHistIdx(-1);
           }}
           onKeyDown={handleKey}
-          onFocus={(e) => { e.currentTarget.style.outline = '2px solid rgba(175,195,214,0.5)'; e.currentTarget.style.outlineOffset = '2px'; }}
-          onBlur={(e) => { e.currentTarget.style.outline = 'none'; }}
+          onFocus={(e) => {
+            e.currentTarget.style.outline = "2px solid rgba(175,195,214,0.5)";
+            e.currentTarget.style.outlineOffset = "2px";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.outline = "none";
+          }}
           placeholder={placeholder ?? DEFAULT_PLACEHOLDER}
           rows={2}
           disabled={loading}
           aria-label="Plain-language research prompt"
           style={{
             flex: 1,
-            resize: 'none',
-            minHeight: '44px',
-            maxHeight: '140px',
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
+            resize: "none",
+            minHeight: "44px",
+            maxHeight: "140px",
+            background: "transparent",
+            border: "none",
+            outline: "none",
             fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-md)',
+            fontSize: "var(--nb-fs-md)",
             lineHeight: 1.55,
             color: THEME.VALUE,
             caretColor: AXON_ACCENT,
-            letterSpacing: '-0.01em',
+            letterSpacing: "-0.01em",
           }}
         />
 
@@ -194,53 +199,51 @@ export default function PromptInput({
             onMouseLeave={() => setBtnHover(false)}
             style={{
               flexShrink: 0,
-              minHeight: '44px',
-              minWidth: '112px',
-              padding: '0 18px',
-              borderRadius: 'var(--nb-radius-md)',
-              cursor: 'pointer',
+              minHeight: "44px",
+              minWidth: "112px",
+              padding: "0 18px",
+              borderRadius: "var(--nb-radius-md)",
+              cursor: "pointer",
               fontFamily: THEME.SANS,
-              fontSize: 'var(--nb-fs-sm)',
+              fontSize: "var(--nb-fs-sm)",
               fontWeight: 700,
-              background: btnHover ? 'rgba(250, 128, 114, 0.22)' : 'rgba(250, 128, 114, 0.12)',
+              background: btnHover ? "rgba(250, 128, 114, 0.22)" : "rgba(250, 128, 114, 0.12)",
               color: THEME.CORAL,
               border: `1px solid rgba(250, 128, 114, ${btnHover ? 0.4 : 0.25})`,
-              boxShadow: btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
-              transition: 'background 0.15s, box-shadow 0.15s',
+              boxShadow: btnHover ? "0 2px 12px rgba(0,0,0,0.22)" : "none",
+              transition: "background 0.15s, box-shadow 0.15s",
             }}
           >
             Stop
           </motion.button>
         ) : (
-        <motion.button
-          aria-label="Ask Axon"
-          onClick={onSubmit}
-          disabled={!query.trim()}
-          whileTap={{ scale: 0.96 }}
-          onMouseEnter={() => setBtnHover(true)}
-          onMouseLeave={() => setBtnHover(false)}
-          style={{
-            flexShrink: 0,
-            minHeight: '44px',
-            minWidth: '112px',
-            padding: '0 18px',
-            borderRadius: 'var(--nb-radius-md)',
-            cursor: !query.trim() ? 'not-allowed' : 'pointer',
-            fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-sm)',
-            fontWeight: 700,
-            background: btnHover
-              ? 'rgba(175, 195, 214, 0.28)'
-              : 'rgba(175, 195, 214, 0.18)',
-            color: THEME.VALUE,
-            opacity: !query.trim() ? 0.45 : 1,
-            border: `1px solid rgba(175, 195, 214, ${btnHover ? 0.35 : 0.2})`,
-            boxShadow: btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
-            transition: 'background 0.15s, box-shadow 0.15s',
-          }}
-        >
-          Ask Axon
-        </motion.button>
+          <motion.button
+            aria-label="Ask Axon"
+            onClick={onSubmit}
+            disabled={!query.trim()}
+            whileTap={{ scale: 0.96 }}
+            onMouseEnter={() => setBtnHover(true)}
+            onMouseLeave={() => setBtnHover(false)}
+            style={{
+              flexShrink: 0,
+              minHeight: "44px",
+              minWidth: "112px",
+              padding: "0 18px",
+              borderRadius: "var(--nb-radius-md)",
+              cursor: !query.trim() ? "not-allowed" : "pointer",
+              fontFamily: THEME.SANS,
+              fontSize: "var(--nb-fs-sm)",
+              fontWeight: 700,
+              background: btnHover ? "rgba(175, 195, 214, 0.28)" : "rgba(175, 195, 214, 0.18)",
+              color: THEME.VALUE,
+              opacity: !query.trim() ? 0.45 : 1,
+              border: `1px solid rgba(175, 195, 214, ${btnHover ? 0.35 : 0.2})`,
+              boxShadow: btnHover ? "0 2px 12px rgba(0,0,0,0.22)" : "none",
+              transition: "background 0.15s, box-shadow 0.15s",
+            }}
+          >
+            Ask Axon
+          </motion.button>
         )}
       </div>
 
@@ -248,21 +251,21 @@ export default function PromptInput({
         <div
           data-testid="nexai-prompt-examples"
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '6px',
-            paddingTop: '2px',
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "6px",
+            paddingTop: "2px",
           }}
         >
           <span
             style={{
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              fontSize: "var(--nb-fs-xs)",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
               color: THEME.LABEL,
-              alignSelf: 'center',
-              marginRight: '4px',
+              alignSelf: "center",
+              marginRight: "4px",
             }}
           >
             Try
@@ -273,16 +276,16 @@ export default function PromptInput({
               type="button"
               onClick={() => setQuery(example)}
               style={{
-                flex: '1 1 0',
-                minWidth: '0',
-                textAlign: 'left',
-                padding: '8px 10px',
-                borderRadius: 'var(--nb-radius-md)',
-                border: '1px solid rgba(175,195,214,0.2)',
-                background: 'rgba(175,195,214,0.06)',
-                cursor: 'pointer',
+                flex: "1 1 0",
+                minWidth: "0",
+                textAlign: "left",
+                padding: "8px 10px",
+                borderRadius: "var(--nb-radius-md)",
+                border: "1px solid rgba(175,195,214,0.2)",
+                background: "rgba(175,195,214,0.06)",
+                cursor: "pointer",
                 fontFamily: THEME.SANS,
-                fontSize: 'var(--nb-fs-sm)',
+                fontSize: "var(--nb-fs-sm)",
                 lineHeight: 1.45,
                 color: THEME.VALUE,
               }}

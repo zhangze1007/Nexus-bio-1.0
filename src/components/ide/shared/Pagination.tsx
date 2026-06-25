@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { THEME } from '../../../theme';
-import { buildPageRange } from '../../../utils/pagination';
+import { THEME } from "../../../theme";
+import { buildPageRange } from "../../../utils/pagination";
 
 const SANS = THEME.SANS;
 const MONO = THEME.MONO;
@@ -23,7 +23,7 @@ export default function Pagination({
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [10, 25, 50],
-  itemLabel = 'items',
+  itemLabel = "items",
 }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(Math.max(currentPage, 1), totalPages);
@@ -38,40 +38,43 @@ export default function Pagination({
     <div
       className="nb-pagination"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '12px',
-        flexWrap: 'wrap',
-        padding: '14px 16px',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(255,255,255,0.02)',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "12px",
+        flexWrap: "wrap",
+        padding: "14px 16px",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.02)",
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
         <p
           style={{
             margin: 0,
             fontFamily: SANS,
-            fontSize: '12px',
-            color: 'rgba(255,255,255,0.68)',
+            fontSize: "12px",
+            color: "rgba(255,255,255,0.68)",
           }}
         >
-          Showing <span style={{ color: '#ffffff', fontWeight: 600 }}>{rangeStart}-{rangeEnd}</span> of{' '}
-          <span style={{ color: '#ffffff', fontWeight: 600 }}>{totalItems}</span> {itemLabel}
+          Showing{" "}
+          <span style={{ color: "#ffffff", fontWeight: 600 }}>
+            {rangeStart}-{rangeEnd}
+          </span>{" "}
+          of <span style={{ color: "#ffffff", fontWeight: 600 }}>{totalItems}</span> {itemLabel}
         </p>
 
         {onPageSizeChange && (
           <label
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
               fontFamily: MONO,
-              fontSize: '10px',
-              color: 'rgba(255,255,255,0.42)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
+              fontSize: "10px",
+              color: "rgba(255,255,255,0.42)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
             }}
           >
             Page size
@@ -80,14 +83,14 @@ export default function Pagination({
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
               style={{
-                minHeight: '36px',
-                borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.12)',
-                background: 'rgba(11,15,22,0.92)',
-                color: 'rgba(255,255,255,0.82)',
-                padding: '0 10px',
+                minHeight: "36px",
+                borderRadius: "12px",
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(11,15,22,0.92)",
+                color: "rgba(255,255,255,0.82)",
+                padding: "0 10px",
                 fontFamily: SANS,
-                fontSize: '12px',
+                fontSize: "12px",
               }}
             >
               {pageSizeOptions.map((option) => (
@@ -100,10 +103,10 @@ export default function Pagination({
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
         {[
-          { label: 'First', ariaLabel: 'Go to first page', target: 1, disabled: safePage === 1 },
-          { label: 'Prev', ariaLabel: 'Go to previous page', target: safePage - 1, disabled: safePage === 1 },
+          { label: "First", ariaLabel: "Go to first page", target: 1, disabled: safePage === 1 },
+          { label: "Prev", ariaLabel: "Go to previous page", target: safePage - 1, disabled: safePage === 1 },
         ].map((control) => (
           <button
             key={control.label}
@@ -112,15 +115,15 @@ export default function Pagination({
             disabled={control.disabled}
             aria-label={control.ariaLabel}
             style={{
-              minHeight: '36px',
-              padding: '0 12px',
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: control.disabled ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)',
-              color: control.disabled ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.8)',
-              cursor: control.disabled ? 'not-allowed' : 'pointer',
+              minHeight: "36px",
+              padding: "0 12px",
+              borderRadius: "12px",
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: control.disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.05)",
+              color: control.disabled ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.8)",
+              cursor: control.disabled ? "not-allowed" : "pointer",
               fontFamily: SANS,
-              fontSize: '12px',
+              fontSize: "12px",
               fontWeight: 500,
             }}
           >
@@ -129,17 +132,17 @@ export default function Pagination({
         ))}
 
         {pages.map((page) => {
-          if (typeof page !== 'number') {
+          if (typeof page !== "number") {
             return (
               <span
                 key={page}
                 aria-hidden="true"
                 style={{
-                  minWidth: '28px',
-                  textAlign: 'center',
-                  color: 'rgba(255,255,255,0.3)',
+                  minWidth: "28px",
+                  textAlign: "center",
+                  color: "rgba(255,255,255,0.3)",
                   fontFamily: MONO,
-                  fontSize: '11px',
+                  fontSize: "11px",
                 }}
               >
                 …
@@ -154,19 +157,19 @@ export default function Pagination({
               key={page}
               type="button"
               onClick={() => onPageChange(page)}
-              aria-current={isActive ? 'page' : undefined}
+              aria-current={isActive ? "page" : undefined}
               aria-label={`Go to page ${page}`}
               style={{
-                minWidth: '36px',
-                minHeight: '36px',
-                padding: '0 10px',
-                borderRadius: '12px',
-                border: isActive ? '1px solid rgba(255,255,255,0.45)' : '1px solid rgba(255,255,255,0.08)',
-                background: isActive ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
-                cursor: 'pointer',
+                minWidth: "36px",
+                minHeight: "36px",
+                padding: "0 10px",
+                borderRadius: "12px",
+                border: isActive ? "1px solid rgba(255,255,255,0.45)" : "1px solid rgba(255,255,255,0.08)",
+                background: isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+                color: isActive ? "#ffffff" : "rgba(255,255,255,0.72)",
+                cursor: "pointer",
                 fontFamily: MONO,
-                fontSize: '11px',
+                fontSize: "11px",
                 fontWeight: 600,
               }}
             >
@@ -176,8 +179,8 @@ export default function Pagination({
         })}
 
         {[
-          { label: 'Next', ariaLabel: 'Go to next page', target: safePage + 1, disabled: safePage === totalPages },
-          { label: 'Last', ariaLabel: 'Go to last page', target: totalPages, disabled: safePage === totalPages },
+          { label: "Next", ariaLabel: "Go to next page", target: safePage + 1, disabled: safePage === totalPages },
+          { label: "Last", ariaLabel: "Go to last page", target: totalPages, disabled: safePage === totalPages },
         ].map((control) => (
           <button
             key={control.label}
@@ -186,15 +189,15 @@ export default function Pagination({
             disabled={control.disabled}
             aria-label={control.ariaLabel}
             style={{
-              minHeight: '36px',
-              padding: '0 12px',
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: control.disabled ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)',
-              color: control.disabled ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.8)',
-              cursor: control.disabled ? 'not-allowed' : 'pointer',
+              minHeight: "36px",
+              padding: "0 12px",
+              borderRadius: "12px",
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: control.disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.05)",
+              color: control.disabled ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.8)",
+              cursor: control.disabled ? "not-allowed" : "pointer",
               fontFamily: SANS,
-              fontSize: '12px',
+              fontSize: "12px",
               fontWeight: 500,
             }}
           >
@@ -205,4 +208,3 @@ export default function Pagination({
     </div>
   );
 }
-

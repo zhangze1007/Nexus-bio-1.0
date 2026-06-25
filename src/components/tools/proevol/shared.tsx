@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import type { CSSProperties, ReactNode } from 'react';
-import { THEME } from '../../../theme';
+import type { CSSProperties, ReactNode } from "react";
+import { THEME } from "../../../theme";
 export const PROEVOL_THEME = {
   border: THEME.BORDER,
   borderStrong: THEME.BORDER_STRONG,
@@ -34,10 +34,10 @@ export function formatPercent(value: number, digits = 0) {
   return `${value.toFixed(digits)}%`;
 }
 
-export function toneColor(tone: 'neutral' | 'cool' | 'warm' | 'alert') {
-  if (tone === 'cool') return PROEVOL_THEME.successHigh;
-  if (tone === 'warm') return PROEVOL_THEME.riskMedium;
-  if (tone === 'alert') return PROEVOL_THEME.riskHigh;
+export function toneColor(tone: "neutral" | "cool" | "warm" | "alert") {
+  if (tone === "cool") return PROEVOL_THEME.successHigh;
+  if (tone === "warm") return PROEVOL_THEME.riskMedium;
+  if (tone === "alert") return PROEVOL_THEME.riskHigh;
   return PROEVOL_THEME.sky;
 }
 
@@ -47,13 +47,13 @@ export function surfaceCardStyle(options?: {
   inset?: boolean;
 }): CSSProperties {
   return {
-    display: 'grid',
-    gap: '10px',
-    padding: options?.padding ?? '12px',
-    borderRadius: 'var(--nb-radius-md)',
+    display: "grid",
+    gap: "10px",
+    padding: options?.padding ?? "12px",
+    borderRadius: "var(--nb-radius-md)",
     border: `1px solid ${options?.inset ? PROEVOL_THEME.borderStrong : PROEVOL_THEME.border}`,
     background: options?.inset ? PROEVOL_THEME.inset : PROEVOL_THEME.surface,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
     minHeight: options?.minHeight,
   };
 }
@@ -61,61 +61,61 @@ export function surfaceCardStyle(options?: {
 export function sectionKickerStyle(): CSSProperties {
   return {
     fontFamily: THEME.MONO,
-    fontSize: 'var(--nb-fs-xs)',
+    fontSize: "var(--nb-fs-xs)",
     color: PROEVOL_THEME.label,
-    textTransform: 'uppercase',
-    letterSpacing: '0.12em',
+    textTransform: "uppercase",
+    letterSpacing: "0.12em",
   };
 }
 
 export function tableHeaderStyle(): CSSProperties {
   return {
     fontFamily: THEME.MONO,
-    fontSize: 'var(--nb-fs-xs)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
+    fontSize: "var(--nb-fs-xs)",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
     color: PROEVOL_THEME.label,
-    padding: '8px 10px',
-    textAlign: 'left',
+    padding: "8px 10px",
+    textAlign: "left",
     borderBottom: `1px solid ${PROEVOL_THEME.borderStrong}`,
-    whiteSpace: 'nowrap',
+    whiteSpace: "nowrap",
   };
 }
 
 export function tableCellStyle(): CSSProperties {
   return {
     fontFamily: THEME.SANS,
-    fontSize: 'var(--nb-fs-sm)',
+    fontSize: "var(--nb-fs-sm)",
     color: PROEVOL_THEME.value,
-    padding: '8px 10px',
-    verticalAlign: 'top',
+    padding: "8px 10px",
+    verticalAlign: "top",
   };
 }
 
 export function StatusPill({
   children,
-  tone = 'neutral',
+  tone = "neutral",
 }: {
   children: ReactNode;
-  tone?: 'neutral' | 'cool' | 'warm' | 'alert';
+  tone?: "neutral" | "cool" | "warm" | "alert";
 }) {
   const color = toneColor(tone);
   return (
     <span
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        minHeight: '24px',
-        padding: '0 10px',
-        borderRadius: '999px',
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        minHeight: "24px",
+        padding: "0 10px",
+        borderRadius: "999px",
         border: `1px solid ${color}44`,
         background: `${color}18`,
         color,
         fontFamily: THEME.MONO,
-        fontSize: 'var(--nb-fs-xs)',
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
+        fontSize: "var(--nb-fs-xs)",
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
       }}
     >
       {children}
@@ -138,20 +138,20 @@ export function MetricBadge({
     <div
       style={{
         minWidth: 0,
-        padding: '10px 12px',
-        borderRadius: 'var(--nb-radius-md)',
+        padding: "10px 12px",
+        borderRadius: "var(--nb-radius-md)",
         border: `1px solid ${PROEVOL_THEME.border}`,
-        background: 'rgba(255,255,255,0.03)',
-        display: 'grid',
-        gap: '4px',
+        background: "rgba(255,255,255,0.03)",
+        display: "grid",
+        gap: "4px",
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span
           style={{
-            width: '7px',
-            height: '7px',
-            borderRadius: '999px',
+            width: "7px",
+            height: "7px",
+            borderRadius: "999px",
             background: accent,
             flexShrink: 0,
           }}
@@ -161,10 +161,10 @@ export function MetricBadge({
       <div
         style={{
           fontFamily: THEME.SANS,
-          fontSize: 'var(--nb-fs-md)',
+          fontSize: "var(--nb-fs-md)",
           fontWeight: 700,
           color: PROEVOL_THEME.value,
-          letterSpacing: '-0.03em',
+          letterSpacing: "-0.03em",
         }}
       >
         {value}
@@ -173,7 +173,7 @@ export function MetricBadge({
         <div
           style={{
             fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-xs)',
+            fontSize: "var(--nb-fs-xs)",
             lineHeight: 1.5,
             color: PROEVOL_THEME.muted,
           }}
@@ -204,12 +204,32 @@ export function ProEvolCard({
 }) {
   return (
     <section style={surfaceCardStyle({ minHeight, inset })}>
-      {(eyebrow || title || actions) ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', paddingBottom: '6px', borderBottom: `1px solid ${PROEVOL_THEME.border}` }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}>
+      {eyebrow || title || actions ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            paddingBottom: "6px",
+            borderBottom: `1px solid ${PROEVOL_THEME.border}`,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", gap: "8px", minWidth: 0 }}>
             {eyebrow ? <div style={sectionKickerStyle()}>{eyebrow}</div> : null}
             {title ? (
-              <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PROEVOL_THEME.value, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div
+                style={{
+                  fontFamily: THEME.SANS,
+                  fontSize: "var(--nb-fs-sm)",
+                  fontWeight: 600,
+                  color: PROEVOL_THEME.value,
+                  letterSpacing: "-0.02em",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {title}
               </div>
             ) : null}

@@ -1,13 +1,10 @@
-import { randomUUID } from 'node:crypto';
-import { GENE_LIST, SC_SPATIAL_DATA } from '../data/mockScSpatial';
-import type {
-  ScSpatialNormalizedArtifact,
-  ScSpatialSparseMatrix,
-} from '../types/scspatial';
+import { randomUUID } from "node:crypto";
+import { GENE_LIST, SC_SPATIAL_DATA } from "../data/mockScSpatial";
+import type { ScSpatialNormalizedArtifact, ScSpatialSparseMatrix } from "../types/scspatial";
 
 function buildSparseMatrix(): ScSpatialSparseMatrix {
   return {
-    encoding: 'row-sparse-v1',
+    encoding: "row-sparse-v1",
     nObs: SC_SPATIAL_DATA.length,
     nVars: GENE_LIST.length,
     rows: SC_SPATIAL_DATA.map((cell) => {
@@ -33,16 +30,16 @@ export function createDemoScSpatialArtifact(): ScSpatialNormalizedArtifact {
     schemaVersion: 1,
     artifactId,
     source: {
-      fileName: 'bundled-demo.h5ad',
+      fileName: "bundled-demo.h5ad",
       uploadedAt: Date.now(),
       sampleCount: 1,
-      parserVersion: 'bundled-demo/1.0.0',
+      parserVersion: "bundled-demo/1.0.0",
       pythonVersion: null,
     },
     matrix: {
       X: buildSparseMatrix(),
       layers: {},
-      defaultLayer: 'X',
+      defaultLayer: "X",
     },
     obs: SC_SPATIAL_DATA.map((cell, index) => {
       const sampleId = `demo-sample-${1 + (index % 2)}`;
@@ -53,12 +50,12 @@ export function createDemoScSpatialArtifact(): ScSpatialNormalizedArtifact {
         cellType: cell.cellType,
         batchId: cell.batchId,
         sampleId,
-        condition: index % 2 === 0 ? 'control' : 'engineered',
+        condition: index % 2 === 0 ? "control" : "engineered",
         replicate: `R${1 + (index % 3)}`,
         sampleMetadata: {
           donor: `donor-${1 + (index % 4)}`,
-          tissue: 'liver',
-          region: index % 2 === 0 ? 'core' : 'margin',
+          tissue: "liver",
+          region: index % 2 === 0 ? "core" : "margin",
         },
       };
     }),
@@ -71,7 +68,7 @@ export function createDemoScSpatialArtifact(): ScSpatialNormalizedArtifact {
       embeddings: {},
     },
     metadata: {
-      warnings: ['Bundled demo dataset loaded by explicit user action.'],
+      warnings: ["Bundled demo dataset loaded by explicit user action."],
       missingFields: [],
       availableViews: {
         spatial2d: true,
@@ -83,10 +80,10 @@ export function createDemoScSpatialArtifact(): ScSpatialNormalizedArtifact {
       extractedKeys: {
         layers: [],
         embeddings: [],
-        clusterLabelKey: 'cellType',
-        cellTypeKey: 'cellType',
-        batchKey: 'batchId',
-        sampleMetadataKeys: ['sampleId', 'condition', 'replicate'],
+        clusterLabelKey: "cellType",
+        cellTypeKey: "cellType",
+        batchKey: "batchId",
+        sampleMetadataKeys: ["sampleId", "condition", "replicate"],
       },
       hasSpatialCoords: true,
       hasClusterLabels: true,

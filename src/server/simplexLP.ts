@@ -50,9 +50,7 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
 
   // Shift: y_i = x_i - lb_i  →  0 ≤ y_i ≤ u_i
   const u = ub.map((u_i, i) => Math.max(0, u_i - lb[i]));
-  const bAdj = b.map((b_i, i) =>
-    b_i - A[i].reduce((s, a_ij, j) => s + a_ij * lb[j], 0),
-  );
+  const bAdj = b.map((b_i, i) => b_i - A[i].reduce((s, a_ij, j) => s + a_ij * lb[j], 0));
 
   // Variable layout  (total nV = 2n + m):
   //   [0 .. n-1]        original y_j
@@ -71,12 +69,12 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
 
   for (let i = 0; i < m; i++) {
     for (let j = 0; j < n; j++) T[i][j] = A[i][j];
-    T[i][2 * n + i] = 1;    // artificial a_i
+    T[i][2 * n + i] = 1; // artificial a_i
     T[i][RHS] = bAdj[i];
   }
   for (let j = 0; j < n; j++) {
-    T[m + j][j] = 1;         // y_j
-    T[m + j][n + j] = 1;     // s_j
+    T[m + j][j] = 1; // y_j
+    T[m + j][n + j] = 1; // s_j
     T[m + j][RHS] = u[j];
   }
 
@@ -89,7 +87,7 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
   // When bAdj = 0 (standard FBA), a greedy pivot suffices since all
   // artificials start at value 0. For non-zero bAdj, we run a full
   // Phase 1 simplex on the artificial objective.
-  const allBAdjZero = bAdj.every(v => Math.abs(v) < EPS);
+  const allBAdjZero = bAdj.every((v) => Math.abs(v) < EPS);
 
   if (allBAdjZero) {
     // Fast path: greedy pivot (artificials are degenerate at 0)
@@ -97,7 +95,10 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
       if (basis[i] < 2 * n) continue; // not an artificial
       let pivCol = -1;
       for (let j = 0; j < 2 * n; j++) {
-        if (Math.abs(T[i][j]) > EPS) { pivCol = j; break; }
+        if (Math.abs(T[i][j]) > EPS) {
+          pivCol = j;
+          break;
+        }
       }
       if (pivCol === -1) continue; // redundant row — leave artificial at 0
 
@@ -134,7 +135,10 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
       let enterCol = -1;
       let minRC = -EPS;
       for (let j = 0; j < 2 * n; j++) {
-        if (phase1Obj[j] < minRC) { minRC = phase1Obj[j]; enterCol = j; }
+        if (phase1Obj[j] < minRC) {
+          minRC = phase1Obj[j];
+          enterCol = j;
+        }
       }
       if (enterCol === -1) break; // Phase 1 optimal
 
@@ -145,7 +149,10 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
         const aij = T[i][enterCol];
         if (aij > EPS) {
           const ratio = T[i][RHS] / aij;
-          if (ratio < minRatio - EPS) { minRatio = ratio; leaveRow = i; }
+          if (ratio < minRatio - EPS) {
+            minRatio = ratio;
+            leaveRow = i;
+          }
         }
       }
       if (leaveRow === -1) break; // unbounded in Phase 1
@@ -181,7 +188,7 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
   }
 
   let iterCount = 0;
-  let blandThreshold = Math.max(100, 2 * n); // Switch to Bland's rule after this many iterations
+  const blandThreshold = Math.max(100, 2 * n); // Switch to Bland's rule after this many iterations
   for (let iter = 0; iter < MAX_ITER; iter++) {
     iterCount = iter + 1;
 
@@ -191,12 +198,18 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
       // Dantzig's rule: most negative reduced cost (faster convergence)
       let minRC = -EPS;
       for (let j = 0; j < 2 * n; j++) {
-        if (obj[j] < minRC) { minRC = obj[j]; enterCol = j; }
+        if (obj[j] < minRC) {
+          minRC = obj[j];
+          enterCol = j;
+        }
       }
     } else {
       // Bland's rule: first negative reduced cost (prevents cycling)
       for (let j = 0; j < 2 * n; j++) {
-        if (obj[j] < -EPS) { enterCol = j; break; }
+        if (obj[j] < -EPS) {
+          enterCol = j;
+          break;
+        }
       }
     }
     if (enterCol === -1) break; // optimal
@@ -210,7 +223,10 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
         const aij = T[i][enterCol];
         if (aij > EPS) {
           const ratio = T[i][RHS] / aij;
-          if (ratio < minRatio - EPS) { minRatio = ratio; leaveRow = i; }
+          if (ratio < minRatio - EPS) {
+            minRatio = ratio;
+            leaveRow = i;
+          }
         }
       }
     } else {

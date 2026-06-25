@@ -1,13 +1,9 @@
-import type {
-  WorkbenchAnalyzeArtifact,
-  WorkbenchProjectBrief,
-  WorkbenchRunArtifact,
-} from '../../store/workbenchTypes';
-import { buildExecutionSnapshot, diffExecutionSnapshot } from '../../config/workbenchExecution';
+import { buildExecutionSnapshot, diffExecutionSnapshot } from "../../config/workbenchExecution";
+import type { WorkbenchAnalyzeArtifact, WorkbenchProjectBrief, WorkbenchRunArtifact } from "../../store/workbenchTypes";
 
-export type WorkbenchFreshnessStatus = 'fresh' | 'stale' | 'awaiting-upstream' | 'not-run';
-export type ExperimentLedgerStatus = 'recorded' | 'committed' | 'attention' | 'draft';
-export type WorkbenchAuthorityTier = 'simulated' | 'contextual' | 'evidence-linked' | 'experiment-backed';
+export type WorkbenchFreshnessStatus = "fresh" | "stale" | "awaiting-upstream" | "not-run";
+export type ExperimentLedgerStatus = "recorded" | "committed" | "attention" | "draft";
+export type WorkbenchAuthorityTier = "simulated" | "contextual" | "evidence-linked" | "experiment-backed";
 
 export interface WorkbenchToolFreshness {
   toolId: string;
@@ -30,22 +26,22 @@ export interface WorkbenchExperimentLedgerEntry {
 }
 
 export function getAuthorityTier(artifact: WorkbenchRunArtifact): WorkbenchAuthorityTier {
-  if (artifact.isSimulated) return 'simulated';
-  if (['cellfree', 'dbtlflow', 'multio', 'scspatial'].includes(artifact.toolId)) return 'experiment-backed';
-  if (artifact.sourceArtifactId || artifact.execution.analyzeRef) return 'evidence-linked';
-  return 'contextual';
+  if (artifact.isSimulated) return "simulated";
+  if (["cellfree", "dbtlflow", "multio", "scspatial"].includes(artifact.toolId)) return "experiment-backed";
+  if (artifact.sourceArtifactId || artifact.execution.analyzeRef) return "evidence-linked";
+  return "contextual";
 }
 
 export function getAuthoritySummary(tier: WorkbenchAuthorityTier) {
   switch (tier) {
-    case 'experiment-backed':
-      return 'Backed by experimental or assay-linked outputs';
-    case 'evidence-linked':
-      return 'Linked to current evidence and analyze context';
-    case 'contextual':
-      return 'Derived from current project context';
+    case "experiment-backed":
+      return "Backed by experimental or assay-linked outputs";
+    case "evidence-linked":
+      return "Linked to current evidence and analyze context";
+    case "contextual":
+      return "Derived from current project context";
     default:
-      return 'Simulation-grade output, not experimental evidence';
+      return "Simulation-grade output, not experimental evidence";
   }
 }
 
@@ -68,9 +64,9 @@ export function getToolFreshness(
   },
 ): WorkbenchToolFreshness {
   const empty: WorkbenchToolFreshness = {
-    toolId: toolId ?? 'unknown',
-    status: 'not-run',
-    summary: 'No auditable run recorded yet',
+    toolId: toolId ?? "unknown",
+    status: "not-run",
+    summary: "No auditable run recorded yet",
     latestRunArtifact: null,
     blockingToolIds: [],
     latestUpstreamArtifact: null,
@@ -85,19 +81,20 @@ export function getToolFreshness(
     analyzeArtifact: context?.analyzeArtifact,
     runArtifacts,
   });
-  const latestUpstreamArtifact = currentExecution.upstreamToolIds
-    .map((upstreamToolId) => latestByTool.get(upstreamToolId))
-    .filter((artifact): artifact is WorkbenchRunArtifact => Boolean(artifact))
-    .sort((left, right) => right.createdAt - left.createdAt)[0] ?? null;
+  const latestUpstreamArtifact =
+    currentExecution.upstreamToolIds
+      .map((upstreamToolId) => latestByTool.get(upstreamToolId))
+      .filter((artifact): artifact is WorkbenchRunArtifact => Boolean(artifact))
+      .sort((left, right) => right.createdAt - left.createdAt)[0] ?? null;
 
   if (!latestRunArtifact) {
     if (currentExecution.analyzeRef || currentExecution.projectRef || currentExecution.upstreamToolIds.length) {
       return {
         toolId,
-        status: 'awaiting-upstream',
+        status: "awaiting-upstream",
         summary: currentExecution.upstreamToolIds.length
-          ? `Upstream context from ${currentExecution.upstreamToolIds.map((upstreamToolId) => upstreamToolId.toUpperCase()).join(', ')} is ready, but this tool has not been rerun yet`
-          : 'Project or Analyze context changed, but this tool has not been run yet',
+          ? `Upstream context from ${currentExecution.upstreamToolIds.map((upstreamToolId) => upstreamToolId.toUpperCase()).join(", ")} is ready, but this tool has not been rerun yet`
+          : "Project or Analyze context changed, but this tool has not been run yet",
         latestRunArtifact: null,
         blockingToolIds: currentExecution.upstreamToolIds,
         latestUpstreamArtifact,
@@ -109,17 +106,17 @@ export function getToolFreshness(
   const diff = diffExecutionSnapshot(latestRunArtifact.execution, currentExecution);
   if (diff.signatureChanged) {
     const reasons: string[] = [];
-    if (diff.projectChanged) reasons.push('project context changed');
-    if (diff.analyzeChanged) reasons.push('analyze artifact changed');
+    if (diff.projectChanged) reasons.push("project context changed");
+    if (diff.analyzeChanged) reasons.push("analyze artifact changed");
     if (diff.blockingToolIds.length) {
-      reasons.push(`upstream rerun: ${diff.blockingToolIds.map((upstreamToolId) => upstreamToolId.toUpperCase()).join(', ')}`);
+      reasons.push(
+        `upstream rerun: ${diff.blockingToolIds.map((upstreamToolId) => upstreamToolId.toUpperCase()).join(", ")}`,
+      );
     }
     return {
       toolId,
-      status: 'stale',
-      summary: reasons.length
-        ? reasons.join(' · ')
-        : 'Current run no longer matches the latest execution context',
+      status: "stale",
+      summary: reasons.length ? reasons.join(" · ") : "Current run no longer matches the latest execution context",
       latestRunArtifact,
       blockingToolIds: diff.blockingToolIds,
       latestUpstreamArtifact,
@@ -128,10 +125,10 @@ export function getToolFreshness(
 
   return {
     toolId,
-    status: 'fresh',
+    status: "fresh",
     summary: currentExecution.upstreamToolIds.length
-      ? `Latest run matches current project, analyze, and upstream context from ${currentExecution.upstreamToolIds.map((upstreamToolId) => upstreamToolId.toUpperCase()).join(', ')}`
-      : 'Latest run matches the current project and analyze context',
+      ? `Latest run matches current project, analyze, and upstream context from ${currentExecution.upstreamToolIds.map((upstreamToolId) => upstreamToolId.toUpperCase()).join(", ")}`
+      : "Latest run matches the current project and analyze context",
     latestRunArtifact,
     blockingToolIds: [],
     latestUpstreamArtifact,
@@ -149,25 +146,28 @@ export function getFreshnessMap(
   return Object.fromEntries(toolIds.map((toolId) => [toolId, getToolFreshness(runArtifacts, toolId, context)]));
 }
 
-function isCellFreePayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload?.toolId === 'cellfree';
+function isCellFreePayload(payload: WorkbenchRunArtifact["payloadSnapshot"]) {
+  return payload?.toolId === "cellfree";
 }
 
-function isDBTLPayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload?.toolId === 'dbtlflow';
+function isDBTLPayload(payload: WorkbenchRunArtifact["payloadSnapshot"]) {
+  return payload?.toolId === "dbtlflow";
 }
 
-function isMultiOPayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload?.toolId === 'multio';
+function isMultiOPayload(payload: WorkbenchRunArtifact["payloadSnapshot"]) {
+  return payload?.toolId === "multio";
 }
 
-function isSpatialPayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload?.toolId === 'scspatial';
+function isSpatialPayload(payload: WorkbenchRunArtifact["payloadSnapshot"]) {
+  return payload?.toolId === "scspatial";
 }
 
-export function buildExperimentLedger(runArtifacts: WorkbenchRunArtifact[], limit = 8): WorkbenchExperimentLedgerEntry[] {
+export function buildExperimentLedger(
+  runArtifacts: WorkbenchRunArtifact[],
+  limit = 8,
+): WorkbenchExperimentLedgerEntry[] {
   return runArtifacts
-    .filter((artifact) => ['cellfree', 'dbtlflow', 'multio', 'scspatial'].includes(artifact.toolId))
+    .filter((artifact) => ["cellfree", "dbtlflow", "multio", "scspatial"].includes(artifact.toolId))
     .slice(0, limit)
     .map((artifact) => {
       const payload = artifact.payloadSnapshot;
@@ -179,11 +179,13 @@ export function buildExperimentLedger(runArtifacts: WorkbenchRunArtifact[], limi
           sourceArtifactId: artifact.sourceArtifactId,
           title: `Cell-free validation · ${payload.targetConstruct}`,
           summary: artifact.summary,
-          status: payload.result.isResourceLimited ? 'attention' : 'recorded',
+          status: payload.result.isResourceLimited ? "attention" : "recorded",
           metrics: [
             `${payload.result.totalProteinYield.toFixed(2)} mg/mL`,
             `depletion ${payload.result.energyDepletionTime.toFixed(1)} min`,
-            payload.result.confidence !== null ? `${(payload.result.confidence * 100).toFixed(0)}% confidence` : 'confidence pending',
+            payload.result.confidence !== null
+              ? `${(payload.result.confidence * 100).toFixed(0)}% confidence`
+              : "confidence pending",
           ],
           createdAt: artifact.createdAt,
         };
@@ -196,11 +198,11 @@ export function buildExperimentLedger(runArtifacts: WorkbenchRunArtifact[], limi
           sourceArtifactId: artifact.sourceArtifactId,
           title: `DBTL ${payload.result.latestPhase} cycle`,
           summary: artifact.summary,
-          status: payload.feedbackSource === 'committed' ? 'committed' : 'draft',
+          status: payload.feedbackSource === "committed" ? "committed" : "draft",
           metrics: [
             `${payload.result.passRate.toFixed(0)}% pass`,
             `${payload.result.improvementRate.toFixed(0)}% improvement`,
-            payload.passed ? 'threshold passed' : 'threshold missed',
+            payload.passed ? "threshold passed" : "threshold missed",
           ],
           createdAt: artifact.createdAt,
         };
@@ -213,7 +215,7 @@ export function buildExperimentLedger(runArtifacts: WorkbenchRunArtifact[], limi
           sourceArtifactId: artifact.sourceArtifactId,
           title: `Multi-omics integration · ${payload.selectedGene}`,
           summary: artifact.summary,
-          status: 'recorded',
+          status: "recorded",
           metrics: [
             `${payload.result.significantCount} significant`,
             `${payload.result.dominantLayer}`,
@@ -230,7 +232,7 @@ export function buildExperimentLedger(runArtifacts: WorkbenchRunArtifact[], limi
           sourceArtifactId: artifact.sourceArtifactId,
           title: `Single-cell / spatial readout · ${payload.highlightGene}`,
           summary: artifact.summary,
-          status: 'recorded',
+          status: "recorded",
           metrics: [
             `${payload.result.totalCells} cells`,
             `${payload.result.highestYieldCluster} highest-yield cluster`,
@@ -246,7 +248,7 @@ export function buildExperimentLedger(runArtifacts: WorkbenchRunArtifact[], limi
         sourceArtifactId: artifact.sourceArtifactId,
         title: artifact.toolId.toUpperCase(),
         summary: artifact.summary,
-        status: 'recorded',
+        status: "recorded",
         metrics: [],
         createdAt: artifact.createdAt,
       };

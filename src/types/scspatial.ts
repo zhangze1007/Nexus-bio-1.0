@@ -1,13 +1,7 @@
-export type ScSpatialValidity = 'real' | 'partial' | 'demo';
+export type ScSpatialValidity = "real" | "partial" | "demo";
 export type ScSpatialScalar = string | number | boolean;
 
-export type ScSpatialViewMode =
-  | 'spatial-2d'
-  | 'spatial-3d'
-  | 'umap'
-  | 'trajectory'
-  | 'table'
-  | 'communication';
+export type ScSpatialViewMode = "spatial-2d" | "spatial-3d" | "umap" | "trajectory" | "table" | "communication";
 
 export interface ScSpatialSparseRow {
   indices: number[];
@@ -15,7 +9,7 @@ export interface ScSpatialSparseRow {
 }
 
 export interface ScSpatialSparseMatrix {
-  encoding: 'row-sparse-v1';
+  encoding: "row-sparse-v1";
   nObs: number;
   nVars: number;
   rows: ScSpatialSparseRow[];
@@ -121,12 +115,12 @@ export interface ScSpatialNormalizedArtifact {
   analysis?: ScSpatialAnalysisResults;
   /** H&E tissue image (Visium data only). */
   heImage?: {
-    data: string;  // base64 PNG
+    data: string; // base64 PNG
     scaleFactor: number;
     spotDiameter: number;
   };
   /** Detected spatial data format. */
-  spatialFormat?: 'visium' | 'merfish' | 'generic' | 'none';
+  spatialFormat?: "visium" | "merfish" | "generic" | "none";
 }
 
 export interface ScSpatialIngestConfig {
@@ -143,7 +137,7 @@ export interface ScSpatialIngestConfig {
   nPcs?: number;
   nTopGenes?: number;
   moranPerms?: number;
-  coordType?: 'auto' | 'visium' | 'generic';
+  coordType?: "auto" | "visium" | "generic";
 }
 
 export interface ScSpatialSelectionState {
@@ -204,7 +198,7 @@ export interface ScSpatialHotspotSummary {
   pValue: number;
   qValue: number;
   isSpatiallyRestricted: boolean;
-  hotspot: 'high' | 'low' | 'ns';
+  hotspot: "high" | "low" | "ns";
 }
 
 export interface ScSpatialClusterSummary {
@@ -214,7 +208,7 @@ export interface ScSpatialClusterSummary {
   meanExpression: number;
   meanPseudotime: number;
   topGenes: string[];
-  fate: 'productive' | 'stressed' | 'quiescent';
+  fate: "productive" | "stressed" | "quiescent";
   spatiallyLocalized: boolean;
 }
 
@@ -242,7 +236,7 @@ export interface ScSpatialSVGResult {
   moranI: number;
   pValue: number;
   qValue: number;
-  spatialPattern: 'clustered' | 'dispersed' | 'random';
+  spatialPattern: "clustered" | "dispersed" | "random";
   hotspotGenes: string[];
 }
 
@@ -273,7 +267,7 @@ export interface ScSpatialQueryResponse {
     spatiallyVariableGenes: ScSpatialSVGResult[];
     niches: ScSpatialNiche[];
     provenance: {
-      source: 'upload' | 'bundled-demo';
+      source: "upload" | "bundled-demo";
       fileName: string;
       validity: ScSpatialValidity;
       warnings: string[];
@@ -312,7 +306,7 @@ export interface ScSpatialQueryResponse {
     spotDiameter: number;
   };
   /** Detected spatial data format. */
-  spatialFormat?: 'visium' | 'merfish' | 'generic' | 'none';
+  spatialFormat?: "visium" | "merfish" | "generic" | "none";
 }
 
 export interface ScSpatialIngestResponse {

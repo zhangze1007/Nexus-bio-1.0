@@ -9,11 +9,7 @@
  * continue to work with identical signatures and return types.
  */
 
-import {
-  competitiveInhibition,
-  simulateEnzymeSystem,
-  type EnzymeKinetics,
-} from '../services/kineticsEngine';
+import { competitiveInhibition, type EnzymeKinetics, simulateEnzymeSystem } from "../services/kineticsEngine";
 
 export interface SimResult {
   time: number[];
@@ -53,11 +49,16 @@ export function mmVelocity(S: number, Vmax: number, Km: number, Ki?: number, I?:
  *   - Degradation: P -> pool (large Km for first-order approximation)
  */
 export function runRK4(
-  S0: number, P0: number,
-  Vmax: number, Km: number,
-  formationRate: number, degradationRate: number,
-  Ki: number | undefined, I: number | undefined,
-  duration: number, steps: number
+  S0: number,
+  P0: number,
+  Vmax: number,
+  Km: number,
+  formationRate: number,
+  degradationRate: number,
+  Ki: number | undefined,
+  I: number | undefined,
+  duration: number,
+  steps: number,
 ): SimResult {
   const velocity0 = mmVelocity(S0, Vmax, Km, Ki, I);
 
@@ -103,7 +104,7 @@ export function runRK4(
   // When pool >> km, v ≈ vmax ≈ formationRate (constant production)
   if (hasFormation) {
     enzymes.push({
-      id: 'formation',
+      id: "formation",
       substrateIndex: poolIndex,
       productIndex: 0, // S
       vmax: formationRate,
@@ -113,7 +114,7 @@ export function runRK4(
 
   // Main enzyme: S -> P (with optional competitive inhibition)
   const mainEnzyme: EnzymeKinetics = {
-    id: 'main',
+    id: "main",
     substrateIndex: 0, // S
     productIndex: 1, // P
     vmax: Vmax,
@@ -131,7 +132,7 @@ export function runRK4(
   // Set vmax = degradationRate * km so that vmax/km = degradationRate
   if (hasDegradation) {
     enzymes.push({
-      id: 'degradation',
+      id: "degradation",
       substrateIndex: 1, // P
       productIndex: poolIndex,
       vmax: degradationRate * DEGRADATION_KM,
@@ -149,9 +150,9 @@ export function runRK4(
 
   // Convert to SimResult (backward-compatible format)
   return {
-    time: result.time.map(t => parseFloat(t.toFixed(3))),
-    substrate: result.species[0].map(s => parseFloat(s.toFixed(4))),
-    product: result.species[1].map(p => parseFloat(p.toFixed(4))),
-    velocity: result.velocities[mainEnzymeIdx].map(v => parseFloat(v.toFixed(4))),
+    time: result.time.map((t) => parseFloat(t.toFixed(3))),
+    substrate: result.species[0].map((s) => parseFloat(s.toFixed(4))),
+    product: result.species[1].map((p) => parseFloat(p.toFixed(4))),
+    velocity: result.velocities[mainEnzymeIdx].map((v) => parseFloat(v.toFixed(4))),
   };
 }

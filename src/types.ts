@@ -1,15 +1,15 @@
 // Core pathway types
-export type NodeColorMapping = 'Green' | 'Yellow' | 'Orange' | 'Red' | 'Purple' | 'Blue';
+export type NodeColorMapping = "Green" | "Yellow" | "Orange" | "Red" | "Purple" | "Blue";
 
 export type NodeType =
-  | 'metabolite'
-  | 'enzyme'
-  | 'gene'
-  | 'complex'
-  | 'cofactor'
-  | 'impurity'
-  | 'intermediate'
-  | 'unknown';
+  | "metabolite"
+  | "enzyme"
+  | "gene"
+  | "complex"
+  | "cofactor"
+  | "impurity"
+  | "intermediate"
+  | "unknown";
 
 export interface MolAtom {
   element: string;
@@ -42,7 +42,7 @@ export interface PathwayNode {
   nodeType?: NodeType;
   evidenceSnippet?: string;
   confidenceScore?: number;
-  
+
   // Nexus-Bio 1.1: Risk and Compliance
   risk_score?: number;
   audit_trail?: string;
@@ -61,7 +61,7 @@ export interface PathwayNode {
   atom_economy?: number;
   dsp_bottleneck?: string;
   ic50_toxicity?: string;
-  
+
   // Molecular structure data
   ecNumber?: string;
   chebiId?: string;
@@ -74,15 +74,15 @@ export interface PathwayNode {
 }
 
 export type EdgeRelationshipType =
-  | 'catalyzes'
-  | 'produces'
-  | 'consumes'
-  | 'activates'
-  | 'inhibits'
-  | 'converts'
-  | 'transports'
-  | 'regulates'
-  | 'unknown';
+  | "catalyzes"
+  | "produces"
+  | "consumes"
+  | "activates"
+  | "inhibits"
+  | "converts"
+  | "transports"
+  | "regulates"
+  | "unknown";
 
 export interface PathwayEdge {
   start: string;
@@ -90,13 +90,13 @@ export interface PathwayEdge {
   relationshipType?: EdgeRelationshipType;
   evidence?: string;
   confidenceScore?: number;
-  direction?: 'forward' | 'reverse' | 'bidirectional';
-  
+  direction?: "forward" | "reverse" | "bidirectional";
+
   // Nexus-Bio 1.1: Thermodynamic data
   predicted_delta_G_kJ_mol?: number;
   spontaneity?: string;
   yield_prediction?: string;
-  thickness_mapping?: 'Thick' | 'Medium' | 'Thin';
+  thickness_mapping?: "Thick" | "Medium" | "Thin";
   audit_trail?: string;
 }
 
@@ -129,33 +129,40 @@ export interface GeneratedPathway {
     sourceText?: string;
     generatedAt?: string;
     modelUsed?: string;
-    confidence?: 'high' | 'medium' | 'low';
+    confidence?: "high" | "medium" | "low";
   };
 }
 
 // RESTORED HELPERS for PaperAnalyzer.tsx
 export function isValidNode(node: unknown): node is Partial<PathwayNode> {
-  if (!node || typeof node !== 'object') return false;
+  if (!node || typeof node !== "object") return false;
   const n = node as Record<string, unknown>;
-  return typeof n.id === 'string' && (n.id as string).length > 0;
+  return typeof n.id === "string" && (n.id as string).length > 0;
 }
 
 export function isValidEdge(edge: unknown): edge is PathwayEdge {
-  if (!edge || typeof edge !== 'object') return false;
+  if (!edge || typeof edge !== "object") return false;
   const e = edge as Record<string, unknown>;
-  return typeof e.start === 'string' && (e.start as string).length > 0 &&
-         typeof e.end === 'string' && (e.end as string).length > 0;
+  return (
+    typeof e.start === "string" &&
+    (e.start as string).length > 0 &&
+    typeof e.end === "string" &&
+    (e.end as string).length > 0
+  );
 }
 
 export function sanitizeNodeId(id: string): string {
-  return id.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 64);
+  return id
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .slice(0, 64);
 }
 
 // ── IDE Console entry ─────────────────────────────────────────────────────────
 export interface ConsoleEntry {
   id: string;
   timestamp: number;
-  level: 'info' | 'warn' | 'error' | 'success';
+  level: "info" | "warn" | "error" | "success";
   module: string;
   message: string;
 }
@@ -196,14 +203,17 @@ export interface ExchangeReaction {
 }
 
 export interface CommunityFBAResult {
-  strainResults: Record<string, {
-    fluxes: Record<string, number>;
-    growthRate: number;
-    atpYield: number;
-    nadhProduction: number;
-    carbonEfficiency: number;
-    feasible: boolean;
-  }>;
+  strainResults: Record<
+    string,
+    {
+      fluxes: Record<string, number>;
+      growthRate: number;
+      atpYield: number;
+      nadhProduction: number;
+      carbonEfficiency: number;
+      feasible: boolean;
+    }
+  >;
   exchangeFluxes: ExchangeReaction[];
   communityGrowthRate: number;
   communityBiomassObjective: number;
@@ -212,13 +222,31 @@ export interface CommunityFBAResult {
 }
 
 // ── MODULE: PROEVOL ───────────────────────────────────────────────────────────
-export interface Mutation { position: number; from: string; to: string; ddG?: number; }
-export interface FitnessPoint { mutationCount: number; fitness: number; sequence: string; }
+export interface Mutation {
+  position: number;
+  from: string;
+  to: string;
+  ddG?: number;
+}
+export interface FitnessPoint {
+  mutationCount: number;
+  fitness: number;
+  sequence: string;
+}
 
 // ── MODULE: GECAIR ────────────────────────────────────────────────────────────
-export type GeneticPartType = 'promoter' | 'rbs' | 'cds' | 'terminator';
-export interface GeneticPart { id: string; type: GeneticPartType; strength?: number; label?: string; }
-export interface CircuitNode { id: string; parts: GeneticPart[]; outputLevel?: number; }
+export type GeneticPartType = "promoter" | "rbs" | "cds" | "terminator";
+export interface GeneticPart {
+  id: string;
+  type: GeneticPartType;
+  strength?: number;
+  label?: string;
+}
+export interface CircuitNode {
+  id: string;
+  parts: GeneticPart[];
+  outputLevel?: number;
+}
 
 // ── MODULE: DYNCON ────────────────────────────────────────────────────────────
 export interface ODEState {
@@ -228,52 +256,57 @@ export interface ODEState {
   product: number;
   dissolvedO2: number;
   // Extended state for artemisinin pathway
-  fpp?: number;            // FPP intermediate concentration (μM)
-  adsExpression?: number;  // ADS enzyme expression level (a.u.)
-  toxicity?: number;       // Toxicity index (0–1)
-  metabolicBurden?: number;// Metabolic burden penalty (0–1)
-  volume?: number;         // Working volume (L) — fed-batch expansion
+  fpp?: number; // FPP intermediate concentration (μM)
+  adsExpression?: number; // ADS enzyme expression level (a.u.)
+  toxicity?: number; // Toxicity index (0–1)
+  metabolicBurden?: number; // Metabolic burden penalty (0–1)
+  volume?: number; // Working volume (L) — fed-batch expansion
 }
 
-export interface ControllerParams { kp: number; ki: number; kd: number; setpoint: number; }
+export interface ControllerParams {
+  kp: number;
+  ki: number;
+  kd: number;
+  setpoint: number;
+}
 
 export interface HillParams {
-  Vmax: number;  // Maximum expression rate
-  Kd: number;    // Dissociation constant (μM)
-  n: number;     // Hill coefficient (cooperativity)
+  Vmax: number; // Maximum expression rate
+  Kd: number; // Dissociation constant (μM)
+  n: number; // Hill coefficient (cooperativity)
 }
 
 export interface ConvergenceMetrics {
-  settlingTime: number;        // Time to reach ±5% of setpoint (h)
-  overshoot: number;           // Maximum overshoot (%)
-  steadyStateError: number;    // Final offset from setpoint
-  convergenceRate: number;     // Exponential decay rate (h⁻¹)
-  oscillationCount: number;    // Number of zero-crossings
+  settlingTime: number; // Time to reach ±5% of setpoint (h)
+  overshoot: number; // Maximum overshoot (%)
+  steadyStateError: number; // Final offset from setpoint
+  convergenceRate: number; // Exponential decay rate (h⁻¹)
+  oscillationCount: number; // Number of zero-crossings
   isStable: boolean;
 }
 
 export interface RBSMapping {
-  controlGain: number;          // Normalized gain (0–1)
-  rbsName: string;              // Registry part name
-  rbsStrength: number;          // Relative translation initiation rate
-  translationRate: number;      // au/min
-  sequence: string;             // DNA sequence (5'→3')
-  registryId: string;           // iGEM Registry ID
+  controlGain: number; // Normalized gain (0–1)
+  rbsName: string; // Registry part name
+  rbsStrength: number; // Relative translation initiation rate
+  translationRate: number; // au/min
+  sequence: string; // DNA sequence (5'→3')
+  registryId: string; // iGEM Registry ID
 }
 
 export interface MetabolicBurdenResult {
-  burdenIndex: number;          // 0–1 composite score
-  proteinCost: number;          // Fraction of ribosome budget consumed
-  atpDrain: number;             // mmol ATP/gDW/h diverted
-  growthPenalty: number;        // Fractional growth rate reduction
-  isViable: boolean;            // Host cell viability prediction
+  burdenIndex: number; // 0–1 composite score
+  proteinCost: number; // Fraction of ribosome budget consumed
+  atpDrain: number; // mmol ATP/gDW/h diverted
+  growthPenalty: number; // Fractional growth rate reduction
+  isViable: boolean; // Host cell viability prediction
   recommendation: string;
 }
 
 // ── MODULE: DBTLflow ──────────────────────────────────────────────────────────
 export interface DBTLIteration {
   id: number;
-  phase: 'Design' | 'Build' | 'Test' | 'Learn';
+  phase: "Design" | "Build" | "Test" | "Learn";
   hypothesis: string;
   result: number;
   unit: string;
@@ -281,12 +314,12 @@ export interface DBTLIteration {
   notes?: string;
   // Automation extensions
   protocol?: GeneratedProtocol;
-  qcStatus?: 'valid' | 'sensor_anomaly' | 'unchecked';
+  qcStatus?: "valid" | "sensor_anomaly" | "unchecked";
   theoreticalMax?: number;
 }
 
 // ── DBTL Automation Suite ─────────────────────────────────────────────────────
-export type DBTLPhase = 'Design' | 'Build' | 'Test' | 'Learn';
+export type DBTLPhase = "Design" | "Build" | "Test" | "Learn";
 
 export interface LabwareSlot {
   slot: number;
@@ -295,7 +328,7 @@ export interface LabwareSlot {
 }
 
 export interface PipettingStep {
-  action: 'aspirate' | 'dispense' | 'mix' | 'transfer';
+  action: "aspirate" | "dispense" | "mix" | "transfer";
   pipette: string;
   volume_ul: number;
   source: string;
@@ -316,7 +349,7 @@ export interface GeneratedProtocol {
   api_version: string;
   metadata: { protocolName: string; author: string; description: string };
   labware: LabwareSlot[];
-  pipettes: { mount: 'left' | 'right'; pipette: string }[];
+  pipettes: { mount: "left" | "right"; pipette: string }[];
   pipetting_logic: PipettingStep[];
   incubation_steps: IncubationStep[];
   python_code: string;
@@ -360,7 +393,7 @@ export interface FeedbackLoopResult {
 
 export interface QCFlag {
   sample_id: string;
-  flag_type: 'sensor_anomaly' | 'outlier' | 'below_detection';
+  flag_type: "sensor_anomaly" | "outlier" | "below_detection";
   measured_value: number;
   theoretical_max: number;
   message: string;
@@ -377,14 +410,14 @@ export interface OmicsRow {
   pValue?: number;
 }
 
-export type OmicsLayer = 'transcriptomics' | 'proteomics' | 'metabolomics';
+export type OmicsLayer = "transcriptomics" | "proteomics" | "metabolomics";
 
 export interface EmbeddingPoint {
   id: string;
   gene: string;
   layer: OmicsLayer;
   coords: [number, number, number]; // 3D projection coordinates (method varies by engine)
-  normalizedValue: number;          // z-score normalized
+  normalizedValue: number; // z-score normalized
   rawValue: number;
 }
 
@@ -409,7 +442,7 @@ export interface PerturbationResult {
   perturbed_expression: number;
   reasoning_chain: ReasoningStep[];
   predicted_yield_change_percent: number;
-  metabolite_shifts: { metabolite: string; delta: number; direction: 'up' | 'down' }[];
+  metabolite_shifts: { metabolite: string; delta: number; direction: "up" | "down" }[];
   confidence: number;
 }
 
@@ -427,8 +460,19 @@ export interface InternalThought {
 }
 
 // ── MODULE: CETHX ─────────────────────────────────────────────────────────────
-export interface ThermoStep { step: string; deltaG: number; cumulative: number; atpYield: number; nadhYield?: number; }
-export interface ThermoState { atp_yield: number; nadh_yield: number; entropy_production: number; gibbs_free_energy: number; }
+export interface ThermoStep {
+  step: string;
+  deltaG: number;
+  cumulative: number;
+  atpYield: number;
+  nadhYield?: number;
+}
+export interface ThermoState {
+  atp_yield: number;
+  nadh_yield: number;
+  entropy_production: number;
+  gibbs_free_energy: number;
+}
 
 // ── MODULE: GENMIM ────────────────────────────────────────────────────────────
 export interface CRISPRiTarget {
@@ -442,8 +486,12 @@ export interface CRISPRiTarget {
 }
 
 // ── MODULE: NEXAI ─────────────────────────────────────────────────────────────
-export interface AIQuery { id: string; text: string; timestamp: number; }
-export type CitationVerificationStatus = 'pending' | 'verified' | 'unverified' | 'not_found';
+export interface AIQuery {
+  id: string;
+  text: string;
+  timestamp: number;
+}
+export type CitationVerificationStatus = "pending" | "verified" | "unverified" | "not_found";
 
 export interface CitationNode {
   id: string;
@@ -494,7 +542,7 @@ export interface AxonInteraction {
   step: string;
   question: string;
   options: string[];
-  disclosure_phase?: 'socratic' | 'revealed';
+  disclosure_phase?: "socratic" | "revealed";
 }
 
 export interface AxonEnrichedResponse {
@@ -507,19 +555,19 @@ export interface AxonEnrichedResponse {
 
 // ── MODULE: SBOL 3.0 & Assembly ────────────────────────────────────────────────
 export type SBOLRole =
-  | 'SO:0000167'  // Promoter
-  | 'SO:0000139'  // RBS
-  | 'SO:0000316'  // CDS
-  | 'SO:0000141'  // Terminator
-  | 'SO:0000110'  // Sequence feature (generic)
-  | 'SO:0000296'  // Origin of replication
-  | 'SO:0000057'; // Operator
+  | "SO:0000167" // Promoter
+  | "SO:0000139" // RBS
+  | "SO:0000316" // CDS
+  | "SO:0000141" // Terminator
+  | "SO:0000110" // Sequence feature (generic)
+  | "SO:0000296" // Origin of replication
+  | "SO:0000057"; // Operator
 
 export interface SBOLComponent {
   displayId: string;
   name: string;
   role: SBOLRole;
-  sequence?: string;           // DNA sequence (5'→3')
+  sequence?: string; // DNA sequence (5'→3')
   description?: string;
   namespace: string;
 }
@@ -538,10 +586,11 @@ export interface SBOLDocument {
 
 export interface SBOLInteraction {
   displayId: string;
-  type: 'SBO:0000170'  // Stimulation
-      | 'SBO:0000169'  // Inhibition
-      | 'SBO:0000176'  // Biochemical reaction
-      | 'SBO:0000589'; // Genetic production
+  type:
+    | "SBO:0000170" // Stimulation
+    | "SBO:0000169" // Inhibition
+    | "SBO:0000176" // Biochemical reaction
+    | "SBO:0000589"; // Genetic production
   participantIds: string[];
 }
 
@@ -550,23 +599,23 @@ export interface GibsonFragment {
   index: number;
   sequence: string;
   length: number;
-  overlapFwd: string;          // 5' overlap region
-  overlapRev: string;          // 3' overlap region
-  gcContent: number;           // fraction
+  overlapFwd: string; // 5' overlap region
+  overlapRev: string; // 3' overlap region
+  gcContent: number; // fraction
 }
 
 export interface GibsonPrimer {
   id: string;
   fragmentIndex: number;
-  direction: 'forward' | 'reverse';
-  sequence: string;            // Full primer including overlap
-  bindingRegion: string;       // Region that anneals to template
-  overlapRegion: string;       // Gibson overlap region
+  direction: "forward" | "reverse";
+  sequence: string; // Full primer including overlap
+  bindingRegion: string; // Region that anneals to template
+  overlapRegion: string; // Gibson overlap region
   length: number;
-  tm: number;                  // Melting temperature (°C), SantaLucia '98
+  tm: number; // Melting temperature (°C), SantaLucia '98
   gcContent: number;
-  hasSelfDimer: boolean;       // Secondary structure warning
-  hasMisprime: boolean;        // Mispriming risk
+  hasSelfDimer: boolean; // Secondary structure warning
+  hasMisprime: boolean; // Mispriming risk
 }
 
 export interface GibsonAssemblyPlan {
@@ -576,22 +625,22 @@ export interface GibsonAssemblyPlan {
   primers: GibsonPrimer[];
   overlapLength: number;
   expectedTmRange: [number, number]; // [min, max] across all primers
-  tmSpread: number;            // max - min Tm (should be < 5°C)
+  tmSpread: number; // max - min Tm (should be < 5°C)
   warnings: string[];
-  provenanceId: string;        // UUID linking digital→physical
+  provenanceId: string; // UUID linking digital→physical
 }
 
 export interface ProvenanceRecord {
-  uuid: string;                // Unique tube/sample barcode
-  designId: string;            // Links back to GibsonAssemblyPlan or SBOL displayId
-  sampleType: 'fragment' | 'primer' | 'assembly' | 'transformant' | 'culture';
+  uuid: string; // Unique tube/sample barcode
+  designId: string; // Links back to GibsonAssemblyPlan or SBOL displayId
+  sampleType: "fragment" | "primer" | "assembly" | "transformant" | "culture";
   label: string;
-  well?: string;               // Plate well (e.g., 'A1')
-  slot?: number;               // OT-2 deck slot
+  well?: string; // Plate well (e.g., 'A1')
+  slot?: number; // OT-2 deck slot
   volume_ul?: number;
   concentration_ng_ul?: number;
   createdAt: string;
-  parentUuids?: string[];      // Provenance chain (assembly from fragments)
+  parentUuids?: string[]; // Provenance chain (assembly from fragments)
 }
 
 // ── Artemisinin showcase CIDs

@@ -15,8 +15,8 @@
  *   ALGORITHM: EC→reaction mapping + stoichiometric matrix + FBA gap-filling
  */
 
-import type { GEMInput, GEMOutput } from './types';
-import { reconstructGEM, detectGaps, findEssentialGenes } from '../../server/gemReconstructionEngine';
+import { detectGaps, findEssentialGenes, reconstructGEM } from "../../server/gemReconstructionEngine";
+import type { GEMInput, GEMOutput } from "./types";
 
 /**
  * Automate GEM reconstruction from genome annotations.
@@ -44,16 +44,16 @@ export function automateGEM(input: GEMInput): GEMOutput {
     // Add exchange reactions for orphan metabolites
     for (const orphan of gaps.orphanProducers) {
       const exchangeId = `EX_${orphan}`;
-      if (!gem.reactions.find(r => r.id === exchangeId)) {
+      if (!gem.reactions.find((r) => r.id === exchangeId)) {
         gem.reactions.push({
           id: exchangeId,
           name: `Exchange: ${orphan}`,
-          ecNumber: '',
+          ecNumber: "",
           stoichiometry: { [orphan]: -1 },
           lb: -1000,
           ub: 1000,
-          subsystem: 'Exchange',
-          gpr: '',
+          subsystem: "Exchange",
+          gpr: "",
         });
         addedReactions.push(exchangeId);
         gapReasons.push(`Added exchange for orphan producer: ${orphan}`);
@@ -62,16 +62,16 @@ export function automateGEM(input: GEMInput): GEMOutput {
 
     for (const orphan of gaps.orphanConsumers) {
       const exchangeId = `EX_${orphan}`;
-      if (!gem.reactions.find(r => r.id === exchangeId)) {
+      if (!gem.reactions.find((r) => r.id === exchangeId)) {
         gem.reactions.push({
           id: exchangeId,
           name: `Exchange: ${orphan}`,
-          ecNumber: '',
+          ecNumber: "",
           stoichiometry: { [orphan]: 1 },
           lb: -1000,
           ub: 1000,
-          subsystem: 'Exchange',
-          gpr: '',
+          subsystem: "Exchange",
+          gpr: "",
         });
         addedReactions.push(exchangeId);
         gapReasons.push(`Added exchange for orphan consumer: ${orphan}`);
@@ -82,8 +82,8 @@ export function automateGEM(input: GEMInput): GEMOutput {
   // Step 4: Essential gene analysis
   const essentialResults = findEssentialGenes(gem);
   const essentialGenes = essentialResults
-    .filter(e => e.essential)
-    .map(e => ({
+    .filter((e) => e.essential)
+    .map((e) => ({
       geneId: e.geneId,
       reason: `Essential: growth without = ${(e.growthWithout * 100).toFixed(1)}% of wild-type`,
     }));
@@ -99,7 +99,7 @@ export function automateGEM(input: GEMInput): GEMOutput {
 
   return {
     model: {
-      reactions: gem.reactions.map(r => ({
+      reactions: gem.reactions.map((r) => ({
         id: r.id,
         name: r.name,
         ecNumber: r.ecNumber,

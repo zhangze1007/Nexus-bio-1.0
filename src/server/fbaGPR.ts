@@ -23,9 +23,9 @@
  */
 
 export type GPRTreeNode =
-  | { type: 'gene'; id: string }
-  | { type: 'and'; children: GPRTreeNode[] }
-  | { type: 'or'; children: GPRTreeNode[] };
+  | { type: "gene"; id: string }
+  | { type: "and"; children: GPRTreeNode[] }
+  | { type: "or"; children: GPRTreeNode[] };
 
 export interface GPRResult {
   geneId: string;
@@ -46,42 +46,42 @@ function parseExpression(tokens: string[], ctx: { pos: number }): GPRTreeNode {
 
 function parseOr(tokens: string[], ctx: { pos: number }): GPRTreeNode {
   const children = [parseAnd(tokens, ctx)];
-  while (ctx.pos < tokens.length && tokens[ctx.pos] === 'OR') {
+  while (ctx.pos < tokens.length && tokens[ctx.pos] === "OR") {
     ctx.pos++; // skip OR
     children.push(parseAnd(tokens, ctx));
   }
-  return children.length === 1 ? children[0] : { type: 'or', children };
+  return children.length === 1 ? children[0] : { type: "or", children };
 }
 
 function parseAnd(tokens: string[], ctx: { pos: number }): GPRTreeNode {
   const children = [parseAtom(tokens, ctx)];
-  while (ctx.pos < tokens.length && tokens[ctx.pos] === 'AND') {
+  while (ctx.pos < tokens.length && tokens[ctx.pos] === "AND") {
     ctx.pos++; // skip AND
     children.push(parseAtom(tokens, ctx));
   }
-  return children.length === 1 ? children[0] : { type: 'and', children };
+  return children.length === 1 ? children[0] : { type: "and", children };
 }
 
 function parseAtom(tokens: string[], ctx: { pos: number }): GPRTreeNode {
   if (ctx.pos >= tokens.length) {
-    throw new Error('Unexpected end of GPR expression');
+    throw new Error("Unexpected end of GPR expression");
   }
-  if (tokens[ctx.pos] === '(') {
+  if (tokens[ctx.pos] === "(") {
     ctx.pos++; // skip (
     const node = parseExpression(tokens, ctx);
-    if (ctx.pos >= tokens.length || tokens[ctx.pos] !== ')') {
-      throw new Error('Missing closing parenthesis in GPR expression');
+    if (ctx.pos >= tokens.length || tokens[ctx.pos] !== ")") {
+      throw new Error("Missing closing parenthesis in GPR expression");
     }
     ctx.pos++; // skip )
     return node;
   }
   // Gene ID
   const id = tokens[ctx.pos];
-  if (id === 'AND' || id === 'OR' || id === ')') {
+  if (id === "AND" || id === "OR" || id === ")") {
     throw new Error(`Unexpected token "${id}" in GPR expression`);
   }
   ctx.pos++;
-  return { type: 'gene', id };
+  return { type: "gene", id };
 }
 
 /**
@@ -98,12 +98,12 @@ function parseAtom(tokens: string[], ctx: { pos: number }): GPRTreeNode {
 export function parseGPR(rule: string): GPRTreeNode {
   const tokens = tokenize(rule);
   if (tokens.length === 0) {
-    throw new Error('Empty GPR expression');
+    throw new Error("Empty GPR expression");
   }
   const ctx = { pos: 0 };
   const node = parseExpression(tokens, ctx);
   if (ctx.pos < tokens.length) {
-    throw new Error(`Unexpected trailing tokens in GPR expression: "${tokens.slice(ctx.pos).join(' ')}"`);
+    throw new Error(`Unexpected trailing tokens in GPR expression: "${tokens.slice(ctx.pos).join(" ")}"`);
   }
   return node;
 }
@@ -116,12 +116,12 @@ export function parseGPR(rule: string): GPRTreeNode {
  */
 export function evaluateGPR(tree: GPRTreeNode, knockedOutGenes: Set<string>): boolean {
   switch (tree.type) {
-    case 'gene':
+    case "gene":
       return !knockedOutGenes.has(tree.id);
-    case 'and':
-      return tree.children.every(child => evaluateGPR(child, knockedOutGenes));
-    case 'or':
-      return tree.children.some(child => evaluateGPR(child, knockedOutGenes));
+    case "and":
+      return tree.children.every((child) => evaluateGPR(child, knockedOutGenes));
+    case "or":
+      return tree.children.some((child) => evaluateGPR(child, knockedOutGenes));
   }
 }
 
@@ -133,24 +133,18 @@ export function evaluateGPR(tree: GPRTreeNode, knockedOutGenes: Set<string>): bo
  *
  * Reactions with no GPR rule (or an empty rule) are treated as always active.
  */
-export function getKnockoutReactions(
-  knockedOutGenes: string[],
-  gprRules: Record<string, string>,
-): string[] {
+export function getKnockoutReactions(knockedOutGenes: string[], gprRules: Record<string, string>): string[] {
   const geneSet = new Set(knockedOutGenes);
   const knockedOutReactions: string[] = [];
 
   for (const [reactionId, rule] of Object.entries(gprRules)) {
-    if (!rule || rule.trim() === '') continue;
+    if (!rule || rule.trim() === "") continue;
     try {
       const tree = parseGPR(rule);
       if (!evaluateGPR(tree, geneSet)) {
         knockedOutReactions.push(reactionId);
       }
-    } catch {
-      // Skip malformed rules
-      continue;
-    }
+    } catch {}
   }
 
   return knockedOutReactions.sort();
@@ -160,10 +154,7 @@ export function getKnockoutReactions(
  * Given a single gene knockout, return all reactions affected.
  * Returns an object with the gene ID and its affected reactions.
  */
-export function getGeneKnockoutEffect(
-  geneId: string,
-  gprRules: Record<string, string>,
-): GPRResult {
+export function getGeneKnockoutEffect(geneId: string, gprRules: Record<string, string>): GPRResult {
   return {
     geneId,
     affectedReactions: getKnockoutReactions([geneId], gprRules),
@@ -175,12 +166,11 @@ export function getGeneKnockoutEffect(
  * For each reaction, if its GPR rule evaluates to false (all paths knocked out),
  * set the reaction bounds to 0.
  */
-export function applyGeneKnockoutsToModel<T extends { reactions: Array<{ id: string; lb: number; ub: number; gpr?: string }> }>(
-  model: T,
-  knockedOutGenes: string[],
-): T {
+export function applyGeneKnockoutsToModel<
+  T extends { reactions: Array<{ id: string; lb: number; ub: number; gpr?: string }> },
+>(model: T, knockedOutGenes: string[]): T {
   const geneSet = new Set(knockedOutGenes);
-  const modifiedReactions = model.reactions.map(rxn => {
+  const modifiedReactions = model.reactions.map((rxn) => {
     if (!rxn.gpr) return rxn; // No GPR rule → can't knock out via genes
     const gprTree = parseGPR(rxn.gpr);
     const isActive = evaluateGPR(gprTree, geneSet);
@@ -198,10 +188,10 @@ export function applyGeneKnockoutsToModel<T extends { reactions: Array<{ id: str
 export function extractGeneIds(gprRules: Record<string, string>): string[] {
   const geneIds = new Set<string>();
   for (const rule of Object.values(gprRules)) {
-    if (!rule || rule.trim() === '') continue;
+    if (!rule || rule.trim() === "") continue;
     const tokens = tokenize(rule);
     for (const token of tokens) {
-      if (token !== 'AND' && token !== 'OR' && token !== '(' && token !== ')') {
+      if (token !== "AND" && token !== "OR" && token !== "(" && token !== ")") {
         geneIds.add(token);
       }
     }

@@ -1,4 +1,4 @@
-import { THEME } from '../theme';
+import { THEME } from "../theme";
 /**
  * Shared design tokens for all tool pages.
  *
@@ -10,13 +10,13 @@ import { THEME } from '../theme';
  * ToolsDirectoryPage keeps its own SURFACE_TINT / SHADOW / BTN_TEXT tokens.
  */
 export const toolTokens = {
-  panelBg:     THEME.PANEL_BG,
-  border:      THEME.PANEL_BORDER,
-  label:       THEME.LABEL,
-  value:       THEME.VALUE,
-  inputBg:     THEME.PANEL_INSET,
+  panelBg: THEME.PANEL_BG,
+  border: THEME.PANEL_BORDER,
+  label: THEME.LABEL,
+  value: THEME.VALUE,
+  inputBg: THEME.PANEL_INSET,
   inputBorder: THEME.PANEL_BORDER,
-  inputText:   THEME.VALUE,
+  inputText: THEME.VALUE,
   glass: {
     borderRadius: THEME.R_XL,
     background: THEME.PANEL_SURFACE,

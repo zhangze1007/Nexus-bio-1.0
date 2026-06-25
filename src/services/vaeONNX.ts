@@ -6,14 +6,14 @@
  *
  * ONNX Runtime is dynamically imported (~10-20 MB) to keep it out of the main client bundle.
  */
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 /* ---- lazy-loaded ONNX Runtime (~10-20 MB, code-split from main bundle) ---- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let ort: any = null;
 
 async function getOrt() {
-  if (!ort) ort = await import('onnxruntime-web');
+  if (!ort) ort = await import("onnxruntime-web");
   return ort;
 }
 
@@ -49,9 +49,9 @@ export class VAEInference {
     // Configure WASM backend
     _ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
 
-    this.session = await _ort.InferenceSession.create('/models/vae.onnx', {
-      executionProviders: ['wasm'],
-      graphOptimizationLevel: 'all',
+    this.session = await _ort.InferenceSession.create("/models/vae.onnx", {
+      executionProviders: ["wasm"],
+      graphOptimizationLevel: "all",
     });
   }
 
@@ -67,11 +67,11 @@ export class VAEInference {
    */
   async encode(input: Float32Array): Promise<EncodeResult> {
     if (!this.session) {
-      throw new Error('VAE session not initialized');
+      throw new Error("VAE session not initialized");
     }
 
     const _ort = await getOrt();
-    const inputTensor = new _ort.Tensor('float32', input, [1, input.length]);
+    const inputTensor = new _ort.Tensor("float32", input, [1, input.length]);
     const results = await this.session.run({ input: inputTensor });
 
     const mu = results.mu?.data as Float32Array;
@@ -99,11 +99,11 @@ export class VAEInference {
    */
   async decode(z: Float32Array): Promise<Float32Array> {
     if (!this.session) {
-      throw new Error('VAE session not initialized');
+      throw new Error("VAE session not initialized");
     }
 
     const _ort = await getOrt();
-    const zTensor = new _ort.Tensor('float32', z, [1, z.length]);
+    const zTensor = new _ort.Tensor("float32", z, [1, z.length]);
     const results = await this.session.run({ z: zTensor });
 
     return results.output?.data as Float32Array;

@@ -19,23 +19,23 @@
 export const AXON_LOG_LIMIT = 400;
 
 export type AxonLogPhase =
-  | 'plan-created'
-  | 'plan-warning'
-  | 'planned'
-  | 'enqueued'
-  | 'context-attached'
-  | 'started'
-  | 'adapter-invoked'
-  | 'writeback-emitted'
-  | 'completed'
-  | 'failed'
-  | 'cancelled'
-  | 'interrupted'
-  | 'retried'
-  | 'reordered'
-  | 'blocked-dependency'
-  | 'autonomy'
-  | 'info';
+  | "plan-created"
+  | "plan-warning"
+  | "planned"
+  | "enqueued"
+  | "context-attached"
+  | "started"
+  | "adapter-invoked"
+  | "writeback-emitted"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "interrupted"
+  | "retried"
+  | "reordered"
+  | "blocked-dependency"
+  | "autonomy"
+  | "info";
 
 export interface AxonLogEntry {
   id: string;
@@ -65,20 +65,18 @@ export function sanitiseLogMetadata(
   let n = 0;
   for (const [key, value] of Object.entries(metadata)) {
     if (n >= METADATA_KEY_CAP) break;
-    if (key === 'rawText' || key === 'raw' || key === 'prompt') continue;
+    if (key === "rawText" || key === "raw" || key === "prompt") continue;
     if (value === null) {
       out[key] = null;
       n += 1;
       continue;
     }
-    if (typeof value === 'string') {
-      out[key] = value.length > LONG_STRING_CUTOFF
-        ? `${value.slice(0, LONG_STRING_CUTOFF - 1)}…`
-        : value;
+    if (typeof value === "string") {
+      out[key] = value.length > LONG_STRING_CUTOFF ? `${value.slice(0, LONG_STRING_CUTOFF - 1)}…` : value;
       n += 1;
       continue;
     }
-    if (typeof value === 'number' || typeof value === 'boolean') {
+    if (typeof value === "number" || typeof value === "boolean") {
       out[key] = value;
       n += 1;
       continue;
@@ -97,7 +95,7 @@ export interface BuildLogOptions {
 }
 
 export function buildLogEntry(
-  input: Omit<AxonLogEntry, 'id' | 'timestamp'> & { timestamp?: number; id?: string },
+  input: Omit<AxonLogEntry, "id" | "timestamp"> & { timestamp?: number; id?: string },
   options: BuildLogOptions = {},
 ): AxonLogEntry {
   const now = options.now ?? Date.now;
@@ -135,22 +133,39 @@ export function appendLogEntry(
  */
 export function phaseLabel(phase: AxonLogPhase): string {
   switch (phase) {
-    case 'plan-created': return 'Plan created';
-    case 'plan-warning': return 'Plan warning';
-    case 'planned': return 'Planned';
-    case 'enqueued': return 'Enqueued';
-    case 'context-attached': return 'Context attached';
-    case 'started': return 'Started';
-    case 'adapter-invoked': return 'Adapter invoked';
-    case 'writeback-emitted': return 'Writeback';
-    case 'completed': return 'Completed';
-    case 'failed': return 'Failed';
-    case 'cancelled': return 'Cancelled';
-    case 'interrupted': return 'Interrupted';
-    case 'retried': return 'Retried';
-    case 'reordered': return 'Reordered';
-    case 'blocked-dependency': return 'Blocked by dependency';
-    case 'autonomy': return 'Autonomy';
-    case 'info': return 'Info';
+    case "plan-created":
+      return "Plan created";
+    case "plan-warning":
+      return "Plan warning";
+    case "planned":
+      return "Planned";
+    case "enqueued":
+      return "Enqueued";
+    case "context-attached":
+      return "Context attached";
+    case "started":
+      return "Started";
+    case "adapter-invoked":
+      return "Adapter invoked";
+    case "writeback-emitted":
+      return "Writeback";
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+    case "cancelled":
+      return "Cancelled";
+    case "interrupted":
+      return "Interrupted";
+    case "retried":
+      return "Retried";
+    case "reordered":
+      return "Reordered";
+    case "blocked-dependency":
+      return "Blocked by dependency";
+    case "autonomy":
+      return "Autonomy";
+    case "info":
+      return "Info";
   }
 }

@@ -20,30 +20,30 @@
 
 export interface PromoterDesign {
   sequence: string;
-  strength: number;           // relative strength (0-1)
-  consensusScore: number;     // match to consensus -10/-35 boxes
-  type: 'constitutive' | 'inducible' | 'repressible';
+  strength: number; // relative strength (0-1)
+  consensusScore: number; // match to consensus -10/-35 boxes
+  type: "constitutive" | "inducible" | "repressible";
   inducer?: string;
 }
 
 export interface RBSDesign {
   sequence: string;
-  spacerLength: number;       // nt between SD and AUG
-  sdSequence: string;         // Shine-Dalgarno sequence
-  predictedStrength: number;  // relative strength (0-1)
-  dgMRNA: number;             // mRNA folding energy (kcal/mol)
-  dgSpacing: number;          // spacing energy (kcal/mol)
-  dgStandby: number;          // standby site energy (kcal/mol)
-  dgStart: number;            // start codon energy (kcal/mol)
-  dgAntiSD: number;           // anti-SD match energy (kcal/mol)
-  dgTotal: number;            // total ΔG (kcal/mol)
+  spacerLength: number; // nt between SD and AUG
+  sdSequence: string; // Shine-Dalgarno sequence
+  predictedStrength: number; // relative strength (0-1)
+  dgMRNA: number; // mRNA folding energy (kcal/mol)
+  dgSpacing: number; // spacing energy (kcal/mol)
+  dgStandby: number; // standby site energy (kcal/mol)
+  dgStart: number; // start codon energy (kcal/mol)
+  dgAntiSD: number; // anti-SD match energy (kcal/mol)
+  dgTotal: number; // total ΔG (kcal/mol)
 }
 
 export interface TerminatorDesign {
   sequence: string;
-  efficiency: number;         // termination efficiency (0-1)
-  type: 'intrinsic' | 'rho-dependent';
-  stemLoopLength: number;     // nt
+  efficiency: number; // termination efficiency (0-1)
+  type: "intrinsic" | "rho-dependent";
+  stemLoopLength: number; // nt
 }
 
 export interface RegulatoryDesignResult {
@@ -56,8 +56,8 @@ export interface RegulatoryDesignResult {
 
 // ── Promoter Design ─────────────────────────────────────────────────────────
 
-const CONSENSUS_MINUS_35 = 'TTGACA';
-const CONSENSUS_MINUS_10 = 'TATAAT';
+const CONSENSUS_MINUS_35 = "TTGACA";
+const CONSENSUS_MINUS_10 = "TATAAT";
 const SPACER_LENGTH = 17; // optimal spacer between -35 and -10 boxes
 
 /**
@@ -107,8 +107,8 @@ export function designPromoter(targetStrength: number): PromoterDesign {
 
   const minus35 = generateConsensusBox(CONSENSUS_MINUS_35, matchRate);
   const minus10 = generateConsensusBox(CONSENSUS_MINUS_10, matchRate);
-  const spacer = 'N'.repeat(SPACER_LENGTH).replace(/N/g, () => 'ATCG'[Math.floor(Math.random() * 4)]);
-  const tail = 'AATG'; // common promoter tail
+  const spacer = "N".repeat(SPACER_LENGTH).replace(/N/g, () => "ATCG"[Math.floor(Math.random() * 4)]);
+  const tail = "AATG"; // common promoter tail
 
   const sequence = minus35 + spacer + minus10 + tail;
   const strength = scorePromoter(sequence);
@@ -117,16 +117,19 @@ export function designPromoter(targetStrength: number): PromoterDesign {
     sequence,
     strength: Math.round(strength * 100) / 100,
     consensusScore: strength,
-    type: 'constitutive',
+    type: "constitutive",
   };
 }
 
 function generateConsensusBox(consensus: string, matchRate: number): string {
-  return consensus.split('').map(base => {
-    if (Math.random() < matchRate) return base;
-    const others = 'ACGT'.replace(base, '');
-    return others[Math.floor(Math.random() * others.length)];
-  }).join('');
+  return consensus
+    .split("")
+    .map((base) => {
+      if (Math.random() < matchRate) return base;
+      const others = "ACGT".replace(base, "");
+      return others[Math.floor(Math.random() * others.length)];
+    })
+    .join("");
 }
 
 // ── RBS Design (Salis 2009) ────────────────────────────────────────────────
@@ -142,13 +145,28 @@ function generateConsensusBox(consensus: string, matchRate: number): string {
  */
 const NN_RNA_STACK: Record<string, number> = {
   // Watson-Crick pairs
-  'AA/UU': -0.9, 'AU/UA': -1.1, 'UA/AU': -1.3, 'UU/AA': -0.9,
-  'CA/GU': -1.8, 'GU/CA': -1.4, 'CU/AG': -0.9, 'AG/CU': -0.9,
-  'GA/UC': -1.1, 'UC/GA': -1.3, 'AC/UG': -1.4, 'UG/AC': -2.1,
+  "AA/UU": -0.9,
+  "AU/UA": -1.1,
+  "UA/AU": -1.3,
+  "UU/AA": -0.9,
+  "CA/GU": -1.8,
+  "GU/CA": -1.4,
+  "CU/AG": -0.9,
+  "AG/CU": -0.9,
+  "GA/UC": -1.1,
+  "UC/GA": -1.3,
+  "AC/UG": -1.4,
+  "UG/AC": -2.1,
   // Wobble pairs
-  'CG/GC': -2.4, 'GC/CG': -3.4, 'GG/CC': -1.7, 'CC/GG': -1.7,
+  "CG/GC": -2.4,
+  "GC/CG": -3.4,
+  "GG/CC": -1.7,
+  "CC/GG": -1.7,
   // GU wobble
-  'GG/UC': -1.3, 'UC/GG': -1.3, 'GU/UG': -0.5, 'UG/GU': -0.5,
+  "GG/UC": -1.3,
+  "UC/GG": -1.3,
+  "GU/UG": -0.5,
+  "UG/GU": -0.5,
 };
 
 /**
@@ -156,10 +174,22 @@ const NN_RNA_STACK: Record<string, number> = {
  * Falls back to nearest available value.
  */
 const NN_RNA_STACK_SIMPLE: Record<string, number> = {
-  'AA': -0.9, 'UU': -0.9, 'AU': -1.1, 'UA': -1.3,
-  'CA': -1.8, 'UG': -2.1, 'CU': -0.9, 'AG': -0.9,
-  'GA': -1.1, 'UC': -1.3, 'GU': -1.4, 'AC': -1.4,
-  'CG': -2.4, 'GC': -3.4, 'GG': -1.7, 'CC': -1.7,
+  AA: -0.9,
+  UU: -0.9,
+  AU: -1.1,
+  UA: -1.3,
+  CA: -1.8,
+  UG: -2.1,
+  CU: -0.9,
+  AG: -0.9,
+  GA: -1.1,
+  UC: -1.3,
+  GU: -1.4,
+  AC: -1.4,
+  CG: -2.4,
+  GC: -3.4,
+  GG: -1.7,
+  CC: -1.7,
 };
 
 /**
@@ -168,10 +198,26 @@ const NN_RNA_STACK_SIMPLE: Record<string, number> = {
  * Complete set from Turner 2009 nearest-neighbor parameters.
  */
 const HAIRPIN_LOOP_DG: Record<number, number> = {
-  3: 5.7, 4: 5.6, 5: 5.6, 6: 5.4, 7: 5.9,
-  8: 6.0, 9: 6.1, 10: 6.3, 11: 6.5, 12: 6.7,
-  13: 6.9, 14: 7.0, 15: 7.1, 16: 7.2, 17: 7.3,
-  18: 7.4, 19: 7.5, 20: 7.6, 25: 8.0, 30: 8.4,
+  3: 5.7,
+  4: 5.6,
+  5: 5.6,
+  6: 5.4,
+  7: 5.9,
+  8: 6.0,
+  9: 6.1,
+  10: 6.3,
+  11: 6.5,
+  12: 6.7,
+  13: 6.9,
+  14: 7.0,
+  15: 7.1,
+  16: 7.2,
+  17: 7.3,
+  18: 7.4,
+  19: 7.5,
+  20: 7.6,
+  25: 8.0,
+  30: 8.4,
 };
 
 /**
@@ -179,9 +225,21 @@ const HAIRPIN_LOOP_DG: Record<number, number> = {
  * Key: total loop size (nt), Value: ΔG (kcal/mol)
  */
 const INTERNAL_LOOP_DG: Record<number, number> = {
-  2: 2.0, 3: 3.0, 4: 3.5, 5: 4.0, 6: 4.4,
-  7: 4.7, 8: 5.0, 9: 5.2, 10: 5.4, 12: 5.8,
-  14: 6.1, 16: 6.4, 18: 6.6, 20: 6.8, 25: 7.2,
+  2: 2.0,
+  3: 3.0,
+  4: 3.5,
+  5: 4.0,
+  6: 4.4,
+  7: 4.7,
+  8: 5.0,
+  9: 5.2,
+  10: 5.4,
+  12: 5.8,
+  14: 6.1,
+  16: 6.4,
+  18: 6.6,
+  20: 6.8,
+  25: 7.2,
   30: 7.5,
 };
 
@@ -190,15 +248,23 @@ const INTERNAL_LOOP_DG: Record<number, number> = {
  * Key: bulge size (nt), Value: ΔG (kcal/mol)
  */
 const BULGE_LOOP_DG: Record<number, number> = {
-  1: 3.8, 2: 2.8, 3: 3.2, 4: 3.6, 5: 4.0,
-  6: 4.4, 7: 4.6, 8: 4.8, 9: 5.0, 10: 5.2,
+  1: 3.8,
+  2: 2.8,
+  3: 3.2,
+  4: 3.6,
+  5: 4.0,
+  6: 4.4,
+  7: 4.6,
+  8: 4.8,
+  9: 5.0,
+  10: 5.2,
 };
 
 /**
  * Anti-Shine-Dalgarno sequence (3' end of 16S rRNA in E. coli).
  * Reference: Salis et al. (2009) Nature Biotechnology 27:946-950
  */
-const ANTI_SD_SEQUENCE = 'AUUCCUC';
+const ANTI_SD_SEQUENCE = "AUUCCUC";
 
 /**
  * Predict RBS strength using the full Salis 2009 thermodynamic model.
@@ -217,7 +283,15 @@ const ANTI_SD_SEQUENCE = 'AUUCCUC';
 export function predictRBSStrength(
   rbsSequence: string,
   cdnSequence: string,
-): { strength: number; dgTotal: number; dgMRNA: number; dgSpacing: number; dgStandby: number; dgStart: number; dgAntiSD: number } {
+): {
+  strength: number;
+  dgTotal: number;
+  dgMRNA: number;
+  dgSpacing: number;
+  dgStandby: number;
+  dgStart: number;
+  dgAntiSD: number;
+} {
   // Term 1: ΔG_mRNA — mRNA folding energy (NN model)
   const dgMRNA = computeMRNAFoldingNN(rbsSequence);
 
@@ -226,15 +300,15 @@ export function predictRBSStrength(
   // Reference: Salis et al. (2009) Nat Biotechnol 27:946-950, Table 1
   const spacing = computeSpacingReal(rbsSequence, cdnSequence);
   const SPACING_PENALTY_TABLE: Record<number, number> = {
-    5: 0.0,    // reference (optimal spacing) — Salis 2009 Table 1
-    4: 1.5,    // +1.5 kcal/mol — Salis 2009 Table 1
-    6: 0.5,    // +0.5 kcal/mol — Salis 2009 Table 1
-    7: 1.2,    // +1.2 kcal/mol — Salis 2009 Table 1
-    8: 2.0,    // +2.0 kcal/mol — Salis 2009 Table 1
-    9: 3.0,    // +3.0 kcal/mol — Salis 2009 Table 1
+    5: 0.0, // reference (optimal spacing) — Salis 2009 Table 1
+    4: 1.5, // +1.5 kcal/mol — Salis 2009 Table 1
+    6: 0.5, // +0.5 kcal/mol — Salis 2009 Table 1
+    7: 1.2, // +1.2 kcal/mol — Salis 2009 Table 1
+    8: 2.0, // +2.0 kcal/mol — Salis 2009 Table 1
+    9: 3.0, // +3.0 kcal/mol — Salis 2009 Table 1
   };
   const clampedSpacing = Math.max(4, Math.min(9, Math.round(spacing)));
-  const dgSpacing = SPACING_PENALTY_TABLE[clampedSpacing] ?? (3.0 + (clampedSpacing - 9) * 1.0);
+  const dgSpacing = SPACING_PENALTY_TABLE[clampedSpacing] ?? 3.0 + (clampedSpacing - 9) * 1.0;
 
   // Term 3: ΔG_standby — standby site energy
   const dgStandby = computeStandbySite(rbsSequence, cdnSequence);
@@ -248,7 +322,7 @@ export function predictRBSStrength(
   const dgTotal = dgMRNA + dgSpacing + dgStandby + dgStart + dgAntiSD;
 
   // Strength: inverse of total energy (more negative = stronger binding)
-  const strength = Math.max(0, Math.min(1, (-dgTotal) / 15));
+  const strength = Math.max(0, Math.min(1, -dgTotal / 15));
 
   return {
     strength: Math.round(strength * 100) / 100,
@@ -262,11 +336,11 @@ export function predictRBSStrength(
 }
 
 function findShineDalgarno(rbs: string): string {
-  const patterns = ['AGGAGG', 'AGGAG', 'AGGA', 'AGG', 'GGAG'];
+  const patterns = ["AGGAGG", "AGGAG", "AGGA", "AGG", "GGAG"];
   for (const pattern of patterns) {
     if (rbs.includes(pattern)) return pattern;
   }
-  return 'AGG';
+  return "AGG";
 }
 
 /**
@@ -279,7 +353,7 @@ function computeSpacingReal(rbs: string, cds: string): number {
   if (sdPos < 0) return 9;
 
   const sdEnd = sdPos + sd.length;
-  const augPos = cds.toUpperCase().indexOf('ATG');
+  const augPos = cds.toUpperCase().indexOf("ATG");
 
   if (augPos < 0) return 9;
 
@@ -310,9 +384,12 @@ function computeMRNAFoldingNN(sequence: string): number {
 
   // Watson-Crick + wobble complementarity (Zuker & Stiegler 1981)
   const isComplementary = (a: string, b: string): boolean =>
-    (a === 'A' && b === 'U') || (a === 'U' && b === 'A') ||
-    (a === 'G' && b === 'C') || (a === 'C' && b === 'G') ||
-    (a === 'G' && b === 'U') || (a === 'U' && b === 'G');
+    (a === "A" && b === "U") ||
+    (a === "U" && b === "A") ||
+    (a === "G" && b === "C") ||
+    (a === "C" && b === "G") ||
+    (a === "G" && b === "U") ||
+    (a === "U" && b === "G");
 
   // Nussinov DP: maximize number of base pairs
   // dp[i][j] = max pairs in seq[i..j]
@@ -325,7 +402,10 @@ function computeMRNAFoldingNN(sequence: string): number {
     for (let i = 0; i < n - len; i++) {
       const j = i + len;
       // Minimum loop size 3 nt (Zuker & Stiegler 1981)
-      if (j - i < 4) { dp[i][j] = 0; continue; }
+      if (j - i < 4) {
+        dp[i][j] = 0;
+        continue;
+      }
 
       // Option 1: i is unpaired
       dp[i][j] = dp[i + 1][j];
@@ -416,7 +496,7 @@ function computeMRNAFoldingNN(sequence: string): number {
       const [a1, b1] = stem[k];
       const [a2, b2] = stem[k + 1];
       // NN notation: 5'→3' on one strand paired with 3'→5' on the other
-      const nnKey = seq[a1] + seq[a2] + '/' + seq[b2] + seq[b1];
+      const nnKey = seq[a1] + seq[a2] + "/" + seq[b2] + seq[b1];
       const simpleKey = seq[a1] + seq[a2];
       dg += NN_RNA_STACK[nnKey] ?? NN_RNA_STACK_SIMPLE[simpleKey] ?? -1.5;
       // -1.5 kcal/mol default: average of Turner 2009 WC stacking values
@@ -474,7 +554,7 @@ function computeMRNAFoldingNN(sequence: string): number {
   // Use weighted average based on end composition
   const firstBase = seq[0];
   const lastBase = seq[n - 1];
-  const isAUend = (firstBase === 'A' || firstBase === 'U') && (lastBase === 'A' || lastBase === 'U');
+  const isAUend = (firstBase === "A" || firstBase === "U") && (lastBase === "A" || lastBase === "U");
   dg += isAUend ? 4.09 : 0.45; // Freier et al. (1986) PNAS 83:9373-9377
 
   return dg;
@@ -496,7 +576,7 @@ function computeStandbySite(rbs: string, cds: string): number {
 
   for (let i = 0; i < upstream.length - 2; i++) {
     const motif = upstream.substring(i, i + 3);
-    if (motif.includes('AGG') || motif.includes('GAG')) {
+    if (motif.includes("AGG") || motif.includes("GAG")) {
       const localDG = computeMRNAFoldingNN(motif);
       minDG = Math.min(minDG, localDG);
     }
@@ -513,7 +593,7 @@ function computeStandbySite(rbs: string, cds: string): number {
  */
 function computeStartCodonEnergy(cds: string): number {
   const cdsUpper = cds.toUpperCase();
-  const augPos = cdsUpper.indexOf('ATG');
+  const augPos = cdsUpper.indexOf("ATG");
   if (augPos < 0) return 0;
 
   // Context: nucleotides around AUG
@@ -522,11 +602,11 @@ function computeStartCodonEnergy(cds: string): number {
 
   if (augPos >= 3) {
     const minus3 = cdsUpper[augPos - 3];
-    if (minus3 === 'A' || minus3 === 'G') dg -= 0.5; // purine at -3
+    if (minus3 === "A" || minus3 === "G") dg -= 0.5; // purine at -3
   }
   if (augPos + 4 < cdsUpper.length) {
     const plus4 = cdsUpper[augPos + 4];
-    if (plus4 === 'G') dg -= 0.3; // G at +4
+    if (plus4 === "G") dg -= 0.3; // G at +4
   }
 
   return dg;
@@ -545,7 +625,7 @@ function computeAntiSDEnergy(rbs: string): number {
   // Count complementary bases between SD and anti-SD
   // SD: 5'-AGGAGG-3' pairs with anti-SD: 3'-AUUCCUC-5'
   let matches = 0;
-  const complement: Record<string, string> = { 'A': 'U', 'U': 'A', 'G': 'C', 'C': 'G' };
+  const complement: Record<string, string> = { A: "U", U: "A", G: "C", C: "G" };
 
   for (let i = 0; i < Math.min(sd.length, ANTI_SD_SEQUENCE.length); i++) {
     if (complement[sd[i]] === ANTI_SD_SEQUENCE[ANTI_SD_SEQUENCE.length - 1 - i]) {
@@ -573,15 +653,18 @@ export function designTerminator(targetEfficiency: number): TerminatorDesign {
   const stemLength = Math.round(6 + targetEfficiency * 4);
 
   // Generate GC-rich stem sequence (palindromic)
-  const stemBases = 'GCGC'.repeat(Math.ceil(stemLength / 4)).substring(0, stemLength);
-  const stemComplement = stemBases.split('').map(b => ({ G: 'C', C: 'G', A: 'T', T: 'A' }[b] ?? 'N')).join('');
+  const stemBases = "GCGC".repeat(Math.ceil(stemLength / 4)).substring(0, stemLength);
+  const stemComplement = stemBases
+    .split("")
+    .map((b) => ({ G: "C", C: "G", A: "T", T: "A" })[b] ?? "N")
+    .join("");
 
   // Loop: typically 4-5 nt (tetra-loop is most stable)
-  const loop = 'GAAA'; // stable tetra-loop
+  const loop = "GAAA"; // stable tetra-loop
 
   // T-tract: 6-8 T's (longer = more efficient)
   const tTractLength = Math.round(6 + targetEfficiency * 2);
-  const tTract = 'T'.repeat(tTractLength);
+  const tTract = "T".repeat(tTractLength);
 
   const sequence = stemBases + loop + stemComplement + tTract;
 
@@ -603,7 +686,7 @@ export function designTerminator(targetEfficiency: number): TerminatorDesign {
   return {
     sequence,
     efficiency: Math.round(efficiency * 100) / 100,
-    type: 'intrinsic',
+    type: "intrinsic",
     stemLoopLength: stemLength,
   };
 }
@@ -616,7 +699,7 @@ function computeStemDG(stem5: string, stem3: string): number {
   for (let i = 0; i < stem5.length - 1; i++) {
     const pair5 = stem5.substring(i, i + 2);
     const pair3 = stem3.substring(stem3.length - 2 - i, stem3.length - i);
-    const key = pair5 + pair3.split('').reverse().join('');
+    const key = pair5 + pair3.split("").reverse().join("");
     dg += NN_RNA_STACK[pair5] || -1.5; // default stacking
   }
   return dg;
@@ -627,23 +710,28 @@ function computeStemDG(stem5: string, stem3: string): number {
 /**
  * Design a complete regulatory cassette (promoter + RBS + terminator).
  */
-export function designRegulatoryCassette(
-  targetStrength: number,
-  codingSequence?: string,
-): RegulatoryDesignResult {
+export function designRegulatoryCassette(targetStrength: number, codingSequence?: string): RegulatoryDesignResult {
   const promoter = designPromoter(targetStrength);
   const terminator = designTerminator(targetStrength);
 
   // Generate default RBS
-  const defaultRBS = 'AAGAAGGAGATATACAT';
+  const defaultRBS = "AAGAAGGAGATATACAT";
   const rbsStrength = codingSequence
     ? predictRBSStrength(defaultRBS, codingSequence)
-    : { strength: targetStrength * 0.8, dgTotal: -10, dgMRNA: -5, dgSpacing: -5, dgStandby: -2, dgStart: -1.5, dgAntiSD: -4.5 };
+    : {
+        strength: targetStrength * 0.8,
+        dgTotal: -10,
+        dgMRNA: -5,
+        dgSpacing: -5,
+        dgStandby: -2,
+        dgStart: -1.5,
+        dgAntiSD: -4.5,
+      };
 
   const rbs: RBSDesign = {
     sequence: defaultRBS,
     spacerLength: 6,
-    sdSequence: 'AGGAGG',
+    sdSequence: "AGGAGG",
     predictedStrength: rbsStrength.strength,
     dgMRNA: rbsStrength.dgMRNA,
     dgSpacing: rbsStrength.dgSpacing,
@@ -675,28 +763,140 @@ export function designRegulatoryCassette(
  * Key: codon, Value: number of tRNA genes.
  */
 const ECOLI_TRNA_COPY_NUMBERS: Record<string, number> = {
-  'UUU': 1, 'UUC': 2, 'UUA': 1, 'UUG': 1, 'CUU': 1, 'CUC': 2, 'CUA': 1, 'CUG': 6,
-  'AUU': 3, 'AUC': 2, 'AUA': 1, 'AUG': 1, 'GUU': 4, 'GUC': 2, 'GUA': 2, 'GUG': 2,
-  'UCU': 4, 'UCC': 2, 'UCA': 1, 'UCG': 1, 'CCU': 1, 'CCC': 1, 'CCA': 1, 'CCG': 2,
-  'ACU': 4, 'ACC': 2, 'ACA': 1, 'ACG': 1, 'GCU': 4, 'GCC': 2, 'GCA': 1, 'GCG': 3,
-  'UAU': 2, 'UAC': 2, 'UAA': 0, 'UAG': 0, 'CAU': 2, 'CAC': 2, 'CAA': 2, 'CAG': 2,
-  'AAU': 2, 'AAC': 2, 'AAA': 6, 'AAG': 2, 'GAU': 2, 'GAC': 2, 'GAA': 6, 'GAG': 2,
-  'UGU': 1, 'UGC': 1, 'UGA': 0, 'UGG': 1, 'CGU': 4, 'CGC': 2, 'CGA': 1, 'CGG': 1,
-  'AGU': 1, 'AGC': 2, 'AGA': 1, 'AGG': 0, 'GGU': 4, 'GGC': 2, 'GGA': 1, 'GGG': 1,
+  UUU: 1,
+  UUC: 2,
+  UUA: 1,
+  UUG: 1,
+  CUU: 1,
+  CUC: 2,
+  CUA: 1,
+  CUG: 6,
+  AUU: 3,
+  AUC: 2,
+  AUA: 1,
+  AUG: 1,
+  GUU: 4,
+  GUC: 2,
+  GUA: 2,
+  GUG: 2,
+  UCU: 4,
+  UCC: 2,
+  UCA: 1,
+  UCG: 1,
+  CCU: 1,
+  CCC: 1,
+  CCA: 1,
+  CCG: 2,
+  ACU: 4,
+  ACC: 2,
+  ACA: 1,
+  ACG: 1,
+  GCU: 4,
+  GCC: 2,
+  GCA: 1,
+  GCG: 3,
+  UAU: 2,
+  UAC: 2,
+  UAA: 0,
+  UAG: 0,
+  CAU: 2,
+  CAC: 2,
+  CAA: 2,
+  CAG: 2,
+  AAU: 2,
+  AAC: 2,
+  AAA: 6,
+  AAG: 2,
+  GAU: 2,
+  GAC: 2,
+  GAA: 6,
+  GAG: 2,
+  UGU: 1,
+  UGC: 1,
+  UGA: 0,
+  UGG: 1,
+  CGU: 4,
+  CGC: 2,
+  CGA: 1,
+  CGG: 1,
+  AGU: 1,
+  AGC: 2,
+  AGA: 1,
+  AGG: 0,
+  GGU: 4,
+  GGC: 2,
+  GGA: 1,
+  GGG: 1,
 };
 
 /**
  * Standard genetic code: codon → amino acid.
  */
 const CODON_TABLE: Record<string, string> = {
-  'UUU': 'F', 'UUC': 'F', 'UUA': 'L', 'UUG': 'L', 'CUU': 'L', 'CUC': 'L', 'CUA': 'L', 'CUG': 'L',
-  'AUU': 'I', 'AUC': 'I', 'AUA': 'I', 'AUG': 'M', 'GUU': 'V', 'GUC': 'V', 'GUA': 'V', 'GUG': 'V',
-  'UCU': 'S', 'UCC': 'S', 'UCA': 'S', 'UCG': 'S', 'CCU': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
-  'ACU': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T', 'GCU': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
-  'UAU': 'Y', 'UAC': 'Y', 'UAA': '*', 'UAG': '*', 'CAU': 'H', 'CAC': 'H', 'CAA': 'Q', 'CAG': 'Q',
-  'AAU': 'N', 'AAC': 'N', 'AAA': 'K', 'AAG': 'K', 'GAU': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
-  'UGU': 'C', 'UGC': 'C', 'UGA': '*', 'UGG': 'W', 'CGU': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R',
-  'AGU': 'S', 'AGC': 'S', 'AGA': 'R', 'AGG': 'R', 'GGU': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G',
+  UUU: "F",
+  UUC: "F",
+  UUA: "L",
+  UUG: "L",
+  CUU: "L",
+  CUC: "L",
+  CUA: "L",
+  CUG: "L",
+  AUU: "I",
+  AUC: "I",
+  AUA: "I",
+  AUG: "M",
+  GUU: "V",
+  GUC: "V",
+  GUA: "V",
+  GUG: "V",
+  UCU: "S",
+  UCC: "S",
+  UCA: "S",
+  UCG: "S",
+  CCU: "P",
+  CCC: "P",
+  CCA: "P",
+  CCG: "P",
+  ACU: "T",
+  ACC: "T",
+  ACA: "T",
+  ACG: "T",
+  GCU: "A",
+  GCC: "A",
+  GCA: "A",
+  GCG: "A",
+  UAU: "Y",
+  UAC: "Y",
+  UAA: "*",
+  UAG: "*",
+  CAU: "H",
+  CAC: "H",
+  CAA: "Q",
+  CAG: "Q",
+  AAU: "N",
+  AAC: "N",
+  AAA: "K",
+  AAG: "K",
+  GAU: "D",
+  GAC: "D",
+  GAA: "E",
+  GAG: "E",
+  UGU: "C",
+  UGC: "C",
+  UGA: "*",
+  UGG: "W",
+  CGU: "R",
+  CGC: "R",
+  CGA: "R",
+  CGG: "R",
+  AGU: "S",
+  AGC: "S",
+  AGA: "R",
+  AGG: "R",
+  GGU: "G",
+  GGC: "G",
+  GGA: "G",
+  GGG: "G",
 };
 
 /**
@@ -709,7 +909,7 @@ const CODON_TABLE: Record<string, string> = {
  *
  * Reference: dos Reis et al. (2004) J Mol Evol 58:523-533
  */
-export function optimizeCodons(proteinSeq: string, organism: 'ecoli' | 'yeast' | 'human' = 'ecoli'): string {
+export function optimizeCodons(proteinSeq: string, organism: "ecoli" | "yeast" | "human" = "ecoli"): string {
   // Select tRNA copy number table for target organism
   // Reference: dos Reis et al. (2004) J Mol Evol 58:523-533
   // For yeast/human, use E. coli as approximation (codon usage trends are similar)
@@ -719,16 +919,16 @@ export function optimizeCodons(proteinSeq: string, organism: 'ecoli' | 'yeast' |
   // Build reverse table: amino acid → codons
   const aaToCodons: Record<string, string[]> = {};
   for (const [codon, aa] of Object.entries(CODON_TABLE)) {
-    if (aa === '*') continue;
+    if (aa === "*") continue;
     if (!aaToCodons[aa]) aaToCodons[aa] = [];
     aaToCodons[aa].push(codon);
   }
 
-  let optimized = '';
+  let optimized = "";
   for (const aa of proteinSeq.toUpperCase()) {
     const codons = aaToCodons[aa];
     if (!codons || codons.length === 0) {
-      optimized += 'NNN';
+      optimized += "NNN";
       continue;
     }
 
@@ -744,7 +944,7 @@ export function optimizeCodons(proteinSeq: string, organism: 'ecoli' | 'yeast' |
       // G-U wobble: 0.8 efficiency
       // I-C: 0.8, I-A: 0.8, I-U: 0.5
       const thirdBase = codon[2];
-      const wobblePenalty = (thirdBase === 'G' || thirdBase === 'U') ? 0.8 : 1.0;
+      const wobblePenalty = thirdBase === "G" || thirdBase === "U" ? 0.8 : 1.0;
       const tai = copyNumber * wobblePenalty;
 
       if (tai > bestTAI) {
@@ -777,12 +977,14 @@ export function computeCAI(codingSeq: string): number {
   for (let i = 0; i < seq.length - 2; i += 3) {
     const codon = seq.substring(i, i + 3);
     const aa = CODON_TABLE[codon];
-    if (!aa || aa === '*') continue;
+    if (!aa || aa === "*") continue;
 
     const copyNumber = tRNA[codon] || 1;
-    const maxCopyNumber = Math.max(...Object.entries(CODON_TABLE)
-      .filter(([_, a]) => a === aa)
-      .map(([c]) => tRNA[c] || 1));
+    const maxCopyNumber = Math.max(
+      ...Object.entries(CODON_TABLE)
+        .filter(([_, a]) => a === aa)
+        .map(([c]) => tRNA[c] || 1),
+    );
 
     if (maxCopyNumber > 0) {
       logSum += Math.log(copyNumber / maxCopyNumber);

@@ -1,17 +1,17 @@
-import { GOLDEN_PATH_TOOL_IDS, type ToolId } from '../../domain/workflowContract';
-import { tryGetToolContract } from '../../services/workflowRegistry';
-import type { WorkbenchRunArtifact, WorkbenchWorkflowControlSnapshot } from '../../store/workbenchTypes';
-import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
+import { GOLDEN_PATH_TOOL_IDS, type ToolId } from "../../domain/workflowContract";
+import { tryGetToolContract } from "../../services/workflowRegistry";
+import type { WorkbenchRunArtifact, WorkbenchWorkflowControlSnapshot } from "../../store/workbenchTypes";
+import { TOOL_BY_ID } from "../tools/shared/toolRegistry";
 
 export type WorkflowExperienceStatus =
-  | 'pending'
-  | 'ready'
-  | 'current'
-  | 'complete'
-  | 'blocked'
-  | 'demoOnly'
-  | 'humanGate'
-  | 'next';
+  | "pending"
+  | "ready"
+  | "current"
+  | "complete"
+  | "blocked"
+  | "demoOnly"
+  | "humanGate"
+  | "next";
 
 export interface WorkflowDashboardItem {
   id: string;
@@ -35,11 +35,11 @@ export interface WorkflowHandoffSummary {
   nextHref: string | null;
   nextArtifactPath: string | null;
   nextArtifactPresent: boolean;
-  availability: 'available' | 'blocked' | 'demoOnly' | 'humanGate' | 'pending';
+  availability: "available" | "blocked" | "demoOnly" | "humanGate" | "pending";
   reason: string;
 }
 
-const COMPLETED_BY_MACHINE_STATE: Record<WorkbenchWorkflowControlSnapshot['machineState'], number> = {
+const COMPLETED_BY_MACHINE_STATE: Record<WorkbenchWorkflowControlSnapshot["machineState"], number> = {
   idle: 0,
   targetSet: 0,
   pathdReady: 1,
@@ -55,19 +55,19 @@ function latestRunFor(toolId: string, runArtifacts: WorkbenchRunArtifact[]) {
 }
 
 function statusFromRun(run: WorkbenchRunArtifact | null) {
-  return run?.status ?? (run ? 'ok' : 'missing');
+  return run?.status ?? (run ? "ok" : "missing");
 }
 
-function gateStatus(status: WorkbenchWorkflowControlSnapshot['status']): WorkflowExperienceStatus {
-  if (status === 'blocked') return 'blocked';
-  if (status === 'gated') return 'humanGate';
-  if (status === 'demoOnly') return 'demoOnly';
-  return 'current';
+function gateStatus(status: WorkbenchWorkflowControlSnapshot["status"]): WorkflowExperienceStatus {
+  if (status === "blocked") return "blocked";
+  if (status === "gated") return "humanGate";
+  if (status === "demoOnly") return "demoOnly";
+  return "current";
 }
 
 export function workflowStatusLabel(status: string): string {
-  if (status === 'demoOnly') return 'DemoOnly';
-  if (status === 'humanGate' || status === 'gated') return 'HumanGate';
+  if (status === "demoOnly") return "DemoOnly";
+  if (status === "humanGate" || status === "gated") return "HumanGate";
   return status;
 }
 
@@ -78,24 +78,24 @@ export function buildWorkflowDashboardItems(
   const completedCount = COMPLETED_BY_MACHINE_STATE[workflow.machineState] ?? 0;
   const items: WorkflowDashboardItem[] = [
     {
-      id: 'target',
-      label: 'Target Input',
-      href: '/analyze',
-      status: workflow.machineState === 'idle' ? 'current' : 'complete',
-      detail: workflow.machineState === 'idle' ? 'Set a target product to start PATHD.' : 'Target product is set.',
+      id: "target",
+      label: "Target Input",
+      href: "/analyze",
+      status: workflow.machineState === "idle" ? "current" : "complete",
+      detail: workflow.machineState === "idle" ? "Set a target product to start PATHD." : "Target product is set.",
     },
   ];
 
   GOLDEN_PATH_TOOL_IDS.forEach((toolId, index) => {
     const tool = TOOL_BY_ID[toolId];
     const run = latestRunFor(toolId, runArtifacts);
-    let status: WorkflowExperienceStatus = 'pending';
-    if (index < completedCount) status = 'complete';
+    let status: WorkflowExperienceStatus = "pending";
+    if (index < completedCount) status = "complete";
     if (workflow.currentToolId === toolId) status = gateStatus(workflow.status);
-    if (workflow.nextRecommendedNode === toolId && status === 'pending') status = 'next';
-    if (run?.status === 'demoOnly') status = 'demoOnly';
-    if (run?.status === 'blocked') status = 'blocked';
-    if (run?.status === 'gated') status = 'humanGate';
+    if (workflow.nextRecommendedNode === toolId && status === "pending") status = "next";
+    if (run?.status === "demoOnly") status = "demoOnly";
+    if (run?.status === "blocked") status = "blocked";
+    if (run?.status === "gated") status = "humanGate";
 
     items.push({
       id: toolId,
@@ -103,21 +103,22 @@ export function buildWorkflowDashboardItems(
       href: tool?.href,
       status,
       detail: run
-        ? `${workflowStatusLabel(run.status ?? 'ready')} · ${run.summary}`
+        ? `${workflowStatusLabel(run.status ?? "ready")} · ${run.summary}`
         : workflow.nextRecommendedNode === toolId
           ? workflow.explanation
-          : 'No artifact published yet.',
+          : "No artifact published yet.",
     });
   });
 
   items.push({
-    id: 'nexai',
-    label: 'NEXAI',
+    id: "nexai",
+    label: "NEXAI",
     href: TOOL_BY_ID.nexai?.href,
-    status: workflow.nextRecommendedNode === 'nexai' ? 'next' : 'pending',
-    detail: workflow.machineState === 'dbtlCommitted'
-      ? 'Ready to explain the next DBTL cycle recommendation.'
-      : 'Supervisor context updates as workflow evidence accumulates.',
+    status: workflow.nextRecommendedNode === "nexai" ? "next" : "pending",
+    detail:
+      workflow.machineState === "dbtlCommitted"
+        ? "Ready to explain the next DBTL cycle recommendation."
+        : "Supervisor context updates as workflow evidence accumulates.",
   });
 
   return items;
@@ -129,7 +130,7 @@ export function buildWorkflowHandoffSummary(
   runArtifacts: WorkbenchRunArtifact[],
 ): WorkflowHandoffSummary | null {
   const contract = tryGetToolContract(toolId);
-  if (!contract || contract.contractScope === 'alias') return null;
+  if (!contract || contract.contractScope === "alias") return null;
 
   const upstreamRows = contract.requiredInputs
     .filter((ref) => ref.required)
@@ -139,14 +140,15 @@ export function buildWorkflowHandoffSummary(
         toolId: ref.toolId,
         artifactPath: ref.payloadPath,
         rationale: ref.rationale,
-        present: statusFromRun(run) === 'ok',
+        present: statusFromRun(run) === "ok",
         status: statusFromRun(run),
       };
     });
 
   const nextToolId = workflow.nextRecommendedNode;
   const nextContract = nextToolId ? tryGetToolContract(nextToolId) : undefined;
-  const nextRequirement = nextContract?.requiredInputs.find((ref) => ref.toolId === contract.toolId && ref.required) ?? null;
+  const nextRequirement =
+    nextContract?.requiredInputs.find((ref) => ref.toolId === contract.toolId && ref.required) ?? null;
   const currentRun = latestRunFor(toolId, runArtifacts);
   const currentRunStatus = statusFromRun(currentRun);
   const blockedUpstream = upstreamRows.find((row) => !row.present);
@@ -155,24 +157,23 @@ export function buildWorkflowHandoffSummary(
     workflow.nextRecommendedNode === contract.toolId ||
     workflow.latestRunToolId === contract.toolId;
 
-  const availability: WorkflowHandoffSummary['availability'] =
-    blockedUpstream || currentRunStatus === 'blocked'
-      ? 'blocked'
-      : currentRunStatus === 'demoOnly' || currentRunStatus === 'simulated'
-        ? 'demoOnly'
-        : currentRunStatus === 'gated' || (blocksCurrentWorkflow && workflow.humanGateRequired)
-          ? 'humanGate'
-          : currentRunStatus === 'ok'
-            ? 'available'
-            : 'pending';
+  const availability: WorkflowHandoffSummary["availability"] =
+    blockedUpstream || currentRunStatus === "blocked"
+      ? "blocked"
+      : currentRunStatus === "demoOnly" || currentRunStatus === "simulated"
+        ? "demoOnly"
+        : currentRunStatus === "gated" || (blocksCurrentWorkflow && workflow.humanGateRequired)
+          ? "humanGate"
+          : currentRunStatus === "ok"
+            ? "available"
+            : "pending";
 
   const nextTool = nextToolId ? TOOL_BY_ID[nextToolId] : null;
-  const reason =
-    blockedUpstream
-      ? `${contract.toolId.toUpperCase()} needs ${blockedUpstream.toolId.toUpperCase()} ${blockedUpstream.artifactPath} before this step can advance.`
-      : nextRequirement
-        ? `${nextTool?.shortLabel ?? nextToolId?.toUpperCase()} consumes ${nextRequirement.payloadPath}: ${nextRequirement.rationale}`
-        : workflow.explanation;
+  const reason = blockedUpstream
+    ? `${contract.toolId.toUpperCase()} needs ${blockedUpstream.toolId.toUpperCase()} ${blockedUpstream.artifactPath} before this step can advance.`
+    : nextRequirement
+      ? `${nextTool?.shortLabel ?? nextToolId?.toUpperCase()} consumes ${nextRequirement.payloadPath}: ${nextRequirement.rationale}`
+      : workflow.explanation;
 
   return {
     toolId,
@@ -181,7 +182,7 @@ export function buildWorkflowHandoffSummary(
     nextToolName: nextTool?.name ?? null,
     nextHref: nextTool?.href ?? null,
     nextArtifactPath: nextRequirement?.payloadPath ?? contract.outputArtifacts[0]?.payloadPath ?? null,
-    nextArtifactPresent: currentRunStatus === 'ok',
+    nextArtifactPresent: currentRunStatus === "ok",
     availability,
     reason,
   };

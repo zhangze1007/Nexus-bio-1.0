@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * ConfidenceLineChart — reusable time-series primitive that draws a central
@@ -11,17 +11,23 @@
  * the caller via `bandLabel` and surfaced in the tooltip — never invented.
  */
 
-import { useMemo } from 'react';
+import { useMemo } from "react";
+import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { colors } from "../../../design-system/tokens";
+import type { ChartEntryProps, ChartTooltipProps } from "../../../types/charts";
 import {
-  ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
-import type { ChartTooltipProps, ChartEntryProps } from '../../../types/charts';
-import {
-  FONT, TOOLTIP_STYLE, SCI_SERIES, rechartsGrid, rechartsTick,
-  rechartsAxisTitle, rechartsAxisLine, LINE, MARKER, BAND,
+  BAND,
   axisLabel as buildAxisLabel,
-} from '../chartTheme';
-import { colors } from '../../../design-system/tokens';
+  FONT,
+  LINE,
+  MARKER,
+  rechartsAxisLine,
+  rechartsAxisTitle,
+  rechartsGrid,
+  rechartsTick,
+  SCI_SERIES,
+  TOOLTIP_STYLE,
+} from "../chartTheme";
 
 export interface ConfidenceSeriesPoint {
   x: number;
@@ -59,7 +65,7 @@ export interface ConfidenceLineChartProps {
   bandLabel?: string;
   height?: number;
   /** Force Y-axis domain. */
-  yDomain?: [number | 'auto', number | 'auto'];
+  yDomain?: [number | "auto", number | "auto"];
 }
 
 interface MergedRow {
@@ -73,7 +79,7 @@ function mergeRows(series: ConfidenceSeries[]): MergedRow[] {
     s.points.forEach((p) => {
       const row = rows.get(p.x) ?? { x: p.x };
       row[s.id] = p.mean;
-      if (typeof p.lower === 'number' && typeof p.upper === 'number') {
+      if (typeof p.lower === "number" && typeof p.upper === "number") {
         row[`${s.id}__band`] = [p.lower, p.upper];
         row[`${s.id}__lower`] = p.lower;
         row[`${s.id}__upper`] = p.upper;
@@ -90,9 +96,9 @@ function buildTooltip(series: ConfidenceSeries[], bandLabel: string, formatValue
     if (!active || !payload?.length) return null;
     const meanRows = payload.filter(
       (entry: ChartEntryProps) =>
-        !entry.dataKey?.toString().endsWith('__band')
-        && !entry.dataKey?.toString().endsWith('__lower')
-        && !entry.dataKey?.toString().endsWith('__upper'),
+        !entry.dataKey?.toString().endsWith("__band") &&
+        !entry.dataKey?.toString().endsWith("__lower") &&
+        !entry.dataKey?.toString().endsWith("__upper"),
     );
     return (
       <div style={TOOLTIP_STYLE}>
@@ -103,7 +109,7 @@ function buildTooltip(series: ConfidenceSeries[], bandLabel: string, formatValue
           const s = series.find((item) => item.id === entry.dataKey);
           const lower = entry.payload?.[`${entry.dataKey}__lower`];
           const upper = entry.payload?.[`${entry.dataKey}__upper`];
-          const hasInterval = typeof lower === 'number' && typeof upper === 'number';
+          const hasInterval = typeof lower === "number" && typeof upper === "number";
           return (
             <div key={entry.dataKey} style={{ fontFamily: FONT.MONO, fontSize: 11, color: entry.color }}>
               {s?.label ?? entry.dataKey} · {fmt(entry.value as number)}
@@ -128,27 +134,27 @@ export default function ConfidenceLineChart({
   yUnit,
   formatY,
   formatValue,
-  bandLabel = '95% CI',
+  bandLabel = "95% CI",
   height = 260,
   yDomain,
 }: ConfidenceLineChartProps) {
   const data = useMemo(() => mergeRows(series), [series]);
 
   return (
-    <div style={{ width: '100%', height }}>
+    <div style={{ width: "100%", height }}>
       <ResponsiveContainer>
         <ComposedChart data={data} margin={{ top: 14, right: 24, left: 8, bottom: 24 }}>
           <CartesianGrid {...rechartsGrid} />
           <XAxis
             dataKey="x"
             type="number"
-            domain={['dataMin', 'dataMax']}
+            domain={["dataMin", "dataMax"]}
             tick={rechartsTick}
             axisLine={rechartsAxisLine}
             tickLine={false}
             label={{
               value: buildAxisLabel(xQuantity, xUnit),
-              position: 'insideBottom',
+              position: "insideBottom",
               offset: -6,
               style: rechartsAxisTitle,
             }}
@@ -163,7 +169,7 @@ export default function ConfidenceLineChart({
             label={{
               value: buildAxisLabel(yQuantity, yUnit),
               angle: -90,
-              position: 'insideLeft',
+              position: "insideLeft",
               offset: 4,
               style: rechartsAxisTitle,
             }}

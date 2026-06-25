@@ -16,30 +16,16 @@
  * Pure function. No fetches, no LLM call, no store access. Fully testable.
  */
 import {
+  type EvidenceSourceKind,
   GOLDEN_PATH_TOOL_IDS,
   meetsValidityFloor,
-  type EvidenceSourceKind,
   type ToolId,
   type ValidityFloor,
-} from '../domain/workflowContract';
-import {
-  GOLDEN_PATH_DONE_EVENT,
-  type WorkflowStateValue,
-  type WorkflowToolStatus,
-} from './workflowStateMachine';
-import {
-  getGoldenPathPredecessor,
-  getGoldenPathSuccessor,
-  getToolContract,
-} from './workflowRegistry';
+} from "../domain/workflowContract";
+import { getGoldenPathPredecessor, getGoldenPathSuccessor, getToolContract } from "./workflowRegistry";
+import { GOLDEN_PATH_DONE_EVENT, type WorkflowStateValue, type WorkflowToolStatus } from "./workflowStateMachine";
 
-export type WorkflowDecisionStatus =
-  | 'idle'
-  | 'ready'
-  | 'blocked'
-  | 'gated'
-  | 'demoOnly'
-  | 'complete';
+export type WorkflowDecisionStatus = "idle" | "ready" | "blocked" | "gated" | "demoOnly" | "complete";
 
 export interface WorkflowEvidenceLite {
   id: string;
@@ -79,12 +65,12 @@ export interface WorkflowDecision {
 
 const STATE_TO_TOOL: Record<WorkflowStateValue, ToolId | null> = {
   idle: null,
-  targetSet: 'pathd',
-  pathdReady: 'fbasim',
-  fbasimReady: 'catdes',
-  catdesReady: 'dyncon',
-  dynconReady: 'cellfree',
-  cellfreeReady: 'dbtlflow',
+  targetSet: "pathd",
+  pathdReady: "fbasim",
+  fbasimReady: "catdes",
+  catdesReady: "dyncon",
+  dynconReady: "cellfree",
+  cellfreeReady: "dbtlflow",
   dbtlCommitted: null,
 };
 
@@ -94,11 +80,11 @@ function describeMissingContract(toolId: ToolId, status: WorkflowToolStatus | un
   if (!status) {
     reasons.push(`no payload published for ${toolId.toUpperCase()}`);
   } else {
-    if (!status.hasRequiredOutputs) reasons.push('required outputs missing');
+    if (!status.hasRequiredOutputs) reasons.push("required outputs missing");
     if (status.missingOutputPaths?.length) {
-      reasons.push(`missing ${status.missingOutputPaths.join(', ')}`);
+      reasons.push(`missing ${status.missingOutputPaths.join(", ")}`);
     }
-    if (status.isSimulated) reasons.push('payload is demo/simulated');
+    if (status.isSimulated) reasons.push("payload is demo/simulated");
     if (status.validity && !meetsValidityFloor(status.validity, contract.validityBaseline.floor)) {
       reasons.push(`validity ${status.validity} below floor ${contract.validityBaseline.floor}`);
     }
@@ -109,63 +95,59 @@ function describeMissingContract(toolId: ToolId, status: WorkflowToolStatus | un
       reasons.push(`confidence below ${contract.confidencePolicy.minToAdvance}`);
     }
     if (contract.uncertaintyPolicy.unboundedIsGate && status.uncertainty == null) {
-      reasons.push('uncertainty unresolved');
+      reasons.push("uncertainty unresolved");
     }
   }
-  return reasons.join('; ');
+  return reasons.join("; ");
 }
 
 function evidenceKindOf(item: WorkflowEvidenceLite): EvidenceSourceKind | null {
   if (!item.sourceKind) return null;
-  const kinds: EvidenceSourceKind[] = ['literature', 'analysis', 'tool', 'system'];
-  return kinds.includes(item.sourceKind as EvidenceSourceKind)
-    ? (item.sourceKind as EvidenceSourceKind)
-    : null;
+  const kinds: EvidenceSourceKind[] = ["literature", "analysis", "tool", "system"];
+  return kinds.includes(item.sourceKind as EvidenceSourceKind) ? (item.sourceKind as EvidenceSourceKind) : null;
 }
 
 export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowDecision {
   const reasonCodes: string[] = [];
 
   // Terminal: everything done.
-  if (input.machineState === 'dbtlCommitted') {
+  if (input.machineState === "dbtlCommitted") {
     return {
-      status: 'complete',
-      currentToolId: 'dbtlflow',
+      status: "complete",
+      currentToolId: "dbtlflow",
       nextRecommendedNode: null,
       missingEvidence: { minRequired: 0, have: input.evidence.length, kinds: [] },
       confidence: input.toolStatus.dbtlflow?.confidence ?? null,
       uncertainty: null,
       validity: input.toolStatus.dbtlflow?.validity ?? null,
-      humanGateRequired: getToolContract('dbtlflow').humanGatePolicy.requiredFor.length > 0,
+      humanGateRequired: getToolContract("dbtlflow").humanGatePolicy.requiredFor.length > 0,
       nextNodeIsContractOnly: false,
-      explanation:
-        'DBTL Learn cycle is committed. The next loop iteration must be initiated explicitly via LOOP_BACK.',
-      reasonCodes: ['DBTL_COMMITTED'],
+      explanation: "DBTL Learn cycle is committed. The next loop iteration must be initiated explicitly via LOOP_BACK.",
+      reasonCodes: ["DBTL_COMMITTED"],
     };
   }
 
   // Idle: no target set, no current tool.
-  if (input.machineState === 'idle') {
+  if (input.machineState === "idle") {
     return {
-      status: 'idle',
+      status: "idle",
       currentToolId: null,
-      nextRecommendedNode: 'pathd',
+      nextRecommendedNode: "pathd",
       missingEvidence: { minRequired: 0, have: input.evidence.length, kinds: [] },
       confidence: null,
       uncertainty: null,
       validity: null,
       humanGateRequired: false,
-      nextNodeIsContractOnly: !input.isAdapterRegistered('pathd'),
-      explanation:
-        'No target product set. Set a target via /research or /analyze, then run PATHD.',
-      reasonCodes: ['NO_TARGET'],
+      nextNodeIsContractOnly: !input.isAdapterRegistered("pathd"),
+      explanation: "No target product set. Set a target via /research or /analyze, then run PATHD.",
+      reasonCodes: ["NO_TARGET"],
     };
   }
 
   const currentToolId = STATE_TO_TOOL[input.machineState];
   if (!currentToolId) {
     return {
-      status: 'idle',
+      status: "idle",
       currentToolId: null,
       nextRecommendedNode: null,
       missingEvidence: { minRequired: 0, have: input.evidence.length, kinds: [] },
@@ -174,8 +156,8 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
       validity: null,
       humanGateRequired: false,
       nextNodeIsContractOnly: false,
-      explanation: 'Workflow is in a state with no current tool.',
-      reasonCodes: ['NO_CURRENT_TOOL'],
+      explanation: "Workflow is in a state with no current tool.",
+      reasonCodes: ["NO_CURRENT_TOOL"],
     };
   }
 
@@ -205,12 +187,11 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
       meetsValidityFloor(predStatus.validity, predContract.validityBaseline.floor) &&
       (!predContract.uncertaintyPolicy.unboundedIsGate || predStatus.uncertainty != null) &&
       (predContract.confidencePolicy.minToAdvance === null ||
-        (predStatus.confidence !== null &&
-          predStatus.confidence >= predContract.confidencePolicy.minToAdvance));
+        (predStatus.confidence !== null && predStatus.confidence >= predContract.confidencePolicy.minToAdvance));
     if (!predOk) {
-      reasonCodes.push('UPSTREAM_BLOCKED');
+      reasonCodes.push("UPSTREAM_BLOCKED");
       return {
-        status: 'blocked',
+        status: "blocked",
         currentToolId,
         nextRecommendedNode: predecessor,
         missingEvidence: {
@@ -231,9 +212,9 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
 
   // Gated by evidence requirement.
   if ((evidenceShort || missingKinds.length > 0) && evidenceReq.gateOnMissing) {
-    reasonCodes.push('EVIDENCE_GATE');
+    reasonCodes.push("EVIDENCE_GATE");
     return {
-      status: 'gated',
+      status: "gated",
       currentToolId,
       nextRecommendedNode: currentToolId,
       missingEvidence: {
@@ -246,7 +227,7 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
       validity: status?.validity ?? null,
       humanGateRequired: true,
       nextNodeIsContractOnly: !input.isAdapterRegistered(currentToolId),
-      explanation: `${currentToolId.toUpperCase()} requires ≥${evidenceReq.minItems} evidence items (${evidenceReq.kinds.join(', ')}). Currently have ${evidenceHave}${missingKinds.length ? `; missing ${missingKinds.join(', ')}` : ''}.`,
+      explanation: `${currentToolId.toUpperCase()} requires ≥${evidenceReq.minItems} evidence items (${evidenceReq.kinds.join(", ")}). Currently have ${evidenceHave}${missingKinds.length ? `; missing ${missingKinds.join(", ")}` : ""}.`,
       reasonCodes,
     };
   }
@@ -259,13 +240,12 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
     meetsValidityFloor(status.validity, contract.validityBaseline.floor) &&
     (!contract.uncertaintyPolicy.unboundedIsGate || status.uncertainty != null) &&
     (contract.confidencePolicy.minToAdvance === null ||
-      (status.confidence !== null &&
-        status.confidence >= contract.confidencePolicy.minToAdvance));
+      (status.confidence !== null && status.confidence >= contract.confidencePolicy.minToAdvance));
 
   if (status?.isSimulated) {
-    reasonCodes.push('DEMO_ONLY');
+    reasonCodes.push("DEMO_ONLY");
     return {
-      status: 'demoOnly',
+      status: "demoOnly",
       currentToolId,
       nextRecommendedNode: currentToolId,
       missingEvidence: {
@@ -284,9 +264,9 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
   }
 
   if (!currentContractOk) {
-    reasonCodes.push('CURRENT_TOOL_NOT_READY');
+    reasonCodes.push("CURRENT_TOOL_NOT_READY");
     return {
-      status: 'ready',
+      status: "ready",
       currentToolId,
       nextRecommendedNode: currentToolId,
       missingEvidence: {
@@ -308,9 +288,9 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
 
   // Current tool is satisfied — recommend the successor.
   const successor = getGoldenPathSuccessor(currentToolId);
-  reasonCodes.push('CURRENT_TOOL_SATISFIED');
+  reasonCodes.push("CURRENT_TOOL_SATISFIED");
   return {
-    status: 'ready',
+    status: "ready",
     currentToolId,
     nextRecommendedNode: successor,
     missingEvidence: {
@@ -321,9 +301,7 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
     confidence: status?.confidence ?? null,
     uncertainty: null,
     validity: status?.validity ?? null,
-    humanGateRequired:
-      successor !== null &&
-      getToolContract(successor).humanGatePolicy.requiredFor.length > 0,
+    humanGateRequired: successor !== null && getToolContract(successor).humanGatePolicy.requiredFor.length > 0,
     nextNodeIsContractOnly: successor !== null && !input.isAdapterRegistered(successor),
     explanation: successor
       ? `${currentToolId.toUpperCase()} is satisfied. Next: ${successor.toUpperCase()} — ${getToolContract(successor).primaryIntent}.`
@@ -334,12 +312,10 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
 
 /** Compact one-line summary used by status bars / sidebars. */
 export function summariseDecision(decision: WorkflowDecision): string {
-  const tool = decision.currentToolId ? decision.currentToolId.toUpperCase() : 'IDLE';
-  const next = decision.nextRecommendedNode
-    ? `→ ${decision.nextRecommendedNode.toUpperCase()}`
-    : '';
-  const gate = decision.humanGateRequired ? ' · human gate' : '';
-  const contractOnly = decision.nextNodeIsContractOnly ? ' · contract-only' : '';
+  const tool = decision.currentToolId ? decision.currentToolId.toUpperCase() : "IDLE";
+  const next = decision.nextRecommendedNode ? `→ ${decision.nextRecommendedNode.toUpperCase()}` : "";
+  const gate = decision.humanGateRequired ? " · human gate" : "";
+  const contractOnly = decision.nextNodeIsContractOnly ? " · contract-only" : "";
   return `${decision.status.toUpperCase()} · ${tool} ${next}${gate}${contractOnly}`.trim();
 }
 

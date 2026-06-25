@@ -47,17 +47,13 @@ interface RateLimitConfig {
 // ── Rate limit tiers (same as the original middleware config) ────────────
 
 export function getRateLimitConfig(path: string): RateLimitConfig {
-  if (path.startsWith('/api/analyze') || path.startsWith('/api/gemini')) {
+  if (path.startsWith("/api/analyze") || path.startsWith("/api/gemini")) {
     return { limit: 10, windowMs: 60_000 }; // 10 req/min for AI
   }
-  if (path.startsWith('/api/fba')) {
+  if (path.startsWith("/api/fba")) {
     return { limit: 20, windowMs: 60_000 }; // 20 req/min for compute
   }
-  if (
-    path.startsWith('/api/alphafold') ||
-    path.startsWith('/api/pubchem') ||
-    path.startsWith('/api/kegg')
-  ) {
+  if (path.startsWith("/api/alphafold") || path.startsWith("/api/pubchem") || path.startsWith("/api/kegg")) {
     return { limit: 30, windowMs: 60_000 }; // 30 req/min for external API proxies
   }
   return { limit: 60, windowMs: 60_000 }; // 60 req/min default
@@ -77,7 +73,7 @@ async function getRedis(): Promise<RedisLike | null> {
 
   if (url && token) {
     // Dynamic import to avoid Edge Runtime issues
-    const { Redis: RedisClass } = await import('@upstash/redis');
+    const { Redis: RedisClass } = await import("@upstash/redis");
     Redis = RedisClass as unknown as RedisConstructor;
     redisClient = new RedisClass({ url, token }) as unknown as RedisLike;
   }
@@ -98,31 +94,27 @@ let warnedMissingRedis = false;
 function warnMissingRedis(): void {
   if (warnedMissingRedis) return;
   warnedMissingRedis = true;
-  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
     console.warn(
-      '[rate-limit] UPSTASH_REDIS_REST_URL not set — using per-instance in-memory fallback. ' +
-      'Rate limiting will NOT work correctly across Vercel serverless instances. ' +
-      'Set Upstash Redis env vars for production: https://upstash.com/docs/redis/overall/getstarted'
+      "[rate-limit] UPSTASH_REDIS_REST_URL not set — using per-instance in-memory fallback. " +
+        "Rate limiting will NOT work correctly across Vercel serverless instances. " +
+        "Set Upstash Redis env vars for production: https://upstash.com/docs/redis/overall/getstarted",
     );
   }
 }
 
 // Periodic cleanup of stale entries (every 5 minutes)
-if (typeof setInterval !== 'undefined') {
+if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of memoryStore) {
-      entry.timestamps = entry.timestamps.filter(t => now - t < 120_000);
+      entry.timestamps = entry.timestamps.filter((t) => now - t < 120_000);
       if (entry.timestamps.length === 0) memoryStore.delete(key);
     }
   }, 300_000);
 }
 
-function checkRateLimitMemory(
-  key: string,
-  limit: number,
-  windowMs: number,
-): RateLimitResult {
+function checkRateLimitMemory(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
 
   let entry = memoryStore.get(key);
@@ -132,7 +124,7 @@ function checkRateLimitMemory(
   }
 
   // Remove timestamps outside the window
-  entry.timestamps = entry.timestamps.filter(t => now - t < windowMs);
+  entry.timestamps = entry.timestamps.filter((t) => now - t < windowMs);
 
   if (entry.timestamps.length >= limit) {
     const oldestInWindow = entry.timestamps[0];
@@ -198,12 +190,9 @@ async function checkRateLimitRedis(
  * Uses Upstash Redis when configured, falls back to in-memory storage.
  * Returns `{ allowed, remaining, resetMs }`.
  */
-export async function checkRateLimit(
-  ip: string,
-  path: string,
-): Promise<RateLimitResult> {
+export async function checkRateLimit(ip: string, path: string): Promise<RateLimitResult> {
   const { limit, windowMs } = getRateLimitConfig(path);
-  const normalizedPath = path.split('/').slice(0, 3).join('/');
+  const normalizedPath = path.split("/").slice(0, 3).join("/");
   const key = `rl:${ip}:${normalizedPath}`;
 
   const redis = await getRedis();
@@ -228,12 +217,9 @@ export async function checkRateLimit(
  * This function is kept for backward compatibility with code that
  * may need the synchronous in-memory path only.
  */
-export function checkRateLimitSync(
-  ip: string,
-  path: string,
-): RateLimitResult {
+export function checkRateLimitSync(ip: string, path: string): RateLimitResult {
   const { limit, windowMs } = getRateLimitConfig(path);
-  const normalizedPath = path.split('/').slice(0, 3).join('/');
+  const normalizedPath = path.split("/").slice(0, 3).join("/");
   const key = `rl:${ip}:${normalizedPath}`;
   return checkRateLimitMemory(key, limit, windowMs);
 }

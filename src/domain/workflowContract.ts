@@ -13,54 +13,54 @@
  */
 
 export const TOOL_IDS = [
-  'pathd',
-  'metabolic-eng',
-  'fbasim',
-  'cethx',
-  'catdes',
-  'proevol',
-  'dyncon',
-  'gecair',
-  'genmim',
-  'cellfree',
-  'dbtlflow',
-  'multio',
-  'scspatial',
-  'nexai',
-  'inversefolding',
-  'multiplexcrispr',
-  'pathwaydiscovery',
-  'digitaltwin',
+  "pathd",
+  "metabolic-eng",
+  "fbasim",
+  "cethx",
+  "catdes",
+  "proevol",
+  "dyncon",
+  "gecair",
+  "genmim",
+  "cellfree",
+  "dbtlflow",
+  "multio",
+  "scspatial",
+  "nexai",
+  "inversefolding",
+  "multiplexcrispr",
+  "pathwaydiscovery",
+  "digitaltwin",
 ] as const;
 
 export type ToolId = (typeof TOOL_IDS)[number];
 
 export const GOLDEN_PATH_TOOL_IDS = [
-  'pathd',
-  'fbasim',
-  'catdes',
-  'dyncon',
-  'cellfree',
-  'dbtlflow',
+  "pathd",
+  "fbasim",
+  "catdes",
+  "dyncon",
+  "cellfree",
+  "dbtlflow",
 ] as const satisfies readonly ToolId[];
 
 export type GoldenPathToolId = (typeof GOLDEN_PATH_TOOL_IDS)[number];
 
-export type StageId = 'stage-1' | 'stage-2' | 'stage-3' | 'stage-4';
+export type StageId = "stage-1" | "stage-2" | "stage-3" | "stage-4";
 
 export type PrimaryIntent =
-  | 'design'
-  | 'simulate'
-  | 'optimize'
-  | 'engineer'
-  | 'control'
-  | 'validate'
-  | 'analyze'
-  | 'supervise';
+  | "design"
+  | "simulate"
+  | "optimize"
+  | "engineer"
+  | "control"
+  | "validate"
+  | "analyze"
+  | "supervise";
 
-export type ValidityFloor = 'real' | 'partial' | 'demo';
+export type ValidityFloor = "real" | "partial" | "demo";
 
-export type EvidenceSourceKind = 'literature' | 'analysis' | 'tool' | 'system';
+export type EvidenceSourceKind = "literature" | "analysis" | "tool" | "system";
 
 export interface ArtifactRef {
   toolId: ToolId;
@@ -98,7 +98,7 @@ export interface UncertaintyPolicy {
   unboundedIsGate: boolean;
 }
 
-export type HumanGateTrigger = 'commit' | 'loop-back' | 'external-handoff';
+export type HumanGateTrigger = "commit" | "loop-back" | "external-handoff";
 
 export interface HumanGatePolicy {
   /** Empty array = no gate. */
@@ -119,12 +119,7 @@ export interface DemoPolicy {
   blockGoldenPath: boolean;
 }
 
-export type ToolContractScope =
-  | 'workflow'
-  | 'sidecar'
-  | 'contractOnly'
-  | 'demoOnly'
-  | 'alias';
+export type ToolContractScope = "workflow" | "sidecar" | "contractOnly" | "demoOnly" | "alias";
 
 export interface ToolContract {
   toolId: ToolId;

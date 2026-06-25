@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { THEME } from '../../../theme';
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useId, useState } from "react";
+import { THEME } from "../../../theme";
+
 interface FloatingControlRailProps {
   children: React.ReactNode;
   width?: number;
@@ -14,7 +15,7 @@ interface FloatingControlRailProps {
 export default function FloatingControlRail({
   children,
   width = 240,
-  label = 'Controls',
+  label = "Controls",
   defaultCollapsed = false,
 }: FloatingControlRailProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -23,34 +24,34 @@ export default function FloatingControlRail({
   return (
     <motion.div
       animate={{ width: collapsed ? 40 : width }}
-      transition={{ duration: 0.25, ease: 'easeInOut' }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
       style={{
         flexShrink: 0,
         borderRight: `1px solid ${THEME.BORDER}`,
         background: THEME.PANEL_MUTED,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        willChange: 'width',
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        willChange: "width",
       }}
     >
       <button
         type="button"
         aria-expanded={!collapsed}
         aria-controls={contentId}
-        aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${label}`}
+        aria-label={`${collapsed ? "Expand" : "Collapse"} ${label}`}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          padding: '10px 12px',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "space-between",
+          padding: "10px 12px",
           borderBottom: `1px solid ${THEME.BORDER}`,
-          cursor: 'pointer',
-          background: 'transparent',
-          border: 'none',
-          width: '100%',
-          color: 'inherit',
-          font: 'inherit',
+          cursor: "pointer",
+          background: "transparent",
+          border: "none",
+          width: "100%",
+          color: "inherit",
+          font: "inherit",
         }}
         onClick={() => setCollapsed(!collapsed)}
       >
@@ -58,20 +59,16 @@ export default function FloatingControlRail({
           <span
             style={{
               fontFamily: THEME.SANS,
-              fontSize: 'var(--nb-fs-xs)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontSize: "var(--nb-fs-xs)",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
               color: THEME.LABEL,
             }}
           >
             {label}
           </span>
         )}
-        {collapsed ? (
-          <ChevronRight size={14} color={THEME.LABEL} />
-        ) : (
-          <ChevronLeft size={14} color={THEME.LABEL} />
-        )}
+        {collapsed ? <ChevronRight size={14} color={THEME.LABEL} /> : <ChevronLeft size={14} color={THEME.LABEL} />}
       </button>
 
       <AnimatePresence>
@@ -84,11 +81,11 @@ export default function FloatingControlRail({
             transition={{ duration: 0.2 }}
             style={{
               flex: 1,
-              overflowY: 'auto',
-              padding: '12px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
+              overflowY: "auto",
+              padding: "12px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
             }}
           >
             {children}

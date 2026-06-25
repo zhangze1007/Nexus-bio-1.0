@@ -1,17 +1,17 @@
-import type { ProvenanceEntry } from '../types/assumptions';
-import type { WorkbenchPayloadBase } from '../store/workbenchPayloads';
-import { TOOL_ASSUMPTIONS } from '../config/toolAssumptions';
-import { TOOL_VALIDITY, type ValidityLevel } from '../config/toolValidity';
+import { TOOL_ASSUMPTIONS } from "../config/toolAssumptions";
+import { TOOL_VALIDITY, type ValidityLevel } from "../config/toolValidity";
+import type { WorkbenchPayloadBase } from "../store/workbenchPayloads";
+import type { ProvenanceEntry } from "../types/assumptions";
 
-export type RuntimeGatingSeverity = 'allow' | 'warn' | 'block';
+export type RuntimeGatingSeverity = "allow" | "warn" | "block";
 
 export interface RuntimeGatingDecision {
   allowed: boolean;
   severity: RuntimeGatingSeverity;
   reason: string;
   blockingAssumptionIds: string[];
-  sourceValidity: ValidityLevel | 'unknown';
-  targetValidity: ValidityLevel | 'unknown';
+  sourceValidity: ValidityLevel | "unknown";
+  targetValidity: ValidityLevel | "unknown";
   sourceToolId: string | null;
   targetToolId: string;
 }
@@ -20,7 +20,7 @@ export interface PayloadTrustState {
   trusted: boolean;
   reason: string;
   sourceToolId: string | null;
-  sourceValidity: ValidityLevel | 'unknown';
+  sourceValidity: ValidityLevel | "unknown";
   provenance: ProvenanceEntry | null;
   outputAssumptionIds: string[];
   blockingAssumptionIds: string[];
@@ -32,42 +32,42 @@ type RuntimePayload = Partial<WorkbenchPayloadBase> & {
 };
 
 const SUB_TOOL_VALIDITY: Record<string, ValidityLevel> = {
-  'fbasim-single': 'partial',
-  'fbasim-community': 'partial',
+  "fbasim-single": "partial",
+  "fbasim-community": "partial",
 };
 
 const ASSUMPTION_BY_ID = Object.values(TOOL_ASSUMPTIONS)
   .flat()
-  .reduce<Record<string, { severity: 'info' | 'warning' | 'blocking' }>>((acc, assumption) => {
+  .reduce<Record<string, { severity: "info" | "warning" | "blocking" }>>((acc, assumption) => {
     acc[assumption.id] = { severity: assumption.severity };
     return acc;
   }, {});
 
-function resolveToolValidity(toolId?: string | null): ValidityLevel | 'unknown' {
-  if (!toolId) return 'unknown';
-  return SUB_TOOL_VALIDITY[toolId] ?? TOOL_VALIDITY[toolId]?.level ?? 'unknown';
+function resolveToolValidity(toolId?: string | null): ValidityLevel | "unknown" {
+  if (!toolId) return "unknown";
+  return SUB_TOOL_VALIDITY[toolId] ?? TOOL_VALIDITY[toolId]?.level ?? "unknown";
 }
 
-function resolveSourceValidity(payload: RuntimePayload): ValidityLevel | 'unknown' {
+function resolveSourceValidity(payload: RuntimePayload): ValidityLevel | "unknown" {
   return payload.runProvenance?.validityTier ?? payload.validity ?? resolveToolValidity(payload.toolId);
 }
 
-function assumptionIdsBySeverity(ids: string[], severity: 'warning' | 'blocking') {
+function assumptionIdsBySeverity(ids: string[], severity: "warning" | "blocking") {
   return ids.filter((id) => ASSUMPTION_BY_ID[id]?.severity === severity);
 }
 
 export function collectBlockingAssumptions(payload: RuntimePayload | null | undefined): string[] {
   const ids = payload?.runProvenance?.outputAssumptions ?? [];
-  return assumptionIdsBySeverity(ids, 'blocking');
+  return assumptionIdsBySeverity(ids, "blocking");
 }
 
 export function getPayloadTrustState(payload: RuntimePayload | null | undefined): PayloadTrustState {
   if (!payload) {
     return {
       trusted: false,
-      reason: 'No source payload is available.',
+      reason: "No source payload is available.",
       sourceToolId: null,
-      sourceValidity: 'unknown',
+      sourceValidity: "unknown",
       provenance: null,
       outputAssumptionIds: [],
       blockingAssumptionIds: [],
@@ -79,13 +79,13 @@ export function getPayloadTrustState(payload: RuntimePayload | null | undefined)
   const outputAssumptionIds = provenance?.outputAssumptions ?? [];
   const sourceToolId = provenance?.toolId ?? payload.toolId ?? null;
   const sourceValidity = resolveSourceValidity(payload);
-  const blockingAssumptionIds = assumptionIdsBySeverity(outputAssumptionIds, 'blocking');
-  const warningAssumptionIds = assumptionIdsBySeverity(outputAssumptionIds, 'warning');
+  const blockingAssumptionIds = assumptionIdsBySeverity(outputAssumptionIds, "blocking");
+  const warningAssumptionIds = assumptionIdsBySeverity(outputAssumptionIds, "warning");
 
   if (!provenance) {
     return {
       trusted: false,
-      reason: 'Source payload has no runProvenance snapshot.',
+      reason: "Source payload has no runProvenance snapshot.",
       sourceToolId,
       sourceValidity,
       provenance: null,
@@ -97,7 +97,7 @@ export function getPayloadTrustState(payload: RuntimePayload | null | undefined)
 
   return {
     trusted: true,
-    reason: 'Source payload includes runProvenance.',
+    reason: "Source payload includes runProvenance.",
     sourceToolId,
     sourceValidity,
     provenance,
@@ -114,13 +114,13 @@ export function canPassToDownstream(
   const trustState = getPayloadTrustState(sourcePayload);
   const targetValidity = resolveToolValidity(targetToolId);
   const sourceValidity = trustState.sourceValidity;
-  const targetIsDemo = targetValidity === 'demo';
-  const targetIsPartialOrReal = targetValidity === 'partial' || targetValidity === 'real';
+  const targetIsDemo = targetValidity === "demo";
+  const targetIsPartialOrReal = targetValidity === "partial" || targetValidity === "real";
 
   if (!trustState.trusted) {
     return {
       allowed: false,
-      severity: 'block',
+      severity: "block",
       reason: `${trustState.reason} Runtime provenance is required before ${targetToolId.toUpperCase()} can consume this output.`,
       blockingAssumptionIds: trustState.blockingAssumptionIds,
       sourceValidity,
@@ -130,11 +130,12 @@ export function canPassToDownstream(
     };
   }
 
-  if (sourceValidity === 'demo' && targetIsDemo) {
+  if (sourceValidity === "demo" && targetIsDemo) {
     return {
       allowed: true,
-      severity: 'warn',
-      reason: 'Demo-only chain allowed. Outputs must remain labelled as demonstration data and must not be used as evidence.',
+      severity: "warn",
+      reason:
+        "Demo-only chain allowed. Outputs must remain labelled as demonstration data and must not be used as evidence.",
       blockingAssumptionIds: trustState.blockingAssumptionIds,
       sourceValidity,
       targetValidity,
@@ -143,10 +144,10 @@ export function canPassToDownstream(
     };
   }
 
-  if (sourceValidity === 'demo' && targetIsPartialOrReal) {
+  if (sourceValidity === "demo" && targetIsPartialOrReal) {
     return {
       allowed: false,
-      severity: 'block',
+      severity: "block",
       reason: `Demo output cannot feed ${targetValidity} downstream inference.`,
       blockingAssumptionIds: trustState.blockingAssumptionIds,
       sourceValidity,
@@ -156,11 +157,11 @@ export function canPassToDownstream(
     };
   }
 
-  if (targetValidity === 'real' && trustState.blockingAssumptionIds.length > 0) {
+  if (targetValidity === "real" && trustState.blockingAssumptionIds.length > 0) {
     return {
       allowed: false,
-      severity: 'block',
-      reason: 'Blocking assumptions prevent this output from being treated as real evidence.',
+      severity: "block",
+      reason: "Blocking assumptions prevent this output from being treated as real evidence.",
       blockingAssumptionIds: trustState.blockingAssumptionIds,
       sourceValidity,
       targetValidity,
@@ -169,11 +170,11 @@ export function canPassToDownstream(
     };
   }
 
-  if (targetValidity === 'partial' && trustState.blockingAssumptionIds.length > 0) {
+  if (targetValidity === "partial" && trustState.blockingAssumptionIds.length > 0) {
     return {
       allowed: false,
-      severity: 'block',
-      reason: 'Blocking assumptions prevent this output from feeding partial downstream inference.',
+      severity: "block",
+      reason: "Blocking assumptions prevent this output from feeding partial downstream inference.",
       blockingAssumptionIds: trustState.blockingAssumptionIds,
       sourceValidity,
       targetValidity,
@@ -182,11 +183,12 @@ export function canPassToDownstream(
     };
   }
 
-  if (trustState.warningAssumptionIds.length > 0 || sourceValidity === 'partial' || targetValidity === 'partial') {
+  if (trustState.warningAssumptionIds.length > 0 || sourceValidity === "partial" || targetValidity === "partial") {
     return {
       allowed: true,
-      severity: 'warn',
-      reason: 'Allowed with caution. Runtime provenance is present, but warning assumptions or partial-tier limits remain.',
+      severity: "warn",
+      reason:
+        "Allowed with caution. Runtime provenance is present, but warning assumptions or partial-tier limits remain.",
       blockingAssumptionIds: trustState.blockingAssumptionIds,
       sourceValidity,
       targetValidity,
@@ -197,8 +199,8 @@ export function canPassToDownstream(
 
   return {
     allowed: true,
-    severity: 'allow',
-    reason: 'Allowed. Runtime provenance is present and no blocking assumptions are attached.',
+    severity: "allow",
+    reason: "Allowed. Runtime provenance is present and no blocking assumptions are attached.",
     blockingAssumptionIds: [],
     sourceValidity,
     targetValidity,

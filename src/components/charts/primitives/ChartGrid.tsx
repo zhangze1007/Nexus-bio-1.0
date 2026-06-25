@@ -1,6 +1,6 @@
-'use client';
-import React from 'react';
-import { colors, typography } from '../../../design-system/tokens';
+"use client";
+import React from "react";
+import { colors, typography } from "../../../design-system/tokens";
 
 /**
  * ChartGrid — reusable grid lines + axis lines for SVG charts.
@@ -48,16 +48,17 @@ export default function ChartGrid({
 }: ChartGridProps) {
   return (
     <g>
-      {showGrid && Array.from({ length: gridCount + 1 }).map((_, i) => {
-        const gx = PAD + (i / gridCount) * (W - PAD * 2);
-        const gy = PAD + (i / gridCount) * (H - PAD * 2);
-        return (
-          <g key={i}>
-            <line x1={gx} y1={PAD} x2={gx} y2={H - PAD} stroke={gridColor} strokeWidth={gridStroke} />
-            <line x1={PAD} y1={gy} x2={W - PAD} y2={gy} stroke={gridColor} strokeWidth={gridStroke} />
-          </g>
-        );
-      })}
+      {showGrid &&
+        Array.from({ length: gridCount + 1 }).map((_, i) => {
+          const gx = PAD + (i / gridCount) * (W - PAD * 2);
+          const gy = PAD + (i / gridCount) * (H - PAD * 2);
+          return (
+            <g key={i}>
+              <line x1={gx} y1={PAD} x2={gx} y2={H - PAD} stroke={gridColor} strokeWidth={gridStroke} />
+              <line x1={PAD} y1={gy} x2={W - PAD} y2={gy} stroke={gridColor} strokeWidth={gridStroke} />
+            </g>
+          );
+        })}
       {showAxes && (
         <>
           <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke={axisColor} />

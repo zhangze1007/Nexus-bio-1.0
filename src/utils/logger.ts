@@ -11,7 +11,7 @@
  *   logger.error('Provider failed', { requestId, provider: 'groq', error: err.message });
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogEntry {
   timestamp: string;
@@ -36,14 +36,14 @@ function log(level: LogLevel, message: string, context?: Record<string, unknown>
   const formatted = formatEntry(entry);
 
   switch (level) {
-    case 'error':
+    case "error":
       console.error(formatted);
       break;
-    case 'warn':
+    case "warn":
       console.warn(formatted);
       break;
-    case 'debug':
-      if (process.env.NODE_ENV !== 'production') {
+    case "debug":
+      if (process.env.NODE_ENV !== "production") {
         console.debug(formatted);
       }
       break;
@@ -53,10 +53,10 @@ function log(level: LogLevel, message: string, context?: Record<string, unknown>
 }
 
 export const logger = {
-  debug: (message: string, context?: Record<string, unknown>) => log('debug', message, context),
-  info: (message: string, context?: Record<string, unknown>) => log('info', message, context),
-  warn: (message: string, context?: Record<string, unknown>) => log('warn', message, context),
-  error: (message: string, context?: Record<string, unknown>) => log('error', message, context),
+  debug: (message: string, context?: Record<string, unknown>) => log("debug", message, context),
+  info: (message: string, context?: Record<string, unknown>) => log("info", message, context),
+  warn: (message: string, context?: Record<string, unknown>) => log("warn", message, context),
+  error: (message: string, context?: Record<string, unknown>) => log("error", message, context),
 };
 
 /**
@@ -64,5 +64,5 @@ export const logger = {
  * The middleware sets X-Request-Id on every API request.
  */
 export function getRequestId(headers: Headers): string {
-  return headers.get('x-request-id') || `local_${Date.now().toString(36)}`;
+  return headers.get("x-request-id") || `local_${Date.now().toString(36)}`;
 }

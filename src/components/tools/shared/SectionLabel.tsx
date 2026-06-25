@@ -1,5 +1,5 @@
-'use client';
-import { THEME } from '../../../theme';
+"use client";
+import { THEME } from "../../../theme";
 
 /**
  * Consistent section label for tool control rails and panels.
@@ -7,14 +7,16 @@ import { THEME } from '../../../theme';
  */
 export default function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{
-      fontFamily: THEME.SANS,
-      fontSize: 'var(--nb-fs-xs)',
-      textTransform: 'uppercase',
-      letterSpacing: '0.1em',
-      color: THEME.LABEL,
-      margin: '0 0 10px',
-    }}>
+    <p
+      style={{
+        fontFamily: THEME.SANS,
+        fontSize: "var(--nb-fs-xs)",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        color: THEME.LABEL,
+        margin: "0 0 10px",
+      }}
+    >
       {children}
     </p>
   );

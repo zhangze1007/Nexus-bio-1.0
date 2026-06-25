@@ -83,13 +83,13 @@ export function solveRK4(system: ODESystem, opts: SolverOptions): ODESolution {
   const { steps, clampToZero = false } = opts;
 
   if (steps <= 0 || tEnd <= tStart) {
-    return { time: [tStart], states: initial.map(v => [v]) };
+    return { time: [tStart], states: initial.map((v) => [v]) };
   }
 
   const dt = (tEnd - tStart) / steps;
   const n = initial.length;
   const time: number[] = [tStart];
-  const states: number[][] = initial.map(v => [v]);
+  const states: number[][] = initial.map((v) => [v]);
 
   let t = tStart;
   let y = clone(initial);
@@ -108,9 +108,7 @@ export function solveRK4(system: ODESystem, opts: SolverOptions): ODESolution {
     const k4 = fn(t + dt, y4);
 
     // y_{n+1} = y_n + (dt/6)(k1 + 2*k2 + 2*k3 + k4)
-    y = y.map((yi, i) =>
-      yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
-    );
+    y = y.map((yi, i) => yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
     t += dt;
 
     if (clampToZero) clampNonNeg(y);
@@ -131,13 +129,13 @@ export function solveEuler(system: ODESystem, opts: SolverOptions): ODESolution 
   const { steps, clampToZero = false } = opts;
 
   if (steps <= 0 || tEnd <= tStart) {
-    return { time: [tStart], states: initial.map(v => [v]) };
+    return { time: [tStart], states: initial.map((v) => [v]) };
   }
 
   const dt = (tEnd - tStart) / steps;
   const n = initial.length;
   const time: number[] = [tStart];
-  const states: number[][] = initial.map(v => [v]);
+  const states: number[][] = initial.map((v) => [v]);
 
   let t = tStart;
   let y = clone(initial);
@@ -168,26 +166,18 @@ export function solveEuler(system: ODESystem, opts: SolverOptions): ODESolution 
 // full Dormand-Prince pair.
 // ---------------------------------------------------------------------------
 
-export function solveAdaptive(
-  system: ODESystem,
-  opts: AdaptiveOptions,
-): ODESolution {
+export function solveAdaptive(system: ODESystem, opts: AdaptiveOptions): ODESolution {
   const { fn, initial, tStart, tEnd } = system;
-  const {
-    tolerance,
-    dtMin = 1e-10,
-    dtMax = (tEnd - tStart) / 2,
-    clampToZero = false,
-  } = opts;
+  const { tolerance, dtMin = 1e-10, dtMax = (tEnd - tStart) / 2, clampToZero = false } = opts;
 
   if (tEnd <= tStart) {
-    return { time: [tStart], states: initial.map(v => [v]) };
+    return { time: [tStart], states: initial.map((v) => [v]) };
   }
 
   const n = initial.length;
   const safety = 0.9;
-  const maxGrowth = 5.0;   // max factor by which dt can grow per step
-  const minShrink = 0.2;   // min factor by which dt can shrink per step
+  const maxGrowth = 5.0; // max factor by which dt can grow per step
+  const minShrink = 0.2; // min factor by which dt can shrink per step
   const maxIter = 2_000_000; // safety valve
 
   // Initial guess for dt
@@ -196,7 +186,7 @@ export function solveAdaptive(
   let y = clone(initial);
 
   const time: number[] = [tStart];
-  const states: number[][] = initial.map(v => [v]);
+  const states: number[][] = initial.map((v) => [v]);
 
   let iter = 0;
   while (t < tEnd && iter < maxIter) {
@@ -214,9 +204,7 @@ export function solveAdaptive(
     const y4 = y.map((yi, i) => yi + dt * k3[i]);
     const k4 = fn(t + dt, y4);
 
-    const yRK4 = y.map((yi, i) =>
-      yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
-    );
+    const yRK4 = y.map((yi, i) => yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
 
     // --- One Euler step (same dt) ---
     const yEuler = y.map((yi, i) => yi + dt * k1[i]);
@@ -251,7 +239,7 @@ export function solveAdaptive(
     // else: reject step, t and y remain unchanged
 
     // Adjust dt (PI-controller-like)
-    const factor = safety * Math.pow(tolerance / error, 0.25);
+    const factor = safety * (tolerance / error) ** 0.25;
     const clampedFactor = Math.max(minShrink, Math.min(maxGrowth, factor));
     dt = Math.max(dtMin, Math.min(dtMax, dt * clampedFactor));
   }

@@ -13,7 +13,7 @@
  *   ALGORITHM: Constrained Expected Improvement (GP classification for feasibility)
  */
 
-import { BaseAcquisition, type AcquisitionFunction, type AcquisitionInput, type AcquisitionOutput } from './base';
+import { type AcquisitionFunction, type AcquisitionInput, type AcquisitionOutput, BaseAcquisition } from "./base";
 
 export interface ConstraintConfig {
   /** Hard constraint: candidate must satisfy (eliminated if not) */
@@ -45,7 +45,7 @@ export class ConstrainedAcquisition extends BaseAcquisition {
     if (this.config.hardConstraints && this.config.hardConstraints.length > 0) {
       maskedScores = baseScores.map((score, i) => {
         const features = input.candidates[i]?.features ?? [];
-        const feasible = this.config.hardConstraints!.every(c => c(features));
+        const feasible = this.config.hardConstraints!.every((c) => c(features));
         return feasible ? score : -Infinity;
       });
     }
@@ -55,9 +55,7 @@ export class ConstrainedAcquisition extends BaseAcquisition {
       maskedScores = maskedScores.map((score, i) => {
         if (score === -Infinity) return score;
         const features = input.candidates[i]?.features ?? [];
-        const feasibility = this.config.softConstraints!.reduce(
-          (prod, c) => prod * c(features), 1.0
-        );
+        const feasibility = this.config.softConstraints!.reduce((prod, c) => prod * c(features), 1.0);
         return score * feasibility;
       });
     }
@@ -81,7 +79,7 @@ export class ConstrainedAcquisition extends BaseAcquisition {
       .map((score, index) => ({ index: input.candidates[index].index, score }))
       .sort((a, b) => b.score - a.score);
 
-    const topKIndices = ranked.slice(0, topK).map(r => r.index);
+    const topKIndices = ranked.slice(0, topK).map((r) => r.index);
 
     return { ranked, topK: topKIndices };
   }
@@ -90,9 +88,6 @@ export class ConstrainedAcquisition extends BaseAcquisition {
 /**
  * Create a constrained version of any acquisition function.
  */
-export function withConstraints(
-  inner: AcquisitionFunction,
-  config: ConstraintConfig,
-): ConstrainedAcquisition {
+export function withConstraints(inner: AcquisitionFunction, config: ConstraintConfig): ConstrainedAcquisition {
   return new ConstrainedAcquisition(inner, config);
 }

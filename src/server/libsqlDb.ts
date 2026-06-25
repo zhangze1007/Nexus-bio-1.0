@@ -6,11 +6,12 @@
  *
  * This replaces better-sqlite3 which is synchronous and ephemeral on Vercel.
  */
-import { createClient, type Client, type InArgs, type InStatement } from '@libsql/client';
-import fs from 'node:fs';
-import path from 'node:path';
 
-const LOCAL_DB_PATH = path.join(process.cwd(), '.nexus', 'workbench.db');
+import fs from "node:fs";
+import path from "node:path";
+import { type Client, createClient, type InArgs, type InStatement } from "@libsql/client";
+
+const LOCAL_DB_PATH = path.join(process.cwd(), ".nexus", "workbench.db");
 
 let singletonClient: Client | null = null;
 
@@ -29,13 +30,13 @@ export function getLibsqlClient(): Client {
   if (singletonClient) return singletonClient;
 
   const url = resolveDbUrl();
-  const isRemote = url.startsWith('http') || url.startsWith('libsql://');
+  const isRemote = url.startsWith("http") || url.startsWith("libsql://");
 
   // Issue 2: When using a remote Turso URL, TURSO_AUTH_TOKEN must be present.
   if (isRemote && !process.env.TURSO_AUTH_TOKEN) {
     throw new Error(
-      'TURSO_DATABASE_URL is set but TURSO_AUTH_TOKEN is missing. ' +
-      'Both environment variables are required for a remote Turso connection.',
+      "TURSO_DATABASE_URL is set but TURSO_AUTH_TOKEN is missing. " +
+        "Both environment variables are required for a remote Turso connection.",
     );
   }
 
@@ -87,7 +88,7 @@ export async function sqlRun(sql: string, args: unknown[] = []): Promise<{ rowsA
  */
 export async function sqlBatch(statements: InStatement[]): Promise<void> {
   const client = getLibsqlClient();
-  await client.batch(statements, 'write');
+  await client.batch(statements, "write");
 }
 
 /**

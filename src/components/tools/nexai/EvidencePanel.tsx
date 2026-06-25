@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * EvidencePanel — Secondary evidence reading surface.
  *
@@ -13,10 +13,10 @@
  * the tree/network view lands — the existing graph is a real viz layer
  * and should remain the primary evidence canvas.
  */
-import { useState } from 'react';
-import type { CitationNode } from '../../../types';
-import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import { THEME } from '../../../theme';
+import { useState } from "react";
+import { THEME } from "../../../theme";
+import type { CitationNode } from "../../../types";
+import { TOOL_TOKENS as T } from "../shared/ToolShell";
 export interface EvidencePanelProps {
   citations: CitationNode[];
   onNodeClick?: (citation: CitationNode) => void;
@@ -28,21 +28,21 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
       <div
         data-testid="nexai-evidence-empty"
         style={{
-          display: 'grid',
-          placeItems: 'center',
-          minHeight: '240px',
-          padding: '24px',
-          borderRadius: 'var(--nb-radius-lg)',
+          display: "grid",
+          placeItems: "center",
+          minHeight: "240px",
+          padding: "24px",
+          borderRadius: "var(--nb-radius-lg)",
           border: `1px solid ${THEME.BORDER}`,
           background: THEME.PANEL_SURFACE,
-          textAlign: 'center',
+          textAlign: "center",
         }}
       >
-        <div style={{ display: 'grid', gap: '6px' }}>
-          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL }}>
+        <div style={{ display: "grid", gap: "6px" }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-sm)", color: THEME.LABEL }}>
             No evidence map yet
           </div>
-          <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: THEME.VALUE, lineHeight: 1.6 }}>
             Attach Research evidence or rerun with a literature-backed query to populate the citation surface.
           </div>
         </div>
@@ -54,17 +54,25 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
     <div
       data-testid="nexai-evidence-panel"
       style={{
-        display: 'grid',
-        gridTemplateRows: 'auto minmax(0, 1fr)',
-        gap: '10px',
+        display: "grid",
+        gridTemplateRows: "auto minmax(0, 1fr)",
+        gap: "10px",
       }}
     >
-      <div style={{ display: 'grid', gap: '4px' }}>
-        <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+      <div style={{ display: "grid", gap: "4px" }}>
+        <div
+          style={{
+            fontFamily: THEME.MONO,
+            fontSize: "var(--nb-fs-xs)",
+            color: THEME.LABEL,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
           Citation support map
         </div>
-        <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, lineHeight: 1.55 }}>
-          {citations.length} source{citations.length === 1 ? '' : 's'} · positioned by year and rank.
+        <div style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: THEME.LABEL, lineHeight: 1.55 }}>
+          {citations.length} source{citations.length === 1 ? "" : "s"} · positioned by year and rank.
         </div>
       </div>
       <CitationGraph citations={citations} onNodeClick={onNodeClick} />
@@ -105,7 +113,7 @@ function CitationGraph({
   });
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "100%" }}>
       <defs>
         <filter id="nexai-node-glow" x="-80%" y="-80%" width="260%" height="260%">
           <feGaussianBlur stdDeviation="3" />
@@ -133,14 +141,7 @@ function CitationGraph({
         return (
           <g key={`g-${tick}`}>
             <line x1="52" y1={y} x2={W - 52} y2={y} stroke="rgba(255,255,255,0.045)" />
-            <text
-              x="46"
-              y={y + 3}
-              textAnchor="end"
-              fontFamily={THEME.MONO}
-              fontSize="10"
-              fill="rgba(255,255,255,0.28)"
-            >
+            <text x="46" y={y + 3} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">
               {(1 - tick).toFixed(2)}
             </text>
           </g>
@@ -153,14 +154,7 @@ function CitationGraph({
         return (
           <g key={`year-${year}-${index}`}>
             <line x1={x} y1="330" x2={x} y2="336" stroke="rgba(255,255,255,0.12)" />
-            <text
-              x={x}
-              y="350"
-              textAnchor="middle"
-              fontFamily={THEME.MONO}
-              fontSize="10"
-              fill="rgba(255,255,255,0.28)"
-            >
+            <text x={x} y="350" textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">
               {year}
             </text>
           </g>
@@ -172,8 +166,7 @@ function CitationGraph({
           .slice(index + 1)
           .filter(
             (candidate) =>
-              Math.abs(candidate.year - node.year) <= 4 &&
-              Math.abs(candidate.relevance - node.relevance) <= 0.22,
+              Math.abs(candidate.year - node.year) <= 4 && Math.abs(candidate.relevance - node.relevance) <= 0.22,
           )
           .slice(0, 2)
           .map((peer, edgeIndex) => {
@@ -185,7 +178,7 @@ function CitationGraph({
                 key={`arc-${index}-${edgeIndex}`}
                 d={`M ${node.x} ${node.y} Q ${mx} ${my} ${peer.x} ${peer.y}`}
                 fill="none"
-                stroke={combined > 0.7 ? 'rgba(175,195,214,0.32)' : 'rgba(175,195,214,0.16)'}
+                stroke={combined > 0.7 ? "rgba(175,195,214,0.32)" : "rgba(175,195,214,0.16)"}
                 strokeWidth={combined > 0.7 ? 1.2 : 0.7}
               />
             );
@@ -200,16 +193,18 @@ function CitationGraph({
             onMouseEnter={() => setHovered(n.id)}
             onMouseLeave={() => setHovered(null)}
             onClick={() => onNodeClick?.(n)}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: "pointer" }}
           >
-            <title>{n.title} ({n.year}) — Rank: {(n.relevance * 100).toFixed(0)}%</title>
+            <title>
+              {n.title} ({n.year}) — Rank: {(n.relevance * 100).toFixed(0)}%
+            </title>
             <line x1={n.x} y1="330" x2={n.x} y2={n.y + n.r + 4} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 4" />
             {n.relevance > 0.7 && (
               <circle
                 cx={n.x}
                 cy={n.y}
                 r={n.r + 4}
-                fill={isHov ? 'rgba(231,199,169,0.22)' : 'rgba(175,195,214,0.18)'}
+                fill={isHov ? "rgba(231,199,169,0.22)" : "rgba(175,195,214,0.18)"}
                 filter="url(#nexai-node-glow)"
               />
             )}
@@ -217,13 +212,13 @@ function CitationGraph({
               cx={n.x}
               cy={n.y}
               r={n.r}
-              fill={isHov ? 'rgba(175,195,214,0.24)' : 'rgba(18,26,40,0.88)'}
+              fill={isHov ? "rgba(175,195,214,0.24)" : "rgba(18,26,40,0.88)"}
               stroke={
                 isHov
-                  ? 'rgba(231,199,169,0.9)'
+                  ? "rgba(231,199,169,0.9)"
                   : n.relevance > 0.7
-                    ? 'rgba(175,195,214,0.72)'
-                    : 'rgba(175,195,214,0.46)'
+                    ? "rgba(175,195,214,0.72)"
+                    : "rgba(175,195,214,0.46)"
               }
               strokeWidth={isHov ? 1.8 : n.relevance > 0.7 ? 1.5 : 1.1}
             />
@@ -233,7 +228,7 @@ function CitationGraph({
               textAnchor="middle"
               fontFamily={THEME.MONO}
               fontSize="10"
-              fill={isHov ? 'rgba(255,244,230,0.96)' : 'rgba(255,255,255,0.72)'}
+              fill={isHov ? "rgba(255,244,230,0.96)" : "rgba(255,255,255,0.72)"}
             >
               {n.year}
             </text>
@@ -245,7 +240,7 @@ function CitationGraph({
               fontSize="10"
               fill="rgba(205,214,236,0.62)"
             >
-              {n.title.length > 24 ? n.title.slice(0, 24) + '…' : n.title}
+              {n.title.length > 24 ? n.title.slice(0, 24) + "…" : n.title}
             </text>
           </g>
         );

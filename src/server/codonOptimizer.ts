@@ -27,13 +27,13 @@
  *       or operon position effects.
  */
 
-import codonTables from '../data/codonUsageTables.json';
+import codonTables from "../data/codonUsageTables.json";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export type Organism = 'ecoli' | 'scerevisiae';
+export type Organism = "ecoli" | "scerevisiae";
 
 export interface CodonOptimizationConfig {
   /** Target organism for codon usage optimization. */
@@ -72,7 +72,7 @@ function gcFraction(dna: string): number {
   let gc = 0;
   for (let i = 0; i < dna.length; i++) {
     const ch = dna[i];
-    if (ch === 'G' || ch === 'C' || ch === 'g' || ch === 'c') gc++;
+    if (ch === "G" || ch === "C" || ch === "g" || ch === "c") gc++;
   }
   return gc / dna.length;
 }
@@ -87,9 +87,7 @@ function findRestrictionSites(dna: string, sites: string[]): string[] {
  * Build a relative-adaptiveness (w) lookup for each codon.
  * For each amino acid, w = freq / maxFreq among synonymous codons.
  */
-function buildRelativeAdaptiveness(
-  table: CodonUsageTable,
-): Map<string, number> {
+function buildRelativeAdaptiveness(table: CodonUsageTable): Map<string, number> {
   const w = new Map<string, number>();
   for (const aminoAcid of Object.keys(table)) {
     const codons = table[aminoAcid];
@@ -139,26 +137,21 @@ function selectCodon(
  * @param config - Optimization parameters.
  * @returns The optimized DNA sequence along with quality metrics.
  */
-export function optimizeCodons(
-  aminoAcidSequence: string,
-  config: CodonOptimizationConfig,
-): CodonOptimizationResult {
+export function optimizeCodons(aminoAcidSequence: string, config: CodonOptimizationConfig): CodonOptimizationResult {
   const { organism, avoidSites = [], gcTarget = [0.4, 0.6] } = config;
   const table = loadTable(organism);
   const wMap = buildRelativeAdaptiveness(table);
   const avoidUpper = avoidSites.map((s) => s.toUpperCase());
 
   // --- Phase 1: select codons, avoiding restriction sites ---
-  let dna = '';
+  let dna = "";
   const codonChoices: string[] = [];
 
   for (let i = 0; i < aminoAcidSequence.length; i++) {
     const aa = aminoAcidSequence[i].toUpperCase();
     const codon = selectCodon(aa, table, avoidUpper, dna);
     if (!codon) {
-      throw new Error(
-        `No codon mapping found for amino acid "${aa}" in organism "${organism}".`,
-      );
+      throw new Error(`No codon mapping found for amino acid "${aa}" in organism "${organism}".`);
     }
     codonChoices.push(codon);
     dna += codon;
@@ -170,10 +163,7 @@ export function optimizeCodons(
   const maxPasses = codonChoices.length * 2;
   let pass = 0;
 
-  while (
-    (gc < gcTarget[0] || gc > gcTarget[1]) &&
-    pass < maxPasses
-  ) {
+  while ((gc < gcTarget[0] || gc > gcTarget[1]) && pass < maxPasses) {
     const needMoreGC = gc < gcTarget[0];
 
     // Find a swappable position (scan from the end)
@@ -187,17 +177,14 @@ export function optimizeCodons(
       const currentGC = gcFraction(current);
 
       // Try to find a synonymous codon with better GC
-      const alternatives = [...codons]
-        .sort((a, b) => b[1] - a[1])
-        .map((c) => c[0].toUpperCase());
+      const alternatives = [...codons].sort((a, b) => b[1] - a[1]).map((c) => c[0].toUpperCase());
 
       for (const alt of alternatives) {
         if (alt === current) continue;
         const altGC = gcFraction(alt);
         if (needMoreGC ? altGC > currentGC : altGC < currentGC) {
           // Check restriction sites with the swap
-          const newDna =
-            dna.slice(0, i * 3) + alt + dna.slice((i + 1) * 3);
+          const newDna = dna.slice(0, i * 3) + alt + dna.slice((i + 1) * 3);
           if (findRestrictionSites(newDna, avoidUpper).length === 0) {
             codonChoices[i] = alt;
             dna = newDna;
@@ -224,8 +211,7 @@ export function optimizeCodons(
       effectiveLength++;
     }
   }
-  const cai =
-    effectiveLength > 0 ? Math.exp(logSum / effectiveLength) : 0;
+  const cai = effectiveLength > 0 ? Math.exp(logSum / effectiveLength) : 0;
 
   // --- Phase 4: final restriction-site check ---
   const sitesFound = findRestrictionSites(dna, avoidUpper);

@@ -26,7 +26,7 @@
 // only at present); the orchestrator surfaces "no adapter registered"
 // errors for any tool without one. See workflowRegistry.ts for the
 // declarative contract per id.
-import type { ToolId } from '../domain/workflowContract';
+import type { ToolId } from "../domain/workflowContract";
 export type AxonTool = ToolId;
 
 /**
@@ -34,12 +34,7 @@ export type AxonTool = ToolId;
  * is an adapter failure; a cancellation is an explicit user action. They
  * diverge in retry semantics, audit messages, and downstream impact.
  */
-export type AxonTaskStatus =
-  | 'pending'
-  | 'running'
-  | 'done'
-  | 'error'
-  | 'cancelled';
+export type AxonTaskStatus = "pending" | "running" | "done" | "error" | "cancelled";
 
 export interface AxonTask<TInput = unknown, TResult = unknown> {
   id: string;
@@ -124,7 +119,7 @@ export class AxonOrchestrator {
   }
 
   peekNextPending(): AxonTask | undefined {
-    const task = this.tasks.find((t) => t.status === 'pending');
+    const task = this.tasks.find((t) => t.status === "pending");
     return task ? { ...task } : undefined;
   }
 
@@ -138,7 +133,7 @@ export class AxonOrchestrator {
       tool: opts.tool,
       label: opts.label,
       input: opts.input,
-      status: 'pending',
+      status: "pending",
       retryCount: 0,
       maxRetries: opts.maxRetries ?? 1,
       createdAt: now(),
@@ -161,7 +156,7 @@ export class AxonOrchestrator {
    */
   peekNextRunnable(): AxonTask | undefined {
     for (const task of this.tasks) {
-      if (task.status !== 'pending') continue;
+      if (task.status !== "pending") continue;
       if (!this.dependenciesSatisfied(task)) continue;
       return { ...task };
     }
@@ -177,11 +172,11 @@ export class AxonOrchestrator {
     const byId = new Map(this.tasks.map((t) => [t.id, t]));
     const blocked: AxonTask[] = [];
     for (const task of this.tasks) {
-      if (task.status !== 'pending') continue;
+      if (task.status !== "pending") continue;
       if (!task.dependsOn?.length) continue;
       const hasDead = task.dependsOn.some((dep) => {
         const d = byId.get(dep);
-        return d?.status === 'error' || d?.status === 'cancelled';
+        return d?.status === "error" || d?.status === "cancelled";
       });
       if (hasDead) blocked.push({ ...task });
     }
@@ -191,14 +186,14 @@ export class AxonOrchestrator {
   private dependenciesSatisfied(task: AxonTask): boolean {
     if (!task.dependsOn || task.dependsOn.length === 0) return true;
     const byId = new Map(this.tasks.map((t) => [t.id, t]));
-    return task.dependsOn.every((dep) => byId.get(dep)?.status === 'done');
+    return task.dependsOn.every((dep) => byId.get(dep)?.status === "done");
   }
 
   /** Transition pending → running. Returns the mutated task or undefined. */
   markRunning(id: string): AxonTask | undefined {
     const task = this.tasks.find((t) => t.id === id);
-    if (!task || task.status !== 'pending') return undefined;
-    task.status = 'running';
+    if (!task || task.status !== "pending") return undefined;
+    task.status = "running";
     task.startedAt = this.now();
     this.notify();
     return { ...task };
@@ -207,8 +202,8 @@ export class AxonOrchestrator {
   /** Transition running → done. */
   complete(id: string, result: unknown): AxonTask | undefined {
     const task = this.tasks.find((t) => t.id === id);
-    if (!task || task.status !== 'running') return undefined;
-    task.status = 'done';
+    if (!task || task.status !== "running") return undefined;
+    task.status = "done";
     task.result = result;
     task.finishedAt = this.now();
     this.notify();
@@ -222,14 +217,14 @@ export class AxonOrchestrator {
    */
   fail(id: string, error: string): AxonTask | undefined {
     const task = this.tasks.find((t) => t.id === id);
-    if (!task || task.status !== 'running') return undefined;
+    if (!task || task.status !== "running") return undefined;
     task.retryCount += 1;
     if (task.retryCount <= task.maxRetries) {
-      task.status = 'pending';
+      task.status = "pending";
       task.startedAt = undefined;
       task.error = error;
     } else {
-      task.status = 'error';
+      task.status = "error";
       task.error = error;
       task.finishedAt = this.now();
     }
@@ -240,9 +235,7 @@ export class AxonOrchestrator {
   /** Remove every task in terminal state. Running / pending are preserved. */
   clearTerminal(): void {
     const before = this.tasks.length;
-    this.tasks = this.tasks.filter(
-      (t) => t.status === 'pending' || t.status === 'running',
-    );
+    this.tasks = this.tasks.filter((t) => t.status === "pending" || t.status === "running");
     if (this.tasks.length !== before) this.notify();
   }
 
@@ -256,14 +249,10 @@ export class AxonOrchestrator {
   cancel(id: string): AxonTask | undefined {
     const task = this.tasks.find((t) => t.id === id);
     if (!task) return undefined;
-    if (
-      task.status === 'done' ||
-      task.status === 'error' ||
-      task.status === 'cancelled'
-    ) {
+    if (task.status === "done" || task.status === "error" || task.status === "cancelled") {
       return undefined;
     }
-    task.status = 'cancelled';
+    task.status = "cancelled";
     task.finishedAt = this.now();
     this.notify();
     return { ...task };
@@ -278,8 +267,8 @@ export class AxonOrchestrator {
   retry(id: string): AxonTask | undefined {
     const task = this.tasks.find((t) => t.id === id);
     if (!task) return undefined;
-    if (task.status !== 'error' && task.status !== 'cancelled') return undefined;
-    task.status = 'pending';
+    if (task.status !== "error" && task.status !== "cancelled") return undefined;
+    task.status = "pending";
     task.retryCount += 1;
     task.error = undefined;
     task.startedAt = undefined;
@@ -299,12 +288,10 @@ export class AxonOrchestrator {
     const current = this.tasks.findIndex((t) => t.id === id);
     if (current < 0) return undefined;
     const task = this.tasks[current];
-    if (task.status !== 'pending') return undefined;
+    if (task.status !== "pending") return undefined;
 
     // Compute target slot within the full array based on pending index.
-    const pending = this.tasks
-      .map((t, i) => ({ t, i }))
-      .filter((p) => p.t.status === 'pending');
+    const pending = this.tasks.map((t, i) => ({ t, i })).filter((p) => p.t.status === "pending");
     if (newIndex < 0 || newIndex >= pending.length) return undefined;
 
     // Dependency guard: newIndex must not place task before any unmet
@@ -314,7 +301,7 @@ export class AxonOrchestrator {
       for (const dep of task.dependsOn) {
         const depTask = byId.get(dep);
         if (!depTask) continue;
-        if (depTask.status === 'done') continue;
+        if (depTask.status === "done") continue;
         const depPendingIdx = pending.findIndex((p) => p.t.id === dep);
         if (depPendingIdx >= 0 && newIndex <= depPendingIdx) return undefined;
       }

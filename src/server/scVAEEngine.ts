@@ -35,24 +35,24 @@
  *       practical for hundreds of cells but not tens of thousands.
  */
 
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface SCVAEConfig {
-  inputDim: number;       // number of genes (default 2000)
-  latentDim: number;      // latent space dimension (default 32)
-  encoderPath: string;    // path to encoder ONNX model
-  decoderPath: string;    // path to decoder ONNX model
+  inputDim: number; // number of genes (default 2000)
+  latentDim: number; // latent space dimension (default 32)
+  encoderPath: string; // path to encoder ONNX model
+  decoderPath: string; // path to decoder ONNX model
   seed?: number;
 }
 
 export interface SCVAEResult {
-  latent: number[][];         // [cells × latent_dim]
-  reconstructed: number[][];  // [cells × genes]
+  latent: number[][]; // [cells × latent_dim]
+  reconstructed: number[][]; // [cells × genes]
   reconstructionError: number; // MSE
-  mu: number[][];             // [cells × latent_dim] mean
-  sigma: number[][];          // [cells × latent_dim] std
+  mu: number[][]; // [cells × latent_dim] mean
+  sigma: number[][]; // [cells × latent_dim] std
 }
 
 export interface SCVAEStatus {
@@ -88,23 +88,23 @@ export class SCVAEEngine {
   async init(): Promise<boolean> {
     try {
       // Dynamic import to avoid bundling ONNX Runtime in SSR
-      const ort = await import('onnxruntime-web');
+      const ort = await import("onnxruntime-web");
       ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
 
       this.encoderSession = await ort.InferenceSession.create(this.config.encoderPath, {
-        executionProviders: ['wasm'],
-        graphOptimizationLevel: 'all',
+        executionProviders: ["wasm"],
+        graphOptimizationLevel: "all",
       });
 
       this.decoderSession = await ort.InferenceSession.create(this.config.decoderPath, {
-        executionProviders: ['wasm'],
-        graphOptimizationLevel: 'all',
+        executionProviders: ["wasm"],
+        graphOptimizationLevel: "all",
       });
 
       this._ready = true;
       return true;
     } catch (err) {
-      console.warn('[scVAE] Failed to load ONNX models:', err);
+      console.warn("[scVAE] Failed to load ONNX models:", err);
       this._ready = false;
       return false;
     }
@@ -129,10 +129,10 @@ export class SCVAEEngine {
    */
   async encode(data: number[][]): Promise<{ mu: number[][]; sigma: number[][]; latent: number[][] }> {
     if (!this._ready || !this.encoderSession) {
-      throw new Error('scVAE not initialized — call init() first');
+      throw new Error("scVAE not initialized — call init() first");
     }
 
-    const ort = await import('onnxruntime-web');
+    const ort = await import("onnxruntime-web");
     const n = data.length;
     const inputDim = this.config.inputDim;
     const latentDim = this.config.latentDim;
@@ -145,8 +145,12 @@ export class SCVAEEngine {
       }
     }
 
-    const inputTensor = new ort.Tensor('float32', flatData, [n, inputDim]);
-    const results = await (this.encoderSession as { run: (inputs: Record<string, unknown>) => Promise<Record<string, { data: Float32Array }>> }).run({ input: inputTensor });
+    const inputTensor = new ort.Tensor("float32", flatData, [n, inputDim]);
+    const results = await (
+      this.encoderSession as {
+        run: (inputs: Record<string, unknown>) => Promise<Record<string, { data: Float32Array }>>;
+      }
+    ).run({ input: inputTensor });
 
     // Extract mu and logvar from encoder output
     const muData = results.mu?.data ?? new Float32Array(n * latentDim);
@@ -182,10 +186,10 @@ export class SCVAEEngine {
    */
   async decode(latent: number[][]): Promise<number[][]> {
     if (!this._ready || !this.decoderSession) {
-      throw new Error('scVAE not initialized — call init() first');
+      throw new Error("scVAE not initialized — call init() first");
     }
 
-    const ort = await import('onnxruntime-web');
+    const ort = await import("onnxruntime-web");
     const n = latent.length;
     const latentDim = this.config.latentDim;
     const inputDim = this.config.inputDim;
@@ -197,8 +201,12 @@ export class SCVAEEngine {
       }
     }
 
-    const inputTensor = new ort.Tensor('float32', flatData, [n, latentDim]);
-    const results = await (this.decoderSession as { run: (inputs: Record<string, unknown>) => Promise<Record<string, { data: Float32Array }>> }).run({ input: inputTensor });
+    const inputTensor = new ort.Tensor("float32", flatData, [n, latentDim]);
+    const results = await (
+      this.decoderSession as {
+        run: (inputs: Record<string, unknown>) => Promise<Record<string, { data: Float32Array }>>;
+      }
+    ).run({ input: inputTensor });
 
     const outputData = results.output?.data ?? new Float32Array(n * inputDim);
     const output: number[][] = [];
@@ -273,8 +281,8 @@ export function createDefaultSCVAEEngine(): SCVAEEngine {
   return new SCVAEEngine({
     inputDim: 2000,
     latentDim: 32,
-    encoderPath: '/models/scVAE_encoder.onnx',
-    decoderPath: '/models/scVAE_decoder.onnx',
+    encoderPath: "/models/scVAE_encoder.onnx",
+    decoderPath: "/models/scVAE_decoder.onnx",
     seed: 42,
   });
 }

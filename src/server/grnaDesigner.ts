@@ -16,16 +16,16 @@
  *     - Rule Set 2 weights are from Doench 2016 Table S2
  */
 
-import { computeCFDScore } from '../data/cfdPenaltyMatrix';
+import { computeCFDScore } from "../data/cfdPenaltyMatrix";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export type CasProtein = 'SpCas9' | 'SpCas9-NG' | 'Cas12a' | 'SpRY';
+export type CasProtein = "SpCas9" | "SpCas9-NG" | "Cas12a" | "SpRY";
 
 export interface PAMDefinition {
   name: CasProtein;
-  pamSequence: string;     // regex-like: 'NGG', 'TTTV', 'NRN'
-  spacerLength: number;    // 20 for Cas9, 23-25 for Cas12a
+  pamSequence: string; // regex-like: 'NGG', 'TTTV', 'NRN'
+  spacerLength: number; // 20 for Cas9, 23-25 for Cas12a
   description: string;
 }
 
@@ -33,12 +33,12 @@ export interface gRNACandidate {
   spacer: string;
   pamSequence: string;
   position: number;
-  strand: '+' | '-';
+  strand: "+" | "-";
   gcContent: number;
   onTargetScore: number;
   offTargetScore: number;
   compositeScore: number;
-  classification: 'high' | 'medium' | 'low';
+  classification: "high" | "medium" | "low";
   warnings: string[];
   positionFeatures: number[];
 }
@@ -56,39 +56,49 @@ export interface gRNADesignResult {
 
 export const PAM_DEFINITIONS: Record<CasProtein, PAMDefinition> = {
   SpCas9: {
-    name: 'SpCas9',
-    pamSequence: 'NGG',
+    name: "SpCas9",
+    pamSequence: "NGG",
     spacerLength: 20,
-    description: 'Streptococcus pyogenes Cas9, NGG PAM',
+    description: "Streptococcus pyogenes Cas9, NGG PAM",
   },
-  'SpCas9-NG': {
-    name: 'SpCas9-NG',
-    pamSequence: 'NG',
+  "SpCas9-NG": {
+    name: "SpCas9-NG",
+    pamSequence: "NG",
     spacerLength: 20,
-    description: 'SpCas9-NG relaxed PAM variant',
+    description: "SpCas9-NG relaxed PAM variant",
   },
   Cas12a: {
-    name: 'Cas12a',
-    pamSequence: 'TTTV',
+    name: "Cas12a",
+    pamSequence: "TTTV",
     spacerLength: 23,
-    description: 'Cas12a (Cpf1), TTTV PAM',
+    description: "Cas12a (Cpf1), TTTV PAM",
   },
   SpRY: {
-    name: 'SpRY',
-    pamSequence: 'NRN',
+    name: "SpRY",
+    pamSequence: "NRN",
     spacerLength: 20,
-    description: 'SpRY near-PAMless variant',
+    description: "SpRY near-PAMless variant",
   },
 };
 
 // ── PAM Matching ───────────────────────────────────────────────────────────
 
 const IUPAC: Record<string, string[]> = {
-  A: ['A'], C: ['C'], G: ['G'], T: ['T'],
-  R: ['A', 'G'], Y: ['C', 'T'], S: ['G', 'C'], W: ['A', 'T'],
-  K: ['G', 'T'], M: ['A', 'C'], B: ['C', 'G', 'T'],
-  D: ['A', 'G', 'T'], H: ['A', 'C', 'T'], V: ['A', 'C', 'G'],
-  N: ['A', 'C', 'G', 'T'],
+  A: ["A"],
+  C: ["C"],
+  G: ["G"],
+  T: ["T"],
+  R: ["A", "G"],
+  Y: ["C", "T"],
+  S: ["G", "C"],
+  W: ["A", "T"],
+  K: ["G", "T"],
+  M: ["A", "C"],
+  B: ["C", "G", "T"],
+  D: ["A", "G", "T"],
+  H: ["A", "C", "T"],
+  V: ["A", "C", "G"],
+  N: ["A", "C", "G", "T"],
 };
 
 function matchesPAM(sequence: string, pamPattern: string): boolean {
@@ -121,8 +131,29 @@ const RULE_SET_2_INTERCEPT = 0.59763615;
 const SINGLE_NUCLEOTIDE_WEIGHTS: Record<string, Record<number, number>> = {
   G: { 0: 0.22529293, 1: 0.08548665, 2: -0.06919448, 6: 0.15964446, 7: -0.30066207, 16: 0.14698494, 18: 0.22264208 },
   A: { 1: -0.08616895, 4: -0.13808249, 6: -0.12066455, 8: 0.13400277, 14: -0.10677946, 16: -0.09001235 },
-  C: { 1: -0.01278955, 3: -0.07568073, 5: -0.03688373, 7: 0.13135212, 10: -0.06442375, 12: -0.07699775, 15: -0.08363285, 17: -0.16031477, 18: -0.21486448 },
-  T: { 4: 0.10078202, 5: 0.07160457, 6: 0.08498648, 7: 0.05849488, 8: -0.13356875, 9: -0.05513225, 12: 0.07827128, 13: -0.07826262, 16: -0.05979855, 18: -0.07201936 },
+  C: {
+    1: -0.01278955,
+    3: -0.07568073,
+    5: -0.03688373,
+    7: 0.13135212,
+    10: -0.06442375,
+    12: -0.07699775,
+    15: -0.08363285,
+    17: -0.16031477,
+    18: -0.21486448,
+  },
+  T: {
+    4: 0.10078202,
+    5: 0.07160457,
+    6: 0.08498648,
+    7: 0.05849488,
+    8: -0.13356875,
+    9: -0.05513225,
+    12: 0.07827128,
+    13: -0.07826262,
+    16: -0.05979855,
+    18: -0.07201936,
+  },
 };
 
 /**
@@ -130,23 +161,23 @@ const SINGLE_NUCLEOTIDE_WEIGHTS: Record<string, Record<number, number>> = {
  * From Doench 2016 Table S2 — "Dinucleotide" features.
  */
 const DINUCLEOTIDE_WEIGHTS: Array<{ pos1: number; pos2: number; dinuc: string; weight: number }> = [
-  { pos1: 0, pos2: 1, dinuc: 'GG', weight: -0.17596377 },
-  { pos1: 1, pos2: 2, dinuc: 'GG', weight: 0.08982347 },
-  { pos1: 4, pos2: 5, dinuc: 'GC', weight: 0.09894967 },
-  { pos1: 5, pos2: 6, dinuc: 'GC', weight: -0.11085337 },
-  { pos1: 6, pos2: 7, dinuc: 'GC', weight: 0.09533652 },
-  { pos1: 7, pos2: 8, dinuc: 'GC', weight: -0.08859355 },
-  { pos1: 8, pos2: 9, dinuc: 'GC', weight: 0.06630007 },
-  { pos1: 9, pos2: 10, dinuc: 'GC', weight: -0.07205955 },
-  { pos1: 10, pos2: 11, dinuc: 'GC', weight: 0.05709395 },
-  { pos1: 11, pos2: 12, dinuc: 'GC', weight: -0.04822557 },
-  { pos1: 12, pos2: 13, dinuc: 'GC', weight: 0.03947035 },
-  { pos1: 13, pos2: 14, dinuc: 'GC', weight: -0.03273652 },
-  { pos1: 14, pos2: 15, dinuc: 'GC', weight: 0.02755435 },
-  { pos1: 15, pos2: 16, dinuc: 'GC', weight: -0.02345255 },
-  { pos1: 16, pos2: 17, dinuc: 'GC', weight: 0.01987625 },
-  { pos1: 17, pos2: 18, dinuc: 'GC', weight: -0.01684755 },
-  { pos1: 18, pos2: 19, dinuc: 'GC', weight: 0.01432545 },
+  { pos1: 0, pos2: 1, dinuc: "GG", weight: -0.17596377 },
+  { pos1: 1, pos2: 2, dinuc: "GG", weight: 0.08982347 },
+  { pos1: 4, pos2: 5, dinuc: "GC", weight: 0.09894967 },
+  { pos1: 5, pos2: 6, dinuc: "GC", weight: -0.11085337 },
+  { pos1: 6, pos2: 7, dinuc: "GC", weight: 0.09533652 },
+  { pos1: 7, pos2: 8, dinuc: "GC", weight: -0.08859355 },
+  { pos1: 8, pos2: 9, dinuc: "GC", weight: 0.06630007 },
+  { pos1: 9, pos2: 10, dinuc: "GC", weight: -0.07205955 },
+  { pos1: 10, pos2: 11, dinuc: "GC", weight: 0.05709395 },
+  { pos1: 11, pos2: 12, dinuc: "GC", weight: -0.04822557 },
+  { pos1: 12, pos2: 13, dinuc: "GC", weight: 0.03947035 },
+  { pos1: 13, pos2: 14, dinuc: "GC", weight: -0.03273652 },
+  { pos1: 14, pos2: 15, dinuc: "GC", weight: 0.02755435 },
+  { pos1: 15, pos2: 16, dinuc: "GC", weight: -0.02345255 },
+  { pos1: 16, pos2: 17, dinuc: "GC", weight: 0.01987625 },
+  { pos1: 17, pos2: 18, dinuc: "GC", weight: -0.01684755 },
+  { pos1: 18, pos2: 19, dinuc: "GC", weight: 0.01432545 },
 ];
 
 /**
@@ -154,13 +185,13 @@ const DINUCLEOTIDE_WEIGHTS: Array<{ pos1: number; pos2: number; dinuc: string; w
  * From Doench 2016 Table S2 — "Global" features.
  */
 const GLOBAL_FEATURE_WEIGHTS = {
-  gcContent: -1.03265573,       // GC fraction
+  gcContent: -1.03265573, // GC fraction
   gcContentSquared: 1.27875488, // GC² (quadratic term)
-  gcContentCubed: -0.54555975,  // GC³ (cubic term)
-  homopolymer4: -0.26071525,    // 4+ homopolymer indicator
-  homopolymer5: -0.42326377,    // 5+ homopolymer indicator
+  gcContentCubed: -0.54555975, // GC³ (cubic term)
+  homopolymer4: -0.26071525, // 4+ homopolymer indicator
+  homopolymer5: -0.42326377, // 5+ homopolymer indicator
   minDistanceToEdge: 0.02675785, // min distance to either end of spacer
-  polyT4: -0.55784688,          // 4+ consecutive T (U6 termination signal)
+  polyT4: -0.55784688, // 4+ consecutive T (U6 termination signal)
 };
 
 /**
@@ -170,7 +201,7 @@ function homopolymerPenalty(spacer: string): number {
   for (let i = 0; i < spacer.length - 3; i++) {
     if (spacer[i] === spacer[i + 1] && spacer[i + 1] === spacer[i + 2] && spacer[i + 2] === spacer[i + 3]) {
       // 4+ consecutive identical bases
-      return spacer[i] === 'T' ? 0.3 : 0.5; // TTTT is worse (U6 termination)
+      return spacer[i] === "T" ? 0.3 : 0.5; // TTTT is worse (U6 termination)
     }
   }
   return 1.0; // no penalty
@@ -279,7 +310,7 @@ export function computeOffTargetScore(spacer: string): number {
 
   // Position 20 G preference (U6 promoter)
   const pos20 = spacer[spacer.length - 1];
-  const pos20Score = pos20 === 'G' ? 1.0 : pos20 === 'A' ? 0.9 : 0.8;
+  const pos20Score = pos20 === "G" ? 1.0 : pos20 === "A" ? 0.9 : 0.8;
 
   return Math.round(gcPenalty * hpPenalty * pos20Score * 1000) / 1000;
 }
@@ -297,12 +328,12 @@ export function computeOffTargetScore(spacer: string): number {
  */
 export function designgRNAs(
   geneSequence: string,
-  casProtein: CasProtein = 'SpCas9',
+  casProtein: CasProtein = "SpCas9",
   maxCandidates = 10,
   geneName?: string,
 ): gRNADesignResult {
   const pam = PAM_DEFINITIONS[casProtein];
-  const seq = geneSequence.toUpperCase().replace(/[^ACGT]/g, '');
+  const seq = geneSequence.toUpperCase().replace(/[^ACGT]/g, "");
 
   if (seq.length < pam.spacerLength + pam.pamSequence.length) {
     return {
@@ -311,7 +342,7 @@ export function designgRNAs(
       pamSitesFound: 0,
       candidatesAfterFilter: 0,
       casProtein,
-      scoringMethod: 'Rule Set 2 (Doench 2016, 31 features) + CFD',
+      scoringMethod: "Rule Set 2 (Doench 2016, 31 features) + CFD",
     };
   }
 
@@ -323,7 +354,7 @@ export function designgRNAs(
     const pamSite = seq.substring(i, i + pam.pamSequence.length);
     if (matchesPAM(pamSite, pam.pamSequence)) {
       const spacer = seq.substring(i - pam.spacerLength, i);
-      candidates.push(evaluateCandidate(spacer, pamSite, i - pam.spacerLength, '+', pam));
+      candidates.push(evaluateCandidate(spacer, pamSite, i - pam.spacerLength, "+", pam));
     }
   }
 
@@ -332,14 +363,16 @@ export function designgRNAs(
     const pamSite = rcSeq.substring(i, i + pam.pamSequence.length);
     if (matchesPAM(pamSite, pam.pamSequence)) {
       const spacer = reverseComplement(rcSeq.substring(i, i + pam.spacerLength));
-      candidates.push(evaluateCandidate(spacer, reverseComplement(pamSite), seq.length - i - pam.pamSequence.length, '-', pam));
+      candidates.push(
+        evaluateCandidate(spacer, reverseComplement(pamSite), seq.length - i - pam.pamSequence.length, "-", pam),
+      );
     }
   }
 
   // Filter and sort
   const filtered = candidates
-    .filter(c => c.gcContent >= 0.3 && c.gcContent <= 0.8)
-    .filter(c => !c.spacer.includes('TTTT'))
+    .filter((c) => c.gcContent >= 0.3 && c.gcContent <= 0.8)
+    .filter((c) => !c.spacer.includes("TTTT"))
     .sort((a, b) => b.compositeScore - a.compositeScore);
 
   return {
@@ -348,7 +381,7 @@ export function designgRNAs(
     pamSitesFound: candidates.length,
     candidatesAfterFilter: filtered.length,
     casProtein,
-    scoringMethod: 'Rule Set 2 (Doench 2016, 31 features) + CFD',
+    scoringMethod: "Rule Set 2 (Doench 2016, 31 features) + CFD",
   };
 }
 
@@ -356,21 +389,22 @@ function evaluateCandidate(
   spacer: string,
   pam: string,
   position: number,
-  strand: '+' | '-',
+  strand: "+" | "-",
   pamDef: PAMDefinition,
 ): gRNACandidate {
   const gc = (spacer.match(/[GC]/g) ?? []).length / spacer.length;
   const { score: onTargetScore, features } = computeOnTargetScore(spacer);
   const offTargetScore = computeOffTargetScore(spacer);
-  const compositeScore = Math.round((0.5 * onTargetScore + 0.3 * offTargetScore + 0.2 * gcContentScore(gc)) * 1000) / 1000;
+  const compositeScore =
+    Math.round((0.5 * onTargetScore + 0.3 * offTargetScore + 0.2 * gcContentScore(gc)) * 1000) / 1000;
 
   const warnings: string[] = [];
-  if (gc < 0.3) warnings.push('Low GC content');
-  if (gc > 0.7) warnings.push('High GC content');
-  if (homopolymerPenalty(spacer) < 1) warnings.push('Homopolymer detected');
+  if (gc < 0.3) warnings.push("Low GC content");
+  if (gc > 0.7) warnings.push("High GC content");
+  if (homopolymerPenalty(spacer) < 1) warnings.push("Homopolymer detected");
 
-  const classification: 'high' | 'medium' | 'low' =
-    compositeScore > 0.7 ? 'high' : compositeScore > 0.4 ? 'medium' : 'low';
+  const classification: "high" | "medium" | "low" =
+    compositeScore > 0.7 ? "high" : compositeScore > 0.4 ? "medium" : "low";
 
   return {
     spacer,
@@ -388,6 +422,10 @@ function evaluateCandidate(
 }
 
 function reverseComplement(seq: string): string {
-  const comp: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C' };
-  return seq.split('').reverse().map(b => comp[b] ?? 'N').join('');
+  const comp: Record<string, string> = { A: "T", T: "A", C: "G", G: "C" };
+  return seq
+    .split("")
+    .reverse()
+    .map((b) => comp[b] ?? "N")
+    .join("");
 }

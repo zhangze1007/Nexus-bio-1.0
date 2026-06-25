@@ -1,18 +1,10 @@
-import type { ClaimSurface } from '../protocol/nexusTrustRuntime';
+import type { ClaimSurface } from "../protocol/nexusTrustRuntime";
 
-export const BENCHMARK_MODES = [
-  'no-gating',
-  'badge-only',
-  'runtime-gating',
-] as const;
+export const BENCHMARK_MODES = ["no-gating", "badge-only", "runtime-gating"] as const;
 
 export type BenchmarkMode = (typeof BENCHMARK_MODES)[number];
 
-export type BenchmarkDecisionStatus =
-  | 'ok'
-  | 'blocked'
-  | 'gated'
-  | 'demoOnly';
+export type BenchmarkDecisionStatus = "ok" | "blocked" | "gated" | "demoOnly";
 
 export interface PublicBenchmarkCaseResult {
   caseId: string;
@@ -50,7 +42,7 @@ export interface PublicBenchmarkModeSummary {
 }
 
 export interface PublicBenchmarkReport {
-  schemaVersion: 'public-benchmark-v1';
+  schemaVersion: "public-benchmark-v1";
   generatedAt: string;
   runLabel: string;
   totalCases: number;

@@ -11,15 +11,11 @@
  *     `campaignToArtifact()`; future CSV/h5ad ingestion produces the same shape.
  */
 
-export const PROEVOL_ARTIFACT_VERSION = 'proevol.campaign.v1' as const;
+export const PROEVOL_ARTIFACT_VERSION = "proevol.campaign.v1" as const;
 
-export type ProEvolValidity = 'real' | 'partial' | 'demo';
+export type ProEvolValidity = "real" | "partial" | "demo";
 
-export type ProEvolProvenanceKind =
-  | 'simulated'
-  | 'inferred'
-  | 'literature-backed'
-  | 'user-supplied';
+export type ProEvolProvenanceKind = "simulated" | "inferred" | "literature-backed" | "user-supplied";
 
 /**
  * `bandSemantic` is the contract every chart uses to decide how to render
@@ -35,7 +31,7 @@ export type ProEvolProvenanceKind =
  * `validity` to `'partial'`, charts MUST keep `bandSemantic = 'modeled'`
  * until per-replicate read counts are actually supplied by a user.
  */
-export type ProEvolBandSemantic = 'measurement' | 'modeled';
+export type ProEvolBandSemantic = "measurement" | "modeled";
 
 export interface ProEvolProvenance {
   kind: ProEvolProvenanceKind;
@@ -101,7 +97,7 @@ export interface ProEvolVariant {
   /** Optional engine-provided composite. Surfaced separately from frequency-derived selection. */
   compositeScore?: number;
   /** Provenance-aware selection status reported by the campaign source. */
-  selectionStatus: 'selected' | 'rejected' | 'wild-type' | 'unknown';
+  selectionStatus: "selected" | "rejected" | "wild-type" | "unknown";
   riskFlags: string[];
 }
 
@@ -144,14 +140,14 @@ export interface ProEvolArtifact {
 
 /** Lightweight runtime guard. Does not validate every nested invariant — it catches the common shape mistakes. */
 export function isProEvolArtifact(value: unknown): value is ProEvolArtifact {
-  if (!value || typeof value !== 'object') return false;
+  if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<ProEvolArtifact>;
   return (
-    candidate.version === PROEVOL_ARTIFACT_VERSION
-    && Array.isArray(candidate.rounds)
-    && Array.isArray(candidate.variants)
-    && candidate.meta != null
-    && candidate.provenance != null
+    candidate.version === PROEVOL_ARTIFACT_VERSION &&
+    Array.isArray(candidate.rounds) &&
+    Array.isArray(candidate.variants) &&
+    candidate.meta != null &&
+    candidate.provenance != null
   );
 }
 
@@ -164,10 +160,10 @@ export function isProEvolArtifact(value: unknown): value is ProEvolArtifact {
  * actual user upload supplies per-replicate read counts.
  */
 export function defaultValidityForProvenance(kind: ProEvolProvenanceKind): ProEvolValidity {
-  if (kind === 'user-supplied') return 'real';
-  if (kind === 'literature-backed') return 'partial';
-  if (kind === 'inferred') return 'partial';
-  return 'demo';
+  if (kind === "user-supplied") return "real";
+  if (kind === "literature-backed") return "partial";
+  if (kind === "inferred") return "partial";
+  return "demo";
 }
 
 /**
@@ -177,7 +173,7 @@ export function defaultValidityForProvenance(kind: ProEvolProvenanceKind): ProEv
  * stable and reproducible — they are *not* claims about real sequencing depth.
  */
 export interface CampaignToArtifactInput {
-  campaign: import('../services/ProEvolCampaignEngine').ProteinEvolutionCampaign;
+  campaign: import("../services/ProEvolCampaignEngine").ProteinEvolutionCampaign;
   targetProduct: string;
   replicateCount?: number;
   sequencingDepthPerSample?: number;
@@ -195,7 +191,7 @@ export function campaignToArtifact({
   // For each round, build a per-variant per-replicate read distribution proportional
   // to score^2 (sharper signal) so that selection coefficient and enrichment are
   // visibly different across rounds.
-  const variantsByRound = new Map<number, import('../services/ProEvolCampaignEngine').VariantCandidate[]>();
+  const variantsByRound = new Map<number, import("../services/ProEvolCampaignEngine").VariantCandidate[]>();
   campaign.rounds.forEach((round) => {
     variantsByRound.set(round.roundNumber, [campaign.wildType, ...round.variantLibrary.candidates]);
   });
@@ -223,7 +219,7 @@ export function campaignToArtifact({
     replicates.forEach((replicateId) => totalsByReplicate.set(replicateId, 0));
 
     const intermediate = candidates.map((candidate) => {
-      const baseShare = Math.pow(Math.max(candidate.score.composite, 0.5), 2);
+      const baseShare = Math.max(candidate.score.composite, 0.5) ** 2;
       return { candidate, baseShare };
     });
 
@@ -234,8 +230,9 @@ export function campaignToArtifact({
         roundId: `r${round.roundNumber}`,
         replicates: replicates.map((replicateId, replicateIndex) => {
           const expected =
-            (baseShare / totalShare) * sequencingDepthPerSample
-            * replicateNoise(candidate.id, round.roundNumber, replicateIndex);
+            (baseShare / totalShare) *
+            sequencingDepthPerSample *
+            replicateNoise(candidate.id, round.roundNumber, replicateIndex);
           const reads = Math.max(0, Math.round(expected));
           totalsByReplicate.set(replicateId, (totalsByReplicate.get(replicateId) ?? 0) + reads);
           return { replicateId, reads };
@@ -251,7 +248,7 @@ export function campaignToArtifact({
     roundReplicateTotals.set(round.roundNumber, totalsByReplicate);
   });
 
-  const allCandidates = new Map<string, import('../services/ProEvolCampaignEngine').VariantCandidate>();
+  const allCandidates = new Map<string, import("../services/ProEvolCampaignEngine").VariantCandidate>();
   allCandidates.set(campaign.wildType.id, campaign.wildType);
   campaign.rounds.forEach((round) => {
     round.variantLibrary.candidates.forEach((candidate) => {
@@ -282,13 +279,13 @@ export function campaignToArtifact({
     },
     compositeScore: candidate.score.composite,
     selectionStatus:
-      candidate.status === 'wild-type'
-        ? 'wild-type'
-        : candidate.status === 'selected'
-          ? 'selected'
-          : candidate.status === 'rejected'
-            ? 'rejected'
-            : 'unknown',
+      candidate.status === "wild-type"
+        ? "wild-type"
+        : candidate.status === "selected"
+          ? "selected"
+          : candidate.status === "rejected"
+            ? "rejected"
+            : "unknown",
     riskFlags: candidate.riskFlags,
   }));
 
@@ -312,7 +309,7 @@ export function campaignToArtifact({
   // Validity is therefore capped at 'partial' even for literature-backed kinds, and
   // bandSemantic is locked to 'modeled' so charts cannot accidentally claim CIs.
   const validity = defaultValidityForProvenance(provenanceKind);
-  const cappedValidity: ProEvolValidity = validity === 'real' ? 'partial' : validity;
+  const cappedValidity: ProEvolValidity = validity === "real" ? "partial" : validity;
 
   return {
     version: PROEVOL_ARTIFACT_VERSION,
@@ -338,28 +335,28 @@ export function campaignToArtifact({
     provenance: {
       kind: provenanceKind,
       validity: cappedValidity,
-      bandSemantic: 'modeled',
+      bandSemantic: "modeled",
       isModeled: true,
       source:
-        provenanceKind === 'simulated'
-          ? 'Engine adapter · deterministic model draws (no wet-lab data)'
-          : provenanceKind === 'inferred'
-            ? 'Engine adapter · inferred from upstream Nexus-Bio context (no wet-lab data)'
-            : provenanceKind === 'literature-backed'
-              ? 'Engine adapter · literature-shaped model draws (no wet-lab data)'
-              : 'User-supplied campaign artifact',
+        provenanceKind === "simulated"
+          ? "Engine adapter · deterministic model draws (no wet-lab data)"
+          : provenanceKind === "inferred"
+            ? "Engine adapter · inferred from upstream Nexus-Bio context (no wet-lab data)"
+            : provenanceKind === "literature-backed"
+              ? "Engine adapter · literature-shaped model draws (no wet-lab data)"
+              : "User-supplied campaign artifact",
       replicateCount,
       sequencingDepthPerSample,
       statisticalNotes: [
-        'Per-round read counts are deterministic model draws synthesized from engine composite scores.',
-        'Bands around frequency, Shannon and top-share lines represent spread across model draws — not biological-replicate confidence intervals.',
-        'Frequencies use Laplace pseudocount (+1) before normalization so low-count variants remain traceable.',
+        "Per-round read counts are deterministic model draws synthesized from engine composite scores.",
+        "Bands around frequency, Shannon and top-share lines represent spread across model draws — not biological-replicate confidence intervals.",
+        "Frequencies use Laplace pseudocount (+1) before normalization so low-count variants remain traceable.",
       ],
       generatedAt: Date.now(),
       notes:
-        cappedValidity === 'demo'
-          ? 'No upstream workbench context detected. Every chart on this page is downstream of the engine model only.'
-          : 'Counts on this artifact were not measured. Treat all bands as model spread, not measurement uncertainty.',
+        cappedValidity === "demo"
+          ? "No upstream workbench context detected. Every chart on this page is downstream of the engine model only."
+          : "Counts on this artifact were not measured. Treat all bands as model spread, not measurement uncertainty.",
     },
   };
 }

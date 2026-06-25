@@ -16,13 +16,13 @@
  * enforce a 350ms minimum gap between requests and batch with delays.
  */
 
-import type { CitationNode, CitationVerificationStatus } from '../types';
+import type { CitationNode, CitationVerificationStatus } from "../types";
 
 // ── PubMed E-utilities endpoints ─────────────────────────────────────────
 
-const ESEARCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi';
-const ESUMMARY_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi';
-const EFETCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
+const ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
+const ESUMMARY_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
+const EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
 
 const RATE_LIMIT_MS = 350;
 const REQUEST_TIMEOUT_MS = 8000;
@@ -58,7 +58,7 @@ async function rateLimitedFetch(url: string, signal?: AbortSignal): Promise<Resp
   const now = Date.now();
   const elapsed = now - lastRequestTime;
   if (elapsed < RATE_LIMIT_MS) {
-    await new Promise(r => setTimeout(r, RATE_LIMIT_MS - elapsed));
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS - elapsed));
   }
   lastRequestTime = Date.now();
 
@@ -67,7 +67,7 @@ async function rateLimitedFetch(url: string, signal?: AbortSignal): Promise<Resp
 
   // Combine external abort signal with our timeout
   if (signal) {
-    signal.addEventListener('abort', () => controller.abort(), { once: true });
+    signal.addEventListener("abort", () => controller.abort(), { once: true });
   }
 
   try {
@@ -91,15 +91,23 @@ function extractYear(dateStr: string | undefined): number {
 function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
 /** Compute simple word-overlap similarity between two strings (0..1) */
 function titleSimilarity(a: string, b: string): number {
-  const wordsA = new Set(normalizeTitle(a).split(' ').filter(w => w.length > 2));
-  const wordsB = new Set(normalizeTitle(b).split(' ').filter(w => w.length > 2));
+  const wordsA = new Set(
+    normalizeTitle(a)
+      .split(" ")
+      .filter((w) => w.length > 2),
+  );
+  const wordsB = new Set(
+    normalizeTitle(b)
+      .split(" ")
+      .filter((w) => w.length > 2),
+  );
   if (wordsA.size === 0 || wordsB.size === 0) return 0;
   let overlap = 0;
   for (const w of wordsA) {
@@ -110,11 +118,13 @@ function titleSimilarity(a: string, b: string): number {
 
 /** Check if author names have meaningful overlap */
 function authorOverlap(citationAuthors: string, pubmedAuthors: string[]): boolean {
-  const citationNorm = citationAuthors.toLowerCase().replace(/[^a-z\s]/g, '');
-  const lastNames = pubmedAuthors.map(a => {
-    const parts = a.trim().split(/\s+/);
-    return parts[parts.length - 1]?.toLowerCase() ?? '';
-  }).filter(Boolean);
+  const citationNorm = citationAuthors.toLowerCase().replace(/[^a-z\s]/g, "");
+  const lastNames = pubmedAuthors
+    .map((a) => {
+      const parts = a.trim().split(/\s+/);
+      return parts[parts.length - 1]?.toLowerCase() ?? "";
+    })
+    .filter(Boolean);
 
   if (lastNames.length === 0) return false;
 
@@ -133,10 +143,13 @@ function authorOverlap(citationAuthors: string, pubmedAuthors: string[]): boolea
  */
 async function searchByTitle(title: string, signal?: AbortSignal): Promise<string[]> {
   // Use first ~8 significant words to avoid over-specific queries
-  const words = normalizeTitle(title).split(' ').filter(w => w.length > 3).slice(0, 8);
+  const words = normalizeTitle(title)
+    .split(" ")
+    .filter((w) => w.length > 3)
+    .slice(0, 8);
   if (words.length === 0) return [];
 
-  const query = encodeURIComponent(words.join(' '));
+  const query = encodeURIComponent(words.join(" "));
   const url = `${ESEARCH_URL}?db=pubmed&term=${query}&retmax=5&retmode=json`;
 
   try {
@@ -153,7 +166,7 @@ async function searchByTitle(title: string, signal?: AbortSignal): Promise<strin
  * Search PubMed by DOI. Returns a single PMID or null.
  */
 async function searchByDOI(doi: string, signal?: AbortSignal): Promise<string | null> {
-  const cleanDoi = doi.replace(/^https?:\/\/doi\.org\//, '').trim();
+  const cleanDoi = doi.replace(/^https?:\/\/doi\.org\//, "").trim();
   if (!cleanDoi) return null;
 
   const query = encodeURIComponent(`${cleanDoi}[doi]`);
@@ -177,7 +190,7 @@ async function fetchSummaries(pmids: string[], signal?: AbortSignal): Promise<Ma
   const result = new Map<string, PubMedArticle>();
   if (pmids.length === 0) return result;
 
-  const url = `${ESUMMARY_URL}?db=pubmed&id=${pmids.join(',')}&retmode=json`;
+  const url = `${ESUMMARY_URL}?db=pubmed&id=${pmids.join(",")}&retmode=json`;
 
   try {
     const res = await rateLimitedFetch(url, signal);
@@ -188,17 +201,17 @@ async function fetchSummaries(pmids: string[], signal?: AbortSignal): Promise<Ma
       const article = data?.result?.[pmid];
       if (!article || article.error) continue;
 
-      const authors: string[] = (article.authors ?? []).map(
-        (a: { name?: string; authtype?: string }) => a.name ?? ''
-      ).filter(Boolean);
+      const authors: string[] = (article.authors ?? [])
+        .map((a: { name?: string; authtype?: string }) => a.name ?? "")
+        .filter(Boolean);
 
-      const title: string = article.title ?? '';
-      const journal: string = article.fulljournalname ?? article.source ?? '';
-      const year = extractYear(article.pubdate ?? article.sortpubdate ?? '');
+      const title: string = article.title ?? "";
+      const journal: string = article.fulljournalname ?? article.source ?? "";
+      const year = extractYear(article.pubdate ?? article.sortpubdate ?? "");
 
       // Extract DOI from articleids
       const articleIds: Array<{ idtype: string; value: string }> = article.articleids ?? [];
-      const doiEntry = articleIds.find(a => a.idtype === 'doi');
+      const doiEntry = articleIds.find((a) => a.idtype === "doi");
       const doi = doiEntry?.value ?? null;
 
       result.set(pmid, { pmid, title, authors, year, journal, doi });
@@ -221,13 +234,10 @@ async function fetchSummaries(pmids: string[], signal?: AbortSignal): Promise<Ma
  *
  * Returns a VerificationResult with status and matched metadata.
  */
-export async function verifyCitation(
-  citation: CitationNode,
-  signal?: AbortSignal,
-): Promise<VerificationResult> {
+export async function verifyCitation(citation: CitationNode, signal?: AbortSignal): Promise<VerificationResult> {
   const base: VerificationResult = {
     citationId: citation.id,
-    status: 'not_found',
+    status: "not_found",
   };
 
   try {
@@ -280,11 +290,11 @@ export async function verifyCitation(
 
     let status: CitationVerificationStatus;
     if (titleSim >= 0.6 && (yearMatches || authorMatch)) {
-      status = 'verified';
+      status = "verified";
     } else if (titleSim >= 0.35) {
-      status = 'unverified'; // partial match — may be related but not exact
+      status = "unverified"; // partial match — may be related but not exact
     } else {
-      status = 'not_found';
+      status = "not_found";
     }
 
     return {
@@ -300,7 +310,7 @@ export async function verifyCitation(
   } catch (e) {
     return {
       ...base,
-      status: 'not_found',
+      status: "not_found",
       error: e instanceof Error ? e.message : String(e),
     };
   }
@@ -331,13 +341,10 @@ export async function verifyCitationsBatch(
  * Merge verification results back into CitationNode objects.
  * Returns new objects (does not mutate input).
  */
-export function mergeVerificationResults(
-  citations: CitationNode[],
-  results: VerificationResult[],
-): CitationNode[] {
-  const resultMap = new Map(results.map(r => [r.citationId, r]));
+export function mergeVerificationResults(citations: CitationNode[], results: VerificationResult[]): CitationNode[] {
+  const resultMap = new Map(results.map((r) => [r.citationId, r]));
 
-  return citations.map(citation => {
+  return citations.map((citation) => {
     const result = resultMap.get(citation.id);
     if (!result) return citation;
 
@@ -369,10 +376,18 @@ export function computeVerificationSummary(citations: CitationNode[]): {
 
   for (const c of citations) {
     switch (c.verificationStatus) {
-      case 'verified': verified++; break;
-      case 'unverified': unverified++; break;
-      case 'not_found': notFound++; break;
-      default: pending++; break;
+      case "verified":
+        verified++;
+        break;
+      case "unverified":
+        unverified++;
+        break;
+      case "not_found":
+        notFound++;
+        break;
+      default:
+        pending++;
+        break;
     }
   }
 

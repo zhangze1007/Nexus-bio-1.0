@@ -8,21 +8,21 @@
  */
 
 import type {
-  FBAWorkbenchPayload,
-  CETHXWorkbenchPayload,
   CatalystWorkbenchPayload,
+  CETHXWorkbenchPayload,
   CellFreeWorkbenchPayload,
-  DynConWorkbenchPayload,
-  MultiOWorkbenchPayload,
-  ScSpatialWorkbenchPayload,
-  GenMIMWorkbenchPayload,
-  ProEvolWorkbenchPayload,
-  GECAIRWorkbenchPayload,
-  PathDWorkbenchPayload,
   DBTLWorkbenchPayload,
+  DynConWorkbenchPayload,
+  FBAWorkbenchPayload,
+  GECAIRWorkbenchPayload,
+  GenMIMWorkbenchPayload,
+  MultiOWorkbenchPayload,
   NEXAIWorkbenchPayload,
+  PathDWorkbenchPayload,
+  ProEvolWorkbenchPayload,
+  ScSpatialWorkbenchPayload,
   WorkbenchPayloadBase,
-} from '../../store/workbenchPayloads';
+} from "../../store/workbenchPayloads";
 
 // ── Interfaces ──────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ export interface ReportData {
  * falling back to 'N/A' for non-finite values.
  */
 function fmt(value: number, decimals = 2): string {
-  return Number.isFinite(value) ? value.toFixed(decimals) : 'N/A';
+  return Number.isFinite(value) ? value.toFixed(decimals) : "N/A";
 }
 
 /**
@@ -78,7 +78,7 @@ function capitalize(s: string): string {
  * Derive a human-readable project title from the target product.
  */
 function deriveProjectTitle(targetProduct: string): string {
-  if (!targetProduct || targetProduct === 'Unknown') return 'Untitled Project';
+  if (!targetProduct || targetProduct === "Unknown") return "Untitled Project";
   return `${capitalize(targetProduct)} Biosynthesis Report`;
 }
 
@@ -90,13 +90,13 @@ function extractProvenance(payload: WorkbenchPayloadBase): {
   validityTier: string;
   assumptions: string[];
 } {
-  const tier = payload.runProvenance?.validityTier ?? payload.validity ?? 'demo';
+  const tier = payload.runProvenance?.validityTier ?? payload.validity ?? "demo";
   const assumptions = [
     ...(payload.runProvenance?.inputAssumptions ?? []),
     ...(payload.runProvenance?.outputAssumptions ?? []),
   ];
   return {
-    source: payload.runProvenance?.toolId ?? 'unknown',
+    source: payload.runProvenance?.toolId ?? "unknown",
     validityTier: tier,
     assumptions,
   };
@@ -121,28 +121,28 @@ function buildFBASection(payload: AnyPayload): ReportSection {
     `ATP yield: ${fmt(r.atpYield)} mmol/gDW/h.`,
     `NADH production: ${fmt(r.nadhProduction)} mmol/gDW/h.`,
     `Carbon efficiency: ${fmt(r.carbonEfficiency * 100, 1)}%.`,
-    `Feasibility: ${r.feasible ? 'feasible' : 'infeasible'}.`,
-  ].join(' ');
+    `Feasibility: ${r.feasible ? "feasible" : "infeasible"}.`,
+  ].join(" ");
 
   const fluxTable: ReportTable = {
-    headers: ['Reaction', 'Flux (mmol/gDW/h)'],
+    headers: ["Reaction", "Flux (mmol/gDW/h)"],
     rows: r.topFluxes.map((f) => [f.reactionId, fmt(f.flux)]),
-    caption: 'Top metabolic fluxes from FBA solution',
+    caption: "Top metabolic fluxes from FBA solution",
   };
 
   const sensitivityTable: ReportTable = {
-    headers: ['Parameter', 'Sensitivity Coefficient'],
+    headers: ["Parameter", "Sensitivity Coefficient"],
     rows: [
-      ['Glucose uptake', fmt(r.sensitivityCoefficients.glc)],
-      ['Oxygen uptake', fmt(r.sensitivityCoefficients.o2)],
-      ['ATP maintenance', fmt(r.sensitivityCoefficients.atp)],
+      ["Glucose uptake", fmt(r.sensitivityCoefficients.glc)],
+      ["Oxygen uptake", fmt(r.sensitivityCoefficients.o2)],
+      ["ATP maintenance", fmt(r.sensitivityCoefficients.atp)],
     ],
-    caption: 'Sensitivity coefficients for key parameters',
+    caption: "Sensitivity coefficients for key parameters",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Flux Balance Analysis',
+    title: "Flux Balance Analysis",
     content,
     tables: [fluxTable, sensitivityTable],
     figures: [],
@@ -154,7 +154,7 @@ function buildCETHXSection(payload: AnyPayload): ReportSection {
   const p = payload as unknown as CETHXWorkbenchPayload;
   const r = p.result;
 
-  const feasibilityLabel = r.gibbsFreeEnergy < 0 ? 'thermodynamically favorable' : 'thermodynamically unfavorable';
+  const feasibilityLabel = r.gibbsFreeEnergy < 0 ? "thermodynamically favorable" : "thermodynamically unfavorable";
 
   const content = [
     `Cell Thermodynamics analysis for ${p.targetProduct} at ${p.tempC}°C, pH ${p.pH}.`,
@@ -164,26 +164,24 @@ function buildCETHXSection(payload: AnyPayload): ReportSection {
     `NADH yield: ${fmt(r.nadhYield)} mol/mol.`,
     `Entropy production: ${fmt(r.entropyProduction)} J/(mol·K).`,
     `Thermodynamic efficiency: ${fmt(r.efficiency * 100, 1)}%.`,
-    r.limitingStep
-      ? `Limiting step: ${r.limitingStep}.`
-      : 'No single limiting step identified.',
-  ].join(' ');
+    r.limitingStep ? `Limiting step: ${r.limitingStep}.` : "No single limiting step identified.",
+  ].join(" ");
 
   const thermoTable: ReportTable = {
-    headers: ['Metric', 'Value', 'Unit'],
+    headers: ["Metric", "Value", "Unit"],
     rows: [
-      ['ΔG', fmt(r.gibbsFreeEnergy), 'kJ/mol'],
-      ['ATP yield', fmt(r.atpYield), 'mol/mol'],
-      ['NADH yield', fmt(r.nadhYield), 'mol/mol'],
-      ['Entropy production', fmt(r.entropyProduction), 'J/(mol·K)'],
-      ['Efficiency', fmt(r.efficiency * 100, 1), '%'],
+      ["ΔG", fmt(r.gibbsFreeEnergy), "kJ/mol"],
+      ["ATP yield", fmt(r.atpYield), "mol/mol"],
+      ["NADH yield", fmt(r.nadhYield), "mol/mol"],
+      ["Entropy production", fmt(r.entropyProduction), "J/(mol·K)"],
+      ["Efficiency", fmt(r.efficiency * 100, 1), "%"],
     ],
-    caption: 'Thermodynamic summary',
+    caption: "Thermodynamic summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Cell Thermodynamics',
+    title: "Cell Thermodynamics",
     content,
     tables: [thermoTable],
     figures: [],
@@ -202,30 +200,30 @@ function buildCatDesSection(payload: AnyPayload): ReportSection {
     `Codon Adaptation Index (CAI): ${fmt(r.bestCAI)}.`,
     `Total metabolic drain: ${fmt(r.totalMetabolicDrain * 100, 1)}%.`,
     `Growth penalty: ${fmt(r.growthPenalty * 100, 1)}%.`,
-    `Viability: ${r.isViable ? 'Viable' : 'Not viable'}.`,
+    `Viability: ${r.isViable ? "Viable" : "Not viable"}.`,
     `Top mutation sites: ${r.topMutationSites}.`,
     `Recommendation: ${r.recommendation}.`,
-  ].join(' ');
+  ].join(" ");
 
   const designTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Binding Kd', fmt(r.bindingKd) + ' µM'],
-      ['Overall binding', fmt(r.overallBinding)],
-      ['Best sequence score', fmt(r.bestSequenceScore)],
-      ['Best CAI', fmt(r.bestCAI)],
-      ['Metabolic drain', fmt(r.totalMetabolicDrain * 100, 1) + '%'],
-      ['Growth penalty', fmt(r.growthPenalty * 100, 1) + '%'],
-      ['Viable', r.isViable ? 'Yes' : 'No'],
-      ['Best pathway', r.bestPathway],
-      ['Mutation sites', String(r.topMutationSites)],
+      ["Binding Kd", fmt(r.bindingKd) + " µM"],
+      ["Overall binding", fmt(r.overallBinding)],
+      ["Best sequence score", fmt(r.bestSequenceScore)],
+      ["Best CAI", fmt(r.bestCAI)],
+      ["Metabolic drain", fmt(r.totalMetabolicDrain * 100, 1) + "%"],
+      ["Growth penalty", fmt(r.growthPenalty * 100, 1) + "%"],
+      ["Viable", r.isViable ? "Yes" : "No"],
+      ["Best pathway", r.bestPathway],
+      ["Mutation sites", String(r.topMutationSites)],
     ],
-    caption: 'Enzyme design summary',
+    caption: "Enzyme design summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Catalyst Designer',
+    title: "Catalyst Designer",
     content,
     tables: [designTable],
     figures: [],
@@ -241,32 +239,32 @@ function buildCellFreeSection(payload: AnyPayload): ReportSection {
     `Cell-Free simulation for ${p.targetProduct} (construct: ${p.targetConstruct}).`,
     `Total protein yield: ${fmt(r.totalProteinYield)} mg/mL.`,
     `Energy depletion time: ${fmt(r.energyDepletionTime)} min.`,
-    `Resource-limited: ${r.isResourceLimited ? 'yes' : 'no'}.`,
+    `Resource-limited: ${r.isResourceLimited ? "yes" : "no"}.`,
     `In vitro max protein: ${fmt(r.invitroMaxProtein)} mg/mL.`,
     r.invivoExpression !== null
       ? `In vivo expression: ${fmt(r.invivoExpression)} mg/mL.`
-      : 'In vivo expression: not available.',
-    r.confidence !== null
-      ? `Confidence: ${fmt(r.confidence * 100, 1)}%.`
-      : '',
-  ].filter(Boolean).join(' ');
+      : "In vivo expression: not available.",
+    r.confidence !== null ? `Confidence: ${fmt(r.confidence * 100, 1)}%.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const summaryTable: ReportTable = {
-    headers: ['Metric', 'Value', 'Unit'],
+    headers: ["Metric", "Value", "Unit"],
     rows: [
-      ['Total protein yield', fmt(r.totalProteinYield), 'mg/mL'],
-      ['Energy depletion time', fmt(r.energyDepletionTime), 'min'],
-      ['In vitro max protein', fmt(r.invitroMaxProtein), 'mg/mL'],
-      ['In vivo expression', r.invivoExpression !== null ? fmt(r.invivoExpression) : 'N/A', 'mg/mL'],
-      ['Resource limited', r.isResourceLimited ? 'Yes' : 'No', ''],
-      ['Constructs tested', String(p.constructCount), ''],
+      ["Total protein yield", fmt(r.totalProteinYield), "mg/mL"],
+      ["Energy depletion time", fmt(r.energyDepletionTime), "min"],
+      ["In vitro max protein", fmt(r.invitroMaxProtein), "mg/mL"],
+      ["In vivo expression", r.invivoExpression !== null ? fmt(r.invivoExpression) : "N/A", "mg/mL"],
+      ["Resource limited", r.isResourceLimited ? "Yes" : "No", ""],
+      ["Constructs tested", String(p.constructCount), ""],
     ],
-    caption: 'Cell-free simulation summary',
+    caption: "Cell-free simulation summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Cell-Free Simulation',
+    title: "Cell-Free Simulation",
     content,
     tables: [summaryTable],
     figures: [],
@@ -285,32 +283,32 @@ function buildDynConSection(payload: AnyPayload): ReportSection {
     `Product titer: ${fmt(r.productTiter)} g/L.`,
     `Productivity: ${fmt(r.productivity)} g/L/h.`,
     `DO RMSE: ${fmt(r.doRmse)}.`,
-    `Stability: ${r.stable ? 'stable' : 'unstable'}.`,
+    `Stability: ${r.stable ? "stable" : "unstable"}.`,
     `Burden index: ${fmt(r.burdenIndex)}.`,
-  ].join(' ');
+  ].join(" ");
 
   const controlTable: ReportTable = {
-    headers: ['Parameter', 'Value'],
+    headers: ["Parameter", "Value"],
     rows: [
-      ['Product titer', fmt(r.productTiter) + ' g/L'],
-      ['Productivity', fmt(r.productivity) + ' g/L/h'],
-      ['DO RMSE', fmt(r.doRmse)],
-      ['Stable', r.stable ? 'Yes' : 'No'],
-      ['Burden index', fmt(r.burdenIndex)],
-      ['Kp', fmt(c.kp)],
-      ['Ki', fmt(c.ki)],
-      ['Kd', fmt(c.kd)],
-      ['Setpoint', fmt(c.setpoint)],
-      ['Hill Vmax', fmt(h.vmax)],
-      ['Hill Kd', fmt(h.kd)],
-      ['Hill n', fmt(h.n)],
+      ["Product titer", fmt(r.productTiter) + " g/L"],
+      ["Productivity", fmt(r.productivity) + " g/L/h"],
+      ["DO RMSE", fmt(r.doRmse)],
+      ["Stable", r.stable ? "Yes" : "No"],
+      ["Burden index", fmt(r.burdenIndex)],
+      ["Kp", fmt(c.kp)],
+      ["Ki", fmt(c.ki)],
+      ["Kd", fmt(c.kd)],
+      ["Setpoint", fmt(c.setpoint)],
+      ["Hill Vmax", fmt(h.vmax)],
+      ["Hill Kd", fmt(h.kd)],
+      ["Hill n", fmt(h.n)],
     ],
-    caption: 'Dynamic control parameters and results',
+    caption: "Dynamic control parameters and results",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Dynamic Control',
+    title: "Dynamic Control",
     content,
     tables: [controlTable],
     figures: [],
@@ -330,26 +328,26 @@ function buildMultiOSection(payload: AnyPayload): ReportSection {
     `MOFA variance explained: ${fmt(r.mofaVarianceExplained * 100, 1)}%.`,
     `Top efficiency gene: ${r.topEfficiencyGene} (score ${fmt(r.topEfficiencyScore)}).`,
     `VAE ELBO: ${fmt(r.vaeElbo)}.`,
-  ].join(' ');
+  ].join(" ");
 
   const omicsTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Significant features', String(r.significantCount)],
-      ['Dominant layer', r.dominantLayer],
-      ['Bottleneck gene', r.bottleneckGene],
-      ['Bottleneck confidence', fmt(r.bottleneckConfidence * 100, 1) + '%'],
-      ['MOFA variance explained', fmt(r.mofaVarianceExplained * 100, 1) + '%'],
-      ['Top efficiency gene', r.topEfficiencyGene],
-      ['Top efficiency score', fmt(r.topEfficiencyScore)],
-      ['VAE ELBO', fmt(r.vaeElbo)],
+      ["Significant features", String(r.significantCount)],
+      ["Dominant layer", r.dominantLayer],
+      ["Bottleneck gene", r.bottleneckGene],
+      ["Bottleneck confidence", fmt(r.bottleneckConfidence * 100, 1) + "%"],
+      ["MOFA variance explained", fmt(r.mofaVarianceExplained * 100, 1) + "%"],
+      ["Top efficiency gene", r.topEfficiencyGene],
+      ["Top efficiency score", fmt(r.topEfficiencyScore)],
+      ["VAE ELBO", fmt(r.vaeElbo)],
     ],
-    caption: 'Multi-omics integration summary',
+    caption: "Multi-omics integration summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Multi-Omics Integration',
+    title: "Multi-Omics Integration",
     content,
     tables: [omicsTable],
     figures: [],
@@ -367,20 +365,20 @@ function buildScSpatialSection(payload: AnyPayload): ReportSection {
     `Highest-yield cluster: ${r.highestYieldCluster}.`,
     `Hotspots detected: ${r.hotspotCount}.`,
     `Dataset source: ${p.source}.`,
-  ].join(' ');
+  ].join(" ");
 
   const spatialTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Total cells', String(r.totalCells)],
-      ['Passed QC cells', String(r.passedCells)],
-      ['Top spatial gene', r.topSpatialGene],
+      ["Total cells", String(r.totalCells)],
+      ["Passed QC cells", String(r.passedCells)],
+      ["Top spatial gene", r.topSpatialGene],
       ["Moran's I", fmt(r.topMoranI)],
-      ['Highest-yield cluster', r.highestYieldCluster],
-      ['Hotspot count', String(r.hotspotCount)],
-      ['Source', p.source],
+      ["Highest-yield cluster", r.highestYieldCluster],
+      ["Hotspot count", String(r.hotspotCount)],
+      ["Source", p.source],
     ],
-    caption: 'Spatial transcriptomics summary',
+    caption: "Spatial transcriptomics summary",
   };
 
   const clusterRows = r.clusterSummaries.map((cs) => [
@@ -389,18 +387,18 @@ function buildScSpatialSection(payload: AnyPayload): ReportSection {
     String(cs.cellCount),
     fmt(cs.meanExpression),
     cs.fate,
-    cs.topGenes.join(', '),
+    cs.topGenes.join(", "),
   ]);
 
   const clusterTable: ReportTable = {
-    headers: ['Cluster ID', 'Label', 'Cells', 'Mean Expression', 'Fate', 'Top Genes'],
+    headers: ["Cluster ID", "Label", "Cells", "Mean Expression", "Fate", "Top Genes"],
     rows: clusterRows,
-    caption: 'Cluster summaries',
+    caption: "Cluster summaries",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Single-Cell Spatial',
+    title: "Single-Cell Spatial",
     content,
     tables: [spatialTable, clusterTable],
     figures: [],
@@ -418,27 +416,27 @@ function buildGenMIMSection(payload: AnyPayload): ReportSection {
     `Growth impact: ${fmt(r.growthImpact * 100, 1)}%.`,
     `Average knockdown efficiency: ${fmt(r.avgEfficiency * 100, 1)}%.`,
     `Off-target risk: ${fmt(r.offTargetRisk * 100, 1)}%.`,
-    `Essential gene protection: ${p.protectEssential ? 'enabled' : 'disabled'}.`,
-    `Top target genes: ${r.topGenes.join(', ')}.`,
-  ].join(' ');
+    `Essential gene protection: ${p.protectEssential ? "enabled" : "disabled"}.`,
+    `Top target genes: ${r.topGenes.join(", ")}.`,
+  ].join(" ");
 
   const minimTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Selected targets', String(r.selectedTargets)],
-      ['Max targets allowed', String(p.maxTargets)],
-      ['Growth impact', fmt(r.growthImpact * 100, 1) + '%'],
-      ['Avg knockdown efficiency', fmt(r.avgEfficiency * 100, 1) + '%'],
-      ['Off-target risk', fmt(r.offTargetRisk * 100, 1) + '%'],
-      ['Essential gene protection', p.protectEssential ? 'Yes' : 'No'],
-      ['Top genes', r.topGenes.join(', ')],
+      ["Selected targets", String(r.selectedTargets)],
+      ["Max targets allowed", String(p.maxTargets)],
+      ["Growth impact", fmt(r.growthImpact * 100, 1) + "%"],
+      ["Avg knockdown efficiency", fmt(r.avgEfficiency * 100, 1) + "%"],
+      ["Off-target risk", fmt(r.offTargetRisk * 100, 1) + "%"],
+      ["Essential gene protection", p.protectEssential ? "Yes" : "No"],
+      ["Top genes", r.topGenes.join(", ")],
     ],
-    caption: 'Genome minimization summary',
+    caption: "Genome minimization summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Gene Minimization',
+    title: "Gene Minimization",
     content,
     tables: [minimTable],
     figures: [],
@@ -459,27 +457,27 @@ function buildProEvolSection(payload: AnyPayload): ReportSection {
     `Diversity index: ${fmt(r.diversityIndex)}.`,
     `Convergence: ${r.convergenceState}.`,
     `Recommendation: ${r.recommendation}.`,
-  ].join(' ');
+  ].join(" ");
 
   const evoTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Campaign', p.campaignName],
-      ['Current round', `${p.currentRound} / ${p.totalRounds}`],
-      ['Library size', String(p.librarySize)],
-      ['Lead variant', r.leadVariantName],
-      ['Lead score', fmt(r.leadVariantScore)],
-      ['Mutations', r.leadMutationString],
-      ['Selected / rejected', `${r.selectedThisRound} / ${r.rejectedThisRound}`],
-      ['Diversity index', fmt(r.diversityIndex)],
-      ['Convergence', r.convergenceState],
+      ["Campaign", p.campaignName],
+      ["Current round", `${p.currentRound} / ${p.totalRounds}`],
+      ["Library size", String(p.librarySize)],
+      ["Lead variant", r.leadVariantName],
+      ["Lead score", fmt(r.leadVariantScore)],
+      ["Mutations", r.leadMutationString],
+      ["Selected / rejected", `${r.selectedThisRound} / ${r.rejectedThisRound}`],
+      ["Diversity index", fmt(r.diversityIndex)],
+      ["Convergence", r.convergenceState],
     ],
-    caption: 'Protein evolution summary',
+    caption: "Protein evolution summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Protein Evolution',
+    title: "Protein Evolution",
     content,
     tables: [evoTable],
     figures: [],
@@ -497,26 +495,26 @@ function buildGECAIRSection(payload: AnyPayload): ReportSection {
     `Node A output: ${fmt(r.nodeAOutput)}, Node B output: ${fmt(r.nodeBOutput)}.`,
     `Noise score: ${fmt(r.noiseScore)}.`,
     `Circuit complexity: ${r.circuitComplexity}.`,
-  ].join(' ');
+  ].join(" ");
 
   const circuitTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Gate type', p.gateType],
-      ['Input A', fmt(p.inputA)],
-      ['Input B', fmt(p.inputB)],
-      ['Output level', fmt(r.outputLevel)],
-      ['Node A output', fmt(r.nodeAOutput)],
-      ['Node B output', fmt(r.nodeBOutput)],
-      ['Noise score', fmt(r.noiseScore)],
-      ['Circuit complexity', String(r.circuitComplexity)],
+      ["Gate type", p.gateType],
+      ["Input A", fmt(p.inputA)],
+      ["Input B", fmt(p.inputB)],
+      ["Output level", fmt(r.outputLevel)],
+      ["Node A output", fmt(r.nodeAOutput)],
+      ["Node B output", fmt(r.nodeBOutput)],
+      ["Noise score", fmt(r.noiseScore)],
+      ["Circuit complexity", String(r.circuitComplexity)],
     ],
-    caption: 'Gene circuit summary',
+    caption: "Gene circuit summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Gene Circuit Reasoner',
+    title: "Gene Circuit Reasoner",
     content,
     tables: [circuitTable],
     figures: [],
@@ -536,27 +534,27 @@ function buildPathDSection(payload: AnyPayload): ReportSection {
     `Enzyme candidates: ${r.enzymeCandidates}.`,
     `Thermodynamic concerns: ${r.thermodynamicConcerns}.`,
     `Recommended next tool: ${r.recommendedNextTool}.`,
-    `Evidence linked: ${r.evidenceLinked ? 'yes' : 'no'}.`,
-  ].join(' ');
+    `Evidence linked: ${r.evidenceLinked ? "yes" : "no"}.`,
+  ].join(" ");
 
   const pathwayTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Nodes', String(p.nodeCount)],
-      ['Edges', String(p.edgeCount)],
-      ['Pathway candidates', String(r.pathwayCandidates)],
-      ['Bottlenecks', String(r.bottleneckCount)],
-      ['Enzyme candidates', String(r.enzymeCandidates)],
-      ['Thermodynamic concerns', String(r.thermodynamicConcerns)],
-      ['Recommended next tool', r.recommendedNextTool],
-      ['Evidence linked', r.evidenceLinked ? 'Yes' : 'No'],
+      ["Nodes", String(p.nodeCount)],
+      ["Edges", String(p.edgeCount)],
+      ["Pathway candidates", String(r.pathwayCandidates)],
+      ["Bottlenecks", String(r.bottleneckCount)],
+      ["Enzyme candidates", String(r.enzymeCandidates)],
+      ["Thermodynamic concerns", String(r.thermodynamicConcerns)],
+      ["Recommended next tool", r.recommendedNextTool],
+      ["Evidence linked", r.evidenceLinked ? "Yes" : "No"],
     ],
-    caption: 'Pathway design summary',
+    caption: "Pathway design summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'Pathway Designer',
+    title: "Pathway Designer",
     content,
     tables: [pathwayTable],
     figures: [],
@@ -575,27 +573,27 @@ function buildDBTLSection(payload: AnyPayload): ReportSection {
     `Pass rate: ${fmt(r.passRate * 100, 1)}%.`,
     `Improvement rate: ${fmt(r.improvementRate * 100, 1)}%.`,
     `Hypothesis: ${p.draftHypothesis}.`,
-    `Latest measurement: ${fmt(p.measuredResult)} ${p.unit} — ${p.passed ? 'passed' : 'failed'}.`,
-  ].join(' ');
+    `Latest measurement: ${fmt(p.measuredResult)} ${p.unit} — ${p.passed ? "passed" : "failed"}.`,
+  ].join(" ");
 
   const dbtlTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Current phase', r.latestPhase],
-      ['Best iteration', String(r.bestIteration)],
-      ['Pass rate', fmt(r.passRate * 100, 1) + '%'],
-      ['Improvement rate', fmt(r.improvementRate * 100, 1) + '%'],
-      ['Proposed phase', p.proposedPhase],
-      ['Latest result', fmt(p.measuredResult) + ' ' + p.unit],
-      ['Passed', p.passed ? 'Yes' : 'No'],
-      ['Feedback source', p.feedbackSource],
+      ["Current phase", r.latestPhase],
+      ["Best iteration", String(r.bestIteration)],
+      ["Pass rate", fmt(r.passRate * 100, 1) + "%"],
+      ["Improvement rate", fmt(r.improvementRate * 100, 1) + "%"],
+      ["Proposed phase", p.proposedPhase],
+      ["Latest result", fmt(p.measuredResult) + " " + p.unit],
+      ["Passed", p.passed ? "Yes" : "No"],
+      ["Feedback source", p.feedbackSource],
     ],
-    caption: 'DBTL cycle summary',
+    caption: "DBTL cycle summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'DBTL Cycle',
+    title: "DBTL Cycle",
     content,
     tables: [dbtlTable],
     figures: [],
@@ -613,23 +611,23 @@ function buildNEXAISection(payload: AnyPayload): ReportSection {
     `Mode: ${r.mode}.`,
     `Citations found: ${r.citations}.`,
     `Confidence: ${fmt(r.confidence * 100, 1)}%.`,
-    `Preview: ${r.answerPreview.slice(0, 200)}${r.answerPreview.length > 200 ? '...' : ''}`,
-  ].join(' ');
+    `Preview: ${r.answerPreview.slice(0, 200)}${r.answerPreview.length > 200 ? "..." : ""}`,
+  ].join(" ");
 
   const nexaiTable: ReportTable = {
-    headers: ['Metric', 'Value'],
+    headers: ["Metric", "Value"],
     rows: [
-      ['Query', p.query],
-      ['Mode', r.mode],
-      ['Citations', String(r.citations)],
-      ['Confidence', fmt(r.confidence * 100, 1) + '%'],
+      ["Query", p.query],
+      ["Mode", r.mode],
+      ["Citations", String(r.citations)],
+      ["Confidence", fmt(r.confidence * 100, 1) + "%"],
     ],
-    caption: 'NEXAI research summary',
+    caption: "NEXAI research summary",
   };
 
   return {
     toolId: p.toolId,
-    title: 'NEXAI Research Agent',
+    title: "NEXAI Research Agent",
     content,
     tables: [nexaiTable],
     figures: [],
@@ -678,20 +676,18 @@ function buildGenericSection(payload: AnyPayload): ReportSection {
  * section template (or a generic fallback), and assembles the final
  * `ReportData` object.
  */
-export function collectReportData(store: {
-  toolPayloads: Record<string, unknown>;
-}): ReportData {
+export function collectReportData(store: { toolPayloads: Record<string, unknown> }): ReportData {
   const payloads = store.toolPayloads ?? {};
   const sections: ReportSection[] = [];
 
-  let targetProduct = 'Unknown';
+  let targetProduct = "Unknown";
 
   for (const key of Object.keys(payloads)) {
     const payload = payloads[key] as AnyPayload | undefined;
-    if (!payload || !payload.result || typeof payload.result !== 'object') continue;
+    if (!payload || !payload.result || typeof payload.result !== "object") continue;
 
     // Derive targetProduct from the first valid payload
-    if (targetProduct === 'Unknown' && payload.targetProduct) {
+    if (targetProduct === "Unknown" && payload.targetProduct) {
       targetProduct = payload.targetProduct;
     }
 
@@ -701,8 +697,8 @@ export function collectReportData(store: {
 
   const summary =
     sections.length > 0
-      ? `Report generated from ${sections.length} tool${sections.length === 1 ? '' : 's'}: ${sections.map((s) => s.title).join(', ')}.`
-      : '';
+      ? `Report generated from ${sections.length} tool${sections.length === 1 ? "" : "s"}: ${sections.map((s) => s.title).join(", ")}.`
+      : "";
 
   return {
     metadata: {

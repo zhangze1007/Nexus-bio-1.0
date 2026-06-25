@@ -2,33 +2,44 @@
  * Structure Prediction Module — Public API
  */
 
-export { predictStructure } from './structurePredictor';
 export {
-  generateEmbedding,
-  generateComplexEmbedding,
   EmbeddingCache,
   generateBatchEmbeddings,
+  generateComplexEmbedding,
+  generateEmbedding,
   generateEmbeddingWithFallback,
-} from './embeddings';
+} from "./embeddings";
 export {
-  detectGeometricInterfaces,
-  predictInterfaceFromEmbeddings,
-  estimateContactProbability,
   classifyInterfaceResidues,
-} from './interface';
+  detectGeometricInterfaces,
+  estimateContactProbability,
+  predictInterfaceFromEmbeddings,
+} from "./interface";
 export {
-  computeContactScore,
   computeAreaScore,
-  computeEnergyScore,
   computeClashPenalty,
+  computeContactScore,
+  computeEnergyScore,
   scoreComplex,
-} from './scoring';
+} from "./scoring";
+export { predictStructure } from "./structurePredictor";
+export type {
+  ChainConfidence,
+  ChainResult,
+  ComplexScore,
+  ConfidenceSummary,
+  InterfacePrediction,
+  InterfaceResidue,
+  ProteinChain,
+  ResidueConfidence,
+  StructureInput,
+  StructureResult,
+} from "./types";
 export {
-  mapPLDDT,
-  mapIPTM,
-  confidenceToColor,
-  exportConfidenceJSON,
-  exportConfidenceCSV,
   computeConfidenceSummary,
-} from './visualization';
-export type { StructureInput, StructureResult, ChainResult, InterfaceResidue, ProteinChain, InterfacePrediction, ComplexScore, ResidueConfidence, ChainConfidence, ConfidenceSummary } from './types';
+  confidenceToColor,
+  exportConfidenceCSV,
+  exportConfidenceJSON,
+  mapIPTM,
+  mapPLDDT,
+} from "./visualization";

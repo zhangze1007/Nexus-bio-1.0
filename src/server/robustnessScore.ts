@@ -34,9 +34,9 @@ export interface MonteCarloTrial {
 }
 
 export interface RobustnessComponent {
-  score: number;         // 0-1
-  formula: string;       // human-readable formula
-  inputs: Record<string, number>;  // raw values used
+  score: number; // 0-1
+  formula: string; // human-readable formula
+  inputs: Record<string, number>; // raw values used
 }
 
 export interface RobustnessReport {
@@ -46,7 +46,7 @@ export interface RobustnessReport {
   resourceRobustness: RobustnessComponent;
   overallRobustness: number;
   formulas: Record<string, string>;
-  interpretation: string;  // placeholder for LLM — filled by pipeline
+  interpretation: string; // placeholder for LLM — filled by pipeline
   stats: {
     nTrials: number;
     nConverged: number;
@@ -93,15 +93,15 @@ export function computeRobustness(
   energySensitivity?: number,
   resourceSensitivity?: number,
 ): RobustnessReport {
-  const converged = trials.filter(t => t.converged);
-  const yields = converged.map(t => t.yield);
-  const timings = converged.map(t => t.timeToHalfMax);
+  const converged = trials.filter((t) => t.converged);
+  const yields = converged.map((t) => t.yield);
+  const timings = converged.map((t) => t.timeToHalfMax);
 
   // Yield robustness: 1 - CV(yield)
   const yieldCV = cv(yields);
   const yieldRobustness: RobustnessComponent = {
     score: Math.max(0, Math.min(1, 1 - yieldCV)),
-    formula: 'R_yield = 1 - CV(yield) = 1 - (std(yield) / mean(yield))',
+    formula: "R_yield = 1 - CV(yield) = 1 - (std(yield) / mean(yield))",
     inputs: { mean: mean(yields), std: std(yields), cv: yieldCV },
   };
 
@@ -109,7 +109,7 @@ export function computeRobustness(
   const timingCV = cv(timings);
   const timingRobustness: RobustnessComponent = {
     score: Math.max(0, Math.min(1, 1 - timingCV)),
-    formula: 'R_timing = 1 - CV(timeToHalfMax)',
+    formula: "R_timing = 1 - CV(timeToHalfMax)",
     inputs: { mean: mean(timings), std: std(timings), cv: timingCV },
   };
 
@@ -117,7 +117,7 @@ export function computeRobustness(
   const energySens = energySensitivity ?? 0;
   const energyRobustness: RobustnessComponent = {
     score: Math.max(0, Math.min(1, 1 - Math.abs(energySens))),
-    formula: 'R_energy = 1 - |dYield/dATP|',
+    formula: "R_energy = 1 - |dYield/dATP|",
     inputs: { sensitivity: energySens },
   };
 
@@ -125,17 +125,19 @@ export function computeRobustness(
   const resourceSens = resourceSensitivity ?? 0;
   const resourceRobustness: RobustnessComponent = {
     score: Math.max(0, Math.min(1, 1 - Math.abs(resourceSens))),
-    formula: 'R_resource = 1 - |dYield/dRibosome|',
+    formula: "R_resource = 1 - |dYield/dRibosome|",
     inputs: { sensitivity: resourceSens },
   };
 
   // Overall: weighted combination
-  const overallRobustness = Math.round(
-    (0.4 * yieldRobustness.score +
-     0.3 * timingRobustness.score +
-     0.15 * energyRobustness.score +
-     0.15 * resourceRobustness.score) * 1000
-  ) / 1000;
+  const overallRobustness =
+    Math.round(
+      (0.4 * yieldRobustness.score +
+        0.3 * timingRobustness.score +
+        0.15 * energyRobustness.score +
+        0.15 * resourceRobustness.score) *
+        1000,
+    ) / 1000;
 
   return {
     yieldRobustness,
@@ -148,9 +150,9 @@ export function computeRobustness(
       timing: timingRobustness.formula,
       energy: energyRobustness.formula,
       resource: resourceRobustness.formula,
-      overall: 'R_total = 0.4*R_yield + 0.3*R_timing + 0.15*R_energy + 0.15*R_resource',
+      overall: "R_total = 0.4*R_yield + 0.3*R_timing + 0.15*R_energy + 0.15*R_resource",
     },
-    interpretation: '',  // filled by LLM in pipeline
+    interpretation: "", // filled by LLM in pipeline
     stats: {
       nTrials: trials.length,
       nConverged: converged.length,

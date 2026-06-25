@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import type { CSSProperties } from 'react';
-import { THEME } from '../../../theme';
+import type { CSSProperties } from "react";
+import { THEME } from "../../../theme";
+
 interface WorkbenchRangeSliderProps {
   label: string;
   value: number;
@@ -17,7 +18,7 @@ interface WorkbenchRangeSliderProps {
 
 function getDecimals(step: number) {
   const stepText = `${step}`;
-  const decimalIndex = stepText.indexOf('.');
+  const decimalIndex = stepText.indexOf(".");
   return decimalIndex === -1 ? 0 : stepText.length - decimalIndex - 1;
 }
 
@@ -38,14 +39,12 @@ export default function WorkbenchRangeSlider({
   const displayValue = formatValue ? formatValue(value) : value.toFixed(getDecimals(step));
 
   return (
-    <div style={{ marginBottom: '14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL }}>
-          {label}
-        </span>
-        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: THEME.VALUE }}>
+    <div style={{ marginBottom: "14px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
+        <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: THEME.LABEL }}>{label}</span>
+        <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-sm)", fontWeight: 600, color: THEME.VALUE }}>
           {displayValue}
-          {unit ? ` ${unit}` : ''}
+          {unit ? ` ${unit}` : ""}
         </span>
       </div>
       <input
@@ -55,8 +54,8 @@ export default function WorkbenchRangeSlider({
         max={max}
         step={step}
         value={value}
-        className={className ? `nb-pathd-slider ${className}` : 'nb-pathd-slider'}
-        style={{ '--val': `${pct}%` } as CSSProperties}
+        className={className ? `nb-pathd-slider ${className}` : "nb-pathd-slider"}
+        style={{ "--val": `${pct}%` } as CSSProperties}
         onChange={(event) => onChange(parseFloat(event.target.value))}
       />
     </div>

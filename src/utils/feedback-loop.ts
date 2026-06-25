@@ -16,23 +16,17 @@
  *   - predicted improvement is a function of the measured gap, never random
  */
 
-import type {
-  TestDataRow,
-  FeedbackLoopResult,
-  NextIterationSuggestion,
-  QCFlag,
-  DBTLIteration,
-} from '../types';
-import { findBenchmarkByTarget } from '../data/experimentalBenchmarks';
-import { solveAuthorityFBA } from '../services/FBAAuthorityClient';
+import { findBenchmarkByTarget } from "../data/experimentalBenchmarks";
 import {
+  type ExperimentCsvColumnMapping,
   mapCsvRowsToExperimentRecords,
   parseExperimentCsvTextToRows,
-  type ExperimentCsvColumnMapping,
   type RejectedExperimentCsvRow,
-} from '../importers/experimentCsvImporter';
-import type { ExperimentRecordV1 } from '../types/experimentRecord';
-import { GaussianProcess } from '../server/gaussianProcess';
+} from "../importers/experimentCsvImporter";
+import { GaussianProcess } from "../server/gaussianProcess";
+import { solveAuthorityFBA } from "../services/FBAAuthorityClient";
+import type { DBTLIteration, FeedbackLoopResult, NextIterationSuggestion, QCFlag, TestDataRow } from "../types";
+import type { ExperimentRecordV1 } from "../types/experimentRecord";
 
 // ── CSV parsing ───────────────────────────────────────────────────────────────
 /**
@@ -42,16 +36,20 @@ import { GaussianProcess } from '../server/gaussianProcess';
  */
 function splitCSVLine(line: string): string[] {
   const out: string[] = [];
-  let current = '';
+  let current = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-      else { inQuotes = !inQuotes; }
-    } else if (ch === ',' && !inQuotes) {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === "," && !inQuotes) {
       out.push(current);
-      current = '';
+      current = "";
     } else {
       current += ch;
     }
@@ -60,28 +58,28 @@ function splitCSVLine(line: string): string[] {
   return out.map((cell) => cell.trim());
 }
 
-const YIELD_COLUMN_ALIASES = ['yield_mg_l', 'yield', 'titer_mg_l', 'titer'];
-const BIOMASS_COLUMN_ALIASES = ['biomass_od600', 'biomass', 'od600', 'od_600'];
-const SUBSTRATE_COLUMN_ALIASES = ['substrate_consumed_mm', 'substrate', 'glucose_consumed', 'glucose_mm'];
+const YIELD_COLUMN_ALIASES = ["yield_mg_l", "yield", "titer_mg_l", "titer"];
+const BIOMASS_COLUMN_ALIASES = ["biomass_od600", "biomass", "od600", "od_600"];
+const SUBSTRATE_COLUMN_ALIASES = ["substrate_consumed_mm", "substrate", "glucose_consumed", "glucose_mm"];
 
 const DBTL_EXPERIMENT_CSV_MAPPING: ExperimentCsvColumnMapping = {
-  recordId: 'record_id',
-  batchId: 'batch_id',
-  sampleId: 'sample_id',
-  constructId: 'construct_id',
-  assayType: 'assay_type',
-  sourceType: 'source_type',
-  measurementUnit: 'measurement_unit',
-  instrument: 'instrument',
-  operator: 'operator',
-  startedAt: 'started_at',
-  completedAt: 'completed_at',
-  timeHours: 'time_hours',
-  value: 'value',
-  unit: 'unit',
-  replicateId: 'replicate_id',
-  qcFlags: 'qc_flags',
-  notes: 'notes',
+  recordId: "record_id",
+  batchId: "batch_id",
+  sampleId: "sample_id",
+  constructId: "construct_id",
+  assayType: "assay_type",
+  sourceType: "source_type",
+  measurementUnit: "measurement_unit",
+  instrument: "instrument",
+  operator: "operator",
+  startedAt: "started_at",
+  completedAt: "completed_at",
+  timeHours: "time_hours",
+  value: "value",
+  unit: "unit",
+  replicateId: "replicate_id",
+  qcFlags: "qc_flags",
+  notes: "notes",
 };
 
 /**
@@ -91,7 +89,7 @@ const DBTL_EXPERIMENT_CSV_MAPPING: ExperimentCsvColumnMapping = {
 function parseNumber(raw: string | undefined): number | null {
   if (raw == null) return null;
   const trimmed = raw.trim();
-  if (trimmed === '' || trimmed.toLowerCase() === 'na' || trimmed.toLowerCase() === 'nan') return null;
+  if (trimmed === "" || trimmed.toLowerCase() === "na" || trimmed.toLowerCase() === "nan") return null;
   const value = Number(trimmed);
   return Number.isFinite(value) ? value : null;
 }
@@ -102,15 +100,18 @@ function parseNumber(raw: string | undefined): number | null {
  * malformed upload propagate into downstream statistics.
  */
 export function parseCSVData(csvText: string): TestDataRow[] {
-  if (typeof csvText !== 'string') return [];
+  if (typeof csvText !== "string") return [];
   // Strip UTF-8 BOM and normalize line endings before splitting.
-  const cleaned = csvText.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim();
+  const cleaned = csvText
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
   if (!cleaned) return [];
 
-  const lines = cleaned.split('\n').filter((line) => line.trim().length > 0);
+  const lines = cleaned.split("\n").filter((line) => line.trim().length > 0);
   if (lines.length < 2) return [];
 
-  const headers = splitCSVLine(lines[0]).map((h) => h.toLowerCase().replace(/\s+/g, '_'));
+  const headers = splitCSVLine(lines[0]).map((h) => h.toLowerCase().replace(/\s+/g, "_"));
   const findCol = (aliases: string[]): number => {
     for (const alias of aliases) {
       const idx = headers.indexOf(alias);
@@ -122,16 +123,16 @@ export function parseCSVData(csvText: string): TestDataRow[] {
   const yieldIdx = findCol(YIELD_COLUMN_ALIASES);
   if (yieldIdx < 0) {
     throw new Error(
-      `feedback-loop: CSV is missing a yield column. Expected one of: ${YIELD_COLUMN_ALIASES.join(', ')}. `
-      + `Got headers: ${headers.join(', ')}.`,
+      `feedback-loop: CSV is missing a yield column. Expected one of: ${YIELD_COLUMN_ALIASES.join(", ")}. ` +
+        `Got headers: ${headers.join(", ")}.`,
     );
   }
   const biomassIdx = findCol(BIOMASS_COLUMN_ALIASES);
   const substrateIdx = findCol(SUBSTRATE_COLUMN_ALIASES);
-  const sampleIdIdx = headers.indexOf('sample_id');
-  const strainIdx = headers.indexOf('strain');
-  const conditionIdx = headers.indexOf('condition');
-  const timestampIdx = headers.indexOf('timestamp');
+  const sampleIdIdx = headers.indexOf("sample_id");
+  const strainIdx = headers.indexOf("strain");
+  const conditionIdx = headers.indexOf("condition");
+  const timestampIdx = headers.indexOf("timestamp");
 
   const rows: TestDataRow[] = [];
   for (let i = 1; i < lines.length; i++) {
@@ -140,12 +141,12 @@ export function parseCSVData(csvText: string): TestDataRow[] {
     if (yieldVal == null) continue; // required field missing — skip silently
     rows.push({
       sample_id: cells[sampleIdIdx]?.trim() || `S${i}`,
-      strain: cells[strainIdx]?.trim() || 'unknown',
-      condition: cells[conditionIdx]?.trim() || 'default',
+      strain: cells[strainIdx]?.trim() || "unknown",
+      condition: cells[conditionIdx]?.trim() || "default",
       yield_mg_L: yieldVal,
       biomass_OD600: biomassIdx >= 0 ? (parseNumber(cells[biomassIdx]) ?? 0) : 0,
       substrate_consumed_mM: substrateIdx >= 0 ? (parseNumber(cells[substrateIdx]) ?? 0) : 0,
-      timestamp: timestampIdx >= 0 ? (cells[timestampIdx]?.trim() || undefined) : undefined,
+      timestamp: timestampIdx >= 0 ? cells[timestampIdx]?.trim() || undefined : undefined,
     });
   }
   return rows;
@@ -153,10 +154,10 @@ export function parseCSVData(csvText: string): TestDataRow[] {
 
 function experimentRecordsToTestDataRows(records: ExperimentRecordV1[]): TestDataRow[] {
   return records.flatMap((record) => {
-    if (record.assayType !== 'product-titer') return [];
-    if (record.measurementUnit !== 'mg/L') return [];
+    if (record.assayType !== "product-titer") return [];
+    if (record.measurementUnit !== "mg/L") return [];
     return record.timepoints
-      .filter((timepoint) => timepoint.unit === 'mg/L')
+      .filter((timepoint) => timepoint.unit === "mg/L")
       .map((timepoint) => ({
         sample_id: timepoint.replicateId ?? record.sampleId,
         strain: record.constructId,
@@ -180,10 +181,10 @@ function rejectedRowSummaries(rows: RejectedExperimentCsvRow[]): Array<{ rowInde
 interface YieldStats {
   n: number;
   mean: number;
-  std: number;          // population std, consistent with original module
+  std: number; // population std, consistent with original module
   min: number;
   max: number;
-  bestIdx: number;      // index in the input array of the best sample
+  bestIdx: number; // index in the input array of the best sample
   worstIdx: number;
 }
 
@@ -192,12 +193,22 @@ function computeYieldStats(data: TestDataRow[]): YieldStats {
   if (n === 0) {
     return { n: 0, mean: 0, std: 0, min: 0, max: 0, bestIdx: -1, worstIdx: -1 };
   }
-  let sum = 0, min = Infinity, max = -Infinity, bestIdx = 0, worstIdx = 0;
+  let sum = 0,
+    min = Infinity,
+    max = -Infinity,
+    bestIdx = 0,
+    worstIdx = 0;
   for (let i = 0; i < n; i++) {
     const y = data[i].yield_mg_L;
     sum += y;
-    if (y > max) { max = y; bestIdx = i; }
-    if (y < min) { min = y; worstIdx = i; }
+    if (y > max) {
+      max = y;
+      bestIdx = i;
+    }
+    if (y < min) {
+      min = y;
+      worstIdx = i;
+    }
   }
   const mean = sum / n;
   let sqSum = 0;
@@ -222,7 +233,7 @@ export async function validateAgainstFBA(
   if (data.length === 0) return [];
 
   const fbaResult = await solveAuthorityFBA({
-    objective: 'product',
+    objective: "product",
     glucoseUptake,
     oxygenUptake,
     knockouts: [],
@@ -245,7 +256,7 @@ export async function validateAgainstFBA(
     if (row.yield_mg_L > theoreticalMaxYield) {
       flags.push({
         sample_id: row.sample_id,
-        flag_type: 'sensor_anomaly',
+        flag_type: "sensor_anomaly",
         measured_value: row.yield_mg_L,
         theoretical_max: theoreticalMaxYield,
         message: `Yield ${row.yield_mg_L.toFixed(1)} mg/L exceeds FBA theoretical max ${theoreticalMaxYield.toFixed(1)} mg/L — possible sensor calibration error or data entry mistake`,
@@ -254,7 +265,7 @@ export async function validateAgainstFBA(
     if (row.yield_mg_L < 0.01 && row.biomass_OD600 > 0.1) {
       flags.push({
         sample_id: row.sample_id,
-        flag_type: 'below_detection',
+        flag_type: "below_detection",
         measured_value: row.yield_mg_L,
         theoretical_max: theoreticalMaxYield,
         message: `Yield below detection limit despite biomass growth (OD600 = ${row.biomass_OD600.toFixed(2)}) — check assay sensitivity`,
@@ -263,7 +274,7 @@ export async function validateAgainstFBA(
     if (zGateUsable && Math.abs(row.yield_mg_L - stats.mean) > 3 * stats.std) {
       flags.push({
         sample_id: row.sample_id,
-        flag_type: 'outlier',
+        flag_type: "outlier",
         measured_value: row.yield_mg_L,
         theoretical_max: theoreticalMaxYield,
         message: `Yield ${row.yield_mg_L.toFixed(1)} mg/L is >3σ from mean (${stats.mean.toFixed(1)} ± ${stats.std.toFixed(1)}) — statistical outlier`,
@@ -281,10 +292,7 @@ export async function validateAgainstFBA(
  * biomass, carbon efficiency) — not drawn randomly. The function is pure:
  * given the same `data` and `currentIteration` it returns the same list.
  */
-export function runMOO(
-  data: TestDataRow[],
-  currentIteration: DBTLIteration,
-): NextIterationSuggestion[] {
+export function runMOO(data: TestDataRow[], currentIteration: DBTLIteration): NextIterationSuggestion[] {
   if (data.length === 0) return [];
   const suggestions: NextIterationSuggestion[] = [];
 
@@ -300,7 +308,7 @@ export function runMOO(
     const suggestedPrecursor = currentPrecursor * 1.25;
     const gapFraction = Math.min(1, (targetYield - meanYield) / targetYield);
     suggestions.push({
-      parameter: 'Precursor Loading (mM mevalonate)',
+      parameter: "Precursor Loading (mM mevalonate)",
       current_value: round1(currentPrecursor),
       suggested_value: round1(suggestedPrecursor),
       rationale: `Mean yield (${meanYield.toFixed(1)} mg/L) is ${((1 - meanYield / targetYield) * 100).toFixed(0)}% below the ${targetYield.toFixed(1)} mg/L target. Increasing mevalonate supplementation relieves upstream precursor bottleneck.`,
@@ -314,7 +322,7 @@ export function runMOO(
   if (meanBiomass > 0 && yieldPerBiomass < 50) {
     const productivityDeficit = (50 - yieldPerBiomass) / 50; // 0..1
     suggestions.push({
-      parameter: 'Promoter Strength (RFU)',
+      parameter: "Promoter Strength (RFU)",
       current_value: 1000,
       suggested_value: 1500,
       rationale: `Specific productivity ${yieldPerBiomass.toFixed(1)} mg/L/OD is below the 50 mg/L/OD reference. A stronger promoter or higher copy number raises per-cell flux.`,
@@ -327,7 +335,7 @@ export function runMOO(
   if (meanBiomass > 0 && meanBiomass < 1.0) {
     const biomassDeficit = (1.0 - meanBiomass) / 1.0;
     suggestions.push({
-      parameter: 'Induction Temperature (°C)',
+      parameter: "Induction Temperature (°C)",
       current_value: 37,
       suggested_value: 30,
       rationale: `Low biomass (OD600 ${meanBiomass.toFixed(2)}) suggests metabolic burden. Reducing induction temperature improves protein folding and growth.`,
@@ -342,7 +350,7 @@ export function runMOO(
     if (conversion < 5) {
       const conversionDeficit = (5 - conversion) / 5;
       suggestions.push({
-        parameter: 'Carbon Source Feeding Rate (mM/h)',
+        parameter: "Carbon Source Feeding Rate (mM/h)",
         current_value: round2(meanSubstrate / 48),
         suggested_value: round2((meanSubstrate * 0.8) / 48),
         rationale: `Carbon-to-product conversion ${conversion.toFixed(2)} mg/mmol is below the 5 mg/mmol reference. Fed-batch at a lower continuous rate reduces overflow metabolism.`,
@@ -355,10 +363,11 @@ export function runMOO(
   // conservative, deterministic fallback.
   if (suggestions.length === 0) {
     suggestions.push({
-      parameter: 'Fermentation Duration (h)',
+      parameter: "Fermentation Duration (h)",
       current_value: 48,
       suggested_value: 72,
-      rationale: 'Observed yields are close to target. Extending culture time may capture late-stage product accumulation.',
+      rationale:
+        "Observed yields are close to target. Extending culture time may capture late-stage product accumulation.",
       predicted_improvement_percent: 7.5,
     });
   }
@@ -369,8 +378,12 @@ export function runMOO(
 function clamp(value: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, value));
 }
-function round1(value: number): number { return Math.round(value * 10) / 10; }
-function round2(value: number): number { return Math.round(value * 100) / 100; }
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
 // ── Main pipeline ─────────────────────────────────────────────────────────────
 export async function AutomatedFeedbackLoop(
@@ -385,7 +398,7 @@ export async function AutomatedFeedbackLoop(
   try {
     const parsedRows = parseExperimentCsvTextToRows(csvText);
     const importResult = mapCsvRowsToExperimentRecords(parsedRows, DBTL_EXPERIMENT_CSV_MAPPING, {
-      defaultSourceType: 'imported-csv',
+      defaultSourceType: "imported-csv",
       generateRecordId: (row, rowIndex) => {
         const sampleId = row.sample_id?.trim();
         const batchId = row.batch_id?.trim();
@@ -401,36 +414,41 @@ export async function AutomatedFeedbackLoop(
     const message = err instanceof Error ? err.message : String(err);
     return {
       iteration_id: currentIteration.id,
-      test_summary: { mean_yield: 0, std_yield: 0, best_sample: 'N/A', worst_sample: 'N/A' },
+      test_summary: { mean_yield: 0, std_yield: 0, best_sample: "N/A", worst_sample: "N/A" },
       qc_flags: [],
-      next_iteration_suggestions: [{
-        parameter: 'Data Quality',
-        current_value: 0,
-        suggested_value: 1,
-        rationale: message,
-        predicted_improvement_percent: 0,
-      }],
-      optimization_objective: 'data_quality',
+      next_iteration_suggestions: [
+        {
+          parameter: "Data Quality",
+          current_value: 0,
+          suggested_value: 1,
+          rationale: message,
+          predicted_improvement_percent: 0,
+        },
+      ],
+      optimization_objective: "data_quality",
       rejectedExperimentRows: [{ rowIndex: -1, reason: message }],
     };
   }
 
   if (data.length === 0) {
-    const rejectedReason = rejectedExperimentRows.length > 0
-      ? `Rejected ${rejectedExperimentRows.length} typed experiment row(s): ${rejectedExperimentRows[0].reason}`
-      : 'No product-titer ExperimentRecordV1 records with mg/L units were found.';
+    const rejectedReason =
+      rejectedExperimentRows.length > 0
+        ? `Rejected ${rejectedExperimentRows.length} typed experiment row(s): ${rejectedExperimentRows[0].reason}`
+        : "No product-titer ExperimentRecordV1 records with mg/L units were found.";
     return {
       iteration_id: currentIteration.id,
-      test_summary: { mean_yield: 0, std_yield: 0, best_sample: 'N/A', worst_sample: 'N/A' },
+      test_summary: { mean_yield: 0, std_yield: 0, best_sample: "N/A", worst_sample: "N/A" },
       qc_flags: [],
-      next_iteration_suggestions: [{
-        parameter: 'Data Quality',
-        current_value: 0,
-        suggested_value: 1,
-        rationale: rejectedReason,
-        predicted_improvement_percent: 0,
-      }],
-      optimization_objective: 'data_quality',
+      next_iteration_suggestions: [
+        {
+          parameter: "Data Quality",
+          current_value: 0,
+          suggested_value: 1,
+          rationale: rejectedReason,
+          predicted_improvement_percent: 0,
+        },
+      ],
+      optimization_objective: "data_quality",
       sourceExperimentRecordIds,
       rejectedExperimentRows,
     };
@@ -445,12 +463,12 @@ export async function AutomatedFeedbackLoop(
     test_summary: {
       mean_yield: round2(stats.mean),
       std_yield: round2(stats.std),
-      best_sample: stats.bestIdx >= 0 ? data[stats.bestIdx].sample_id : 'N/A',
-      worst_sample: stats.worstIdx >= 0 ? data[stats.worstIdx].sample_id : 'N/A',
+      best_sample: stats.bestIdx >= 0 ? data[stats.bestIdx].sample_id : "N/A",
+      worst_sample: stats.worstIdx >= 0 ? data[stats.worstIdx].sample_id : "N/A",
     },
     qc_flags: qcFlags,
     next_iteration_suggestions: suggestions,
-    optimization_objective: 'maximize_yield_minimize_burden',
+    optimization_objective: "maximize_yield_minimize_burden",
     sourceExperimentRecordIds,
     rejectedExperimentRows,
   };
@@ -499,10 +517,7 @@ function denormalizeParam(normalized: number, min: number, max: number): number 
 function buildGrid(paramNames: string[], resolution: number, maxPoints: number): number[][] {
   const nDim = paramNames.length;
   // Cap resolution so total points stay manageable
-  const effectiveResolution = Math.max(
-    2,
-    Math.min(resolution, Math.floor(Math.pow(maxPoints, 1 / nDim))),
-  );
+  const effectiveResolution = Math.max(2, Math.min(resolution, Math.floor(maxPoints ** (1 / nDim))));
 
   const axes: number[][] = paramNames.map(() => {
     const pts: number[] = [];
@@ -541,10 +556,7 @@ function buildGrid(paramNames: string[], resolution: number, maxPoints: number):
  * @param config   Parameter ranges and optional suggestion count.
  * @returns        Top-N suggestions ranked by Expected Improvement.
  */
-export function runBayesianOptimization(
-  history: BOExperiment[],
-  config: BOConfig,
-): BOResult {
+export function runBayesianOptimization(history: BOExperiment[], config: BOConfig): BOResult {
   const paramNames = Object.keys(config.paramRanges).sort();
   const nSuggestions = config.nSuggestions ?? 3;
   const ranges = paramNames.map((k) => config.paramRanges[k]);
@@ -568,7 +580,7 @@ export function runBayesianOptimization(
 
   // Fit GP with sensible defaults for normalized space
   const gp = new GaussianProcess({
-    kernel: 'rbf',
+    kernel: "rbf",
     lengthScale: 0.5,
     signalVariance: 1.0,
     noiseVariance: 0.01,
@@ -605,7 +617,7 @@ export function runBayesianOptimization(
   const indexed = eiValues.map((ei, i) => ({ ei, idx: i }));
   indexed.sort((a, b) => b.ei - a.ei);
 
-  const suggestions: BOResult['suggestions'] = [];
+  const suggestions: BOResult["suggestions"] = [];
   const selectedPoints: number[][] = [];
 
   for (const { ei, idx } of indexed) {
@@ -674,9 +686,7 @@ export function runBayesianOptimization(
         params[paramNames[i]] = round2(denormalizeParam(point[i], ranges[i][0], ranges[i][1]));
       }
 
-      const isDuplicate = suggestions.some((s) =>
-        paramNames.every((name) => s.params[name] === params[name]),
-      );
+      const isDuplicate = suggestions.some((s) => paramNames.every((name) => s.params[name] === params[name]));
       if (isDuplicate) continue;
 
       selectedPoints.push(point);
@@ -709,7 +719,7 @@ function heuristicSuggestions(
   nSuggestions: number,
 ): BOResult {
   const nDim = paramNames.length;
-  const suggestions: BOResult['suggestions'] = [];
+  const suggestions: BOResult["suggestions"] = [];
   const bestY = history.length > 0 ? Math.max(...history.map((e) => e.yield)) : 0;
 
   // Strategy 1: Explore corners of the parameter space
@@ -718,9 +728,7 @@ function heuristicSuggestions(
     const params: Record<string, number> = {};
     for (let d = 0; d < nDim; d++) {
       const bit = (c >> d) & 1;
-      params[paramNames[d]] = round2(
-        bit === 0 ? ranges[d][0] : ranges[d][1],
-      );
+      params[paramNames[d]] = round2(bit === 0 ? ranges[d][0] : ranges[d][1]);
     }
 
     // Skip if too close to an existing experiment
@@ -746,11 +754,9 @@ function heuristicSuggestions(
     for (let d = 0; d < nDim; d++) {
       params[paramNames[d]] = round2((ranges[d][0] + ranges[d][1]) / 2);
     }
-    const isDuplicate = suggestions.some((s) =>
-      paramNames.every((name) => Math.abs(s.params[name] - params[name]) < 1e-9),
-    ) || history.some((exp) =>
-      paramNames.every((name) => Math.abs((exp.params[name] ?? 0) - params[name]) < 1e-9),
-    );
+    const isDuplicate =
+      suggestions.some((s) => paramNames.every((name) => Math.abs(s.params[name] - params[name]) < 1e-9)) ||
+      history.some((exp) => paramNames.every((name) => Math.abs((exp.params[name] ?? 0) - params[name]) < 1e-9));
 
     if (!isDuplicate && suggestions.length < nSuggestions) {
       suggestions.push({
@@ -770,11 +776,9 @@ function heuristicSuggestions(
         const direction = val < (ranges[d][0] + ranges[d][1]) / 2 ? 1 : -1;
         expanded[paramNames[d]] = round2(clamp(val + direction * range * 0.15, ranges[d][0], ranges[d][1]));
       }
-      const isDupExpand = suggestions.some((s) =>
-        paramNames.every((name) => Math.abs(s.params[name] - expanded[name]) < 1e-9),
-      ) || history.some((exp) =>
-        paramNames.every((name) => Math.abs((exp.params[name] ?? 0) - expanded[name]) < 1e-9),
-      );
+      const isDupExpand =
+        suggestions.some((s) => paramNames.every((name) => Math.abs(s.params[name] - expanded[name]) < 1e-9)) ||
+        history.some((exp) => paramNames.every((name) => Math.abs((exp.params[name] ?? 0) - expanded[name]) < 1e-9));
 
       if (!isDupExpand) {
         suggestions.push({

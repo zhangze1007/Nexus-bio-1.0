@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useMemo, useCallback, useState } from 'react';
-import { colors, typography, spacing } from '../../tokens';
+import React, { useCallback, useMemo, useState } from "react";
+import { colors, spacing, typography } from "../../tokens";
 
 // ============================================================================
 // Types
@@ -34,7 +34,7 @@ export interface BarChartProps {
   /** Y-axis label */
   yLabel?: string;
   /** Bar layout mode */
-  layout?: 'grouped' | 'stacked';
+  layout?: "grouped" | "stacked";
   /** Show grid lines */
   showGrid?: boolean;
   /** Show value labels above bars */
@@ -79,7 +79,7 @@ const SERIES_PALETTE = [
 
 function niceNum(range: number, round: boolean): number {
   const exponent = Math.floor(Math.log10(range));
-  const fraction = range / Math.pow(10, exponent);
+  const fraction = range / 10 ** exponent;
   let niceFraction: number;
   if (round) {
     if (fraction < 1.5) niceFraction = 1;
@@ -92,7 +92,7 @@ function niceNum(range: number, round: boolean): number {
     else if (fraction <= 5) niceFraction = 5;
     else niceFraction = 10;
   }
-  return niceFraction * Math.pow(10, exponent);
+  return niceFraction * 10 ** exponent;
 }
 
 function niceScale(min: number, max: number, ticks: number): { min: number; max: number; step: number } {
@@ -121,7 +121,7 @@ export function BarChart({
   height = 360,
   title,
   yLabel,
-  layout = 'grouped',
+  layout = "grouped",
   showGrid = true,
   showValues = false,
   showLegend = true,
@@ -137,7 +137,12 @@ export function BarChart({
   const [hoveredBar, setHoveredBar] = useState<{ seriesId: string; index: number } | null>(null);
 
   // Layout constants
-  const margin = { top: title ? 40 : 24, right: 24, bottom: showLegend && series.length > 1 ? 52 : 36, left: yLabel ? 60 : 48 };
+  const margin = {
+    top: title ? 40 : 24,
+    right: 24,
+    bottom: showLegend && series.length > 1 ? 52 : 36,
+    left: yLabel ? 60 : 48,
+  };
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
 
@@ -146,9 +151,9 @@ export function BarChart({
 
   // Compute Y domain
   const { yMin, yMax } = useMemo(() => {
-    let ymn = 0; // bars start at 0
+    const ymn = 0; // bars start at 0
     let ymx = -Infinity;
-    if (layout === 'stacked') {
+    if (layout === "stacked") {
       for (let i = 0; i < groupLabels.length; i++) {
         let stack = 0;
         for (const s of series) {
@@ -168,14 +173,17 @@ export function BarChart({
     const pad = ymx * 0.08 || 1;
     return {
       yMin: yDomain?.[0] ?? ymn,
-      yMax: yDomain?.[1] ?? (ymx + pad),
+      yMax: yDomain?.[1] ?? ymx + pad,
     };
   }, [series, groupLabels, layout, yDomain]);
 
   const yScale = useMemo(() => niceScale(yMin, yMax, yTickCount), [yMin, yMax, yTickCount]);
   const yTicks = useMemo(() => generateTicks(yScale.min, yScale.max, yScale.step), [yScale]);
 
-  const toY = useCallback((v: number) => plotH - ((v - yScale.min) / (yScale.max - yScale.min)) * plotH, [yScale, plotH]);
+  const toY = useCallback(
+    (v: number) => plotH - ((v - yScale.min) / (yScale.max - yScale.min)) * plotH,
+    [yScale, plotH],
+  );
 
   // Bar geometry
   const nGroups = groupLabels.length;
@@ -200,14 +208,14 @@ export function BarChart({
       const groupX = gi * groupWidth + groupPadding / 2;
       const usableGroupWidth = groupWidth - groupPadding;
 
-      if (layout === 'stacked') {
+      if (layout === "stacked") {
         let stackY = 0;
         for (let si = 0; si < nSeries; si++) {
           const s = series[si];
           const d = s.data[gi];
           if (!d) continue;
           const val = d.value;
-          const barH = ((val) / (yScale.max - yScale.min)) * plotH;
+          const barH = (val / (yScale.max - yScale.min)) * plotH;
           const barY = toY(stackY + val);
           const color = d.color ?? s.color ?? SERIES_PALETTE[si % SERIES_PALETTE.length];
           rects.push({
@@ -254,10 +262,13 @@ export function BarChart({
     return rects;
   }, [nGroups, nSeries, groupWidth, groupPadding, layout, series, yScale, plotH, toY, barGap]);
 
-  const handleBarEnter = useCallback((seriesId: string, datum: BarDatum, index: number) => {
-    setHoveredBar({ seriesId, index });
-    onHoverBar?.(seriesId, datum, index);
-  }, [onHoverBar]);
+  const handleBarEnter = useCallback(
+    (seriesId: string, datum: BarDatum, index: number) => {
+      setHoveredBar({ seriesId, index });
+      onHoverBar?.(seriesId, datum, index);
+    },
+    [onHoverBar],
+  );
 
   const handleBarLeave = useCallback(() => {
     setHoveredBar(null);
@@ -271,9 +282,9 @@ export function BarChart({
     <div
       className={className}
       style={{
-        display: 'inline-block',
+        display: "inline-block",
         background: colors.bg.primary,
-        borderRadius: '12px',
+        borderRadius: "12px",
         border: `1px solid ${colors.border.subtle}`,
         padding: spacing.md,
       }}
@@ -282,7 +293,7 @@ export function BarChart({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        style={{ display: 'block', overflow: 'visible' }}
+        style={{ display: "block", overflow: "visible" }}
       >
         {/* Title */}
         {title && (
@@ -301,18 +312,19 @@ export function BarChart({
 
         <g transform={`translate(${margin.left}, ${margin.top})`}>
           {/* Grid lines */}
-          {showGrid && yTicks.map((t) => (
-            <line
-              key={`yg-${t}`}
-              x1={0}
-              x2={plotW}
-              y1={toY(t)}
-              y2={toY(t)}
-              stroke={colors.border.subtle}
-              strokeWidth={1}
-              strokeDasharray="3 3"
-            />
-          ))}
+          {showGrid &&
+            yTicks.map((t) => (
+              <line
+                key={`yg-${t}`}
+                x1={0}
+                x2={plotW}
+                y1={toY(t)}
+                y2={toY(t)}
+                stroke={colors.border.subtle}
+                strokeWidth={1}
+                strokeDasharray="3 3"
+              />
+            ))}
 
           {/* Axes */}
           <line x1={0} x2={plotW} y1={plotH} y2={plotH} stroke={colors.border.default} strokeWidth={1} />
@@ -347,7 +359,7 @@ export function BarChart({
                 fontFamily={sansFont}
                 fontSize={typography.fontSize.xs}
               >
-                {label.length > 12 ? label.slice(0, 11) + '…' : label}
+                {label.length > 12 ? label.slice(0, 11) + "…" : label}
               </text>
             );
           })}
@@ -384,7 +396,7 @@ export function BarChart({
                   ry={r}
                   fill={bar.color}
                   opacity={isDimmed ? 0.3 : isHovered ? 1 : 0.85}
-                  style={{ transition: 'opacity 150ms ease', cursor: 'pointer' }}
+                  style={{ transition: "opacity 150ms ease", cursor: "pointer" }}
                   onMouseEnter={() => handleBarEnter(bar.seriesId, bar.datum, bar.groupIndex)}
                   onMouseLeave={handleBarLeave}
                 />
@@ -407,39 +419,40 @@ export function BarChart({
           })}
 
           {/* Hover tooltip */}
-          {hoveredBar && (() => {
-            const bar = barGeometry.find(
-              (b) => b.seriesId === hoveredBar.seriesId && b.groupIndex === hoveredBar.index
-            );
-            if (!bar) return null;
-            const tx = bar.x + bar.w / 2;
-            const ty = bar.y - 12;
-            const text = `${bar.datum.label}: ${yFormat(bar.value)}${bar.datum.subLabel ? ` ${bar.datum.subLabel}` : ''}`;
-            return (
-              <g>
-                <rect
-                  x={tx - 60}
-                  y={ty - 22}
-                  width={120}
-                  height={20}
-                  rx={4}
-                  fill={colors.bg.elevated}
-                  stroke={colors.border.default}
-                  strokeWidth={1}
-                />
-                <text
-                  x={tx}
-                  y={ty - 9}
-                  textAnchor="middle"
-                  fill={bar.color}
-                  fontFamily={monoFont}
-                  fontSize={typography.fontSize.xs}
-                >
-                  {text}
-                </text>
-              </g>
-            );
-          })()}
+          {hoveredBar &&
+            (() => {
+              const bar = barGeometry.find(
+                (b) => b.seriesId === hoveredBar.seriesId && b.groupIndex === hoveredBar.index,
+              );
+              if (!bar) return null;
+              const tx = bar.x + bar.w / 2;
+              const ty = bar.y - 12;
+              const text = `${bar.datum.label}: ${yFormat(bar.value)}${bar.datum.subLabel ? ` ${bar.datum.subLabel}` : ""}`;
+              return (
+                <g>
+                  <rect
+                    x={tx - 60}
+                    y={ty - 22}
+                    width={120}
+                    height={20}
+                    rx={4}
+                    fill={colors.bg.elevated}
+                    stroke={colors.border.default}
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={tx}
+                    y={ty - 9}
+                    textAnchor="middle"
+                    fill={bar.color}
+                    fontFamily={monoFont}
+                    fontSize={typography.fontSize.xs}
+                  >
+                    {text}
+                  </text>
+                </g>
+              );
+            })()}
         </g>
 
         {/* Legend */}
@@ -450,14 +463,7 @@ export function BarChart({
               const offset = si * 120;
               return (
                 <g key={s.id} transform={`translate(${offset}, 0)`}>
-                  <rect
-                    x={0}
-                    y={-6}
-                    width={12}
-                    height={12}
-                    rx={2}
-                    fill={color}
-                  />
+                  <rect x={0} y={-6} width={12} height={12} rx={2} fill={color} />
                   <text
                     x={18}
                     y={0}

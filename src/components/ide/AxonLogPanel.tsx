@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * AxonLogPanel — shared live execution trace.
  *
@@ -14,35 +14,35 @@
  *     stays calm.
  *   • When the log is empty we say so plainly.
  */
-import { useMemo, useState } from 'react';
-import type { AxonLogEntry } from '../../services/axonExecutionLog';
-import { phaseLabel } from '../../services/axonExecutionLog';
-import { THEME } from '../../theme';
+import { useMemo, useState } from "react";
+import type { AxonLogEntry } from "../../services/axonExecutionLog";
+import { phaseLabel } from "../../services/axonExecutionLog";
+import { THEME } from "../../theme";
 
 const PHASE_TONE: Record<string, { bg: string; border: string; fg: string }> = {
-  'plan-created': { bg: 'rgba(175,195,214,0.14)', border: 'rgba(175,195,214,0.3)', fg: THEME.VALUE },
-  'plan-warning': { bg: 'rgba(229,143,70,0.14)', border: 'rgba(229,143,70,0.34)', fg: '#E8C49A' },
-  enqueued: { bg: 'rgba(175,195,214,0.12)', border: 'rgba(175,195,214,0.26)', fg: THEME.VALUE },
-  'context-attached': { bg: 'rgba(207,196,227,0.14)', border: 'rgba(207,196,227,0.3)', fg: '#DDD0E8' },
-  started: { bg: 'rgba(200,224,208,0.16)', border: 'rgba(200,224,208,0.32)', fg: '#C8E0D0' },
-  'adapter-invoked': { bg: 'rgba(175,195,214,0.10)', border: 'rgba(175,195,214,0.22)', fg: THEME.LABEL },
-  'writeback-emitted': { bg: 'rgba(147,203,82,0.12)', border: 'rgba(147,203,82,0.28)', fg: '#B8DE8A' },
-  completed: { bg: 'rgba(147,203,82,0.16)', border: 'rgba(147,203,82,0.34)', fg: '#93CB52' },
-  failed: { bg: 'rgba(250,128,114,0.14)', border: 'rgba(250,128,114,0.36)', fg: '#FA8072' },
-  cancelled: { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.14)', fg: THEME.LABEL },
-  interrupted: { bg: 'rgba(229,143,70,0.12)', border: 'rgba(229,143,70,0.3)', fg: '#E8C49A' },
-  retried: { bg: 'rgba(175,195,214,0.14)', border: 'rgba(175,195,214,0.3)', fg: THEME.VALUE },
-  reordered: { bg: 'rgba(175,195,214,0.10)', border: 'rgba(175,195,214,0.22)', fg: THEME.LABEL },
-  'blocked-dependency': { bg: 'rgba(229,143,70,0.12)', border: 'rgba(229,143,70,0.3)', fg: '#E8C49A' },
-  info: { bg: 'transparent', border: 'rgba(255,255,255,0.10)', fg: THEME.LABEL },
-  planned: { bg: 'rgba(175,195,214,0.12)', border: 'rgba(175,195,214,0.24)', fg: THEME.LABEL },
+  "plan-created": { bg: "rgba(175,195,214,0.14)", border: "rgba(175,195,214,0.3)", fg: THEME.VALUE },
+  "plan-warning": { bg: "rgba(229,143,70,0.14)", border: "rgba(229,143,70,0.34)", fg: "#E8C49A" },
+  enqueued: { bg: "rgba(175,195,214,0.12)", border: "rgba(175,195,214,0.26)", fg: THEME.VALUE },
+  "context-attached": { bg: "rgba(207,196,227,0.14)", border: "rgba(207,196,227,0.3)", fg: "#DDD0E8" },
+  started: { bg: "rgba(200,224,208,0.16)", border: "rgba(200,224,208,0.32)", fg: "#C8E0D0" },
+  "adapter-invoked": { bg: "rgba(175,195,214,0.10)", border: "rgba(175,195,214,0.22)", fg: THEME.LABEL },
+  "writeback-emitted": { bg: "rgba(147,203,82,0.12)", border: "rgba(147,203,82,0.28)", fg: "#B8DE8A" },
+  completed: { bg: "rgba(147,203,82,0.16)", border: "rgba(147,203,82,0.34)", fg: "#93CB52" },
+  failed: { bg: "rgba(250,128,114,0.14)", border: "rgba(250,128,114,0.36)", fg: "#FA8072" },
+  cancelled: { bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.14)", fg: THEME.LABEL },
+  interrupted: { bg: "rgba(229,143,70,0.12)", border: "rgba(229,143,70,0.3)", fg: "#E8C49A" },
+  retried: { bg: "rgba(175,195,214,0.14)", border: "rgba(175,195,214,0.3)", fg: THEME.VALUE },
+  reordered: { bg: "rgba(175,195,214,0.10)", border: "rgba(175,195,214,0.22)", fg: THEME.LABEL },
+  "blocked-dependency": { bg: "rgba(229,143,70,0.12)", border: "rgba(229,143,70,0.3)", fg: "#E8C49A" },
+  info: { bg: "transparent", border: "rgba(255,255,255,0.10)", fg: THEME.LABEL },
+  planned: { bg: "rgba(175,195,214,0.12)", border: "rgba(175,195,214,0.24)", fg: THEME.LABEL },
 };
 
 function formatTime(ms: number): string {
   return new Date(ms).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
 }
 
@@ -64,17 +64,17 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
       <div
         data-testid="axon-log-empty"
         style={{
-          padding: compact ? '10px 12px' : '14px',
-          borderRadius: '12px',
+          padding: compact ? "10px 12px" : "14px",
+          borderRadius: "12px",
           border: `1px dashed ${THEME.BORDER}`,
           color: THEME.LABEL,
           fontFamily: THEME.SANS,
-          fontSize: '11px',
+          fontSize: "11px",
           lineHeight: 1.5,
         }}
       >
-        No execution trace yet. Enqueue a task or ask Axon to plan and the
-        log will populate with honest lifecycle events.
+        No execution trace yet. Enqueue a task or ask Axon to plan and the log will populate with honest lifecycle
+        events.
       </div>
     );
   }
@@ -83,10 +83,10 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
     <div
       data-testid="axon-log-panel"
       style={{
-        display: 'grid',
-        gap: '4px',
+        display: "grid",
+        gap: "4px",
         fontFamily: THEME.MONO,
-        fontSize: '10px',
+        fontSize: "10px",
       }}
     >
       {sliced.map((entry) => {
@@ -98,28 +98,26 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
             data-testid={`axon-log-entry-${entry.phase}`}
             data-phase={entry.phase}
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto',
-              alignItems: 'baseline',
-              columnGap: '8px',
-              padding: compact ? '4px 8px' : '6px 10px',
-              borderRadius: '8px',
+              display: "grid",
+              gridTemplateColumns: "auto 1fr auto",
+              alignItems: "baseline",
+              columnGap: "8px",
+              padding: compact ? "4px 8px" : "6px 10px",
+              borderRadius: "8px",
               border: `1px solid ${tone.border}`,
               background: tone.bg,
             }}
           >
-            <span style={{ color: THEME.LABEL, whiteSpace: 'nowrap' }}>
-              {formatTime(entry.timestamp)}
-            </span>
-            <div style={{ display: 'grid', gap: '2px', minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ color: THEME.LABEL, whiteSpace: "nowrap" }}>{formatTime(entry.timestamp)}</span>
+            <div style={{ display: "grid", gap: "2px", minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
                 <span
                   style={{
                     color: tone.fg,
                     fontWeight: 700,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    fontSize: '10px',
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    fontSize: "10px",
                   }}
                 >
                   {phaseLabel(entry.phase)}
@@ -127,31 +125,27 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                 {entry.tool && (
                   <span
                     style={{
-                      padding: '1px 5px',
-                      borderRadius: '4px',
-                      background: 'rgba(10,14,22,0.45)',
+                      padding: "1px 5px",
+                      borderRadius: "4px",
+                      background: "rgba(10,14,22,0.45)",
                       color: THEME.VALUE,
-                      fontSize: '10px',
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
+                      fontSize: "10px",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
                     }}
                   >
                     {entry.tool}
                   </span>
                 )}
-                {entry.taskId && (
-                  <span style={{ color: THEME.LABEL, fontSize: '10px' }}>
-                    {entry.taskId}
-                  </span>
-                )}
+                {entry.taskId && <span style={{ color: THEME.LABEL, fontSize: "10px" }}>{entry.taskId}</span>}
               </div>
               <span
                 style={{
                   fontFamily: THEME.SANS,
-                  fontSize: '11px',
+                  fontSize: "11px",
                   color: THEME.VALUE,
                   lineHeight: 1.4,
-                  overflowWrap: 'anywhere',
+                  overflowWrap: "anywhere",
                 }}
               >
                 {entry.message}
@@ -160,17 +154,17 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                 <pre
                   data-testid={`axon-log-meta-${entry.id}`}
                   style={{
-                    margin: '4px 0 0',
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    background: 'rgba(5,7,11,0.6)',
+                    margin: "4px 0 0",
+                    padding: "6px 8px",
+                    borderRadius: "6px",
+                    background: "rgba(5,7,11,0.6)",
                     color: THEME.LABEL,
-                    fontSize: '10px',
+                    fontSize: "10px",
                     lineHeight: 1.4,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    maxHeight: '160px',
-                    overflow: 'auto',
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    maxHeight: "160px",
+                    overflow: "auto",
                   }}
                 >
                   {JSON.stringify(entry.metadata, null, 2)}
@@ -184,16 +178,16 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                 aria-label="Toggle metadata"
                 data-testid={`axon-log-meta-toggle-${entry.id}`}
                 style={{
-                  padding: '2px 6px',
-                  borderRadius: '4px',
+                  padding: "2px 6px",
+                  borderRadius: "4px",
                   border: `1px solid ${THEME.BORDER}`,
-                  background: 'transparent',
+                  background: "transparent",
                   color: THEME.LABEL,
-                  fontSize: '10px',
-                  cursor: 'pointer',
+                  fontSize: "10px",
+                  cursor: "pointer",
                 }}
               >
-                {expandedId === entry.id ? '–' : '+'}
+                {expandedId === entry.id ? "–" : "+"}
               </button>
             ) : (
               <span />

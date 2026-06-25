@@ -1,29 +1,29 @@
-'use client';
+"use client";
 
-import { useMemo, useState, useRef, useEffect, useCallback, type KeyboardEvent, type MutableRefObject } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import { THEME } from '../../../theme';
-import * as THREE from 'three';
-import { Minus, Plus } from 'lucide-react';
-import DataTable, { type TableColumn } from '../../ide/shared/DataTable';
-import EmptyState from '../../ide/shared/EmptyState';
-import type { ScSpatialPointDatum, ScSpatialQueryResponse } from '../../../types/scspatial';
-import { colorForCluster, SCSPATIAL_VIEW_LABELS } from './scSpatialPalette';
-import { computeConvexHull, expandHull, hexPath } from '../../../utils/vizUtils';
-import styles from './ScSpatialWorkbench.module.css';
+import { OrbitControls } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { Minus, Plus } from "lucide-react";
+import { type KeyboardEvent, type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import { THEME } from "../../../theme";
+import type { ScSpatialPointDatum, ScSpatialQueryResponse } from "../../../types/scspatial";
+import { computeConvexHull, expandHull, hexPath } from "../../../utils/vizUtils";
+import DataTable, { type TableColumn } from "../../ide/shared/DataTable";
+import EmptyState from "../../ide/shared/EmptyState";
+import styles from "./ScSpatialWorkbench.module.css";
+import { colorForCluster, SCSPATIAL_VIEW_LABELS } from "./scSpatialPalette";
 
-type AnalysisTabKey = 'context' | 'marker' | 'distribution';
+type AnalysisTabKey = "context" | "marker" | "distribution";
 
 const ANALYSIS_TABS: Array<{ key: AnalysisTabKey; label: string }> = [
-  { key: 'context', label: 'Tissue Context' },
-  { key: 'marker', label: 'Marker Heatmap' },
-  { key: 'distribution', label: 'Expression by Domain' },
+  { key: "context", label: "Tissue Context" },
+  { key: "marker", label: "Marker Heatmap" },
+  { key: "distribution", label: "Expression by Domain" },
 ];
 
 interface ScSpatialViewportProps {
   canvasRef: MutableRefObject<HTMLCanvasElement | null>;
-  loadState: 'idle' | 'uploading' | 'querying' | 'ready' | 'error';
+  loadState: "idle" | "uploading" | "querying" | "ready" | "error";
   query: ScSpatialQueryResponse | null;
   svgRef: MutableRefObject<SVGSVGElement | null>;
   onSelectCell: (cellId: string | null) => void;
@@ -44,11 +44,11 @@ interface TableRow {
 }
 
 const TABLE_COLUMNS: TableColumn<TableRow>[] = [
-  { key: 'cellId', header: 'Cell', width: 120 },
-  { key: 'clusterLabel', header: 'Cluster', width: 160 },
-  { key: 'cellType', header: 'Type', width: 160 },
-  { key: 'expression', header: 'Expr.', width: 70, render: (value) => (value as number).toFixed(2) },
-  { key: 'pseudotime', header: 'PT', width: 70, render: (value) => (value as number).toFixed(2) },
+  { key: "cellId", header: "Cell", width: 120 },
+  { key: "clusterLabel", header: "Cluster", width: 160 },
+  { key: "cellType", header: "Type", width: 160 },
+  { key: "expression", header: "Expr.", width: 70, render: (value) => (value as number).toFixed(2) },
+  { key: "pseudotime", header: "PT", width: 70, render: (value) => (value as number).toFixed(2) },
 ];
 
 function getBounds(points: ScSpatialPointDatum[]) {
@@ -68,8 +68,12 @@ function getBounds(points: ScSpatialPointDatum[]) {
   };
 }
 
-function handlePointKeyDown(event: KeyboardEvent<SVGPathElement>, cellId: string, onSelectCell: (cellId: string | null) => void) {
-  if (event.key === 'Enter' || event.key === ' ') {
+function handlePointKeyDown(
+  event: KeyboardEvent<SVGPathElement>,
+  cellId: string,
+  onSelectCell: (cellId: string | null) => void,
+) {
+  if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     onSelectCell(cellId);
   }
@@ -112,10 +116,7 @@ interface KNNEdge {
   exprSimilarity: number;
 }
 
-function computeKNNEdges(
-  points: ScSpatialPointDatum[],
-  k: number,
-): KNNEdge[] {
+function computeKNNEdges(points: ScSpatialPointDatum[], k: number): KNNEdge[] {
   const edges: KNNEdge[] = [];
   for (let i = 0; i < points.length; i++) {
     const dists: Array<{ idx: number; d: number }> = [];
@@ -190,7 +191,7 @@ function ClusterLegend({ query }: { query: ScSpatialQueryResponse }) {
   );
 }
 
-function ScaleBar({ label = '1000 µm' }: { label?: string }) {
+function ScaleBar({ label = "1000 µm" }: { label?: string }) {
   return (
     <div className={styles.scaleBar}>
       <div className={styles.scaleBarLine} />
@@ -239,9 +240,7 @@ function ScatterViewport({
     const span = Math.max(bounds.width, bounds.height);
     return Array.from(map.entries()).map(([id, { label, pts }]) => {
       const hullIn = pts.map((p) => ({ sx: p.x, sy: p.y }));
-      const hull = hullIn.length >= 3
-        ? expandHull(computeConvexHull(hullIn), span * 0.018)
-        : [];
+      const hull = hullIn.length >= 3 ? expandHull(computeConvexHull(hullIn), span * 0.018) : [];
       return { id, label, pts, hull };
     });
   }, [points, bounds]);
@@ -260,8 +259,8 @@ function ScatterViewport({
   // zoom narrows the data window around the midpoint.
   const cx = (bounds.minX + bounds.maxX) / 2;
   const cy = (bounds.minY + bounds.maxY) / 2;
-  const halfW = (bounds.width / 2) / zoom;
-  const halfH = (bounds.height / 2) / zoom;
+  const halfW = bounds.width / 2 / zoom;
+  const halfH = bounds.height / 2 / zoom;
   const viewMinX = cx - halfW;
   const viewMaxX = cx + halfW;
   const viewMinY = cy - halfH;
@@ -269,15 +268,21 @@ function ScatterViewport({
   const viewSpanX = Math.max(viewMaxX - viewMinX, 1e-6);
   const viewSpanY = Math.max(viewMaxY - viewMinY, 1e-6);
 
-  const xScale = useCallback((x: number) => marginL + ((x - viewMinX) / viewSpanX) * plotW, [viewMinX, viewSpanX, marginL, plotW]);
-  const yScale = useCallback((y: number) => marginT + (1 - (y - viewMinY) / viewSpanY) * plotH, [viewMinY, viewSpanY, marginT, plotH]);
+  const xScale = useCallback(
+    (x: number) => marginL + ((x - viewMinX) / viewSpanX) * plotW,
+    [viewMinX, viewSpanX, marginL, plotW],
+  );
+  const yScale = useCallback(
+    (y: number) => marginT + (1 - (y - viewMinY) / viewSpanY) * plotH,
+    [viewMinY, viewSpanY, marginT, plotH],
+  );
 
   const tickFractions = [0, 0.25, 0.5, 0.75, 1];
   const xTickValues = tickFractions.map((t) => viewMinX + t * viewSpanX);
   const yTickValues = tickFractions.map((t) => viewMinY + t * viewSpanY);
 
   const hullPath = (hull: { sx: number; sy: number }[]) =>
-    `M ${hull.map((p) => `${xScale(p.sx).toFixed(2)} ${yScale(p.sy).toFixed(2)}`).join(' L ')} Z`;
+    `M ${hull.map((p) => `${xScale(p.sx).toFixed(2)} ${yScale(p.sy).toFixed(2)}`).join(" L ")} Z`;
 
   // Stable references for the canvas effect.
   const scaleRef = useRef({ xScale, yScale, viewMinX, viewMaxX, viewMinY, viewMaxY });
@@ -287,7 +292,7 @@ function ScatterViewport({
   useEffect(() => {
     const canvas = canvasOverlayRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const { xScale: xs, yScale: ys } = scaleRef.current;
@@ -302,9 +307,8 @@ function ScatterViewport({
     if (showKde && points.length > 2) {
       // Sample for performance on large datasets.
       const maxKdePts = 600;
-      const sampled = points.length > maxKdePts
-        ? points.filter((_, i) => i % Math.ceil(points.length / maxKdePts) === 0)
-        : points;
+      const sampled =
+        points.length > maxKdePts ? points.filter((_, i) => i % Math.ceil(points.length / maxKdePts) === 0) : points;
 
       // Bandwidth = median nearest-neighbor distance in pixel space.
       const pixelPts = sampled.map((p) => ({ x: xs(p.x), y: ys(p.y) }));
@@ -340,9 +344,8 @@ function ScatterViewport({
     if (showNeighbors && points.length > 1 && neighborK && neighborK > 0) {
       // Sample for performance.
       const maxKnnPts = 300;
-      const knnPts = points.length > maxKnnPts
-        ? points.filter((_, i) => i % Math.ceil(points.length / maxKnnPts) === 0)
-        : points;
+      const knnPts =
+        points.length > maxKnnPts ? points.filter((_, i) => i % Math.ceil(points.length / maxKnnPts) === 0) : points;
       const k = Math.min(neighborK, knnPts.length - 1);
       const edges = computeKNNEdges(knnPts, k);
 
@@ -367,17 +370,37 @@ function ScatterViewport({
     }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [showKde, showNeighbors, neighborK, points, W, H, marginL, marginT, plotW, plotH, viewMinX, viewMaxX, viewMinY, viewMaxY, xScale, yScale]);
+  }, [
+    showKde,
+    showNeighbors,
+    neighborK,
+    points,
+    W,
+    H,
+    marginL,
+    marginT,
+    plotW,
+    plotH,
+    viewMinX,
+    viewMaxX,
+    viewMinY,
+    viewMaxY,
+    xScale,
+    yScale,
+  ]);
 
   if (points.length === 0) {
     return (
       <div className={styles.viewportStage}>
-        <EmptyState title="No points in current view" message="Adjust the cluster or gene filters to populate the current scatter view." />
+        <EmptyState
+          title="No points in current view"
+          message="Adjust the cluster or gene filters to populate the current scatter view."
+        />
       </div>
     );
   }
 
-  const isSpatial = viewMode === 'spatial-2d';
+  const isSpatial = viewMode === "spatial-2d";
   const isDualGene = !!compareGene;
 
   // Dual-gene color: Gene A -> red, Gene B -> green, overlap -> yellow.
@@ -394,11 +417,23 @@ function ScatterViewport({
 
   return (
     <div className={styles.viewportStage}>
-      <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4, zIndex: 5 }}>
-        <button type="button" className={styles.button} style={{ width: 30, padding: 0 }} onClick={() => setZoom((value) => Math.max(0.5, value - 0.25))} aria-label="Zoom out">
+      <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 4, zIndex: 5 }}>
+        <button
+          type="button"
+          className={styles.button}
+          style={{ width: 30, padding: 0 }}
+          onClick={() => setZoom((value) => Math.max(0.5, value - 0.25))}
+          aria-label="Zoom out"
+        >
           <Minus size={12} />
         </button>
-        <button type="button" className={styles.button} style={{ width: 30, padding: 0 }} onClick={() => setZoom((value) => Math.min(3, value + 0.25))} aria-label="Zoom in">
+        <button
+          type="button"
+          className={styles.button}
+          style={{ width: 30, padding: 0 }}
+          onClick={() => setZoom((value) => Math.min(3, value + 0.25))}
+          aria-label="Zoom in"
+        >
           <Plus size={12} />
         </button>
       </div>
@@ -408,12 +443,12 @@ function ScatterViewport({
         <canvas
           ref={canvasOverlayRef}
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
             zIndex: 2,
           }}
         />
@@ -426,7 +461,7 @@ function ScatterViewport({
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={`${xLabel} versus ${yLabel} scatter plot`}
-        style={{ position: 'relative', zIndex: 3 }}
+        style={{ position: "relative", zIndex: 3 }}
       >
         <rect width={W} height={H} fill="#050505" />
         {/* plot background */}
@@ -497,7 +532,7 @@ function ScatterViewport({
               key={point.id}
               d={hexPath(xScale(point.x), yScale(point.y), r)}
               fill={fill}
-              stroke={point.selected ? '#ffffff' : 'rgba(255,255,255,0.3)'}
+              stroke={point.selected ? "#ffffff" : "rgba(255,255,255,0.3)"}
               strokeWidth={point.selected ? 1.2 : 0.4}
               opacity={point.selected ? 1 : 0.85}
               tabIndex={0}
@@ -524,7 +559,7 @@ function ScatterViewport({
               textAnchor="middle"
               fill="rgba(255,255,255,0.7)"
               fontFamily={THEME.MONO}
-              style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2.5, strokeLinejoin: 'round' }}
+              style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.5)", strokeWidth: 2.5, strokeLinejoin: "round" }}
             >
               {g.label.length > 14 ? `${g.label.slice(0, 13)}…` : g.label}
             </text>
@@ -532,15 +567,36 @@ function ScatterViewport({
         })}
 
         {/* axes */}
-        <line x1={marginL} y1={marginT + plotH} x2={marginL + plotW} y2={marginT + plotH} stroke="rgba(255,255,255,0.2)" strokeWidth={0.8} />
-        <line x1={marginL} y1={marginT} x2={marginL} y2={marginT + plotH} stroke="rgba(255,255,255,0.2)" strokeWidth={0.8} />
+        <line
+          x1={marginL}
+          y1={marginT + plotH}
+          x2={marginL + plotW}
+          y2={marginT + plotH}
+          stroke="rgba(255,255,255,0.2)"
+          strokeWidth={0.8}
+        />
+        <line
+          x1={marginL}
+          y1={marginT}
+          x2={marginL}
+          y2={marginT + plotH}
+          stroke="rgba(255,255,255,0.2)"
+          strokeWidth={0.8}
+        />
 
         {/* x ticks + labels */}
         {xTickValues.map((v, i) => {
           const x = marginL + tickFractions[i] * plotW;
           return (
             <g key={`xt-${i}`}>
-              <line x1={x} y1={marginT + plotH} x2={x} y2={marginT + plotH + 3} stroke="rgba(255,255,255,0.15)" strokeWidth={0.6} />
+              <line
+                x1={x}
+                y1={marginT + plotH}
+                x2={x}
+                y2={marginT + plotH + 3}
+                stroke="rgba(255,255,255,0.15)"
+                strokeWidth={0.6}
+              />
               <text
                 x={x}
                 y={marginT + plotH + 12}
@@ -561,14 +617,7 @@ function ScatterViewport({
           return (
             <g key={`yt-${i}`}>
               <line x1={marginL - 3} y1={y} x2={marginL} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth={0.6} />
-              <text
-                x={marginL - 5}
-                y={y + 3}
-                fontSize={8}
-                textAnchor="end"
-                fill="#475569"
-                fontFamily={THEME.MONO}
-              >
+              <text x={marginL - 5} y={y + 3} fontSize={8} textAnchor="end" fill="#475569" fontFamily={THEME.MONO}>
                 {v.toFixed(1)}
               </text>
             </g>
@@ -618,33 +667,39 @@ function ScatterViewport({
       {isDualGene && compareGene && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 40,
             left: 16,
-            padding: '8px 10px',
-            border: '1px solid rgba(255,255,255,0.15)',
+            padding: "8px 10px",
+            border: "1px solid rgba(255,255,255,0.15)",
             borderRadius: 4,
-            background: 'rgba(5,5,5,0.88)',
+            background: "rgba(5,5,5,0.88)",
             zIndex: 6,
             fontFamily: THEME.MONO,
             fontSize: 9,
-            color: '#ccc',
-            display: 'grid',
+            color: "#ccc",
+            display: "grid",
             gap: 3,
           }}
           role="figure"
           aria-label="Dual gene legend"
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: 'rgb(230,40,50)', display: 'inline-block' }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span
+              style={{ width: 10, height: 10, borderRadius: 2, background: "rgb(230,40,50)", display: "inline-block" }}
+            />
             <span>Gene A (selected)</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: 'rgb(40,200,40)', display: 'inline-block' }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span
+              style={{ width: 10, height: 10, borderRadius: 2, background: "rgb(40,200,40)", display: "inline-block" }}
+            />
             <span>Gene B ({compareGene})</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: 'rgb(230,200,50)', display: 'inline-block' }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span
+              style={{ width: 10, height: 10, borderRadius: 2, background: "rgb(230,200,50)", display: "inline-block" }}
+            />
             <span>Co-expression</span>
           </div>
         </div>
@@ -654,33 +709,34 @@ function ScatterViewport({
       {showKde && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 40,
             right: 16,
-            padding: '8px 10px',
-            border: '1px solid rgba(255,255,255,0.15)',
+            padding: "8px 10px",
+            border: "1px solid rgba(255,255,255,0.15)",
             borderRadius: 4,
-            background: 'rgba(5,5,5,0.88)',
+            background: "rgba(5,5,5,0.88)",
             zIndex: 6,
             fontFamily: THEME.MONO,
             fontSize: 9,
-            color: '#ccc',
+            color: "#ccc",
             width: 110,
           }}
           role="figure"
           aria-label="KDE density colorbar"
         >
-          <div style={{ marginBottom: 4, fontWeight: 600, letterSpacing: '0.06em' }}>DENSITY</div>
+          <div style={{ marginBottom: 4, fontWeight: 600, letterSpacing: "0.06em" }}>DENSITY</div>
           <div
             style={{
               height: 8,
-              width: '100%',
+              width: "100%",
               borderRadius: 2,
-              background: 'linear-gradient(to right, rgb(13,8,135), rgb(70,3,159), rgb(135,50,160), rgb(194,100,110), rgb(253,231,37))',
-              border: '1px solid rgba(255,255,255,0.15)',
+              background:
+                "linear-gradient(to right, rgb(13,8,135), rgb(70,3,159), rgb(135,50,160), rgb(194,100,110), rgb(253,231,37))",
+              border: "1px solid rgba(255,255,255,0.15)",
             }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2 }}>
             <span>Low</span>
             <span>High</span>
           </div>
@@ -704,13 +760,22 @@ function TrajectoryViewport({
   if (nodes.length === 0) {
     return (
       <div className={styles.viewportStage}>
-        <EmptyState title="No trajectory graph available" message="This artifact does not currently expose enough cluster structure to render a PAGA trajectory." />
+        <EmptyState
+          title="No trajectory graph available"
+          message="This artifact does not currently expose enough cluster structure to render a PAGA trajectory."
+        />
       </div>
     );
   }
   return (
     <div className={styles.viewportStage}>
-      <svg ref={svgRef} className={styles.viewportSvg} viewBox="0 0 100 100" role="img" aria-label="PAGA trajectory graph">
+      <svg
+        ref={svgRef}
+        className={styles.viewportSvg}
+        viewBox="0 0 100 100"
+        role="img"
+        aria-label="PAGA trajectory graph"
+      >
         <rect width="100" height="100" fill="#050505" />
         {edges.map((edge) => {
           const from = nodes.find((node) => node.clusterId === edge.from);
@@ -733,7 +798,7 @@ function TrajectoryViewport({
             <circle
               cx={10 + node.x * 80}
               cy={10 + node.y * 80}
-              r={3 + node.cellCount / Math.max(query.datasetMeta.cellCount, 1) * 12}
+              r={3 + (node.cellCount / Math.max(query.datasetMeta.cellCount, 1)) * 12}
               fill={colorForCluster(node.clusterId)}
               stroke="#111827"
               strokeWidth={0.3}
@@ -772,7 +837,7 @@ function SpatialPointCloud({
   const clusterGroups = useMemo(() => {
     const groups = new Map<string, ScSpatialPointDatum[]>();
     for (const point of points) {
-      const key = point.selected ? 'selected' : String(point.clusterId);
+      const key = point.selected ? "selected" : String(point.clusterId);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(point);
     }
@@ -782,7 +847,10 @@ function SpatialPointCloud({
   if (points.length === 0) {
     return (
       <div className={styles.viewportStage}>
-        <EmptyState title="No 3D point cloud available" message="The current selection has no cells to render in the spatial point cloud." />
+        <EmptyState
+          title="No 3D point cloud available"
+          message="The current selection has no cells to render in the spatial point cloud."
+        />
       </div>
     );
   }
@@ -796,10 +864,10 @@ function SpatialPointCloud({
           canvasRef.current = gl.domElement;
         }}
       >
-        <color attach="background" args={['#050505']} />
+        <color attach="background" args={["#050505"]} />
         <ambientLight intensity={0.95} />
         <directionalLight position={[6, 8, 12]} intensity={0.6} />
-        <gridHelper args={[16, 12, '#d1d5db', '#e5e7eb']} position={[0, -2.3, 0]} />
+        <gridHelper args={[16, 12, "#d1d5db", "#e5e7eb"]} position={[0, -2.3, 0]} />
         <group position={[-4.5, -2, -4.5]}>
           {Array.from(clusterGroups.entries()).map(([clusterId, clusterPoints]) => (
             <InstancedPointCloud
@@ -807,7 +875,7 @@ function SpatialPointCloud({
               points={clusterPoints}
               bounds={bounds}
               maxExpression={maxExpression}
-              color={clusterId === 'selected' ? '#111827' : colorForCluster(Number(clusterId))}
+              color={clusterId === "selected" ? "#111827" : colorForCluster(Number(clusterId))}
               onSelectCell={onSelectCell}
             />
           ))}
@@ -853,18 +921,17 @@ function InstancedPointCloud({
     meshRef.current.instanceMatrix.needsUpdate = true;
   }, [points, bounds, maxExpression, tempObject]);
 
-  const handleClick = useCallback((e: { instanceId?: number }) => {
-    if (e.instanceId !== undefined) {
-      onSelectCell(points[e.instanceId]?.id ?? null);
-    }
-  }, [points, onSelectCell]);
+  const handleClick = useCallback(
+    (e: { instanceId?: number }) => {
+      if (e.instanceId !== undefined) {
+        onSelectCell(points[e.instanceId]?.id ?? null);
+      }
+    },
+    [points, onSelectCell],
+  );
 
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[undefined, undefined, points.length]}
-      onClick={handleClick}
-    >
+    <instancedMesh ref={meshRef} args={[undefined, undefined, points.length]} onClick={handleClick}>
       <sphereGeometry args={[0.12, 12, 12]} />
       <meshLambertMaterial color={color} />
     </instancedMesh>
@@ -896,15 +963,12 @@ function SpatialContextPanel({ query }: { query: ScSpatialQueryResponse }) {
   // a cluster filter is applied to centerView.points).
   const hullPoints = sampled.map((p) => ({ sx: p.x, sy: p.y }));
   const hull = expandHull(computeConvexHull(hullPoints), padding * 0.35);
-  const hullPath = hull.length
-    ? `M ${hull.map((p) => `${p.sx.toFixed(2)} ${p.sy.toFixed(2)}`).join(' L ')} Z`
-    : '';
+  const hullPath = hull.length ? `M ${hull.map((p) => `${p.sx.toFixed(2)} ${p.sy.toFixed(2)}`).join(" L ")} Z` : "";
 
   // ROI box: tight bounding box of the selected cluster if any.
   const selectedClusterId = query.rightPanel.selectedClusterSummary?.clusterId;
-  const selectedPoints = selectedClusterId !== undefined
-    ? sampled.filter((p) => p.clusterId === selectedClusterId)
-    : [];
+  const selectedPoints =
+    selectedClusterId !== undefined ? sampled.filter((p) => p.clusterId === selectedClusterId) : [];
   const roi = selectedPoints.length > 0 ? getBounds(selectedPoints) : null;
 
   return (
@@ -1013,7 +1077,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
   /** Purple→teal→yellow ramp (Viridis-like, CVD-safe). */
   const ramp = (t: number) => {
     const stops = [
-      { at: 0.0, c: [240, 243, 250] },  // very pale for "absent"
+      { at: 0.0, c: [240, 243, 250] }, // very pale for "absent"
       { at: 0.3, c: [197, 205, 227] },
       { at: 0.55, c: [102, 133, 181] },
       { at: 0.8, c: [58, 91, 143] },
@@ -1030,7 +1094,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
         return `rgb(${r},${g},${b})`;
       }
     }
-    return 'rgb(28,54,99)';
+    return "rgb(28,54,99)";
   };
 
   return (
@@ -1038,23 +1102,15 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
         <rect width={W} height={H} fill="#050505" />
         {/* frame */}
-        <rect
-          x={marginL}
-          y={marginT}
-          width={gridW}
-          height={gridH}
-          fill="none"
-          stroke="#111827"
-          strokeWidth={0.5}
-        />
+        <rect x={marginL} y={marginT} width={gridW} height={gridH} fill="none" stroke="#111827" strokeWidth={0.5} />
         {/* heatmap cells */}
-        {clusters.map((cluster, rIdx) => (
+        {clusters.map((cluster, rIdx) =>
           trimmedGenes.map((gene, cIdx) => {
             const rank = cluster.topGenes.indexOf(gene);
             const present = rank >= 0;
             const intensity = present ? 1 - rank / Math.max(cluster.topGenes.length, 1) : 0;
             const moran = hotspotMap.get(gene) ?? 0;
-            const bump = Math.abs(moran) / maxMoran * 0.3;
+            const bump = (Math.abs(moran) / maxMoran) * 0.3;
             const t = Math.min(1, intensity + (present ? bump : 0));
             return (
               <rect
@@ -1068,8 +1124,8 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
                 strokeWidth={0.6}
               />
             );
-          })
-        ))}
+          }),
+        )}
         {/* row labels with cluster swatches */}
         {clusters.map((cluster, rIdx) => (
           <g key={`row-${cluster.clusterId}`}>
@@ -1111,14 +1167,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
           </text>
         ))}
         {/* axis title */}
-        <text
-          x={marginL - 44}
-          y={marginT - 1}
-          fontSize={7.5}
-          fill="#374151"
-          fontFamily={THEME.MONO}
-          fontWeight={700}
-        >
+        <text x={marginL - 44} y={marginT - 1} fontSize={7.5} fill="#374151" fontFamily={THEME.MONO} fontWeight={700}>
           Domain
         </text>
       </svg>
@@ -1147,7 +1196,7 @@ interface BoxStats {
   n: number;
 }
 
-function computeBoxStats(values: number[]): Omit<BoxStats, 'clusterId' | 'clusterLabel'> {
+function computeBoxStats(values: number[]): Omit<BoxStats, "clusterId" | "clusterLabel"> {
   const sorted = [...values].sort((a, b) => a - b);
   const n = sorted.length;
   const quantile = (p: number) => {
@@ -1223,7 +1272,7 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
 
   const xFor = (idx: number) => marginL + plotW * ((idx + 0.5) / stats.length);
   const yFor = (v: number) => marginT + plotH * (1 - (v - yMin) / (yMax - yMin));
-  const boxW = Math.min(plotW / stats.length * 0.55, 22);
+  const boxW = Math.min((plotW / stats.length) * 0.55, 22);
 
   const yTicks = [yMin, yMin + (yMax - yMin) * 0.25, yMin + (yMax - yMin) * 0.5, yMin + (yMax - yMin) * 0.75, yMax];
 
@@ -1245,19 +1294,19 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
         ))}
         {/* axes */}
         <line x1={marginL} y1={marginT} x2={marginL} y2={marginT + plotH} stroke="#111827" strokeWidth={0.6} />
-        <line x1={marginL} y1={marginT + plotH} x2={W - marginR} y2={marginT + plotH} stroke="#111827" strokeWidth={0.6} />
+        <line
+          x1={marginL}
+          y1={marginT + plotH}
+          x2={W - marginR}
+          y2={marginT + plotH}
+          stroke="#111827"
+          strokeWidth={0.6}
+        />
         {/* y ticks */}
         {yTicks.map((t, idx) => (
           <g key={`tick-${idx}`}>
             <line x1={marginL - 2} y1={yFor(t)} x2={marginL} y2={yFor(t)} stroke="#111827" strokeWidth={0.5} />
-            <text
-              x={marginL - 3}
-              y={yFor(t) + 2}
-              fontSize={7}
-              fill="#475569"
-              textAnchor="end"
-              fontFamily={THEME.MONO}
-            >
+            <text x={marginL - 3} y={yFor(t) + 2} fontSize={7} fill="#475569" textAnchor="end" fontFamily={THEME.MONO}>
               {t.toFixed(1)}
             </text>
           </g>
@@ -1282,10 +1331,24 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
             <g key={s.clusterId}>
               {/* lower whisker */}
               <line x1={x} y1={yFor(s.whiskerLow)} x2={x} y2={yFor(s.q1)} stroke="#111827" strokeWidth={0.5} />
-              <line x1={x - boxW * 0.3} y1={yFor(s.whiskerLow)} x2={x + boxW * 0.3} y2={yFor(s.whiskerLow)} stroke="#111827" strokeWidth={0.5} />
+              <line
+                x1={x - boxW * 0.3}
+                y1={yFor(s.whiskerLow)}
+                x2={x + boxW * 0.3}
+                y2={yFor(s.whiskerLow)}
+                stroke="#111827"
+                strokeWidth={0.5}
+              />
               {/* upper whisker */}
               <line x1={x} y1={yFor(s.whiskerHigh)} x2={x} y2={yFor(s.q3)} stroke="#111827" strokeWidth={0.5} />
-              <line x1={x - boxW * 0.3} y1={yFor(s.whiskerHigh)} x2={x + boxW * 0.3} y2={yFor(s.whiskerHigh)} stroke="#111827" strokeWidth={0.5} />
+              <line
+                x1={x - boxW * 0.3}
+                y1={yFor(s.whiskerHigh)}
+                x2={x + boxW * 0.3}
+                y2={yFor(s.whiskerHigh)}
+                stroke="#111827"
+                strokeWidth={0.5}
+              />
               {/* IQR box */}
               <rect
                 x={x - boxW / 2}
@@ -1348,18 +1411,18 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
 }
 
 function AnalysisStrip({ query }: { query: ScSpatialQueryResponse }) {
-  const [activeTab, setActiveTab] = useState<AnalysisTabKey>('context');
+  const [activeTab, setActiveTab] = useState<AnalysisTabKey>("context");
   const selectedGene = query.selection.selectedGene;
   const selectedCluster = query.rightPanel.selectedClusterSummary?.clusterLabel;
 
   const caption =
-    activeTab === 'context'
+    activeTab === "context"
       ? selectedCluster
         ? `Spatial footprint with ROI highlighted for ${selectedCluster}.`
-        : 'Tissue boundary from convex hull of all cells; domains colored by cluster.'
-      : activeTab === 'marker'
-      ? 'Top marker genes by domain; intensity encodes rank within each cluster, accented by spatial autocorrelation.'
-      : `Tukey box plot of ${selectedGene || 'target gene'} expression per domain: IQR, median, 1.5×IQR whiskers, outliers.`;
+        : "Tissue boundary from convex hull of all cells; domains colored by cluster."
+      : activeTab === "marker"
+        ? "Top marker genes by domain; intensity encodes rank within each cluster, accented by spatial autocorrelation."
+        : `Tukey box plot of ${selectedGene || "target gene"} expression per domain: IQR, median, 1.5×IQR whiskers, outliers.`;
 
   return (
     <div className={styles.analysisStrip}>
@@ -1370,7 +1433,7 @@ function AnalysisStrip({ query }: { query: ScSpatialQueryResponse }) {
             type="button"
             role="tab"
             aria-selected={activeTab === tab.key}
-            className={`${styles.analysisTab} ${activeTab === tab.key ? styles.analysisTabActive : ''}`}
+            className={`${styles.analysisTab} ${activeTab === tab.key ? styles.analysisTabActive : ""}`}
             onClick={() => setActiveTab(tab.key)}
           >
             {tab.label}
@@ -1379,9 +1442,9 @@ function AnalysisStrip({ query }: { query: ScSpatialQueryResponse }) {
       </div>
       <div className={styles.analysisPanel}>
         <p className={styles.analysisCaption}>{caption}</p>
-        {activeTab === 'context' ? <SpatialContextPanel query={query} /> : null}
-        {activeTab === 'marker' ? <MarkerHeatmapPanel query={query} /> : null}
-        {activeTab === 'distribution' ? <BoxPlotPanel query={query} /> : null}
+        {activeTab === "context" ? <SpatialContextPanel query={query} /> : null}
+        {activeTab === "marker" ? <MarkerHeatmapPanel query={query} /> : null}
+        {activeTab === "distribution" ? <BoxPlotPanel query={query} /> : null}
       </div>
     </div>
   );
@@ -1399,11 +1462,15 @@ export default function ScSpatialViewport({
   neighborK,
   heImageData,
 }: ScSpatialViewportProps) {
-  if (loadState === 'uploading' || loadState === 'querying') {
+  if (loadState === "uploading" || loadState === "querying") {
     return (
       <div className={styles.emptyWrap}>
         <div className={styles.viewport}>
-          <EmptyState type="loading" title="Loading spatial dataset" message="Preparing the normalized artifact and refreshing the current view." />
+          <EmptyState
+            type="loading"
+            title="Loading spatial dataset"
+            message="Preparing the normalized artifact and refreshing the current view."
+          />
         </div>
       </div>
     );
@@ -1413,7 +1480,10 @@ export default function ScSpatialViewport({
     return (
       <div className={styles.emptyWrap}>
         <div className={styles.viewport}>
-          <EmptyState title="No spatial artifact loaded" message="Upload a .h5ad file or open the bundled demo to start the SCSPATIAL workbench." />
+          <EmptyState
+            title="No spatial artifact loaded"
+            message="Upload a .h5ad file or open the bundled demo to start the SCSPATIAL workbench."
+          />
         </div>
       </div>
     );
@@ -1428,9 +1498,9 @@ export default function ScSpatialViewport({
   }));
 
   const viewMode = query.selection.viewMode;
-  const isTable = viewMode === 'table';
-  const isTrajectory = viewMode === 'trajectory';
-  const is3D = viewMode === 'spatial-3d';
+  const isTable = viewMode === "table";
+  const isTrajectory = viewMode === "trajectory";
+  const is3D = viewMode === "spatial-3d";
 
   const topHotspot = query.rightPanel.hotspots[0];
   const nCells = query.centerView.points.length;
@@ -1443,7 +1513,9 @@ export default function ScSpatialViewport({
           <h2>{SCSPATIAL_VIEW_LABELS[query.selection.viewMode]}</h2>
           <div className={styles.viewportHeadline}>
             {query.selection.selectedGene ? (
-              <span><strong>{query.selection.selectedGene}</strong> readout</span>
+              <span>
+                <strong>{query.selection.selectedGene}</strong> readout
+              </span>
             ) : (
               <span className={styles.viewportHeadlineMuted}>Select a gene to inspect expression</span>
             )}
@@ -1451,14 +1523,17 @@ export default function ScSpatialViewport({
               <>
                 <span className={styles.viewportHeadlineDivider} />
                 <span className={styles.viewportHeadlineMuted}>
-                  top hotspot <strong style={{ color: 'var(--sc-value)' }}>{topHotspot.geneSymbol}</strong> (I={topHotspot.moranI.toFixed(2)})
+                  top hotspot <strong style={{ color: "var(--sc-value)" }}>{topHotspot.geneSymbol}</strong> (I=
+                  {topHotspot.moranI.toFixed(2)})
                 </span>
               </>
             ) : null}
             {selectedClusterLabel ? (
               <>
                 <span className={styles.viewportHeadlineDivider} />
-                <span className={styles.viewportHeadlineMuted}>cluster <strong style={{ color: 'var(--sc-value)' }}>{selectedClusterLabel}</strong></span>
+                <span className={styles.viewportHeadlineMuted}>
+                  cluster <strong style={{ color: "var(--sc-value)" }}>{selectedClusterLabel}</strong>
+                </span>
               </>
             ) : null}
             <span className={styles.viewportHeadlineDivider} />

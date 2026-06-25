@@ -1,22 +1,23 @@
-'use client';
+"use client";
+
 /**
  * TopNav — Fixed global navigation bar.
  * Uses Next.js Link for proper multi-page routing.
  * Active route highlighting via usePathname().
  */
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Dna } from 'lucide-react';
-import styles from './TopNav.module.css';
-import LoginButton from './auth/LoginButton';
-import { THEME } from '../theme';
+import { Dna } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { THEME } from "../theme";
+import LoginButton from "./auth/LoginButton";
+import styles from "./TopNav.module.css";
 
 const NAV_LINKS: [string, string][] = [
-  ['Home',     '/'],
-  ['Research', '/research'],
-  ['Workbench', '/tools'],
-  ['Analyze',  '/analyze'],
+  ["Home", "/"],
+  ["Research", "/research"],
+  ["Workbench", "/tools"],
+  ["Analyze", "/analyze"],
 ];
 
 export default function TopNav() {
@@ -37,12 +38,12 @@ export default function TopNav() {
       {/* Nav links */}
       <div className={styles.links}>
         {NAV_LINKS.map(([label, href]) => {
-          const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
-              className={`${styles.link} ${isActive ? styles.linkActive : ''}`}
+              className={`${styles.link} ${isActive ? styles.linkActive : ""}`}
               style={{ fontFamily: THEME.SANS }}
             >
               {label}
@@ -53,7 +54,7 @@ export default function TopNav() {
       </div>
 
       {/* Auth + Version — right-aligned */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifySelf: 'end' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, justifySelf: "end" }}>
         <LoginButton />
         <div className={styles.versionTag} style={{ fontFamily: THEME.MONO }}>
           v1.0

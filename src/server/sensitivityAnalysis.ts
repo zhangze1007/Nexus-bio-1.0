@@ -97,9 +97,7 @@ export function computeSensitivity(
 
     const rawSensitivity = (yPlus - yMinus) / (2 * h);
     // Normalized: (dY/dθ) × (θ/Y)
-    const normalizedSensitivity = Math.abs(yNominal) > 1e-15
-      ? rawSensitivity * (nominalValue / yNominal)
-      : 0;
+    const normalizedSensitivity = Math.abs(yNominal) > 1e-15 ? rawSensitivity * (nominalValue / yNominal) : 0;
 
     results.push({
       parameter: paramName,
@@ -114,14 +112,14 @@ export function computeSensitivity(
 
   // Rank by |sensitivity|
   const sorted = [...results].sort((a, b) => Math.abs(b.sensitivity) - Math.abs(a.sensitivity));
-  const ranking = sorted.map(r => r.parameter);
+  const ranking = sorted.map((r) => r.parameter);
   const totalSensitivity = results.reduce((s, r) => s + Math.abs(r.sensitivity), 0);
 
   return {
     results,
     ranking,
     totalSensitivity: Math.round(totalSensitivity * 1000) / 1000,
-    dominantParameter: ranking[0] ?? '',
-    formula: 'S_i = (dY/dθ_i) × (θ_i/Y) — central finite difference, perturbation = ±5%',
+    dominantParameter: ranking[0] ?? "",
+    formula: "S_i = (dY/dθ_i) × (θ_i/Y) — central finite difference, perturbation = ±5%",
   };
 }

@@ -1,4 +1,4 @@
-import type { ClaimSurface, GateStatus, ValidityTier } from '../protocol/nexusTrustRuntime';
+import type { ClaimSurface, GateStatus, ValidityTier } from "../protocol/nexusTrustRuntime";
 
 export interface ShowcaseTraceStep {
   stepId: string;

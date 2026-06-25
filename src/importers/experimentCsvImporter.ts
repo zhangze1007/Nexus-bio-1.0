@@ -1,13 +1,13 @@
 import {
   ASSAY_TYPES,
+  type AssayType,
   EXPERIMENT_RECORD_QC_FLAGS,
   EXPERIMENT_RECORD_SOURCE_TYPES,
-  type AssayType,
   type ExperimentRecordQcFlag,
   type ExperimentRecordSourceType,
   type ExperimentRecordV1,
-} from '../types/experimentRecord';
-import { validateExperimentRecordV1 } from '../validation/experimentRecordValidator';
+} from "../types/experimentRecord";
+import { validateExperimentRecordV1 } from "../validation/experimentRecordValidator";
 
 export interface ExperimentCsvColumnMapping {
   recordId?: string;
@@ -56,7 +56,7 @@ interface GroupedRecord {
 
 function splitCsvLine(line: string): string[] {
   const cells: string[] = [];
-  let current = '';
+  let current = "";
   let inQuotes = false;
   for (let index = 0; index < line.length; index += 1) {
     const char = line[index];
@@ -67,9 +67,9 @@ function splitCsvLine(line: string): string[] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === "," && !inQuotes) {
       cells.push(current);
-      current = '';
+      current = "";
     } else {
       current += char;
     }
@@ -79,24 +79,27 @@ function splitCsvLine(line: string): string[] {
 }
 
 export function parseExperimentCsvTextToRows(csvText: string): Array<Record<string, string>> {
-  const cleaned = csvText.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim();
+  const cleaned = csvText
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
   if (!cleaned) return [];
-  const lines = cleaned.split('\n').filter((line) => line.trim().length > 0);
+  const lines = cleaned.split("\n").filter((line) => line.trim().length > 0);
   if (lines.length < 2) return [];
   const headers = splitCsvLine(lines[0]).map((header) => header.trim());
   return lines.slice(1).map((line) => {
     const cells = splitCsvLine(line);
     const row: Record<string, string> = {};
     headers.forEach((header, index) => {
-      row[header] = cells[index] ?? '';
+      row[header] = cells[index] ?? "";
     });
     return row;
   });
 }
 
 function cell(row: Record<string, string>, column: string | undefined): string {
-  if (!column) return '';
-  return row[column]?.trim() ?? '';
+  if (!column) return "";
+  return row[column]?.trim() ?? "";
 }
 
 function isAssayType(value: string): value is AssayType {
@@ -117,7 +120,7 @@ function parseNumberCell(raw: string): number {
 }
 
 function parseQcFlags(raw: string): ExperimentRecordQcFlag[] {
-  if (!raw.trim()) return ['passed'];
+  if (!raw.trim()) return ["passed"];
   const flags = raw
     .split(/[;|,]/)
     .map((flag) => flag.trim())
@@ -126,7 +129,7 @@ function parseQcFlags(raw: string): ExperimentRecordQcFlag[] {
   for (const flag of flags) {
     if (isQcFlag(flag)) validFlags.push(flag);
   }
-  return validFlags.length > 0 ? validFlags : ['manual-review-required'];
+  return validFlags.length > 0 ? validFlags : ["manual-review-required"];
 }
 
 function uniqueFlags(flags: ExperimentRecordQcFlag[]): ExperimentRecordQcFlag[] {
@@ -134,17 +137,19 @@ function uniqueFlags(flags: ExperimentRecordQcFlag[]): ExperimentRecordQcFlag[] 
 }
 
 function metadataMatches(existing: ExperimentRecordV1, next: ExperimentRecordV1): boolean {
-  return existing.batchId === next.batchId
-    && existing.sampleId === next.sampleId
-    && existing.constructId === next.constructId
-    && existing.assayType === next.assayType
-    && existing.sourceType === next.sourceType
-    && existing.measurementUnit === next.measurementUnit
-    && existing.instrument === next.instrument
-    && existing.operator === next.operator
-    && existing.startedAt === next.startedAt
-    && existing.completedAt === next.completedAt
-    && existing.sourceFileId === next.sourceFileId;
+  return (
+    existing.batchId === next.batchId &&
+    existing.sampleId === next.sampleId &&
+    existing.constructId === next.constructId &&
+    existing.assayType === next.assayType &&
+    existing.sourceType === next.sourceType &&
+    existing.measurementUnit === next.measurementUnit &&
+    existing.instrument === next.instrument &&
+    existing.operator === next.operator &&
+    existing.startedAt === next.startedAt &&
+    existing.completedAt === next.completedAt &&
+    existing.sourceFileId === next.sourceFileId
+  );
 }
 
 function reject(
@@ -162,22 +167,20 @@ function buildCandidate(
   options: ExperimentCsvImportOptions,
   rowIndex: number,
 ): ExperimentRecordV1 | string {
-  const recordId = mapping.recordId
-    ? cell(row, mapping.recordId)
-    : options.generateRecordId?.(row, rowIndex) ?? '';
-  if (!recordId) return 'Missing record id and no generateRecordId option was supplied.';
+  const recordId = mapping.recordId ? cell(row, mapping.recordId) : (options.generateRecordId?.(row, rowIndex) ?? "");
+  if (!recordId) return "Missing record id and no generateRecordId option was supplied.";
 
   const assayType = cell(row, mapping.assayType);
-  if (!isAssayType(assayType)) return `Unsupported assay type: ${assayType || '<empty>'}.`;
+  if (!isAssayType(assayType)) return `Unsupported assay type: ${assayType || "<empty>"}.`;
 
   const sourceTypeRaw = mapping.sourceType
     ? cell(row, mapping.sourceType)
-    : options.defaultSourceType ?? 'imported-csv';
-  if (!isSourceType(sourceTypeRaw)) return `Unsupported source type: ${sourceTypeRaw || '<empty>'}.`;
+    : (options.defaultSourceType ?? "imported-csv");
+  if (!isSourceType(sourceTypeRaw)) return `Unsupported source type: ${sourceTypeRaw || "<empty>"}.`;
 
   const qcFlags = parseQcFlags(cell(row, mapping.qcFlags));
   return {
-    schemaVersion: 'experiment-record-v1',
+    schemaVersion: "experiment-record-v1",
     recordId,
     batchId: cell(row, mapping.batchId),
     sampleId: cell(row, mapping.sampleId),
@@ -189,13 +192,15 @@ function buildCandidate(
     operator: cell(row, mapping.operator),
     startedAt: cell(row, mapping.startedAt),
     ...(cell(row, mapping.completedAt) ? { completedAt: cell(row, mapping.completedAt) } : {}),
-    timepoints: [{
-      timeHours: parseNumberCell(cell(row, mapping.timeHours)),
-      value: parseNumberCell(cell(row, mapping.value)),
-      unit: cell(row, mapping.unit),
-      ...(cell(row, mapping.replicateId) ? { replicateId: cell(row, mapping.replicateId) } : {}),
-      qcFlags,
-    }],
+    timepoints: [
+      {
+        timeHours: parseNumberCell(cell(row, mapping.timeHours)),
+        value: parseNumberCell(cell(row, mapping.value)),
+        unit: cell(row, mapping.unit),
+        ...(cell(row, mapping.replicateId) ? { replicateId: cell(row, mapping.replicateId) } : {}),
+        qcFlags,
+      },
+    ],
     qcFlags,
     ...(options.sourceFileId ? { sourceFileId: options.sourceFileId } : {}),
     ...(cell(row, mapping.notes) ? { notes: cell(row, mapping.notes) } : {}),
@@ -212,15 +217,15 @@ export function mapCsvRowsToExperimentRecords(
 
   rows.forEach((row, rowIndex) => {
     const candidate = buildCandidate(row, mapping, options, rowIndex);
-    if (typeof candidate === 'string') {
+    if (typeof candidate === "string") {
       reject(rejectedRows, rowIndex, row, candidate);
       return;
     }
 
     const validation = validateExperimentRecordV1(candidate);
-    const errors = validation.issues.filter((issue) => issue.severity === 'error');
+    const errors = validation.issues.filter((issue) => issue.severity === "error");
     if (errors.length > 0) {
-      reject(rejectedRows, rowIndex, row, errors.map((issue) => issue.message).join(' '));
+      reject(rejectedRows, rowIndex, row, errors.map((issue) => issue.message).join(" "));
       return;
     }
 
@@ -234,7 +239,7 @@ export function mapCsvRowsToExperimentRecords(
     }
 
     if (!metadataMatches(existing.record, candidate)) {
-      reject(rejectedRows, rowIndex, row, 'Record metadata does not match earlier rows for the same record id.');
+      reject(rejectedRows, rowIndex, row, "Record metadata does not match earlier rows for the same record id.");
       return;
     }
 
@@ -246,10 +251,10 @@ export function mapCsvRowsToExperimentRecords(
   const records: ExperimentRecordV1[] = [];
   for (const group of grouped.values()) {
     const validation = validateExperimentRecordV1(group.record);
-    const errors = validation.issues.filter((issue) => issue.severity === 'error');
+    const errors = validation.issues.filter((issue) => issue.severity === "error");
     if (errors.length > 0) {
       for (const rawRow of group.rawRows) {
-        reject(rejectedRows, rawRow.rowIndex, rawRow.raw, errors.map((issue) => issue.message).join(' '));
+        reject(rejectedRows, rawRow.rowIndex, rawRow.raw, errors.map((issue) => issue.message).join(" "));
       }
     } else {
       records.push(group.record);

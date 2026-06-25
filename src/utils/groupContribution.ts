@@ -14,7 +14,7 @@
  * @module
  */
 
-import { parseSMILES, SMILESGraph, SMILESAtom, SMILESBond } from './smilesParser';
+import { parseSMILES, SMILESAtom, type SMILESBond, type SMILESGraph } from "./smilesParser";
 
 /* ------------------------------------------------------------------ */
 /*  Public interface                                                  */
@@ -35,36 +35,36 @@ export interface GroupContributionResult {
 
 export const GROUP_CONTRIBUTIONS: Record<string, number> = {
   // Carbon skeleton groups
-  CH3:       -3.6,
-  CH2:        0.56,
-  CH:         3.48,
-  C_quat:     6.39,
+  CH3: -3.6,
+  CH2: 0.56,
+  CH: 3.48,
+  C_quat: 6.39,
 
   // Functional groups
-  OH:       -16.2,
-  COOH:     -24.4,
-  NH2:       -6.6,
-  NH:         2.2,
-  'C=O':     15.0,
-  SH:         1.7,
+  OH: -16.2,
+  COOH: -24.4,
+  NH2: -6.6,
+  NH: 2.2,
+  "C=O": 15.0,
+  SH: 1.7,
 
   // Aromatic / conjugation
-  aromatic_C:  5.0,
-  'C=C':      12.6,
+  aromatic_C: 5.0,
+  "C=C": 12.6,
 
   // Phosphate groups
-  phosphate:    -25.1,
+  phosphate: -25.1,
   phosphoester: -12.5,
 
   // Thioester / high-energy bonds
-  thioester:  18.2,
-  ester:      -8.2,
+  thioester: 18.2,
+  ester: -8.2,
 
   // Amide / peptide
-  amide:      -5.8,
+  amide: -5.8,
 
   // Aldehyde
-  CHO:        10.8,
+  CHO: 10.8,
 };
 
 /* ------------------------------------------------------------------ */
@@ -88,7 +88,16 @@ function buildAdjacency(graph: SMILESGraph): Neighbor[][] {
 
 /** Standard valence for common organic atoms (first-row + halogens). */
 const VALENCE: Record<string, number> = {
-  C: 4, N: 3, O: 2, S: 2, P: 3, H: 1, F: 1, Cl: 1, Br: 1, I: 1,
+  C: 4,
+  N: 3,
+  O: 2,
+  S: 2,
+  P: 3,
+  H: 1,
+  F: 1,
+  Cl: 1,
+  Br: 1,
+  I: 1,
 };
 
 /** Number of explicit bonds an atom has in the graph. */
@@ -112,30 +121,25 @@ function implicitH(atomIdx: number, graph: SMILESGraph, adj: Neighbor[][]): numb
 
 /** Helper: does atom at `idx` have a double bond to element `el`? */
 function hasDoubleBondTo(idx: number, el: string, graph: SMILESGraph, adj: Neighbor[][]): boolean {
-  return adj[idx].some(n => n.bond.order === 2 && graph.atoms[n.atomIdx].element === el);
+  return adj[idx].some((n) => n.bond.order === 2 && graph.atoms[n.atomIdx].element === el);
 }
 
 /** Helper: does atom at `idx` have a single bond to element `el`? */
 function hasSingleBondTo(idx: number, el: string, graph: SMILESGraph, adj: Neighbor[][]): boolean {
-  return adj[idx].some(n => n.bond.order === 1 && graph.atoms[n.atomIdx].element === el);
+  return adj[idx].some((n) => n.bond.order === 1 && graph.atoms[n.atomIdx].element === el);
 }
 
 /** Count neighbors of a given element (any bond order). */
-function countNeighborsOf(
-  idx: number,
-  el: string,
-  graph: SMILESGraph,
-  adj: Neighbor[][],
-): number {
-  return adj[idx].filter(n => graph.atoms[n.atomIdx].element === el).length;
+function countNeighborsOf(idx: number, el: string, graph: SMILESGraph, adj: Neighbor[][]): number {
+  return adj[idx].filter((n) => graph.atoms[n.atomIdx].element === el).length;
 }
 
 /** Count carbonyl (C=O) neighbors of `idx`. */
 function countCarbonylNeighbors(idx: number, graph: SMILESGraph, adj: Neighbor[][]): number {
-  return adj[idx].filter(n => {
+  return adj[idx].filter((n) => {
     const neighbor = graph.atoms[n.atomIdx];
-    if (neighbor.element !== 'C') return false;
-    return hasDoubleBondTo(n.atomIdx, 'O', graph, adj);
+    if (neighbor.element !== "C") return false;
+    return hasDoubleBondTo(n.atomIdx, "O", graph, adj);
   }).length;
 }
 
@@ -162,19 +166,16 @@ function detectGroups(graph: SMILESGraph): Map<string, number> {
     const neighbors = adj[i];
 
     // ---- Carbon groups (non-aromatic) ----
-    if (atom.element === 'C' && !atom.isAromatic) {
-      const hasCDoubleBond = hasDoubleBondTo(i, 'C', graph, adj);
+    if (atom.element === "C" && !atom.isAromatic) {
+      const hasCDoubleBond = hasDoubleBondTo(i, "C", graph, adj);
 
       // -- Carboxyl (COOH): C double-bonded to O and single-bonded to O --
-      if (
-        hasDoubleBondTo(i, 'O', graph, adj) &&
-        countNeighborsOf(i, 'O', graph, adj) >= 2
-      ) {
-        const oNeighbors = adj[i].filter(n => graph.atoms[n.atomIdx].element === 'O');
-        const hasDoubleO = oNeighbors.some(n => n.bond.order === 2);
-        const hasSingleO = oNeighbors.some(n => n.bond.order === 1);
+      if (hasDoubleBondTo(i, "O", graph, adj) && countNeighborsOf(i, "O", graph, adj) >= 2) {
+        const oNeighbors = adj[i].filter((n) => graph.atoms[n.atomIdx].element === "O");
+        const hasDoubleO = oNeighbors.some((n) => n.bond.order === 2);
+        const hasSingleO = oNeighbors.some((n) => n.bond.order === 1);
         if (hasDoubleO && hasSingleO) {
-          add('COOH');
+          add("COOH");
           for (const n of neighbors) matched.add(n.atomIdx);
           matched.add(i);
           continue;
@@ -182,22 +183,16 @@ function detectGroups(graph: SMILESGraph): Map<string, number> {
       }
 
       // -- Amide: C double-bonded to O and bonded to N --
-      if (
-        hasDoubleBondTo(i, 'O', graph, adj) &&
-        hasSingleBondTo(i, 'N', graph, adj)
-      ) {
-        add('amide');
+      if (hasDoubleBondTo(i, "O", graph, adj) && hasSingleBondTo(i, "N", graph, adj)) {
+        add("amide");
         for (const n of neighbors) matched.add(n.atomIdx);
         matched.add(i);
         continue;
       }
 
       // -- Thioester: C double-bonded to O and bonded to S --
-      if (
-        hasDoubleBondTo(i, 'O', graph, adj) &&
-        hasSingleBondTo(i, 'S', graph, adj)
-      ) {
-        add('thioester');
+      if (hasDoubleBondTo(i, "O", graph, adj) && hasSingleBondTo(i, "S", graph, adj)) {
+        add("thioester");
         for (const n of neighbors) matched.add(n.atomIdx);
         matched.add(i);
         continue;
@@ -205,11 +200,11 @@ function detectGroups(graph: SMILESGraph): Map<string, number> {
 
       // -- Aldehyde (CHO): terminal C=O with at least one implicit H --
       if (
-        hasDoubleBondTo(i, 'O', graph, adj) &&
-        neighbors.filter(n => n.bond.order === 1).length < 3 &&
+        hasDoubleBondTo(i, "O", graph, adj) &&
+        neighbors.filter((n) => n.bond.order === 1).length < 3 &&
         implicitH(i, graph, adj) > 0
       ) {
-        add('CHO');
+        add("CHO");
         for (const n of neighbors) matched.add(n.atomIdx);
         matched.add(i);
         continue;
@@ -217,31 +212,24 @@ function detectGroups(graph: SMILESGraph): Map<string, number> {
 
       // -- Standalone C=O (ketone): C=O with no other heteroatom single bonds --
       // Must come before C=C and carbon skeleton checks.
-      if (
-        hasDoubleBondTo(i, 'O', graph, adj) &&
-        !matched.has(i)
-      ) {
-        const otherHetero = adj[i].some(
-          n => n.bond.order !== 2 && !['C'].includes(graph.atoms[n.atomIdx].element),
-        );
+      if (hasDoubleBondTo(i, "O", graph, adj) && !matched.has(i)) {
+        const otherHetero = adj[i].some((n) => n.bond.order !== 2 && !["C"].includes(graph.atoms[n.atomIdx].element));
         if (!otherHetero) {
-          add('C=O');
+          add("C=O");
           matched.add(i);
           for (const n of adj[i]) {
-            if (graph.atoms[n.atomIdx].element === 'O') matched.add(n.atomIdx);
+            if (graph.atoms[n.atomIdx].element === "O") matched.add(n.atomIdx);
           }
         }
       }
 
       // -- C=C double bond (non-aromatic) --
       if (hasCDoubleBond && !matched.has(i)) {
-        const partner = adj[i].find(n =>
-          n.bond.order === 2 &&
-          graph.atoms[n.atomIdx].element === 'C' &&
-          !graph.atoms[n.atomIdx].isAromatic,
+        const partner = adj[i].find(
+          (n) => n.bond.order === 2 && graph.atoms[n.atomIdx].element === "C" && !graph.atoms[n.atomIdx].isAromatic,
         );
         if (partner && !matched.has(partner.atomIdx)) {
-          add('C=C');
+          add("C=C");
           matched.add(i);
           matched.add(partner.atomIdx);
         }
@@ -253,81 +241,76 @@ function detectGroups(graph: SMILESGraph): Map<string, number> {
       // neighbor has 3 implicit H (CH3), etc.
       if (!matched.has(i)) {
         const nCount = neighbors.length;
-        if (nCount <= 1) { add('CH3'); matched.add(i); }
-        else if (nCount === 2) { add('CH2'); matched.add(i); }
-        else if (nCount === 3) { add('CH'); matched.add(i); }
-        else if (nCount >= 4) { add('C_quat'); matched.add(i); }
+        if (nCount <= 1) {
+          add("CH3");
+          matched.add(i);
+        } else if (nCount === 2) {
+          add("CH2");
+          matched.add(i);
+        } else if (nCount === 3) {
+          add("CH");
+          matched.add(i);
+        } else if (nCount >= 4) {
+          add("C_quat");
+          matched.add(i);
+        }
       }
     }
 
     // ---- Aromatic carbon ----
-    if (atom.element === 'C' && atom.isAromatic && !matched.has(i)) {
-      add('aromatic_C');
+    if (atom.element === "C" && atom.isAromatic && !matched.has(i)) {
+      add("aromatic_C");
       matched.add(i);
     }
 
     // ---- Nitrogen groups ----
-    if (atom.element === 'N' && !atom.isAromatic && !matched.has(i)) {
-      const cNeighbors = adj[i].filter(n => graph.atoms[n.atomIdx].element === 'C');
+    if (atom.element === "N" && !atom.isAromatic && !matched.has(i)) {
+      const cNeighbors = adj[i].filter((n) => graph.atoms[n.atomIdx].element === "C");
       if (cNeighbors.length === 0) continue;
-      if (cNeighbors.length === 1) { add('NH2'); matched.add(i); }
-      else if (cNeighbors.length >= 2) { add('NH'); matched.add(i); }
+      if (cNeighbors.length === 1) {
+        add("NH2");
+        matched.add(i);
+      } else if (cNeighbors.length >= 2) {
+        add("NH");
+        matched.add(i);
+      }
     }
 
     // ---- Phosphate: P with at least one double-bonded O ----
-    if (atom.element === 'P' && !matched.has(i)) {
-      if (hasDoubleBondTo(i, 'O', graph, adj)) {
-        add('phosphate');
+    if (atom.element === "P" && !matched.has(i)) {
+      if (hasDoubleBondTo(i, "O", graph, adj)) {
+        add("phosphate");
         matched.add(i);
         for (const n of adj[i]) {
-          if (graph.atoms[n.atomIdx].element === 'O') matched.add(n.atomIdx);
+          if (graph.atoms[n.atomIdx].element === "O") matched.add(n.atomIdx);
         }
       }
     }
 
     // ---- Phosphoester: O between two C atoms, at least one C bonded to P ----
-    if (
-      atom.element === 'O' &&
-      !matched.has(i) &&
-      neighbors.length === 2
-    ) {
+    if (atom.element === "O" && !matched.has(i) && neighbors.length === 2) {
       const [n1, n2] = neighbors;
-      if (
-        graph.atoms[n1.atomIdx].element === 'C' &&
-        graph.atoms[n2.atomIdx].element === 'C'
-      ) {
-        const c1HasP = adj[n1.atomIdx].some(nb => graph.atoms[nb.atomIdx].element === 'P');
-        const c2HasP = adj[n2.atomIdx].some(nb => graph.atoms[nb.atomIdx].element === 'P');
+      if (graph.atoms[n1.atomIdx].element === "C" && graph.atoms[n2.atomIdx].element === "C") {
+        const c1HasP = adj[n1.atomIdx].some((nb) => graph.atoms[nb.atomIdx].element === "P");
+        const c2HasP = adj[n2.atomIdx].some((nb) => graph.atoms[nb.atomIdx].element === "P");
         if (c1HasP || c2HasP) {
-          add('phosphoester');
+          add("phosphoester");
           matched.add(i);
         }
       }
     }
 
     // ---- Sulfhydryl (SH): S single-bonded to C ----
-    if (
-      atom.element === 'S' &&
-      !matched.has(i) &&
-      hasSingleBondTo(i, 'C', graph, adj)
-    ) {
-      add('SH');
+    if (atom.element === "S" && !matched.has(i) && hasSingleBondTo(i, "C", graph, adj)) {
+      add("SH");
       matched.add(i);
     }
 
     // ---- Hydroxyl (OH): O single-bonded to non-carbonyl C ----
-    if (
-      atom.element === 'O' &&
-      !matched.has(i) &&
-      !atom.isAromatic &&
-      neighbors.length === 1
-    ) {
+    if (atom.element === "O" && !matched.has(i) && !atom.isAromatic && neighbors.length === 1) {
       const parentAtom = graph.atoms[neighbors[0].atomIdx];
-      if (
-        parentAtom.element === 'C' &&
-        !hasDoubleBondTo(neighbors[0].atomIdx, 'O', graph, adj)
-      ) {
-        add('OH');
+      if (parentAtom.element === "C" && !hasDoubleBondTo(neighbors[0].atomIdx, "O", graph, adj)) {
+        add("OH");
         matched.add(i);
       }
     }
@@ -361,7 +344,7 @@ export function estimateFormationEnergy(smiles: string): GroupContributionResult
   const detected = detectGroups(graph);
   let totalDGf = 0;
   let totalGroups = 0;
-  const matchedGroups: GroupContributionResult['matchedGroups'] = [];
+  const matchedGroups: GroupContributionResult["matchedGroups"] = [];
 
   for (const [group, count] of detected) {
     const contribution = GROUP_CONTRIBUTIONS[group] ?? 0;

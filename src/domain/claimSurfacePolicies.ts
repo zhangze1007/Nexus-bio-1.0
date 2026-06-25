@@ -1,9 +1,9 @@
-import { CLAIM_SURFACES, type ClaimSurface, type ValidityTier } from '../protocol/nexusTrustRuntime';
-import { TOOL_IDS, type ToolId } from './workflowContract';
-import type { ClaimSurfaceBlockCode, ClaimSurfacePolicy } from './claimSurfacePolicy';
+import { CLAIM_SURFACES, type ClaimSurface, type ValidityTier } from "../protocol/nexusTrustRuntime";
+import type { ClaimSurfaceBlockCode, ClaimSurfacePolicy } from "./claimSurfacePolicy";
+import { TOOL_IDS, type ToolId } from "./workflowContract";
 
-const ALL_VALIDITY_TIERS: ValidityTier[] = ['real', 'partial', 'demo'];
-const FORMAL_CLAIM_TIERS: ValidityTier[] = ['real', 'partial'];
+const ALL_VALIDITY_TIERS: ValidityTier[] = ["real", "partial", "demo"];
+const FORMAL_CLAIM_TIERS: ValidityTier[] = ["real", "partial"];
 
 type SurfacePolicyTemplate = {
   allowedTiers: ValidityTier[];
@@ -18,94 +18,91 @@ const SURFACE_POLICY_TEMPLATES: Record<ClaimSurface, SurfacePolicyTemplate> = {
   payload: {
     allowedTiers: ALL_VALIDITY_TIERS,
     requiresProvenance: false,
-    blockCode: 'TIER_NOT_ALLOWED_FOR_SURFACE',
+    blockCode: "TIER_NOT_ALLOWED_FOR_SURFACE",
     rationale:
-      'Workbench payloads may remain visible for exploration, including demo-tier outputs, as long as formal claim surfaces stay gated separately.',
+      "Workbench payloads may remain visible for exploration, including demo-tier outputs, as long as formal claim surfaces stay gated separately.",
   },
   export: {
     allowedTiers: FORMAL_CLAIM_TIERS,
     requiresProvenance: true,
     denyIfDraft: true,
-    blockCode: 'DRAFT_OUTPUT_NOT_EXPORTABLE',
+    blockCode: "DRAFT_OUTPUT_NOT_EXPORTABLE",
     rationale:
-      'Exports leave the immediate tool view and should carry at least partial validity, provenance, and a finalized output state.',
+      "Exports leave the immediate tool view and should carry at least partial validity, provenance, and a finalized output state.",
   },
   recommendation: {
     allowedTiers: FORMAL_CLAIM_TIERS,
     requiresProvenance: true,
-    blockCode: 'TIER_NOT_ALLOWED_FOR_SURFACE',
+    blockCode: "TIER_NOT_ALLOWED_FOR_SURFACE",
     rationale:
-      'Recommendations influence future work and should be backed by at least partial validity plus traceable provenance.',
+      "Recommendations influence future work and should be backed by at least partial validity plus traceable provenance.",
   },
   protocol: {
     allowedTiers: FORMAL_CLAIM_TIERS,
     requiresProvenance: true,
     requiresHumanGate: true,
     denyIfDraft: true,
-    blockCode: 'DEMO_OUTPUT_PROTOCOL_BLOCKED',
+    blockCode: "DEMO_OUTPUT_PROTOCOL_BLOCKED",
     rationale:
-      'Protocol-like artifacts can imply operational lab action, so demo-tier outputs are excluded and human review is declared for future enforcement.',
+      "Protocol-like artifacts can imply operational lab action, so demo-tier outputs are excluded and human review is declared for future enforcement.",
   },
-  'external-handoff': {
+  "external-handoff": {
     allowedTiers: FORMAL_CLAIM_TIERS,
     requiresProvenance: true,
     requiresHumanGate: true,
-    blockCode: 'EXTERNAL_HANDOFF_BLOCKED',
+    blockCode: "EXTERNAL_HANDOFF_BLOCKED",
     rationale:
-      'External handoffs move claims outside Nexus-Bio and therefore require at least partial validity, provenance, and declared human review.',
+      "External handoffs move claims outside Nexus-Bio and therefore require at least partial validity, provenance, and declared human review.",
   },
 };
 
 const CETHX_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
   payload:
-    'CETHX Alberty-transformed ΔG′ may be displayed with condition-aware feasibility assessment; provenance and uncertainty estimates are visible.',
+    "CETHX Alberty-transformed ΔG′ may be displayed with condition-aware feasibility assessment; provenance and uncertainty estimates are visible.",
   export:
-    'CETHX exports carry Alberty-transformed ΔG′ values with provenance; proton stoichiometry is estimated, so export-grade claims require eQuilibrator-backed data.',
+    "CETHX exports carry Alberty-transformed ΔG′ values with provenance; proton stoichiometry is estimated, so export-grade claims require eQuilibrator-backed data.",
   recommendation:
-    'CETHX recommendations use condition-aware ΔG′ via Alberty transform; proton stoichiometry is estimated from KEGG reaction equations, not measured pKa values.',
+    "CETHX recommendations use condition-aware ΔG′ via Alberty transform; proton stoichiometry is estimated from KEGG reaction equations, not measured pKa values.",
   protocol:
-    'CETHX protocol use requires eQuilibrator-backed data or explicit acknowledgment that proton stoichiometry is estimated and reference ΔG° values are from Lehninger tables.',
-  'external-handoff':
-    'CETHX external handoff requires eQuilibrator-backed data because estimated proton stoichiometry and reference ΔG° values may not meet external evidence standards.',
+    "CETHX protocol use requires eQuilibrator-backed data or explicit acknowledgment that proton stoichiometry is estimated and reference ΔG° values are from Lehninger tables.",
+  "external-handoff":
+    "CETHX external handoff requires eQuilibrator-backed data because estimated proton stoichiometry and reference ΔG° values may not meet external evidence standards.",
 };
 
 const MULTIO_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
   payload:
-    'MultiO demo outputs may remain visible as exploratory deterministic integration, but they are not Bayesian, GP, MOFA, VAE, or reference-model-backed inference.',
+    "MultiO demo outputs may remain visible as exploratory deterministic integration, but they are not Bayesian, GP, MOFA, VAE, or reference-model-backed inference.",
   export:
-    'MultiO exports must not carry demo deterministic projections as formal multi-omics inference; formal export use requires at least partial validity, provenance, and a real model boundary.',
+    "MultiO exports must not carry demo deterministic projections as formal multi-omics inference; formal export use requires at least partial validity, provenance, and a real model boundary.",
   recommendation:
-    'MultiO recommendations require at least partial validity and provenance because demo deterministic integration lacks posterior uncertainty and a reference-model backend.',
+    "MultiO recommendations require at least partial validity and provenance because demo deterministic integration lacks posterior uncertainty and a reference-model backend.",
   protocol:
-    'MultiO protocol-like use blocks demo output because no Bayesian/GP/MOFA/VAE backend, posterior uncertainty, or causal perturbation model currently supports operational claims.',
-  'external-handoff':
-    'MultiO external handoff blocks demo output because local deterministic projections must not leave Nexus-Bio as formal probabilistic or reference-model evidence.',
+    "MultiO protocol-like use blocks demo output because no Bayesian/GP/MOFA/VAE backend, posterior uncertainty, or causal perturbation model currently supports operational claims.",
+  "external-handoff":
+    "MultiO external handoff blocks demo output because local deterministic projections must not leave Nexus-Bio as formal probabilistic or reference-model evidence.",
 };
 
 const CELLFREE_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
   payload:
-    'CellFree payloads may show the implemented TX-TL simulation structure, but parameter sourcing, calibration, and uncertainty limits must remain visible.',
+    "CellFree payloads may show the implemented TX-TL simulation structure, but parameter sourcing, calibration, and uncertainty limits must remain visible.",
   export:
-    'CellFree exports require at least partial validity and provenance because the current parameter pack is not fully sourced or calibrated.',
+    "CellFree exports require at least partial validity and provenance because the current parameter pack is not fully sourced or calibrated.",
   recommendation:
-    'CellFree recommendations require at least partial validity and provenance because confidence-like values are heuristic and uncertainty is not quantified.',
+    "CellFree recommendations require at least partial validity and provenance because confidence-like values are heuristic and uncertainty is not quantified.",
   protocol:
-    'CellFree protocol-like use blocks demo outputs because implemented ODE structure alone does not establish sourced parameters, calibration, or operational readiness.',
-  'external-handoff':
-    'CellFree external handoff blocks demo outputs because incomplete parameter provenance and missing uncertainty must not leave Nexus-Bio as formal evidence.',
+    "CellFree protocol-like use blocks demo outputs because implemented ODE structure alone does not establish sourced parameters, calibration, or operational readiness.",
+  "external-handoff":
+    "CellFree external handoff blocks demo outputs because incomplete parameter provenance and missing uncertainty must not leave Nexus-Bio as formal evidence.",
 };
 
 function policyRationale(toolId: ToolId, surface: ClaimSurface, fallback: string): string {
-  if (toolId === 'cethx') return CETHX_POLICY_RATIONALES[surface] ?? fallback;
-  if (toolId === 'multio') return MULTIO_POLICY_RATIONALES[surface] ?? fallback;
-  if (toolId === 'cellfree') return CELLFREE_POLICY_RATIONALES[surface] ?? fallback;
+  if (toolId === "cethx") return CETHX_POLICY_RATIONALES[surface] ?? fallback;
+  if (toolId === "multio") return MULTIO_POLICY_RATIONALES[surface] ?? fallback;
+  if (toolId === "cellfree") return CELLFREE_POLICY_RATIONALES[surface] ?? fallback;
   return fallback;
 }
 
-function buildClaimSurfacePolicy(
-  toolId: ToolId,
-  surface: ClaimSurface,
-): ClaimSurfacePolicy {
+function buildClaimSurfacePolicy(toolId: ToolId, surface: ClaimSurface): ClaimSurfacePolicy {
   const template = SURFACE_POLICY_TEMPLATES[surface];
   return {
     policyId: `claim-surface:${toolId}:${surface}:v1`,
@@ -125,21 +122,13 @@ export const CLAIM_SURFACE_POLICIES: ClaimSurfacePolicy[] = TOOL_IDS.flatMap((to
 );
 
 const POLICY_BY_TOOL_AND_SURFACE = new Map(
-  CLAIM_SURFACE_POLICIES.map((policy) => [
-    `${policy.toolId}:${policy.surface}`,
-    policy,
-  ]),
+  CLAIM_SURFACE_POLICIES.map((policy) => [`${policy.toolId}:${policy.surface}`, policy]),
 );
 
-export function getClaimSurfacePolicy(
-  toolId: string,
-  surface: ClaimSurface,
-): ClaimSurfacePolicy | undefined {
+export function getClaimSurfacePolicy(toolId: string, surface: ClaimSurface): ClaimSurfacePolicy | undefined {
   return POLICY_BY_TOOL_AND_SURFACE.get(`${toolId}:${surface}`);
 }
 
-export function listClaimSurfacePoliciesForTool(
-  toolId: string,
-): ClaimSurfacePolicy[] {
+export function listClaimSurfacePoliciesForTool(toolId: string): ClaimSurfacePolicy[] {
   return CLAIM_SURFACE_POLICIES.filter((policy) => policy.toolId === toolId);
 }

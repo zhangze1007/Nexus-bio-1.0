@@ -14,7 +14,7 @@ import type {
   ProEvolRound,
   ProEvolVariant,
   ProEvolVariantRoundObservation,
-} from '../domain/proevolArtifact';
+} from "../domain/proevolArtifact";
 
 const PSEUDOCOUNT = 1;
 
@@ -352,9 +352,7 @@ export function variantEnrichmentTable(artifact: ProEvolArtifact): VariantEnrich
       const lastFrequencyData = variantRoundFrequency(context, variant, lastRound);
       const lastFrequency = lastFrequencyData.frequency.mean;
 
-      const wildTypeLastFrequency = wildType
-        ? variantRoundFrequency(context, wildType, lastRound).frequency.mean
-        : 0;
+      const wildTypeLastFrequency = wildType ? variantRoundFrequency(context, wildType, lastRound).frequency.mean : 0;
 
       const selectionCoefficients: number[] = [];
       for (let index = 1; index < artifact.rounds.length; index += 1) {
@@ -373,14 +371,11 @@ export function variantEnrichmentTable(artifact: ProEvolArtifact): VariantEnrich
         mutationString: variant.mutationString,
         mutationBurden: variant.mutationBurden,
         log2EnrichmentVsWildType:
-          wildTypeLastFrequency > 0
-            ? safeLog2(lastFrequency / wildTypeLastFrequency)
-            : safeLog2(lastFrequency),
+          wildTypeLastFrequency > 0 ? safeLog2(lastFrequency / wildTypeLastFrequency) : safeLog2(lastFrequency),
         // When firstFrequency is 0 (variant absent in round 0), enrichment is
         // undefined (∞). We cap at 20 to avoid misleading extreme values.
-        log2EnrichmentAcrossRounds: firstFrequency > 0
-          ? safeLog2(lastFrequency / firstFrequency)
-          : lastFrequency > 0 ? 20 : 0,
+        log2EnrichmentAcrossRounds:
+          firstFrequency > 0 ? safeLog2(lastFrequency / firstFrequency) : lastFrequency > 0 ? 20 : 0,
         meanSelectionCoefficient: mean(selectionCoefficients),
         finalFrequency: lastFrequency,
         finalFrequencyCi: {
@@ -423,10 +418,7 @@ export function buildProEvolResearchSummary(artifact: ProEvolArtifact): ProEvolR
       .slice(0, 6),
     familyShares: familyShareCurve(artifact),
     enrichment,
-    shannonDelta:
-      lastRoundShannon && previousRoundShannon
-        ? lastRoundShannon.mean - previousRoundShannon.mean
-        : 0,
+    shannonDelta: lastRoundShannon && previousRoundShannon ? lastRoundShannon.mean - previousRoundShannon.mean : 0,
     lastRoundShannon,
     lastRoundTopShare: diversity.length ? diversity[diversity.length - 1].topShare : null,
   };

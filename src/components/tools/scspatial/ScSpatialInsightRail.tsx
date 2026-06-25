@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import styles from './ScSpatialWorkbench.module.css';
-import type { ScSpatialQueryResponse } from '../../../types/scspatial';
-import { colorForCluster } from './scSpatialPalette';
-import { THEME } from '../../../theme';
+import { THEME } from "../../../theme";
+import type { ScSpatialQueryResponse } from "../../../types/scspatial";
+import styles from "./ScSpatialWorkbench.module.css";
+import { colorForCluster } from "./scSpatialPalette";
 
 interface ScSpatialInsightRailProps {
   query: ScSpatialQueryResponse | null;
 }
 
 function headlineText(query: ScSpatialQueryResponse): string {
-  const gene = query.selection.selectedGene || 'Target gene';
+  const gene = query.selection.selectedGene || "Target gene";
   const topHotspot = query.rightPanel.hotspots[0];
   if (topHotspot) {
     return `${gene} readout · top spatially-restricted signal at ${topHotspot.geneSymbol} (Moran's I ${topHotspot.moranI.toFixed(2)}, p ${topHotspot.pValue.toFixed(3)}).`;
@@ -32,7 +32,7 @@ function nextStepText(query: ScSpatialQueryResponse): string {
   if (selectedCell) {
     return `Export the cluster annotations CSV to persist this selection into the DBTL ledger.`;
   }
-  return 'Load a normalized artifact or run the bundled demo to begin.';
+  return "Load a normalized artifact or run the bundled demo to begin.";
 }
 
 function RunSummary({ query }: { query: ScSpatialQueryResponse }) {
@@ -47,11 +47,11 @@ function RunSummary({ query }: { query: ScSpatialQueryResponse }) {
       <div className={styles.kpiGrid}>
         <div className={styles.kpi}>
           <span className={styles.kpiLabel}>Top hotspot</span>
-          <span className={styles.kpiValueMono}>{topHotspot?.geneSymbol ?? '—'}</span>
+          <span className={styles.kpiValueMono}>{topHotspot?.geneSymbol ?? "—"}</span>
         </div>
         <div className={styles.kpi}>
           <span className={styles.kpiLabel}>Moran&apos;s I</span>
-          <span className={styles.kpiValue}>{topHotspot ? topHotspot.moranI.toFixed(2) : '—'}</span>
+          <span className={styles.kpiValue}>{topHotspot ? topHotspot.moranI.toFixed(2) : "—"}</span>
         </div>
         <div className={styles.kpi}>
           <span className={styles.kpiLabel}>Clusters</span>
@@ -87,7 +87,7 @@ function HotspotTable({ query }: { query: ScSpatialQueryResponse }) {
       <tbody>
         {rows.map((hotspot) => (
           <tr key={hotspot.geneSymbol}>
-            <td className={styles.gene ?? ''}>{hotspot.geneSymbol}</td>
+            <td className={styles.gene ?? ""}>{hotspot.geneSymbol}</td>
             <td className="num">{hotspot.moranI.toFixed(2)}</td>
             <td className="num">{hotspot.pValue.toFixed(3)}</td>
           </tr>
@@ -112,7 +112,7 @@ function LeadingEdgeProfile({ query }: { query: ScSpatialQueryResponse }) {
           return (
             <div
               key={`${h.geneSymbol}-${idx}`}
-              className={`${styles.leadingEdgeBar} ${muted ? styles.muted : ''}`}
+              className={`${styles.leadingEdgeBar} ${muted ? styles.muted : ""}`}
               style={{ height: `${height}%` }}
               title={`${h.geneSymbol} I=${h.moranI.toFixed(2)}`}
             />
@@ -151,7 +151,9 @@ function SelectedClusterCard({ query }: { query: ScSpatialQueryResponse }) {
       </div>
       <div className={styles.pillList}>
         {summary.topGenes.map((gene) => (
-          <span key={gene} className={styles.pill}>{gene}</span>
+          <span key={gene} className={styles.pill}>
+            {gene}
+          </span>
         ))}
       </div>
     </div>
@@ -188,10 +190,12 @@ function SelectedCellCard({ query }: { query: ScSpatialQueryResponse }) {
       {cell.sampleMetadata ? (
         <div className={styles.pillList}>
           {Object.entries(cell.sampleMetadata)
-            .filter(([, value]) => value !== null && value !== '')
+            .filter(([, value]) => value !== null && value !== "")
             .slice(0, 4)
             .map(([key, value]) => (
-              <span key={key} className={styles.pill}>{key}:{String(value ?? '—')}</span>
+              <span key={key} className={styles.pill}>
+                {key}:{String(value ?? "—")}
+              </span>
             ))}
         </div>
       ) : null}
@@ -211,7 +215,9 @@ export default function ScSpatialInsightRail({ query }: ScSpatialInsightRailProp
             </p>
             <div className={styles.nextStep}>
               <span className={styles.nextStepLabel}>Next step</span>
-              <p className={styles.nextStepText}>Use &ldquo;Upload h5ad&rdquo; or &ldquo;Demo&rdquo; in step 1 on the left.</p>
+              <p className={styles.nextStepText}>
+                Use &ldquo;Upload h5ad&rdquo; or &ldquo;Demo&rdquo; in step 1 on the left.
+              </p>
             </div>
           </div>
         </div>
@@ -219,8 +225,7 @@ export default function ScSpatialInsightRail({ query }: ScSpatialInsightRailProp
     );
   }
 
-  const hasSelection =
-    Boolean(query.rightPanel.selectedClusterSummary) || Boolean(query.rightPanel.selectedCell);
+  const hasSelection = Boolean(query.rightPanel.selectedClusterSummary) || Boolean(query.rightPanel.selectedCell);
   const coexpressionCount = query.rightPanel.coexpression.length;
   const hotspotCount = query.rightPanel.hotspots.length;
   const clusterCount = query.rightPanel.clusterSummaries.length;
@@ -260,11 +265,8 @@ export default function ScSpatialInsightRail({ query }: ScSpatialInsightRailProp
                 <tbody>
                   {query.rightPanel.coexpression.slice(0, 5).map((entry) => (
                     <tr key={entry.geneSymbol}>
-                      <td className={styles.gene ?? ''}>{entry.geneSymbol}</td>
-                      <td
-                        className="num"
-                        style={{ color: entry.correlation < 0 ? '#2563eb' : '#dc2626' }}
-                      >
+                      <td className={styles.gene ?? ""}>{entry.geneSymbol}</td>
+                      <td className="num" style={{ color: entry.correlation < 0 ? "#2563eb" : "#dc2626" }}>
                         {entry.correlation.toFixed(2)}
                       </td>
                     </tr>
@@ -293,15 +295,13 @@ export default function ScSpatialInsightRail({ query }: ScSpatialInsightRailProp
                 {query.rightPanel.clusterSummaries.slice(0, 8).map((cluster) => (
                   <tr key={cluster.clusterLabel}>
                     <td>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                         <span className={styles.swatch} style={{ background: colorForCluster(cluster.clusterId) }} />
                         {cluster.clusterLabel}
                       </span>
                     </td>
                     <td className="num">{cluster.cellCount}</td>
-                    <td style={{ fontFamily: THEME.MONO, fontSize: 9, color: 'var(--sc-label)' }}>
-                      {cluster.fate}
-                    </td>
+                    <td style={{ fontFamily: THEME.MONO, fontSize: 9, color: "var(--sc-label)" }}>{cluster.fate}</td>
                   </tr>
                 ))}
               </tbody>
@@ -325,33 +325,39 @@ export default function ScSpatialInsightRail({ query }: ScSpatialInsightRailProp
               {query.datasetMeta.sampleMetadataKeys.length > 0 ? (
                 <div className={styles.pillList}>
                   {query.datasetMeta.sampleMetadataKeys.map((field) => (
-                    <span key={field} className={styles.pill}>{field}</span>
+                    <span key={field} className={styles.pill}>
+                      {field}
+                    </span>
                   ))}
                 </div>
               ) : null}
               {query.rightPanel.provenance.missingFields.length > 0 ? (
                 <div className={styles.pillList}>
                   {query.rightPanel.provenance.missingFields.map((field) => (
-                    <span key={field} className={styles.pill} style={{ color: '#d97706', borderColor: '#fcd34d' }}>missing: {field}</span>
+                    <span key={field} className={styles.pill} style={{ color: "#d97706", borderColor: "#fcd34d" }}>
+                      missing: {field}
+                    </span>
                   ))}
                 </div>
               ) : null}
               {query.rightPanel.provenance.warnings.length > 0 ? (
-                <div className={styles.metricDetail}>{query.rightPanel.provenance.warnings.join(' ')}</div>
+                <div className={styles.metricDetail}>{query.rightPanel.provenance.warnings.join(" ")}</div>
               ) : null}
             </div>
             {query.selection.developerMode ? (
               <div className={styles.developerPanel}>
                 <div className={styles.insightRow}>
                   <span>Embeddings</span>
-                  <span className={styles.insightStrong}>{query.developer.availableEmbeddings.join(', ') || 'backend umap'}</span>
+                  <span className={styles.insightStrong}>
+                    {query.developer.availableEmbeddings.join(", ") || "backend umap"}
+                  </span>
                 </div>
                 <div className={styles.insightRow}>
                   <span>Layers</span>
-                  <span className={styles.insightStrong}>{query.developer.availableLayers.join(', ') || 'X'}</span>
+                  <span className={styles.insightStrong}>{query.developer.availableLayers.join(", ") || "X"}</span>
                 </div>
                 {query.developer.warnings.length > 0 ? (
-                  <div className={styles.metricDetail}>{query.developer.warnings.join(' ')}</div>
+                  <div className={styles.metricDetail}>{query.developer.warnings.join(" ")}</div>
                 ) : null}
               </div>
             ) : null}

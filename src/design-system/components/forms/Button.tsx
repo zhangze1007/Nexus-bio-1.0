@@ -1,19 +1,12 @@
-import React from 'react';
-import {
-  colors,
-  spacing,
-  typography,
-  borderRadius,
-  shadows,
-  transitions,
-} from '../../tokens';
+import type React from "react";
+import { borderRadius, colors, shadows, spacing, transitions, typography } from "../../tokens";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps {
   variant?: ButtonVariant;
@@ -24,7 +17,7 @@ interface ButtonProps {
   children: React.ReactNode;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
-  type?: 'button' | 'submit' | 'reset';
+  type?: "button" | "submit" | "reset";
 }
 
 // ---------------------------------------------------------------------------
@@ -35,19 +28,19 @@ const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
   sm: {
     padding: `${spacing.xs} ${spacing.sm}`,
     fontSize: typography.fontSize.sm,
-    height: '28px',
+    height: "28px",
     gap: spacing.xs,
   },
   md: {
     padding: `${spacing.sm} ${spacing.base}`,
     fontSize: typography.fontSize.md,
-    height: '36px',
+    height: "36px",
     gap: spacing.sm,
   },
   lg: {
     padding: `${spacing.md} ${spacing.lg}`,
     fontSize: typography.fontSize.lg,
-    height: '44px',
+    height: "44px",
     gap: spacing.sm,
   },
 };
@@ -68,9 +61,9 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
     border: `1px solid ${colors.border.default}`,
   },
   ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     color: colors.text.secondary,
-    border: '1px solid transparent',
+    border: "1px solid transparent",
   },
   danger: {
     backgroundColor: colors.state.errorMuted,
@@ -89,11 +82,11 @@ const variantHoverStyles: Record<ButtonVariant, React.CSSProperties> = {
     borderColor: colors.border.strong,
   },
   ghost: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     color: colors.text.primary,
   },
   danger: {
-    backgroundColor: 'rgba(250, 128, 114, 0.25)',
+    backgroundColor: "rgba(250, 128, 114, 0.25)",
     boxShadow: shadows.glowError,
   },
 };
@@ -103,17 +96,17 @@ const variantHoverStyles: Record<ButtonVariant, React.CSSProperties> = {
 // ---------------------------------------------------------------------------
 
 function Spinner({ size }: { size: ButtonSize }) {
-  const spinnerSize = size === 'sm' ? 12 : size === 'md' ? 14 : 16;
+  const spinnerSize = size === "sm" ? 12 : size === "md" ? 14 : 16;
   return (
     <span
       style={{
-        display: 'inline-block',
+        display: "inline-block",
         width: spinnerSize,
         height: spinnerSize,
-        border: '2px solid rgba(255, 255, 255, 0.2)',
+        border: "2px solid rgba(255, 255, 255, 0.2)",
         borderTopColor: colors.text.primary,
         borderRadius: borderRadius.full,
-        animation: 'nexus-btn-spin 0.6s linear infinite',
+        animation: "nexus-btn-spin 0.6s linear infinite",
         flexShrink: 0,
       }}
     />
@@ -125,39 +118,39 @@ function Spinner({ size }: { size: ButtonSize }) {
 // ---------------------------------------------------------------------------
 
 export function Button({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   disabled = false,
   loading = false,
   icon,
   children,
   onClick,
   className,
-  type = 'button',
+  type = "button",
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
   const baseStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     fontFamily: typography.fontFamily.sans,
     fontWeight: typography.fontWeight.medium,
     lineHeight: typography.lineHeight.tight,
     letterSpacing: typography.letterSpacing.wide,
     borderRadius: borderRadius.md,
-    cursor: isDisabled ? 'not-allowed' : 'pointer',
+    cursor: isDisabled ? "not-allowed" : "pointer",
     opacity: isDisabled ? 0.5 : 1,
-    outline: 'none',
-    textDecoration: 'none',
-    whiteSpace: 'nowrap',
-    userSelect: 'none',
+    outline: "none",
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+    userSelect: "none",
     transition: [
       transitions.preset.bg,
       transitions.preset.color,
       transitions.preset.shadow,
       transitions.preset.border,
-    ].join(', '),
+    ].join(", "),
     ...sizeStyles[size],
     ...variantStyles[variant],
   };
@@ -173,10 +166,10 @@ export function Button({
     if (isDisabled) return;
     const el = e.currentTarget;
     const base = variantStyles[variant];
-    el.style.backgroundColor = base.backgroundColor ?? '';
-    el.style.boxShadow = 'none';
-    el.style.borderColor = (base.border as string)?.match(/(?:1px solid )(.+)/)?.[1] ?? '';
-    el.style.color = base.color ?? '';
+    el.style.backgroundColor = base.backgroundColor ?? "";
+    el.style.boxShadow = "none";
+    el.style.borderColor = (base.border as string)?.match(/(?:1px solid )(.+)/)?.[1] ?? "";
+    el.style.color = base.color ?? "";
   };
 
   return (
@@ -196,9 +189,7 @@ export function Button({
         {loading ? (
           <Spinner size={size} />
         ) : icon ? (
-          <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
-            {icon}
-          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", flexShrink: 0 }}>{icon}</span>
         ) : null}
         {children}
       </button>

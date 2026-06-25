@@ -33,18 +33,18 @@
  *   - Lopez et al. (2018) Deep generative modeling for single-cell transcriptomics
  */
 
-import { KDTreeIndex } from '../utils/knnIndex';
-import { mannWhitneyU, benjaminiHochberg } from '../utils/statistics';
+import { KDTreeIndex } from "../utils/knnIndex";
+import { benjaminiHochberg, mannWhitneyU } from "../utils/statistics";
 
 // ══════════════════════════════════════════════════════════════════════
 //  Marker gene sets for expression-based cell-type annotation
 // ══════════════════════════════════════════════════════════════════════
 
 const MARKER_GENE_SETS: Record<string, { markers: string[]; label: string }> = {
-  progenitor: { markers: ['SOX2', 'NES', 'VIM', 'NOTCH1'], label: 'Progenitor' },
-  metabolic: { markers: ['ATP5F1', 'COX4I1', 'SDHB', 'IDH1'], label: 'Metabolically Active' },
-  stressed: { markers: ['HSPA5', 'DDIT3', 'ATF4', 'XBP1'], label: 'Stressed' },
-  quiescent: { markers: ['MKI67', 'PCNA', 'TOP2A'], label: 'Quiescent' },
+  progenitor: { markers: ["SOX2", "NES", "VIM", "NOTCH1"], label: "Progenitor" },
+  metabolic: { markers: ["ATP5F1", "COX4I1", "SDHB", "IDH1"], label: "Metabolically Active" },
+  stressed: { markers: ["HSPA5", "DDIT3", "ATF4", "XBP1"], label: "Stressed" },
+  quiescent: { markers: ["MKI67", "PCNA", "TOP2A"], label: "Quiescent" },
 };
 
 /**
@@ -54,11 +54,7 @@ const MARKER_GENE_SETS: Record<string, { markers: string[]; label: string }> = {
  * cluster.  The marker set with the highest mean -log10(p) enrichment wins.
  * Falls back to "Cluster N" when no set reaches p < 0.05.
  */
-function markerGeneAnnotation(
-  community: Int32Array,
-  cells: CellRecord[],
-  geneNames: string[],
-): Map<number, string> {
+function markerGeneAnnotation(community: Int32Array, cells: CellRecord[], geneNames: string[]): Map<number, string> {
   const nClusters = new Set(community).size;
   const labels = new Map<number, string>();
 
@@ -73,7 +69,7 @@ function markerGeneAnnotation(
       continue;
     }
 
-    let bestKey = '';
+    let bestKey = "";
     let bestScore = -Infinity;
 
     for (const [key, { markers }] of Object.entries(MARKER_GENE_SETS)) {
@@ -82,14 +78,14 @@ function markerGeneAnnotation(
 
       for (const marker of markers) {
         // Find the gene index (case-insensitive match)
-        const gIdx = geneNames.findIndex(g => g.toUpperCase() === marker.toUpperCase());
+        const gIdx = geneNames.findIndex((g) => g.toUpperCase() === marker.toUpperCase());
         if (gIdx < 0) continue;
 
-        const inVals = inIdx.map(i => cells[i].geneExpression[geneNames[gIdx]] ?? 0);
-        const outVals = outIdx.map(i => cells[i].geneExpression[geneNames[gIdx]] ?? 0);
+        const inVals = inIdx.map((i) => cells[i].geneExpression[geneNames[gIdx]] ?? 0);
+        const outVals = outIdx.map((i) => cells[i].geneExpression[geneNames[gIdx]] ?? 0);
 
         // Skip if all values are identical (no variance)
-        const allSame = inVals.every(v => v === inVals[0]) && outVals.every(v => v === outVals[0]);
+        const allSame = inVals.every((v) => v === inVals[0]) && outVals.every((v) => v === outVals[0]);
         if (allSame) continue;
 
         try {
@@ -133,11 +129,11 @@ function markerGeneAnnotation(
  */
 export interface MarkerGeneResult {
   gene: string;
-  logFoldChange: number;   // log2(mean_in / mean_out), clipped to avoid ±Inf
-  pValue: number;           // raw p-value from Wilcoxon rank-sum
-  qValue: number;           // BH-adjusted p-value (FDR)
-  meanIn: number;           // mean expression in cluster
-  meanOut: number;          // mean expression outside cluster
+  logFoldChange: number; // log2(mean_in / mean_out), clipped to avoid ±Inf
+  pValue: number; // raw p-value from Wilcoxon rank-sum
+  qValue: number; // BH-adjusted p-value (FDR)
+  meanIn: number; // mean expression in cluster
+  meanOut: number; // mean expression outside cluster
 }
 
 /**
@@ -145,9 +141,9 @@ export interface MarkerGeneResult {
  */
 export interface ClusterMarkerSummary {
   clusterId: number;
-  label: string;                    // from markerGeneAnnotation
+  label: string; // from markerGeneAnnotation
   nCells: number;
-  markers: MarkerGeneResult[];      // sorted by qValue ascending, top-N
+  markers: MarkerGeneResult[]; // sorted by qValue ascending, top-N
 }
 
 /**
@@ -189,12 +185,12 @@ export function discoverMarkerGenes(
     // Test every gene
     const rawResults: { gene: string; meanIn: number; meanOut: number; pValue: number }[] = [];
     for (const gene of geneNames) {
-      const inVals = inIdx.map(i => cells[i].geneExpression[gene] ?? 0);
-      const outVals = outIdx.map(i => cells[i].geneExpression[gene] ?? 0);
+      const inVals = inIdx.map((i) => cells[i].geneExpression[gene] ?? 0);
+      const outVals = outIdx.map((i) => cells[i].geneExpression[gene] ?? 0);
 
       // Skip genes with no variance across all cells
       const allVals = [...inVals, ...outVals];
-      if (allVals.every(v => v === allVals[0])) continue;
+      if (allVals.every((v) => v === allVals[0])) continue;
 
       try {
         const { pValue } = mannWhitneyU(inVals, outVals);
@@ -207,7 +203,7 @@ export function discoverMarkerGenes(
     }
 
     // Apply Benjamini-Hochberg FDR correction
-    const pValues = rawResults.map(r => r.pValue);
+    const pValues = rawResults.map((r) => r.pValue);
     const qValues = benjaminiHochberg(pValues);
 
     // Build annotated results with log-fold-change
@@ -227,7 +223,7 @@ export function discoverMarkerGenes(
 
     // Filter by FDR threshold, sort by qValue, take top-N
     const significant = annotated
-      .filter(r => r.qValue < fdrThreshold && r.logFoldChange > 0)
+      .filter((r) => r.qValue < fdrThreshold && r.logFoldChange > 0)
       .sort((a, b) => a.qValue - b.qValue)
       .slice(0, nTop);
 
@@ -295,7 +291,7 @@ export interface PAGAResult {
     cluster: number;
     label: string;
     divergenceScore: number;
-    childBranches: { cluster: number; label: string; fate: 'productive' | 'stressed' | 'quiescent' }[];
+    childBranches: { cluster: number; label: string; fate: "productive" | "stressed" | "quiescent" }[];
   }[];
   pseudotimeRange: [number, number];
   rootCluster: number;
@@ -305,7 +301,7 @@ export interface PAGAResult {
 export interface SpatialNeighborResult {
   nCells: number;
   nNeighbors: number;
-  graphType: 'knn' | 'delaunay';
+  graphType: "knn" | "delaunay";
   adjacency: [number, number][];
 }
 
@@ -317,14 +313,14 @@ export interface MoranResult {
   pValue: number;
   qValue: number;
   isSpatiallyRestricted: boolean;
-  hotspot: 'high' | 'low' | 'ns';
+  hotspot: "high" | "low" | "ns";
 }
 
 export interface GiStarGeneResult {
   gene: string;
   giStar: number;
   zScore: number;
-  hotspot: 'high' | 'low' | 'ns';
+  hotspot: "high" | "low" | "ns";
 }
 
 export interface GiStarResult {
@@ -371,7 +367,7 @@ export interface HighYieldCluster {
   avgMetabolicEfficiency: number;
   avgProductivity: number;
   keyGenes: { gene: string; meanExpression: number; pctExpressed: number }[];
-  fate: 'productive' | 'stressed' | 'quiescent';
+  fate: "productive" | "stressed" | "quiescent";
   spatiallyLocalized: boolean;
 }
 
@@ -393,7 +389,9 @@ export interface ScSpatialAnalysisResult {
 /** Linear congruential generator for reproducible randomness. */
 class SeededRNG {
   private state: number;
-  constructor(seed: number = 42) { this.state = seed; }
+  constructor(seed: number = 42) {
+    this.state = seed;
+  }
   next(): number {
     this.state = (this.state * 1103515245 + 12345) & 0x7fffffff;
     return this.state / 0x7fffffff;
@@ -455,7 +453,7 @@ function buildKNNGraph(points: [number, number][], k: number): [number, number][
   }
 
   // Build K-d tree index from all points
-  const index = new KDTreeIndex(points.map(p => [p[0], p[1]]));
+  const index = new KDTreeIndex(points.map((p) => [p[0], p[1]]));
 
   // Query k+1 nearest neighbors for each point (includes the point itself)
   for (let i = 0; i < n; i++) {
@@ -476,12 +474,18 @@ function buildKNNGraph(points: [number, number][], k: number): [number, number][
 }
 
 /** ReLU activation. */
-function relu(x: number): number { return x > 0 ? x : 0; }
+function relu(x: number): number {
+  return x > 0 ? x : 0;
+}
 
 /** Approximate CDF of standard normal (Abramowitz & Stegun 26.2.17). */
 function normalCDF(z: number): number {
-  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
-  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const a1 = 0.254829592,
+    a2 = -0.284496736,
+    a3 = 1.421413741;
+  const a4 = -1.453152027,
+    a5 = 1.061405429,
+    p = 0.3275911;
   const sign = z < 0 ? -1 : 1;
   const x = Math.abs(z) / Math.SQRT2;
   const t = 1 / (1 + p * x);
@@ -538,7 +542,7 @@ export function preprocessAndQC(
     const pass = c.mitoPercent < mitoThreshold && c.totalCounts >= minCounts && c.nGenes >= minGenes;
     filtered.push({ ...c, qcPass: pass });
   }
-  const passed = filtered.filter(c => c.qcPass);
+  const passed = filtered.filter((c) => c.qcPass);
   return {
     filtered: passed,
     qc: {
@@ -548,9 +552,9 @@ export function preprocessAndQC(
       mitoThreshold,
       minCounts,
       minGenes,
-      medianCounts: median(passed.map(c => c.totalCounts)),
-      medianGenes: median(passed.map(c => c.nGenes)),
-      medianMitoPercent: median(passed.map(c => c.mitoPercent)),
+      medianCounts: median(passed.map((c) => c.totalCounts)),
+      medianGenes: median(passed.map((c) => c.nGenes)),
+      medianMitoPercent: median(passed.map((c) => c.mitoPercent)),
     },
   };
 }
@@ -567,7 +571,7 @@ export function preprocessAndQC(
  * input is never mutated.
  */
 export function normalizeAndLog(cells: CellRecord[], targetSum: number = 10000): CellRecord[] {
-  return cells.map(c => {
+  return cells.map((c) => {
     const total = c.totalCounts || 1;
     const scaleFactor = targetSum / total;
     const normed: Record<string, number> = {};
@@ -594,12 +598,7 @@ export function normalizeAndLog(cells: CellRecord[], targetSum: number = 10000):
  * @param span    Proportion of data used in each local fit (0–1)
  * @returns       LOESS-predicted y value at xQuery
  */
-export function loessPredict(
-  x: number[],
-  y: number[],
-  xQuery: number,
-  span: number,
-): number {
+export function loessPredict(x: number[], y: number[], xQuery: number, span: number): number {
   const n = x.length;
   if (n === 0) return 0;
 
@@ -623,7 +622,7 @@ export function loessPredict(
     const { i, dist } = distances[k];
     const u = dist / maxDist;
     // Tricube weight: (1 - |u|^3)^3
-    const w = Math.pow(1 - Math.pow(Math.min(u, 1), 3), 3);
+    const w = (1 - Math.min(u, 1) ** 3) ** 3;
     sumW += w;
     sumWX += w * x[i];
     sumWY += w * y[i];
@@ -661,7 +660,9 @@ export function selectHVGs(cells: CellRecord[], nTop: number = 2000): HVGResult 
   // Per-gene mean and variance
   const stats: { gene: string; mean: number; variance: number }[] = [];
   for (const g of genes) {
-    let sum = 0, sumSq = 0, count = 0;
+    let sum = 0,
+      sumSq = 0,
+      count = 0;
     for (const c of cells) {
       const v = c.geneExpression[g] ?? 0;
       sum += v;
@@ -669,7 +670,7 @@ export function selectHVGs(cells: CellRecord[], nTop: number = 2000): HVGResult 
       count++;
     }
     const mean = sum / Math.max(count, 1);
-    const variance = count > 1 ? (sumSq / count - mean * mean) : 0;
+    const variance = count > 1 ? sumSq / count - mean * mean : 0;
     stats.push({ gene: g, mean, variance });
   }
 
@@ -691,7 +692,8 @@ export function selectHVGs(cells: CellRecord[], nTop: number = 2000): HVGResult 
     // Fast fallback: unweighted sliding window (width ~10% of genes)
     const windowHalf = Math.max(5, Math.floor(stats.length * 0.05));
     for (let i = 0; i < stats.length; i++) {
-      let wSum = 0, wCount = 0;
+      let wSum = 0,
+        wCount = 0;
       const lo = Math.max(0, i - windowHalf);
       const hi = Math.min(stats.length - 1, i + windowHalf);
       for (let j = lo; j <= hi; j++) {
@@ -703,20 +705,20 @@ export function selectHVGs(cells: CellRecord[], nTop: number = 2000): HVGResult 
   }
 
   // Normalized variance
-  const geneResults: HVGResult['genes'] = stats.map((s, i) => {
+  const geneResults: HVGResult["genes"] = stats.map((s, i) => {
     const ev = Math.max(expectedVariance[i], 1e-12);
     return { gene: s.gene, mean: s.mean, variance: s.variance, varianceNorm: s.variance / ev, isHVG: false };
   });
 
   // Rank and select top N
   const ranked = [...geneResults].sort((a, b) => b.varianceNorm - a.varianceNorm);
-  const hvgSet = new Set(ranked.slice(0, Math.min(nTop, ranked.length)).map(r => r.gene));
+  const hvgSet = new Set(ranked.slice(0, Math.min(nTop, ranked.length)).map((r) => r.gene));
   for (const r of geneResults) r.isHVG = hvgSet.has(r.gene);
 
   return {
     genes: geneResults,
     nHVGs: hvgSet.size,
-    method: 'seurat_v3_vst',
+    method: "seurat_v3_vst",
   };
 }
 
@@ -751,11 +753,11 @@ export function clusterCells(
   const genes = allGenes(cells);
 
   // Build expression matrix
-  const expr: number[][] = cells.map(c => genes.map(g => c.geneExpression[g] ?? 0));
+  const expr: number[][] = cells.map((c) => genes.map((g) => c.geneExpression[g] ?? 0));
 
   // KNN graph in expression space (k=15)
   const k = Math.min(15, n - 1);
-  let adj: number[][] = Array.from({ length: n }, () => []);
+  const adj: number[][] = Array.from({ length: n }, () => []);
   for (let i = 0; i < n; i++) {
     const dists: { idx: number; d: number }[] = [];
     for (let j = 0; j < n; j++) {
@@ -770,7 +772,7 @@ export function clusterCells(
 
   // Build symmetric adjacency weights (shared-nearest-neighbor similarity)
   const weights = new Map<string, number>();
-  const edgeKey = (a: number, b: number) => a < b ? `${a}_${b}` : `${b}_${a}`;
+  const edgeKey = (a: number, b: number) => (a < b ? `${a}_${b}` : `${b}_${a}`);
   for (let i = 0; i < n; i++) {
     for (const j of adj[i]) {
       const key = edgeKey(i, j);
@@ -790,14 +792,22 @@ export function clusterCells(
   for (let i = 0; i < n; i++) degree[i] = adj[i].length;
 
   // Compute modularity Q for current partition
-  function computeModularity(partition: Int32Array, adjList: number[][], deg: Float64Array, edgeWeights: Map<string, number>): number {
+  function computeModularity(
+    partition: Int32Array,
+    adjList: number[][],
+    deg: Float64Array,
+    edgeWeights: Map<string, number>,
+  ): number {
     let m2Local = 0;
-    edgeWeights.forEach(w => { m2Local += w; });
+    edgeWeights.forEach((w) => {
+      m2Local += w;
+    });
     m2Local = m2Local * 2 || 1;
     let q = 0;
     edgeWeights.forEach((w, key) => {
-      const [iStr, jStr] = key.split('_');
-      const ii = parseInt(iStr), jj = parseInt(jStr);
+      const [iStr, jStr] = key.split("_");
+      const ii = parseInt(iStr),
+        jj = parseInt(jStr);
       if (partition[ii] === partition[jj]) {
         q += w - (deg[ii] * deg[jj]) / m2Local;
       }
@@ -818,7 +828,9 @@ export function clusterCells(
     for (let i = 0; i < numNodes; i++) partition[i] = currentPartition[i];
 
     let m2Local = 0;
-    edgeWeights.forEach(w => { m2Local += w; });
+    edgeWeights.forEach((w) => {
+      m2Local += w;
+    });
     m2Local = m2Local * 2 || 1;
 
     let anyMoved = false;
@@ -836,9 +848,13 @@ export function clusterCells(
           const gain = resolution * (w - (ki * sumTot) / m2Local);
           communityDelta.set(cj, (communityDelta.get(cj) ?? 0) + gain);
         }
-        let bestComm = ci, bestGain = 0;
+        let bestComm = ci,
+          bestGain = 0;
         communityDelta.forEach((gain, comm) => {
-          if (gain > bestGain) { bestGain = gain; bestComm = comm; }
+          if (gain > bestGain) {
+            bestGain = gain;
+            bestComm = comm;
+          }
         });
         if (bestComm !== ci) {
           partition[i] = bestComm;
@@ -977,9 +993,9 @@ export function clusterCells(
   const markerLabels = markerGeneAnnotation(community, cells, genes);
 
   // Assign labels
-  const clusterSizes: ClusterResult['clusterSizes'] = [];
+  const clusterSizes: ClusterResult["clusterSizes"] = [];
   for (let c = 0; c < nClusters; c++) {
-    const size = community.filter(v => v === c).length;
+    const size = community.filter((v) => v === c).length;
     clusterSizes.push({ cluster: c, size, label: markerLabels.get(c) ?? `Cluster ${c}` });
   }
 
@@ -991,7 +1007,8 @@ export function clusterCells(
     const i = Math.floor(rng.next() * n);
     const ci = community[i];
     // a(i) = mean intra-cluster distance
-    let aSum = 0, aCount = 0;
+    let aSum = 0,
+      aCount = 0;
     for (let j = 0; j < n; j++) {
       if (j === i || community[j] !== ci) continue;
       aSum += euclideanDistance(expr[i], expr[j]);
@@ -1002,7 +1019,8 @@ export function clusterCells(
     let b = Infinity;
     for (let c = 0; c < nClusters; c++) {
       if (c === ci) continue;
-      let bSum = 0, bCount = 0;
+      let bSum = 0,
+        bCount = 0;
       for (let j = 0; j < n; j++) {
         if (community[j] !== c) continue;
         bSum += euclideanDistance(expr[i], expr[j]);
@@ -1018,17 +1036,20 @@ export function clusterCells(
 
   // Modularity Q (computed on original graph)
   let totalEdgeWeight = 0;
-  weights.forEach(w => { totalEdgeWeight += w; });
+  weights.forEach((w) => {
+    totalEdgeWeight += w;
+  });
   const m2Orig = totalEdgeWeight * 2 || 1;
   let Q = 0;
   weights.forEach((w, key) => {
-    const [iStr, jStr] = key.split('_');
-    const i = parseInt(iStr), j = parseInt(jStr);
+    const [iStr, jStr] = key.split("_");
+    const i = parseInt(iStr),
+      j = parseInt(jStr);
     if (community[i] === community[j]) {
       Q += w - (degree[i] * degree[j]) / m2Orig;
     }
   });
-  Q /= (m2Orig / 2) || 1;
+  Q /= m2Orig / 2 || 1;
 
   // Produce updated cells
   const updated = cells.map((c, idx) => ({
@@ -1055,9 +1076,9 @@ function sumCommunityDegree(community: Int32Array, degree: Float64Array, comm: n
 // ── Metabolic marker genes for expression-based fate classification ──
 
 const METABOLIC_MARKERS: Record<string, string[]> = {
-  artemisinin: ['ADS', 'CYP71AV1', 'CPR1', 'DBR2'],
-  general: ['ACTB', 'ACT1'],   // housekeeping
-  stress: ['HSPA5', 'DDIT3'],  // stress / UPR
+  artemisinin: ["ADS", "CYP71AV1", "CPR1", "DBR2"],
+  general: ["ACTB", "ACT1"], // housekeeping
+  stress: ["HSPA5", "DDIT3"], // stress / UPR
 };
 
 /**
@@ -1072,32 +1093,32 @@ function classifyFateByExpression(
   clusterCells: CellRecord[],
   allCells: CellRecord[],
   geneNames: string[],
-): 'productive' | 'stressed' | 'quiescent' {
+): "productive" | "stressed" | "quiescent" {
   for (const markers of Object.values(METABOLIC_MARKERS)) {
-    const markerIndices = markers
-      .map(m => geneNames.indexOf(m))
-      .filter(i => i >= 0);
+    const markerIndices = markers.map((m) => geneNames.indexOf(m)).filter((i) => i >= 0);
     if (markerIndices.length === 0) continue;
 
     const clusterMean =
       clusterCells.reduce((s, c) => {
-        const cellMean = markerIndices.reduce((ss, i) => ss + (c.geneExpression[geneNames[i]] ?? 0), 0) / markerIndices.length;
+        const cellMean =
+          markerIndices.reduce((ss, i) => ss + (c.geneExpression[geneNames[i]] ?? 0), 0) / markerIndices.length;
         return s + cellMean;
       }, 0) / Math.max(clusterCells.length, 1);
 
     const allMean =
       allCells.reduce((s, c) => {
-        const cellMean = markerIndices.reduce((ss, i) => ss + (c.geneExpression[geneNames[i]] ?? 0), 0) / markerIndices.length;
+        const cellMean =
+          markerIndices.reduce((ss, i) => ss + (c.geneExpression[geneNames[i]] ?? 0), 0) / markerIndices.length;
         return s + cellMean;
       }, 0) / Math.max(allCells.length, 1);
 
     if (allMean > 0) {
       const score = clusterMean / allMean;
-      if (score > 1.5) return 'productive';
-      if (score < 0.5) return 'stressed';
+      if (score > 1.5) return "productive";
+      if (score < 0.5) return "stressed";
     }
   }
-  return 'quiescent';
+  return "quiescent";
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1144,15 +1165,19 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
 
   // Build KNN graph from EXPRESSION space (not spatial coordinates)
   // This matches the clustering algorithm which uses expression-space KNN
-  const expr: number[][] = cells.map(c => genes.map(g => c.geneExpression[g] ?? 0));
+  const expr: number[][] = cells.map((c) => genes.map((g) => c.geneExpression[g] ?? 0));
   const neighborMap = new Map<string, Set<string>>();
   for (const c of cells) neighborMap.set(c.id, new Set());
   const kPaga = Math.min(15, cells.length - 1); // Same k as clustering
   for (let i = 0; i < cells.length; i++) {
-    const distances = cells.map((cj, j) => ({
-      j,
-      d: euclideanDistance(expr[i], expr[j]) // Use expression distance, not spatial
-    })).filter(d => d.j !== i).sort((a, b) => a.d - b.d).slice(0, kPaga);
+    const distances = cells
+      .map((cj, j) => ({
+        j,
+        d: euclideanDistance(expr[i], expr[j]), // Use expression distance, not spatial
+      }))
+      .filter((d) => d.j !== i)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, kPaga);
     for (const { j } of distances) {
       neighborMap.get(cells[i].id)?.add(cells[j].id);
       neighborMap.get(cells[j].id)?.add(cells[i].id);
@@ -1165,7 +1190,7 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
     const neighbors = neighborMap.get(c.id);
     if (!neighbors) continue;
     for (const nid of neighbors) {
-      const neighbor = cells.find(cn => cn.id === nid);
+      const neighbor = cells.find((cn) => cn.id === nid);
       if (!neighbor) continue;
       const cj = neighbor.cluster;
       if (ci !== cj) {
@@ -1186,9 +1211,13 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
   }
 
   // Root cluster = largest cluster (heuristic: progenitors are most abundant)
-  let rootCluster = 0, rootSize = 0;
+  let rootCluster = 0,
+    rootSize = 0;
   for (const cs of clusters.clusterSizes) {
-    if (cs.size > rootSize) { rootSize = cs.size; rootCluster = cs.cluster; }
+    if (cs.size > rootSize) {
+      rootSize = cs.size;
+      rootCluster = cs.cluster;
+    }
   }
 
   // Diffusion pseudotime via BFS from root, weighted by connectivity
@@ -1217,7 +1246,7 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
   if (ptMax > 0) for (let j = 0; j < nC; j++) pseudotime[j] /= ptMax;
 
   // Trajectory edges: significant connectivities
-  const trajectory: PAGAResult['trajectory'] = [];
+  const trajectory: PAGAResult["trajectory"] = [];
   for (let i = 0; i < nC; i++) {
     for (let j = i + 1; j < nC; j++) {
       if (connectivities[i][j] > 0.15) {
@@ -1227,7 +1256,7 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
   }
 
   // Identify branching points (clusters with 3+ strong connections)
-  const branchingPoints: PAGAResult['branchingPoints'] = [];
+  const branchingPoints: PAGAResult["branchingPoints"] = [];
   for (let i = 0; i < nC; i++) {
     const strongNeighbors = [];
     for (let j = 0; j < nC; j++) {
@@ -1235,12 +1264,12 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
     }
     if (strongNeighbors.length >= 2) {
       const children = strongNeighbors
-        .filter(j => pseudotime[j] > pseudotime[i])
-        .map(j => ({
+        .filter((j) => pseudotime[j] > pseudotime[i])
+        .map((j) => ({
           cluster: j,
           label: clusters.clusterSizes[j]?.label ?? `Cluster ${j}`,
           fate: classifyFateByExpression(
-            cells.filter(c => c.cluster === j),
+            cells.filter((c) => c.cluster === j),
             cells,
             genes,
           ),
@@ -1283,7 +1312,7 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
  * @param k      Number of neighbors (default 6)
  */
 export function computeSpatialNeighbors(cells: CellRecord[], k: number = 6): SpatialNeighborResult {
-  const points: [number, number][] = cells.map(c => [c.spatialX, c.spatialY]);
+  const points: [number, number][] = cells.map((c) => [c.spatialX, c.spatialY]);
   const adjacency = buildKNNGraph(points, k);
 
   // Average neighbors per cell
@@ -1292,13 +1321,15 @@ export function computeSpatialNeighbors(cells: CellRecord[], k: number = 6): Spa
     neighborCount.set(a, (neighborCount.get(a) ?? 0) + 1);
   }
   let totalNeighbors = 0;
-  neighborCount.forEach(count => { totalNeighbors += count; });
+  neighborCount.forEach((count) => {
+    totalNeighbors += count;
+  });
   const avgNeighbors = cells.length > 0 ? totalNeighbors / cells.length : 0;
 
   return {
     nCells: cells.length,
     nNeighbors: Math.round(avgNeighbors * 100) / 100,
-    graphType: 'knn',
+    graphType: "knn",
     adjacency,
   };
 }
@@ -1426,7 +1457,7 @@ export function computeMoranI(
 
   for (const gene of genesToTest) {
     // Expression vector
-    const x: number[] = cells.map(c => c.geneExpression[gene] ?? 0);
+    const x: number[] = cells.map((c) => c.geneExpression[gene] ?? 0);
     const xMean = x.reduce((s, v) => s + v, 0) / (n || 1);
 
     // Denominator: Σ (x_i - x̄)²
@@ -1444,7 +1475,15 @@ export function computeMoranI(
 
     // Permutation-based p-value and z-score
     const { pValue, permMean, permStd } = moranIPermutationPValue(
-      x, xMean, denom, neighbors.adjacency, n, W, I, nPermutations, rng,
+      x,
+      xMean,
+      denom,
+      neighbors.adjacency,
+      n,
+      W,
+      I,
+      nPermutations,
+      rng,
     );
 
     const zScore = (I - permMean) / Math.max(permStd, 1e-10);
@@ -1453,7 +1492,7 @@ export function computeMoranI(
   }
 
   // Second pass: Benjamini-Hochberg FDR correction across all genes
-  const pValues = rawResults.map(r => r.pValue);
+  const pValues = rawResults.map((r) => r.pValue);
   const qValues = benjaminiHochberg(pValues);
 
   // Third pass: build final results with q-values and hotspot classification
@@ -1461,9 +1500,9 @@ export function computeMoranI(
     const qValue = qValues[idx];
     // Hotspot classification: high Moran's I + significant after FDR = high hotspot
     // negative Moran's I + significant = low hotspot
-    let hotspot: 'high' | 'low' | 'ns' = 'ns';
+    let hotspot: "high" | "low" | "ns" = "ns";
     if (qValue < 0.05) {
-      hotspot = r.moranI > 0 ? 'high' : 'low';
+      hotspot = r.moranI > 0 ? "high" : "low";
     }
     return {
       gene: r.gene,
@@ -1478,7 +1517,7 @@ export function computeMoranI(
   });
 
   results.sort((a, b) => b.moranI - a.moranI);
-  const spatiallyRestricted = results.filter(r => r.isSpatiallyRestricted);
+  const spatiallyRestricted = results.filter((r) => r.isSpatiallyRestricted);
 
   // Compute Getis-Ord Gi* hotspot analysis
   const giStarResults = computeGiStar(cells, neighbors, genesToTest);
@@ -1487,7 +1526,7 @@ export function computeMoranI(
     results,
     nGenesTested: results.length,
     nSpatiallyRestricted: spatiallyRestricted.length,
-    topSpatialGenes: spatiallyRestricted.slice(0, 20).map(r => r.gene),
+    topSpatialGenes: spatiallyRestricted.slice(0, 20).map((r) => r.gene),
     giStarResults,
   };
 }
@@ -1518,11 +1557,7 @@ export function computeMoranI(
  * @param neighbors Spatial neighbor graph
  * @param genes     Genes to analyze (default: all genes)
  */
-export function computeGiStar(
-  cells: CellRecord[],
-  neighbors: SpatialNeighborResult,
-  genes?: string[],
-): GiStarResult {
+export function computeGiStar(cells: CellRecord[], neighbors: SpatialNeighborResult, genes?: string[]): GiStarResult {
   const n = cells.length;
   const genesToTest = genes ?? allGenes(cells);
 
@@ -1538,13 +1573,13 @@ export function computeGiStar(
   const results: GiStarGeneResult[] = [];
 
   for (const gene of genesToTest) {
-    const x: number[] = cells.map(c => c.geneExpression[gene] ?? 0);
+    const x: number[] = cells.map((c) => c.geneExpression[gene] ?? 0);
     const mean = x.reduce((s, v) => s + v, 0) / n;
     const variance = x.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
     const std = Math.sqrt(variance);
 
     if (std < 1e-10) {
-      results.push({ gene, giStar: 0, zScore: 0, hotspot: 'ns' });
+      results.push({ gene, giStar: 0, zScore: 0, hotspot: "ns" });
       continue;
     }
 
@@ -1568,7 +1603,7 @@ export function computeGiStar(
 
       // Expected value and variance under spatial randomness
       const S1 = wSum;
-      const expected = (S1 * mean);
+      const expected = S1 * mean;
       const variance_i = (S1 * (n - S1) * variance) / (n - 1);
 
       if (variance_i > 1e-10) {
@@ -1583,16 +1618,16 @@ export function computeGiStar(
     // Scale by sqrt(n) for the aggregate test statistic
     const giStarZ = avgGiStarZ * Math.sqrt(Math.max(validCells, 1));
 
-    let hotspot: 'high' | 'low' | 'ns' = 'ns';
-    if (giStarZ > 1.96) hotspot = 'high';
-    else if (giStarZ < -1.96) hotspot = 'low';
+    let hotspot: "high" | "low" | "ns" = "ns";
+    if (giStarZ > 1.96) hotspot = "high";
+    else if (giStarZ < -1.96) hotspot = "low";
 
     results.push({ gene, giStar: round(giStarZ, 4), zScore: round(giStarZ, 4), hotspot });
   }
 
   results.sort((a, b) => Math.abs(b.zScore) - Math.abs(a.zScore));
-  const nHotHigh = results.filter(r => r.hotspot === 'high').length;
-  const nHotLow = results.filter(r => r.hotspot === 'low').length;
+  const nHotHigh = results.filter((r) => r.hotspot === "high").length;
+  const nHotLow = results.filter((r) => r.hotspot === "low").length;
 
   return { results, nHotHigh, nHotLow };
 }
@@ -1603,23 +1638,37 @@ export function computeGiStar(
 
 interface VAEWeights {
   // Encoder
-  W1: number[][]; b1: number[];
-  W2: number[][]; b2: number[];
-  Wmu: number[][]; bmu: number[];
-  Wlv: number[][]; blv: number[];
+  W1: number[][];
+  b1: number[];
+  W2: number[][];
+  b2: number[];
+  Wmu: number[][];
+  bmu: number[];
+  Wlv: number[][];
+  blv: number[];
   // Decoder
-  W3: number[][]; b3: number[];
-  W4: number[][]; b4: number[];
-  W5: number[][]; b5: number[];
+  W3: number[][];
+  b3: number[];
+  W4: number[][];
+  b4: number[];
+  W5: number[][];
+  b5: number[];
 }
 
 interface ForwardResult {
-  h1: number[]; h2: number[];
-  z_mean: number[]; z_logvar: number[]; z_sample: number[];
-  h3: number[]; h4: number[];
+  h1: number[];
+  h2: number[];
+  z_mean: number[];
+  z_logvar: number[];
+  z_sample: number[];
+  h3: number[];
+  h4: number[];
   recon: number[];
   // Pre-activations (before ReLU) for gradient computation
-  z1: number[]; z2: number[]; z3: number[]; z4: number[];
+  z1: number[];
+  z2: number[];
+  z3: number[];
+  z4: number[];
   // Epsilon from reparameterization trick
   epsilon: number[];
 }
@@ -1661,18 +1710,23 @@ export async function trainScVAE(
   const n = cells.length;
   if (n === 0) {
     return {
-      latentCells: [], elbo: 0, reconLoss: 0, klDivergence: 0,
-      latentDim, batchCorrected: false, convergenceHistory: [],
+      latentCells: [],
+      elbo: 0,
+      reconLoss: 0,
+      klDivergence: 0,
+      latentDim,
+      batchCorrected: false,
+      convergenceHistory: [],
     };
   }
 
   // Select top HVGs for input features
   const hvgResult = selectHVGs(cells, Math.min(50, allGenes(cells).length));
-  const hvgGenes = hvgResult.genes.filter(g => g.isHVG).map(g => g.gene);
+  const hvgGenes = hvgResult.genes.filter((g) => g.isHVG).map((g) => g.gene);
   const nFeatures = hvgGenes.length;
 
   // Batch one-hot encoding
-  const batches = batchLabels ?? cells.map(c => c.batchId);
+  const batches = batchLabels ?? cells.map((c) => c.batchId);
   const uniqueBatches = Array.from(new Set(batches));
   const nBatches = uniqueBatches.length;
   const batchMap = new Map<number, number>();
@@ -1684,7 +1738,7 @@ export async function trainScVAE(
 
   // Build input matrix
   const inputs: number[][] = cells.map((c, idx) => {
-    const expr = hvgGenes.map(g => c.geneExpression[g] ?? 0);
+    const expr = hvgGenes.map((g) => c.geneExpression[g] ?? 0);
     const batchOH = new Array(nBatches).fill(0);
     batchOH[batchMap.get(batches[idx]) ?? 0] = 1;
     return [...expr, ...batchOH];
@@ -1692,17 +1746,26 @@ export async function trainScVAE(
 
   // Initialise weights
   const w: VAEWeights = {
-    W1: initWeights(inputDim, h1Dim, rng), b1: initBias(h1Dim),
-    W2: initWeights(h1Dim, h2Dim, rng), b2: initBias(h2Dim),
-    Wmu: initWeights(h2Dim, latentDim, rng), bmu: initBias(latentDim),
-    Wlv: initWeights(h2Dim, latentDim, rng), blv: initBias(latentDim),
-    W3: initWeights(latentDim, h2Dim, rng), b3: initBias(h2Dim),
-    W4: initWeights(h2Dim, h1Dim, rng), b4: initBias(h1Dim),
-    W5: initWeights(h1Dim, nFeatures, rng), b5: initBias(nFeatures),
+    W1: initWeights(inputDim, h1Dim, rng),
+    b1: initBias(h1Dim),
+    W2: initWeights(h1Dim, h2Dim, rng),
+    b2: initBias(h2Dim),
+    Wmu: initWeights(h2Dim, latentDim, rng),
+    bmu: initBias(latentDim),
+    Wlv: initWeights(h2Dim, latentDim, rng),
+    blv: initBias(latentDim),
+    W3: initWeights(latentDim, h2Dim, rng),
+    b3: initBias(h2Dim),
+    W4: initWeights(h2Dim, h1Dim, rng),
+    b4: initBias(h1Dim),
+    W5: initWeights(h1Dim, nFeatures, rng),
+    b5: initBias(nFeatures),
   };
 
   /** ReLU derivative for backpropagation. */
-  function reluDeriv(x: number): number { return x > 0 ? 1 : 0; }
+  function reluDeriv(x: number): number {
+    return x > 0 ? 1 : 0;
+  }
 
   /** Forward pass through the VAE, storing pre-activations and epsilon for backprop. */
   function forward(x: number[]): ForwardResult {
@@ -1728,7 +1791,8 @@ export async function trainScVAE(
     const z_mean = new Array(latentDim);
     const z_logvar = new Array(latentDim);
     for (let j = 0; j < latentDim; j++) {
-      let sm = w.bmu[j], sl = w.blv[j];
+      let sm = w.bmu[j],
+        sl = w.blv[j];
       for (let i = 0; i < h2Dim; i++) {
         sm += h2[i] * w.Wmu[i][j];
         sl += h2[i] * w.Wlv[i][j];
@@ -1773,11 +1837,13 @@ export async function trainScVAE(
 
   // Training loop with full backpropagation through all layers
   const lr = 0.001;
-  const history: ScVAEResult['convergenceHistory'] = [];
-  let finalReconLoss = 0, finalKL = 0;
+  const history: ScVAEResult["convergenceHistory"] = [];
+  let finalReconLoss = 0,
+    finalKL = 0;
 
   for (let epoch = 0; epoch < epochs; epoch++) {
-    let epochRecon = 0, epochKL = 0;
+    let epochRecon = 0,
+      epochKL = 0;
 
     for (let i = 0; i < n; i++) {
       const x = inputs[i];
@@ -1934,19 +2000,19 @@ export async function trainScVAE(
   }
 
   // 2-D projection via UMAP on latent means
-  const { runUMAP } = await import('../server/umapEngine');
-  const latentData = latentPoints.map(lp => lp.z_mean);
+  const { runUMAP } = await import("../server/umapEngine");
+  const latentData = latentPoints.map((lp) => lp.z_mean);
   const umapResult = runUMAP(latentData, {
     nNeighbors: Math.min(15, Math.max(2, n - 1)),
     minDist: 0.1,
     nEpochs: 200,
     seed: 42,
   });
-  const pos: [number, number][] = umapResult.embedding.map(e => [e.x, e.y]);
+  const pos: [number, number][] = umapResult.embedding.map((e) => [e.x, e.y]);
 
   // Metabolic efficiency: inverse normalised reconstruction error
   const maxErr = Math.max(...reconErrors) || 1;
-  const metabolicEfficiencies = reconErrors.map(e => 1 - e / maxErr);
+  const metabolicEfficiencies = reconErrors.map((e) => 1 - e / maxErr);
 
   const latentCells: VAELatentCell[] = cells.map((c, i) => ({
     id: c.id,
@@ -2001,7 +2067,7 @@ export function identifyHighYieldClusters(
   const nC = clusters.nClusters;
 
   // Build PAGA fate map: which clusters are downstream of branching points
-  const fateMap = new Map<number, 'productive' | 'stressed' | 'quiescent'>();
+  const fateMap = new Map<number, "productive" | "stressed" | "quiescent">();
   for (const bp of paga.branchingPoints) {
     for (const child of bp.childBranches) {
       fateMap.set(child.cluster, child.fate);
@@ -2011,7 +2077,7 @@ export function identifyHighYieldClusters(
   const results: HighYieldCluster[] = [];
 
   for (let ci = 0; ci < nC; ci++) {
-    const clusterCells = cells.filter(c => c.cluster === ci);
+    const clusterCells = cells.filter((c) => c.cluster === ci);
     const nCells = clusterCells.length;
     if (nCells === 0) continue;
 
@@ -2021,7 +2087,8 @@ export function identifyHighYieldClusters(
     // Per-gene statistics within this cluster
     const geneStats: { gene: string; meanExpr: number; pctExpressed: number }[] = [];
     for (const g of genes) {
-      let sum = 0, nExpr = 0;
+      let sum = 0,
+        nExpr = 0;
       for (const c of clusterCells) {
         const v = c.geneExpression[g] ?? 0;
         sum += v;
@@ -2034,8 +2101,8 @@ export function identifyHighYieldClusters(
       });
     }
     // Top marker genes: high mean × high pct
-    geneStats.sort((a, b) => (b.meanExpr * b.pctExpressed) - (a.meanExpr * a.pctExpressed));
-    const keyGenes = geneStats.slice(0, 5).map(gs => ({
+    geneStats.sort((a, b) => b.meanExpr * b.pctExpressed - a.meanExpr * a.pctExpressed);
+    const keyGenes = geneStats.slice(0, 5).map((gs) => ({
       gene: gs.gene,
       meanExpression: Math.round(gs.meanExpr * 1000) / 1000,
       pctExpressed: Math.round(gs.pctExpressed * 10) / 10,
@@ -2045,12 +2112,12 @@ export function identifyHighYieldClusters(
     const avgProductivity = avgEfficiency * (nCells / cells.length);
 
     // Fate classification
-    let fate: 'productive' | 'stressed' | 'quiescent' = fateMap.get(ci) ?? 'quiescent';
-    if (avgEfficiency > 0.6) fate = 'productive';
-    else if (avgEfficiency < 0.3) fate = 'stressed';
+    let fate: "productive" | "stressed" | "quiescent" = fateMap.get(ci) ?? "quiescent";
+    if (avgEfficiency > 0.6) fate = "productive";
+    else if (avgEfficiency < 0.3) fate = "stressed";
 
     // Spatial localization: check if any top marker gene is spatially restricted
-    const spatiallyLocalized = keyGenes.some(kg => spatialGeneSet.has(kg.gene));
+    const spatiallyLocalized = keyGenes.some((kg) => spatialGeneSet.has(kg.gene));
 
     results.push({
       clusterId: ci,
@@ -2100,7 +2167,7 @@ export async function runFullPipeline(cells: CellRecord[]): Promise<ScSpatialAna
   const paga = computePAGA(clustered, clusterResult);
 
   // Propagate pseudotime from PAGA back to cells
-  const withPseudotime = clustered.map(c => ({
+  const withPseudotime = clustered.map((c) => ({
     ...c,
     pseudotime: paga.clusterPseudotime[c.cluster] ?? 0,
   }));

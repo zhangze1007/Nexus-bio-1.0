@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useMemo, useCallback, useState } from 'react';
-import { colors, typography, spacing } from '../../tokens';
+import React, { useCallback, useMemo, useState } from "react";
+import { colors, spacing, typography } from "../../tokens";
 
 // ============================================================================
 // Types
@@ -87,7 +87,7 @@ const SERIES_PALETTE = [
 
 function niceNum(range: number, round: boolean): number {
   const exponent = Math.floor(Math.log10(range));
-  const fraction = range / Math.pow(10, exponent);
+  const fraction = range / 10 ** exponent;
   let niceFraction: number;
   if (round) {
     if (fraction < 1.5) niceFraction = 1;
@@ -100,7 +100,7 @@ function niceNum(range: number, round: boolean): number {
     else if (fraction <= 5) niceFraction = 5;
     else niceFraction = 10;
   }
-  return niceFraction * Math.pow(10, exponent);
+  return niceFraction * 10 ** exponent;
 }
 
 function niceScale(min: number, max: number, ticks: number): { min: number; max: number; step: number } {
@@ -186,7 +186,10 @@ export function ScatterChart({
 
   // Compute domains
   const { xMin, xMax, yMin, yMax } = useMemo(() => {
-    let xmn = Infinity, xmx = -Infinity, ymn = Infinity, ymx = -Infinity;
+    let xmn = Infinity,
+      xmx = -Infinity,
+      ymn = Infinity,
+      ymx = -Infinity;
     for (const s of series) {
       for (const p of s.data) {
         if (p.x < xmn) xmn = p.x;
@@ -195,14 +198,19 @@ export function ScatterChart({
         if (p.y > ymx) ymx = p.y;
       }
     }
-    if (xmn === Infinity) { xmn = 0; xmx = 1; ymn = 0; ymx = 1; }
+    if (xmn === Infinity) {
+      xmn = 0;
+      xmx = 1;
+      ymn = 0;
+      ymx = 1;
+    }
     const xPad = (xmx - xmn) * 0.05 || 1;
     const yPad = (ymx - ymn) * 0.05 || 1;
     return {
-      xMin: xDomain?.[0] ?? (xmn - xPad),
-      xMax: xDomain?.[1] ?? (xmx + xPad),
-      yMin: yDomain?.[0] ?? (ymn - yPad),
-      yMax: yDomain?.[1] ?? (ymx + yPad),
+      xMin: xDomain?.[0] ?? xmn - xPad,
+      xMax: xDomain?.[1] ?? xmx + xPad,
+      yMin: yDomain?.[0] ?? ymn - yPad,
+      yMax: yDomain?.[1] ?? ymx + yPad,
     };
   }, [series, xDomain, yDomain]);
 
@@ -213,7 +221,10 @@ export function ScatterChart({
   const xTicks = useMemo(() => generateTicks(xScale.min, xScale.max, xScale.step), [xScale]);
 
   const toX = useCallback((v: number) => ((v - xScale.min) / (xScale.max - xScale.min)) * plotW, [xScale, plotW]);
-  const toY = useCallback((v: number) => plotH - ((v - yScale.min) / (yScale.max - yScale.min)) * plotH, [yScale, plotH]);
+  const toY = useCallback(
+    (v: number) => plotH - ((v - yScale.min) / (yScale.max - yScale.min)) * plotH,
+    [yScale, plotH],
+  );
 
   // Compute hulls
   const hulls = useMemo(() => {
@@ -224,16 +235,19 @@ export function ScatterChart({
         const screenPts = s.data.map((p) => ({ x: toX(p.x), y: toY(p.y) }));
         const hull = computeConvexHull(screenPts);
         const expanded = expandHull(hull, 8);
-        const d = expanded.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+        const d = expanded.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z";
         return { id: s.id, d, color };
       });
   }, [series, toX, toY]);
 
-  const handlePointEnter = useCallback((seriesId: string, point: ScatterPoint, index: number) => {
-    setHoveredSeries(seriesId);
-    setHoveredIndex(index);
-    onHoverPoint?.(seriesId, point, index);
-  }, [onHoverPoint]);
+  const handlePointEnter = useCallback(
+    (seriesId: string, point: ScatterPoint, index: number) => {
+      setHoveredSeries(seriesId);
+      setHoveredIndex(index);
+      onHoverPoint?.(seriesId, point, index);
+    },
+    [onHoverPoint],
+  );
 
   const handlePointLeave = useCallback(() => {
     setHoveredSeries(null);
@@ -248,9 +262,9 @@ export function ScatterChart({
     <div
       className={className}
       style={{
-        display: 'inline-block',
+        display: "inline-block",
         background: colors.bg.primary,
-        borderRadius: '12px',
+        borderRadius: "12px",
         border: `1px solid ${colors.border.subtle}`,
         padding: spacing.md,
       }}
@@ -259,7 +273,7 @@ export function ScatterChart({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        style={{ display: 'block', overflow: 'visible' }}
+        style={{ display: "block", overflow: "visible" }}
       >
         {/* Title */}
         {title && (
@@ -278,30 +292,32 @@ export function ScatterChart({
 
         <g transform={`translate(${margin.left}, ${margin.top})`}>
           {/* Grid lines */}
-          {showGrid && yTicks.map((t) => (
-            <line
-              key={`yg-${t}`}
-              x1={0}
-              x2={plotW}
-              y1={toY(t)}
-              y2={toY(t)}
-              stroke={colors.border.subtle}
-              strokeWidth={1}
-              strokeDasharray="3 3"
-            />
-          ))}
-          {showGrid && xTicks.map((t) => (
-            <line
-              key={`xg-${t}`}
-              x1={toX(t)}
-              x2={toX(t)}
-              y1={0}
-              y2={plotH}
-              stroke={colors.border.subtle}
-              strokeWidth={1}
-              strokeDasharray="3 3"
-            />
-          ))}
+          {showGrid &&
+            yTicks.map((t) => (
+              <line
+                key={`yg-${t}`}
+                x1={0}
+                x2={plotW}
+                y1={toY(t)}
+                y2={toY(t)}
+                stroke={colors.border.subtle}
+                strokeWidth={1}
+                strokeDasharray="3 3"
+              />
+            ))}
+          {showGrid &&
+            xTicks.map((t) => (
+              <line
+                key={`xg-${t}`}
+                x1={toX(t)}
+                x2={toX(t)}
+                y1={0}
+                y2={plotH}
+                stroke={colors.border.subtle}
+                strokeWidth={1}
+                strokeDasharray="3 3"
+              />
+            ))}
 
           {/* Axes */}
           <line x1={0} x2={plotW} y1={plotH} y2={plotH} stroke={colors.border.default} strokeWidth={1} />
@@ -393,13 +409,7 @@ export function ScatterChart({
                 <g key={`pt-${s.id}-${i}`}>
                   {/* Glow halo for hovered point */}
                   {isPointHovered && (
-                    <circle
-                      cx={toX(pt.x)}
-                      cy={toY(pt.y)}
-                      r={r + 6}
-                      fill={ptColor}
-                      fillOpacity={0.15}
-                    />
+                    <circle cx={toX(pt.x)} cy={toY(pt.y)} r={r + 6} fill={ptColor} fillOpacity={0.15} />
                   )}
                   <circle
                     cx={toX(pt.x)}
@@ -410,7 +420,10 @@ export function ScatterChart({
                     stroke={ptColor}
                     strokeWidth={isPointHovered ? 2 : 1}
                     strokeOpacity={isOtherHovered ? 0.2 : 0.9}
-                    style={{ transition: 'fill-opacity 150ms ease, stroke-opacity 150ms ease, r 100ms ease', cursor: 'pointer' }}
+                    style={{
+                      transition: "fill-opacity 150ms ease, stroke-opacity 150ms ease, r 100ms ease",
+                      cursor: "pointer",
+                    }}
                     onMouseEnter={() => handlePointEnter(s.id, pt, i)}
                     onMouseLeave={handlePointLeave}
                   />
@@ -420,59 +433,81 @@ export function ScatterChart({
           })}
 
           {/* Hover tooltip */}
-          {hoveredSeries !== null && hoveredIndex !== null && (() => {
-            const s = series.find((s) => s.id === hoveredSeries);
-            if (!s) return null;
-            const pt = s.data[hoveredIndex];
-            if (!pt) return null;
-            const tx = toX(pt.x);
-            const ty = toY(pt.y);
-            const r = pt.radius ?? s.pointRadius ?? defaultPointRadius;
-            const tooltipX = tx + (tx > plotW / 2 ? -(r + 12) : r + 12);
-            const anchor = tx > plotW / 2 ? 'end' : 'start';
-            const label = pt.label ?? `(${xFormat(pt.x)}, ${yFormat(pt.y)})`;
-            const lines = [label];
-            if (pt.meta) {
-              for (const [k, v] of Object.entries(pt.meta)) {
-                lines.push(`${k}: ${v}`);
+          {hoveredSeries !== null &&
+            hoveredIndex !== null &&
+            (() => {
+              const s = series.find((s) => s.id === hoveredSeries);
+              if (!s) return null;
+              const pt = s.data[hoveredIndex];
+              if (!pt) return null;
+              const tx = toX(pt.x);
+              const ty = toY(pt.y);
+              const r = pt.radius ?? s.pointRadius ?? defaultPointRadius;
+              const tooltipX = tx + (tx > plotW / 2 ? -(r + 12) : r + 12);
+              const anchor = tx > plotW / 2 ? "end" : "start";
+              const label = pt.label ?? `(${xFormat(pt.x)}, ${yFormat(pt.y)})`;
+              const lines = [label];
+              if (pt.meta) {
+                for (const [k, v] of Object.entries(pt.meta)) {
+                  lines.push(`${k}: ${v}`);
+                }
               }
-            }
-            const tooltipH = lines.length * 16 + 8;
-            const tooltipW = Math.max(80, Math.max(...lines.map((l) => l.length)) * 7 + 16);
-            const tooltipY = ty - tooltipH / 2;
-            return (
-              <g>
-                {/* Crosshair */}
-                <line x1={tx} x2={tx} y1={0} y2={plotH} stroke={colors.border.strong} strokeWidth={1} strokeDasharray="2 2" />
-                <line x1={0} x2={plotW} y1={ty} y2={ty} stroke={colors.border.strong} strokeWidth={1} strokeDasharray="2 2" />
-                {/* Tooltip box */}
-                <rect
-                  x={anchor === 'end' ? tooltipX - tooltipW : tooltipX}
-                  y={tooltipY}
-                  width={tooltipW}
-                  height={tooltipH}
-                  rx={4}
-                  fill={colors.bg.elevated}
-                  stroke={colors.border.default}
-                  strokeWidth={1}
-                />
-                {lines.map((line, li) => (
-                  <text
-                    key={li}
-                    x={anchor === 'end' ? tooltipX - 8 : tooltipX + 8}
-                    y={tooltipY + 14 + li * 16}
-                    textAnchor={anchor}
-                    fill={li === 0 ? (pt.color ?? s.color ?? SERIES_PALETTE[series.indexOf(s) % SERIES_PALETTE.length]) : colors.text.secondary}
-                    fontFamily={li === 0 ? monoFont : sansFont}
-                    fontSize={typography.fontSize.xs}
-                    fontWeight={li === 0 ? typography.fontWeight.medium : typography.fontWeight.regular}
-                  >
-                    {line}
-                  </text>
-                ))}
-              </g>
-            );
-          })()}
+              const tooltipH = lines.length * 16 + 8;
+              const tooltipW = Math.max(80, Math.max(...lines.map((l) => l.length)) * 7 + 16);
+              const tooltipY = ty - tooltipH / 2;
+              return (
+                <g>
+                  {/* Crosshair */}
+                  <line
+                    x1={tx}
+                    x2={tx}
+                    y1={0}
+                    y2={plotH}
+                    stroke={colors.border.strong}
+                    strokeWidth={1}
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1={0}
+                    x2={plotW}
+                    y1={ty}
+                    y2={ty}
+                    stroke={colors.border.strong}
+                    strokeWidth={1}
+                    strokeDasharray="2 2"
+                  />
+                  {/* Tooltip box */}
+                  <rect
+                    x={anchor === "end" ? tooltipX - tooltipW : tooltipX}
+                    y={tooltipY}
+                    width={tooltipW}
+                    height={tooltipH}
+                    rx={4}
+                    fill={colors.bg.elevated}
+                    stroke={colors.border.default}
+                    strokeWidth={1}
+                  />
+                  {lines.map((line, li) => (
+                    <text
+                      key={li}
+                      x={anchor === "end" ? tooltipX - 8 : tooltipX + 8}
+                      y={tooltipY + 14 + li * 16}
+                      textAnchor={anchor}
+                      fill={
+                        li === 0
+                          ? (pt.color ?? s.color ?? SERIES_PALETTE[series.indexOf(s) % SERIES_PALETTE.length])
+                          : colors.text.secondary
+                      }
+                      fontFamily={li === 0 ? monoFont : sansFont}
+                      fontSize={typography.fontSize.xs}
+                      fontWeight={li === 0 ? typography.fontWeight.medium : typography.fontWeight.regular}
+                    >
+                      {line}
+                    </text>
+                  ))}
+                </g>
+              );
+            })()}
         </g>
 
         {/* Legend */}

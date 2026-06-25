@@ -13,8 +13,8 @@
  * - Max total retries: AUTONOMY_MAX_TOTAL_RETRIES (5)
  */
 
-import type { AxonPlan } from './axonPlanner';
-import type { AxonTask } from './AxonOrchestrator';
+import type { AxonTask } from "./AxonOrchestrator";
+import type { AxonPlan } from "./axonPlanner";
 
 export const AUTONOMY_MAX_STEPS = 8;
 export const AUTONOMY_MAX_RETRIES = 2;
@@ -30,10 +30,10 @@ export interface AutonomyDecisionContext {
 }
 
 export type AutonomyDecision =
-  | { action: 'idle'; reason: string }
-  | { action: 'run-next-step'; reason: string; taskId: string }
-  | { action: 'retry-task'; reason: string; taskId: string }
-  | { action: 'halt'; reason: string };
+  | { action: "idle"; reason: string }
+  | { action: "run-next-step"; reason: string; taskId: string }
+  | { action: "retry-task"; reason: string; taskId: string }
+  | { action: "halt"; reason: string };
 
 export interface AutonomyLoop {
   readonly enabled: boolean;
@@ -48,9 +48,9 @@ export interface AutonomyLoop {
  */
 export const noopAutonomyLoop: AutonomyLoop = {
   enabled: false,
-  label: 'Manual only — autonomy disabled',
+  label: "Manual only — autonomy disabled",
   decide() {
-    return { action: 'idle', reason: 'Autonomy disabled.' };
+    return { action: "idle", reason: "Autonomy disabled." };
   },
 };
 
@@ -68,19 +68,19 @@ export const noopAutonomyLoop: AutonomyLoop = {
  */
 export const boundedAutonomyLoop: AutonomyLoop = {
   enabled: true,
-  label: 'Bounded autonomy — auto-executes plan steps',
+  label: "Bounded autonomy — auto-executes plan steps",
   decide(ctx: AutonomyDecisionContext): AutonomyDecision {
     const { plan, tasks, autoStepsTaken, autoRetries } = ctx;
 
     // No plan or no tasks
     if (!plan || tasks.length === 0) {
-      return { action: 'idle', reason: 'No plan or tasks to execute.' };
+      return { action: "idle", reason: "No plan or tasks to execute." };
     }
 
     // Max auto-steps reached
     if (autoStepsTaken >= AUTONOMY_MAX_STEPS) {
       return {
-        action: 'halt',
+        action: "halt",
         reason: `Maximum auto-steps (${AUTONOMY_MAX_STEPS}) reached. Manual intervention required.`,
       };
     }
@@ -88,76 +88,73 @@ export const boundedAutonomyLoop: AutonomyLoop = {
     // Max total retries reached
     if (autoRetries >= AUTONOMY_MAX_TOTAL_RETRIES) {
       return {
-        action: 'halt',
+        action: "halt",
         reason: `Maximum total retries (${AUTONOMY_MAX_TOTAL_RETRIES}) reached. Stopping to prevent infinite loops.`,
       };
     }
 
     // Check if any task is currently running
-    const runningTask = tasks.find(t => t.status === 'running');
+    const runningTask = tasks.find((t) => t.status === "running");
     if (runningTask) {
       return {
-        action: 'idle',
+        action: "idle",
         reason: `Task "${runningTask.label}" is still running. Waiting for completion.`,
       };
     }
 
     // Check for failed tasks that can be retried
-    const failedTask = tasks.find(t =>
-      t.status === 'error' &&
-      t.retryCount < (t.maxRetries ?? AUTONOMY_MAX_RETRIES)
-    );
+    const failedTask = tasks.find((t) => t.status === "error" && t.retryCount < (t.maxRetries ?? AUTONOMY_MAX_RETRIES));
     if (failedTask) {
       return {
-        action: 'retry-task',
+        action: "retry-task",
         reason: `Task "${failedTask.label}" failed (attempt ${failedTask.retryCount + 1}/${failedTask.maxRetries ?? AUTONOMY_MAX_RETRIES}). Retrying.`,
         taskId: failedTask.id,
       };
     }
 
     // Find next pending task whose dependencies are satisfied
-    const byId = new Map(tasks.map(t => [t.id, t]));
-    const nextTask = tasks.find(t => {
-      if (t.status !== 'pending') return false;
+    const byId = new Map(tasks.map((t) => [t.id, t]));
+    const nextTask = tasks.find((t) => {
+      if (t.status !== "pending") return false;
       if (!t.dependsOn || t.dependsOn.length === 0) return true;
-      return t.dependsOn.every(depId => byId.get(depId)?.status === 'done');
+      return t.dependsOn.every((depId) => byId.get(depId)?.status === "done");
     });
 
     if (nextTask) {
       return {
-        action: 'run-next-step',
+        action: "run-next-step",
         reason: `Running step: ${nextTask.label}`,
         taskId: nextTask.id,
       };
     }
 
     // Check if all tasks are done
-    const allDone = tasks.every(t => t.status === 'done' || t.status === 'cancelled');
+    const allDone = tasks.every((t) => t.status === "done" || t.status === "cancelled");
     if (allDone) {
       return {
-        action: 'halt',
-        reason: 'All plan steps completed successfully.',
+        action: "halt",
+        reason: "All plan steps completed successfully.",
       };
     }
 
     // Check for blocked tasks (dependencies failed)
-    const blockedTask = tasks.find(t => {
-      if (t.status !== 'pending') return false;
+    const blockedTask = tasks.find((t) => {
+      if (t.status !== "pending") return false;
       if (!t.dependsOn || t.dependsOn.length === 0) return false;
-      return t.dependsOn.some(depId => {
+      return t.dependsOn.some((depId) => {
         const dep = byId.get(depId);
-        return dep?.status === 'error' || dep?.status === 'cancelled';
+        return dep?.status === "error" || dep?.status === "cancelled";
       });
     });
 
     if (blockedTask) {
       return {
-        action: 'halt',
+        action: "halt",
         reason: `Task "${blockedTask.label}" is blocked by a failed dependency. Manual intervention required.`,
       };
     }
 
-    return { action: 'idle', reason: 'No actionable tasks at this time.' };
+    return { action: "idle", reason: "No actionable tasks at this time." };
   },
 };
 
@@ -170,11 +167,7 @@ export const boundedAutonomyLoop: AutonomyLoop = {
 // node. We expose that surface here as a separate seam so consumers can
 // import a single module instead of reaching across services.
 
-import {
-  buildWorkflowDecision,
-  type WorkflowDecision,
-  type WorkflowSupervisorInput,
-} from './workflowSupervisor';
+import { buildWorkflowDecision, type WorkflowDecision, type WorkflowSupervisorInput } from "./workflowSupervisor";
 
 export interface WorkflowSupervisorBridge {
   readonly enabled: boolean;
@@ -189,7 +182,7 @@ export interface WorkflowSupervisorBridge {
  */
 export const workflowSupervisorBridge: WorkflowSupervisorBridge = {
   enabled: true,
-  label: 'Deterministic workflow supervisor (no LLM call)',
+  label: "Deterministic workflow supervisor (no LLM call)",
   decide(input) {
     return buildWorkflowDecision(input);
   },

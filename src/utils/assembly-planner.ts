@@ -14,33 +14,28 @@
  * - Gibson et al. (2009) Nature Methods 6:343–345
  */
 
-import type {
-  GibsonFragment,
-  GibsonPrimer,
-  GibsonAssemblyPlan,
-  ProvenanceRecord,
-} from '../types';
-import { generateUUID } from './sbol-serializer';
+import type { GibsonAssemblyPlan, GibsonFragment, GibsonPrimer, ProvenanceRecord } from "../types";
+import { generateUUID } from "./sbol-serializer";
 
 // ── SantaLucia '98 Nearest-Neighbor Parameters ───────────────────────────────
 // ΔH in cal/mol, ΔS in cal/(mol·K) for DNA/DNA duplexes in 1M NaCl
 const NN_PARAMS: Record<string, { dH: number; dS: number }> = {
-  'AA': { dH: -7900, dS: -22.2 },
-  'AT': { dH: -7200, dS: -20.4 },
-  'AC': { dH: -8400, dS: -22.4 },
-  'AG': { dH: -7800, dS: -21.0 },
-  'TA': { dH: -7200, dS: -21.3 },
-  'TT': { dH: -7900, dS: -22.2 },
-  'TC': { dH: -8200, dS: -22.2 },
-  'TG': { dH: -8500, dS: -22.7 },
-  'CA': { dH: -8500, dS: -22.7 },
-  'CT': { dH: -7800, dS: -21.0 },
-  'CC': { dH: -8000, dS: -19.9 },
-  'CG': { dH: -10600, dS: -27.2 },
-  'GA': { dH: -8200, dS: -22.2 },
-  'GT': { dH: -8400, dS: -22.4 },
-  'GC': { dH: -9800, dS: -24.4 },
-  'GG': { dH: -8000, dS: -19.9 },
+  AA: { dH: -7900, dS: -22.2 },
+  AT: { dH: -7200, dS: -20.4 },
+  AC: { dH: -8400, dS: -22.4 },
+  AG: { dH: -7800, dS: -21.0 },
+  TA: { dH: -7200, dS: -21.3 },
+  TT: { dH: -7900, dS: -22.2 },
+  TC: { dH: -8200, dS: -22.2 },
+  TG: { dH: -8500, dS: -22.7 },
+  CA: { dH: -8500, dS: -22.7 },
+  CT: { dH: -7800, dS: -21.0 },
+  CC: { dH: -8000, dS: -19.9 },
+  CG: { dH: -10600, dS: -27.2 },
+  GA: { dH: -8200, dS: -22.2 },
+  GT: { dH: -8400, dS: -22.4 },
+  GC: { dH: -9800, dS: -24.4 },
+  GG: { dH: -8000, dS: -19.9 },
 };
 
 // Initiation parameters
@@ -66,12 +61,8 @@ const INIT_PARAMS = {
  * @param naConc - Na+ concentration in M (default 0.05 for standard PCR)
  * @param primerConc - Total primer concentration in M (default 250e-9)
  */
-export function calculateTm(
-  sequence: string,
-  naConc: number = 0.05,
-  primerConc: number = 250e-9,
-): number {
-  const seq = sequence.toUpperCase().replace(/[^ATCG]/g, '');
+export function calculateTm(sequence: string, naConc: number = 0.05, primerConc: number = 250e-9): number {
+  const seq = sequence.toUpperCase().replace(/[^ATCG]/g, "");
   if (seq.length < 2) return 0;
 
   const R = 1.987; // cal/(mol·K)
@@ -91,8 +82,14 @@ export function calculateTm(
   // Initiation corrections
   const first = seq[0];
   const last = seq[seq.length - 1];
-  if (first === 'A' || first === 'T') { dH += INIT_PARAMS.AT.dH; dS += INIT_PARAMS.AT.dS; }
-  if (last === 'A' || last === 'T') { dH += INIT_PARAMS.AT.dH; dS += INIT_PARAMS.AT.dS; }
+  if (first === "A" || first === "T") {
+    dH += INIT_PARAMS.AT.dH;
+    dS += INIT_PARAMS.AT.dS;
+  }
+  if (last === "A" || last === "T") {
+    dH += INIT_PARAMS.AT.dH;
+    dS += INIT_PARAMS.AT.dS;
+  }
 
   // Salt correction (SantaLucia '98)
   dS += 0.368 * (seq.length - 1) * Math.log(naConc);
@@ -108,7 +105,7 @@ export function calculateTm(
  */
 function gcContent(seq: string): number {
   const s = seq.toUpperCase();
-  const gc = (s.split('').filter(c => c === 'G' || c === 'C').length) / s.length;
+  const gc = s.split("").filter((c) => c === "G" || c === "C").length / s.length;
   return Math.round(gc * 1000) / 1000;
 }
 
@@ -116,8 +113,13 @@ function gcContent(seq: string): number {
  * Reverse complement of a DNA sequence.
  */
 function reverseComplement(seq: string): string {
-  const comp: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C' };
-  return seq.toUpperCase().split('').reverse().map(c => comp[c] ?? c).join('');
+  const comp: Record<string, string> = { A: "T", T: "A", C: "G", G: "C" };
+  return seq
+    .toUpperCase()
+    .split("")
+    .reverse()
+    .map((c) => comp[c] ?? c)
+    .join("");
 }
 
 /**
@@ -170,7 +172,7 @@ function checkMispriming(
 function designPrimer(
   template: string,
   position: number, // Start position in template for binding
-  direction: 'forward' | 'reverse',
+  direction: "forward" | "reverse",
   overlapSeq: string,
   fragmentIndex: number,
   fullTarget: string,
@@ -181,13 +183,13 @@ function designPrimer(
   const MAX_BIND = 25;
   const TARGET_TM = 62; // °C
 
-  let bestBind = '';
+  let bestBind = "";
   let bestTm = 0;
   let bestDiff = Infinity;
 
   for (let len = MIN_BIND; len <= MAX_BIND; len++) {
     let binding: string;
-    if (direction === 'forward') {
+    if (direction === "forward") {
       binding = template.slice(position, position + len).toUpperCase();
     } else {
       const start = Math.max(0, position - len);
@@ -205,9 +207,7 @@ function designPrimer(
   }
 
   // Build full primer: overlap + binding
-  const fullSeq = direction === 'forward'
-    ? overlapSeq.toUpperCase() + bestBind
-    : overlapSeq.toUpperCase() + bestBind;
+  const fullSeq = direction === "forward" ? overlapSeq.toUpperCase() + bestBind : overlapSeq.toUpperCase() + bestBind;
 
   return {
     id: `primer_F${fragmentIndex}_${direction[0].toUpperCase()}`,
@@ -227,10 +227,10 @@ function designPrimer(
 // ── Main Assembly Planner ─────────────────────────────────────────────────────
 
 export interface AssemblyOptions {
-  maxFragmentLength?: number;   // Default 800 bp
-  overlapLength?: number;       // Default 30 bp
-  targetTm?: number;            // Default 62°C
-  circularize?: boolean;        // Default true (circular plasmid)
+  maxFragmentLength?: number; // Default 800 bp
+  overlapLength?: number; // Default 30 bp
+  targetTm?: number; // Default 62°C
+  circularize?: boolean; // Default true (circular plasmid)
 }
 
 /**
@@ -252,19 +252,15 @@ export function planGibsonAssembly(
   targetName: string,
   options: AssemblyOptions = {},
 ): GibsonAssemblyPlan {
-  const {
-    maxFragmentLength = 800,
-    overlapLength = 30,
-    circularize = true,
-  } = options;
+  const { maxFragmentLength = 800, overlapLength = 30, circularize = true } = options;
 
-  const target = targetSequence.toUpperCase().replace(/[^ATCG]/g, '');
+  const target = targetSequence.toUpperCase().replace(/[^ATCG]/g, "");
   const totalLength = target.length;
   const warnings: string[] = [];
   const provenanceId = generateUUID();
 
   if (totalLength < 100) {
-    warnings.push('Target sequence is very short (< 100 bp). Consider direct synthesis.');
+    warnings.push("Target sequence is very short (< 100 bp). Consider direct synthesis.");
   }
 
   // Step 1: Calculate fragment count and boundaries
@@ -279,8 +275,8 @@ export function planGibsonAssembly(
     const seq = target.slice(start, end);
 
     // For circular constructs, last fragment overlaps with first
-    let overlapFwd = '';
-    let overlapRev = '';
+    let overlapFwd = "";
+    let overlapRev = "";
 
     if (i > 0) {
       // 5' overlap = end of previous fragment
@@ -320,31 +316,31 @@ export function planGibsonAssembly(
     const fragEnd = Math.min(fragStart + idealFragLen + overlapLength, totalLength);
 
     // Forward primer: overlap from previous junction + binding to fragment start
-    const fwdOverlap = i > 0
-      ? target.slice(fragStart - overlapLength, fragStart)
-      : (circularize ? target.slice(totalLength - overlapLength) : '');
+    const fwdOverlap =
+      i > 0
+        ? target.slice(fragStart - overlapLength, fragStart)
+        : circularize
+          ? target.slice(totalLength - overlapLength)
+          : "";
 
-    const fwdPrimer = designPrimer(
-      target, fragStart, 'forward', fwdOverlap,
-      i, target, fragStart, fragEnd,
-    );
+    const fwdPrimer = designPrimer(target, fragStart, "forward", fwdOverlap, i, target, fragStart, fragEnd);
     primers.push(fwdPrimer);
 
     // Reverse primer: overlap into next junction + binding to fragment end
     const nextStart = Math.min(fragEnd, totalLength);
-    const revOverlap = i < fragments.length - 1
-      ? reverseComplement(target.slice(nextStart, nextStart + overlapLength))
-      : (circularize ? reverseComplement(target.slice(0, overlapLength)) : '');
+    const revOverlap =
+      i < fragments.length - 1
+        ? reverseComplement(target.slice(nextStart, nextStart + overlapLength))
+        : circularize
+          ? reverseComplement(target.slice(0, overlapLength))
+          : "";
 
-    const revPrimer = designPrimer(
-      target, fragEnd, 'reverse', revOverlap,
-      i, target, fragStart, fragEnd,
-    );
+    const revPrimer = designPrimer(target, fragEnd, "reverse", revOverlap, i, target, fragStart, fragEnd);
     primers.push(revPrimer);
   }
 
   // Step 3: Analyze Tm spread
-  const tms = primers.map(p => p.tm);
+  const tms = primers.map((p) => p.tm);
   const minTm = Math.min(...tms);
   const maxTm = Math.max(...tms);
   const tmSpread = Math.round((maxTm - minTm) * 10) / 10;
@@ -354,14 +350,18 @@ export function planGibsonAssembly(
   }
 
   // Step 4: Flag secondary structure warnings
-  const dimers = primers.filter(p => p.hasSelfDimer);
+  const dimers = primers.filter((p) => p.hasSelfDimer);
   if (dimers.length > 0) {
-    warnings.push(`${dimers.length} primer(s) have potential self-dimer structures: ${dimers.map(p => p.id).join(', ')}.`);
+    warnings.push(
+      `${dimers.length} primer(s) have potential self-dimer structures: ${dimers.map((p) => p.id).join(", ")}.`,
+    );
   }
 
-  const misprimes = primers.filter(p => p.hasMisprime);
+  const misprimes = primers.filter((p) => p.hasMisprime);
   if (misprimes.length > 0) {
-    warnings.push(`${misprimes.length} primer(s) have potential mispriming sites: ${misprimes.map(p => p.id).join(', ')}.`);
+    warnings.push(
+      `${misprimes.length} primer(s) have potential mispriming sites: ${misprimes.map((p) => p.id).join(", ")}.`,
+    );
   }
 
   return {
@@ -384,9 +384,7 @@ export function planGibsonAssembly(
  * Each fragment, primer, and assembly product gets a unique UUID linked
  * back to the digital design ID.
  */
-export function generateProvenanceRecords(
-  plan: GibsonAssemblyPlan,
-): ProvenanceRecord[] {
+export function generateProvenanceRecords(plan: GibsonAssemblyPlan): ProvenanceRecord[] {
   const records: ProvenanceRecord[] = [];
   const now = new Date().toISOString();
   const fragmentUuids: string[] = [];
@@ -398,7 +396,7 @@ export function generateProvenanceRecords(
     records.push({
       uuid,
       designId: plan.provenanceId,
-      sampleType: 'fragment',
+      sampleType: "fragment",
       label: `${frag.id} (${frag.length} bp)`,
       well: `${String.fromCharCode(65 + frag.index)}1`,
       slot: 4,
@@ -413,9 +411,9 @@ export function generateProvenanceRecords(
     records.push({
       uuid: generateUUID(),
       designId: plan.provenanceId,
-      sampleType: 'primer',
+      sampleType: "primer",
       label: `${primer.id} (Tm ${primer.tm}°C)`,
-      well: `${String.fromCharCode(65 + primer.fragmentIndex)}${primer.direction === 'forward' ? 2 : 3}`,
+      well: `${String.fromCharCode(65 + primer.fragmentIndex)}${primer.direction === "forward" ? 2 : 3}`,
       slot: 5,
       volume_ul: 100,
       concentration_ng_ul: 10,
@@ -427,9 +425,9 @@ export function generateProvenanceRecords(
   records.push({
     uuid: generateUUID(),
     designId: plan.provenanceId,
-    sampleType: 'assembly',
+    sampleType: "assembly",
     label: `${plan.targetName} assembled (${plan.targetLength} bp)`,
-    well: 'A1',
+    well: "A1",
     slot: 2,
     volume_ul: 25,
     createdAt: now,
@@ -443,20 +441,23 @@ export function generateProvenanceRecords(
  * Generate a detailed primer order sheet as a CSV string.
  */
 export function exportPrimerOrderCSV(plan: GibsonAssemblyPlan): string {
-  const header = 'Primer_ID,Direction,Sequence_5to3,Length_bp,Tm_C,GC%,Self_Dimer,Misprime,Fragment,Overlap_bp,Binding_bp';
-  const rows = plan.primers.map(p => [
-    p.id,
-    p.direction,
-    p.sequence,
-    p.length,
-    p.tm.toFixed(1),
-    (p.gcContent * 100).toFixed(1),
-    p.hasSelfDimer ? 'YES' : 'no',
-    p.hasMisprime ? 'YES' : 'no',
-    `Fragment_${p.fragmentIndex + 1}`,
-    p.overlapRegion.length,
-    p.bindingRegion.length,
-  ].join(','));
+  const header =
+    "Primer_ID,Direction,Sequence_5to3,Length_bp,Tm_C,GC%,Self_Dimer,Misprime,Fragment,Overlap_bp,Binding_bp";
+  const rows = plan.primers.map((p) =>
+    [
+      p.id,
+      p.direction,
+      p.sequence,
+      p.length,
+      p.tm.toFixed(1),
+      (p.gcContent * 100).toFixed(1),
+      p.hasSelfDimer ? "YES" : "no",
+      p.hasMisprime ? "YES" : "no",
+      `Fragment_${p.fragmentIndex + 1}`,
+      p.overlapRegion.length,
+      p.bindingRegion.length,
+    ].join(","),
+  );
 
-  return [header, ...rows].join('\n');
+  return [header, ...rows].join("\n");
 }

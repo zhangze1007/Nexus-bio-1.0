@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { FONT, SCI_SERIES, PAPER_THEME } from '../../../charts/chartTheme';
-import { ConfidenceLineChart } from '../../../charts/primitives';
-import type { ConfidenceSeries } from '../../../charts/primitives';
-import type { VariantTrajectory } from '../../../../services/proevolAnalysis';
-import type { ProEvolBandSemantic } from '../../../../domain/proevolArtifact';
+import { useMemo } from "react";
+import type { ProEvolBandSemantic } from "../../../../domain/proevolArtifact";
+import type { VariantTrajectory } from "../../../../services/proevolAnalysis";
+import { FONT, PAPER_THEME, SCI_SERIES } from "../../../charts/chartTheme";
+import type { ConfidenceSeries } from "../../../charts/primitives";
+import { ConfidenceLineChart } from "../../../charts/primitives";
 
 interface VariantTrajectoryChartProps {
   trajectories: VariantTrajectory[];
@@ -23,7 +23,7 @@ export default function VariantTrajectoryChart({
   highlightVariantId,
   onSelectVariant,
 }: VariantTrajectoryChartProps) {
-  const bandLabel = bandSemantic === 'measurement' ? '95% CI' : 'model spread';
+  const bandLabel = bandSemantic === "measurement" ? "95% CI" : "model spread";
 
   /**
    * Map `VariantTrajectory` points into the primitive's series schema.
@@ -50,7 +50,16 @@ export default function VariantTrajectoryChart({
   }
 
   return (
-    <div style={{ display: 'grid', gap: '10px', background: PAPER_THEME.bg, border: `1px solid ${PAPER_THEME.border}`, borderRadius: PAPER_THEME.borderRadius, padding: '12px' }}>
+    <div
+      style={{
+        display: "grid",
+        gap: "10px",
+        background: PAPER_THEME.bg,
+        border: `1px solid ${PAPER_THEME.border}`,
+        borderRadius: PAPER_THEME.borderRadius,
+        padding: "12px",
+      }}
+    >
       <ConfidenceLineChart
         series={series}
         xQuantity="Selection round"
@@ -59,10 +68,10 @@ export default function VariantTrajectoryChart({
         formatY={formatTickPercent}
         formatValue={formatPercent}
         bandLabel={bandLabel}
-        yDomain={[0, 'auto']}
+        yDomain={[0, "auto"]}
         height={280}
       />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {trajectories.map((trajectory, index) => {
           const color = SCI_SERIES[index % SCI_SERIES.length];
           const isHighlighted = !highlightVariantId || highlightVariantId === trajectory.variantId;
@@ -72,18 +81,18 @@ export default function VariantTrajectoryChart({
               key={trajectory.variantId}
               onClick={() => onSelectVariant?.(trajectory.variantId)}
               style={{
-                cursor: onSelectVariant ? 'pointer' : 'default',
+                cursor: onSelectVariant ? "pointer" : "default",
                 fontFamily: FONT.MONO,
                 fontSize: 10,
-                padding: '4px 10px',
-                borderRadius: '999px',
+                padding: "4px 10px",
+                borderRadius: "999px",
                 border: `1px solid ${color}66`,
-                background: `${color}${isHighlighted ? '24' : '0c'}`,
+                background: `${color}${isHighlighted ? "24" : "0c"}`,
                 color: PAPER_THEME.titleColor,
                 opacity: isHighlighted ? 1 : 0.55,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
               <span style={{ width: 8, height: 8, borderRadius: 999, background: color }} />
@@ -104,9 +113,9 @@ function EmptyState({ message }: { message: string }) {
     <div
       style={{
         height: 180,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         fontFamily: FONT.SANS,
         fontSize: 12,
         color: PAPER_THEME.legendColor,

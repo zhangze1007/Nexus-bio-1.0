@@ -1,13 +1,7 @@
-import trustPolicyDocument from '../../policy/trust-policy-v1.json';
-import type { ClaimSurface, ValidityTier } from '../protocol/nexusTrustRuntime';
-import {
-  evaluateClaimSurfacePolicy,
-  type HumanGateStatus,
-} from './trustPolicyEngine';
-import {
-  evaluatePolicyDsl,
-  type PolicyDslEvaluationInput,
-} from './policyDslEvaluator';
+import trustPolicyDocument from "../../policy/trust-policy-v1.json";
+import type { ClaimSurface, ValidityTier } from "../protocol/nexusTrustRuntime";
+import { evaluatePolicyDsl, type PolicyDslEvaluationInput } from "./policyDslEvaluator";
+import { evaluateClaimSurfacePolicy, type HumanGateStatus } from "./trustPolicyEngine";
 
 export interface PolicyDslParityResult {
   caseId: string;
@@ -24,36 +18,29 @@ interface ParsedParityInput {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function stringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
-    : [];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function stringField(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
+  return typeof value === "string" ? value : undefined;
 }
 
 function booleanField(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined;
+  return typeof value === "boolean" ? value : undefined;
 }
 
 function isHumanGateStatus(value: unknown): value is HumanGateStatus {
-  return (
-    value === 'not-required'
-    || value === 'pending'
-    || value === 'approved'
-    || value === 'rejected'
-  );
+  return value === "not-required" || value === "pending" || value === "approved" || value === "rejected";
 }
 
 function benchmarkHumanGateStatus(input: Record<string, unknown>): HumanGateStatus {
   if (isHumanGateStatus(input.humanGateStatus)) return input.humanGateStatus;
-  if (input.humanGateRequired !== true) return 'not-required';
-  return input.humanGateSatisfied === true ? 'approved' : 'pending';
+  if (input.humanGateRequired !== true) return "not-required";
+  return input.humanGateSatisfied === true ? "approved" : "pending";
 }
 
 function directHumanGateStatus(input: Record<string, unknown>): HumanGateStatus | undefined {
@@ -65,13 +52,10 @@ function benchmarkProvenanceIds(caseId: string, input: Record<string, unknown>):
 }
 
 function benchmarkEvidenceIds(caseId: string, input: Record<string, unknown>): string[] {
-  return input.evidenceState === 'present' ? [`${caseId}:evidence`] : [];
+  return input.evidenceState === "present" ? [`${caseId}:evidence`] : [];
 }
 
-function parsedInputFromBenchmarkCase(
-  value: Record<string, unknown>,
-  index: number,
-): ParsedParityInput | null {
+function parsedInputFromBenchmarkCase(value: Record<string, unknown>, index: number): ParsedParityInput | null {
   if (!isRecord(value.input)) return null;
 
   const caseId = stringField(value.caseId) ?? `case-${index + 1}`;
@@ -85,7 +69,7 @@ function parsedInputFromBenchmarkCase(
     input: {
       toolId,
       surface: surface as ClaimSurface,
-      ...(typeof value.input.validityTier === 'string'
+      ...(typeof value.input.validityTier === "string"
         ? { validityTier: value.input.validityTier as ValidityTier }
         : {}),
       isDraft: value.input.isDraft === true,
@@ -98,10 +82,7 @@ function parsedInputFromBenchmarkCase(
   };
 }
 
-function parsedInputFromDirectCase(
-  value: Record<string, unknown>,
-  index: number,
-): ParsedParityInput | null {
+function parsedInputFromDirectCase(value: Record<string, unknown>, index: number): ParsedParityInput | null {
   const toolId = stringField(value.toolId);
   const surface = stringField(value.surface);
 
@@ -115,9 +96,7 @@ function parsedInputFromDirectCase(
     input: {
       toolId,
       surface: surface as ClaimSurface,
-      ...(typeof value.validityTier === 'string'
-        ? { validityTier: value.validityTier as ValidityTier }
-        : {}),
+      ...(typeof value.validityTier === "string" ? { validityTier: value.validityTier as ValidityTier } : {}),
       ...(booleanField(value.isDraft) !== undefined ? { isDraft: booleanField(value.isDraft) } : {}),
       provenanceIds: stringArray(value.provenanceIds),
       evidenceIds: stringArray(value.evidenceIds),
@@ -136,7 +115,7 @@ function parsedParityInput(value: unknown, index: number): ParsedParityInput | n
 }
 
 function blockCodeForCompare(value: string | undefined): string {
-  return value ?? '';
+  return value ?? "";
 }
 
 export function comparePolicyDslWithRuntimeEngine(
@@ -149,18 +128,17 @@ export function comparePolicyDslWithRuntimeEngine(
     if (!parsed) {
       return {
         caseId: `case-${index + 1}`,
-        runtimeStatus: 'invalid-input',
-        dslStatus: 'invalid-input',
+        runtimeStatus: "invalid-input",
+        dslStatus: "invalid-input",
         matches: false,
       };
     }
 
     const runtimeDecision = evaluateClaimSurfacePolicy(parsed.input);
     const dslDecision = evaluatePolicyDsl(policy, parsed.input);
-    const matches = (
-      runtimeDecision.status === dslDecision.status
-      && blockCodeForCompare(runtimeDecision.blockCode) === blockCodeForCompare(dslDecision.blockCode)
-    );
+    const matches =
+      runtimeDecision.status === dslDecision.status &&
+      blockCodeForCompare(runtimeDecision.blockCode) === blockCodeForCompare(dslDecision.blockCode);
 
     return {
       caseId: parsed.caseId,

@@ -4,17 +4,17 @@
  */
 
 export type ModuleId =
-  | 'pathd'
-  | 'metabolic-eng'
-  | 'catdes'
-  | 'cellfree'
-  | 'fbasim'
-  | 'scspatial'
-  | 'proevol'
-  | 'gecair'
-  | 'dyncon'
-  | 'dbtlflow'
-  | 'multio'
-  | 'cethx'
-  | 'genmim'
-  | 'nexai';
+  | "pathd"
+  | "metabolic-eng"
+  | "catdes"
+  | "cellfree"
+  | "fbasim"
+  | "scspatial"
+  | "proevol"
+  | "gecair"
+  | "dyncon"
+  | "dbtlflow"
+  | "multio"
+  | "cethx"
+  | "genmim"
+  | "nexai";

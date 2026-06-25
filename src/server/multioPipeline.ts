@@ -21,13 +21,13 @@
  *     - No batch correction or confounder adjustment before factorization
  */
 
-import { runMOFA, type MOFAInput, type MOFAResult } from './mofaPlus';
+import { type MOFAInput, type MOFAResult, runMOFA } from "./mofaPlus";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
 export interface OmicsDataset {
-  viewName: string;           // e.g., 'transcriptomics', 'proteomics'
-  data: number[][];           // [samples × features]
+  viewName: string; // e.g., 'transcriptomics', 'proteomics'
+  data: number[][]; // [samples × features]
   featureNames: string[];
   sampleNames: string[];
 }
@@ -41,7 +41,7 @@ export interface MultiOmicsSpec {
 
 export interface FactorInterpretation {
   factorId: number;
-  varianceExplained: number;  // per-view
+  varianceExplained: number; // per-view
   topFeatures: Array<{ feature: string; loading: number; view: string }>;
   pathwayEnrichment: Array<{ pathway: string; pValue: number; genes: string[] }>;
 }
@@ -59,14 +59,15 @@ export interface MultiOmicsResult {
 /**
  * Prepare data matrices for MOFA+ input.
  */
-function prepareData(
-  datasets: OmicsDataset[],
-): {
+function prepareData(datasets: OmicsDataset[]): {
   mofaInput: MOFAInput;
   solverCalls: Array<{ solver: string; description: string }>;
 } {
   const solverCalls: Array<{ solver: string; description: string }> = [];
-  solverCalls.push({ solver: 'data::prepare', description: `${datasets.length} views, ${datasets[0]?.sampleNames.length ?? 0} samples` });
+  solverCalls.push({
+    solver: "data::prepare",
+    description: `${datasets.length} views, ${datasets[0]?.sampleNames.length ?? 0} samples`,
+  });
 
   const views: Record<string, number[][]> = {};
   for (const ds of datasets) {
@@ -75,7 +76,7 @@ function prepareData(
 
   const mofaInput: MOFAInput = {
     views,
-    nFactors: Math.min(10, Math.max(2, Math.floor(Math.min(...datasets.map(d => d.data[0]?.length ?? 0)) / 3))),
+    nFactors: Math.min(10, Math.max(2, Math.floor(Math.min(...datasets.map((d) => d.data[0]?.length ?? 0)) / 3))),
   };
 
   return { mofaInput, solverCalls };
@@ -86,14 +87,15 @@ function prepareData(
 /**
  * Run MOFA+ factorization.
  */
-function analyzeFactors(
-  mofaInput: MOFAInput,
-): {
+function analyzeFactors(mofaInput: MOFAInput): {
   result: MOFAResult;
   solverCalls: Array<{ solver: string; description: string }>;
 } {
   const solverCalls: Array<{ solver: string; description: string }> = [];
-  solverCalls.push({ solver: 'mofaPlus::runMOFA', description: `${mofaInput.nFactors} factors, ${Object.keys(mofaInput.views).length} views` });
+  solverCalls.push({
+    solver: "mofaPlus::runMOFA",
+    description: `${mofaInput.nFactors} factors, ${Object.keys(mofaInput.views).length} views`,
+  });
 
   const result = runMOFA(mofaInput);
   return { result, solverCalls };
@@ -113,7 +115,10 @@ function interpretFactors(
   solverCalls: Array<{ solver: string; description: string }>;
 } {
   const solverCalls: Array<{ solver: string; description: string }> = [];
-  solverCalls.push({ solver: 'interpret::factors', description: `${mofaResult.factors[0]?.length ?? 0} factor interpretations` });
+  solverCalls.push({
+    solver: "interpret::factors",
+    description: `${mofaResult.factors[0]?.length ?? 0} factor interpretations`,
+  });
 
   const interpretations: FactorInterpretation[] = [];
 
@@ -150,7 +155,7 @@ function interpretFactors(
       factorId: f,
       varianceExplained: varianceExplainedView[datasets[0]?.viewName] ?? 0,
       topFeatures: topFeatures.sort((a, b) => Math.abs(b.loading) - Math.abs(a.loading)).slice(0, 20),
-      pathwayEnrichment: [],  // would need KEGG/GO annotation
+      pathwayEnrichment: [], // would need KEGG/GO annotation
     });
   }
 

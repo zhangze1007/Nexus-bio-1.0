@@ -9,48 +9,65 @@
  */
 
 import type {
-  OmicsRow,
-  OmicsLayer,
-  EmbeddingPoint,
-  LayerSignalScore,
   BottleneckSignal,
+  EmbeddingPoint,
+  InternalThought,
+  LayerSignalScore,
+  OmicsLayer,
+  OmicsRow,
   PerturbationResult,
   ReasoningStep,
-  InternalThought,
-} from '../types';
-import { SeededRNG } from '../utils/seededRng';
+} from "../types";
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Gene-to-Protein-to-Metabolite mapping (artemisinin pathway) ────────────
 const GENE_PROTEIN_MAP: Record<string, string> = {
-  HMGS: 'HMG-CoA synthase', HMGR: 'HMG-CoA reductase', MK: 'Mevalonate kinase',
-  PMK: 'Phosphomevalonate kinase', MDC: 'Mevalonate decarboxylase',
-  IDI: 'IPP isomerase', FPPS: 'FPP synthase', ADS: 'Amorphadiene synthase',
-  CYP71AV1: 'Cytochrome P450 71AV1', CPR: 'Cytochrome P450 reductase',
-  ERG9: 'Squalene synthase', ERG20: 'FPP synthase (yeast)',
-  ZWF1: 'G6PDH', TDH1: 'GAPDH', PYK2: 'Pyruvate kinase',
-  PDA1: 'Pyruvate dehydrogenase', ENO1: 'Enolase', TPI1: 'TPI',
-  FBA1: 'Fructose-bisphosphate aldolase', PFK1: 'Phosphofructokinase',
-  HXK2: 'Hexokinase', PGI1: 'Phosphoglucose isomerase',
-  CIT1: 'Citrate synthase', ACO1: 'Aconitase', MAE1: 'Malic enzyme',
-  PYC1: 'Pyruvate carboxylase', PGM1: 'Phosphoglucomutase',
-  GPM1: 'Phosphoglycerate mutase', ADH1: 'Alcohol dehydrogenase',
-  ALDH1: 'Aldehyde dehydrogenase',
+  HMGS: "HMG-CoA synthase",
+  HMGR: "HMG-CoA reductase",
+  MK: "Mevalonate kinase",
+  PMK: "Phosphomevalonate kinase",
+  MDC: "Mevalonate decarboxylase",
+  IDI: "IPP isomerase",
+  FPPS: "FPP synthase",
+  ADS: "Amorphadiene synthase",
+  CYP71AV1: "Cytochrome P450 71AV1",
+  CPR: "Cytochrome P450 reductase",
+  ERG9: "Squalene synthase",
+  ERG20: "FPP synthase (yeast)",
+  ZWF1: "G6PDH",
+  TDH1: "GAPDH",
+  PYK2: "Pyruvate kinase",
+  PDA1: "Pyruvate dehydrogenase",
+  ENO1: "Enolase",
+  TPI1: "TPI",
+  FBA1: "Fructose-bisphosphate aldolase",
+  PFK1: "Phosphofructokinase",
+  HXK2: "Hexokinase",
+  PGI1: "Phosphoglucose isomerase",
+  CIT1: "Citrate synthase",
+  ACO1: "Aconitase",
+  MAE1: "Malic enzyme",
+  PYC1: "Pyruvate carboxylase",
+  PGM1: "Phosphoglucomutase",
+  GPM1: "Phosphoglycerate mutase",
+  ADH1: "Alcohol dehydrogenase",
+  ALDH1: "Aldehyde dehydrogenase",
 };
 
 // Enzyme → downstream metabolite effects (simplified flux propagation)
 const FLUX_GRAPH: Record<string, { metabolites: string[]; impact_factor: number }> = {
-  HMGS:    { metabolites: ['HMG-CoA', 'Mevalonate'], impact_factor: 0.9 },
-  HMGR:    { metabolites: ['Mevalonate', 'IPP', 'FPP'], impact_factor: 0.95 },
-  MK:      { metabolites: ['Mevalonate-5P', 'IPP'], impact_factor: 0.7 },
-  PMK:     { metabolites: ['Mevalonate-5PP', 'IPP'], impact_factor: 0.7 },
-  MDC:     { metabolites: ['IPP', 'DMAPP'], impact_factor: 0.75 },
-  IDI:     { metabolites: ['DMAPP', 'GPP', 'FPP'], impact_factor: 0.8 },
-  FPPS:    { metabolites: ['FPP', 'Amorphadiene'], impact_factor: 0.85 },
-  ADS:     { metabolites: ['Amorphadiene', 'Artemisinic acid'], impact_factor: 1.0 },
-  CYP71AV1:{ metabolites: ['Artemisinic acid', 'Artemisinin'], impact_factor: 0.95 },
-  CPR:     { metabolites: ['Artemisinic acid'], impact_factor: 0.6 },
-  ERG9:    { metabolites: ['Squalene', 'Ergosterol'], impact_factor: -0.8 },
-  ERG20:   { metabolites: ['FPP', 'GGPP'], impact_factor: 0.7 },
+  HMGS: { metabolites: ["HMG-CoA", "Mevalonate"], impact_factor: 0.9 },
+  HMGR: { metabolites: ["Mevalonate", "IPP", "FPP"], impact_factor: 0.95 },
+  MK: { metabolites: ["Mevalonate-5P", "IPP"], impact_factor: 0.7 },
+  PMK: { metabolites: ["Mevalonate-5PP", "IPP"], impact_factor: 0.7 },
+  MDC: { metabolites: ["IPP", "DMAPP"], impact_factor: 0.75 },
+  IDI: { metabolites: ["DMAPP", "GPP", "FPP"], impact_factor: 0.8 },
+  FPPS: { metabolites: ["FPP", "Amorphadiene"], impact_factor: 0.85 },
+  ADS: { metabolites: ["Amorphadiene", "Artemisinic acid"], impact_factor: 1.0 },
+  CYP71AV1: { metabolites: ["Artemisinic acid", "Artemisinin"], impact_factor: 0.95 },
+  CPR: { metabolites: ["Artemisinic acid"], impact_factor: 0.6 },
+  ERG9: { metabolites: ["Squalene", "Ergosterol"], impact_factor: -0.8 },
+  ERG20: { metabolites: ["FPP", "GGPP"], impact_factor: 0.7 },
 };
 
 // ── Normalization utilities ───────────────────────────────────────────────────
@@ -61,7 +78,7 @@ function zScore(values: number[]): number[] {
   const mean = values.reduce((a, b) => a + b, 0) / n;
   const std = Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
   if (std < 1e-10) return values.map(() => 0);
-  return values.map(v => (v - mean) / std);
+  return values.map((v) => (v - mean) / std);
 }
 
 function log2FoldChange(value: number, baseline: number): number {
@@ -71,16 +88,16 @@ function log2FoldChange(value: number, baseline: number): number {
 
 // ── Deterministic dimensionality reduction approximation ─────────────────────
 // Uses a simplified distance-preserving layout for consistent 3D coordinates.
-function computeProjection3D(
-  matrix: number[][],
-  seed: number = 42,
-): [number, number, number][] {
+function computeProjection3D(matrix: number[][], seed: number = 42): [number, number, number][] {
   const n = matrix.length;
   if (n === 0) return [];
 
   // Seeded PRNG for deterministic results
   let s = seed;
-  const rand = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  const rand = () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
 
   // Distance matrix
   const dist = Array.from({ length: n }, (_, i) =>
@@ -90,19 +107,23 @@ function computeProjection3D(
         d += (matrix[i][k] - matrix[j][k]) ** 2;
       }
       return Math.sqrt(d);
-    })
+    }),
   );
 
   // Initialize random positions
-  const coords: [number, number, number][] = Array.from({ length: n }, () =>
-    [(rand() - 0.5) * 2, (rand() - 0.5) * 2, (rand() - 0.5) * 2]
-  );
+  const coords: [number, number, number][] = Array.from({ length: n }, () => [
+    (rand() - 0.5) * 2,
+    (rand() - 0.5) * 2,
+    (rand() - 0.5) * 2,
+  ]);
 
   // Simple force-directed layout (Barnes-Hut approximation) — 50 iterations
   for (let iter = 0; iter < 50; iter++) {
     const lr = 0.5 * (1 - iter / 50);
     for (let i = 0; i < n; i++) {
-      let fx = 0, fy = 0, fz = 0;
+      let fx = 0,
+        fy = 0,
+        fz = 0;
       for (let j = 0; j < n; j++) {
         if (i === j) continue;
         const dx = coords[j][0] - coords[i][0];
@@ -122,15 +143,16 @@ function computeProjection3D(
   }
 
   // Normalize to [-1, 1]
-  const ranges = [0, 1, 2].map(k => {
-    const vals = coords.map(c => c[k]);
+  const ranges = [0, 1, 2].map((k) => {
+    const vals = coords.map((c) => c[k]);
     return { min: Math.min(...vals), max: Math.max(...vals) };
   });
-  return coords.map(c =>
-    c.map((v, k) => {
-      const r = ranges[k];
-      return r.max - r.min > 1e-6 ? ((v - r.min) / (r.max - r.min)) * 2 - 1 : 0;
-    }) as [number, number, number]
+  return coords.map(
+    (c) =>
+      c.map((v, k) => {
+        const r = ranges[k];
+        return r.max - r.min > 1e-6 ? ((v - r.min) / (r.max - r.min)) * 2 - 1 : 0;
+      }) as [number, number, number],
   );
 }
 
@@ -141,11 +163,11 @@ function computeProjection3D(
  * bottleneck signals across transcriptomics, proteomics, and metabolomics.
  */
 function computeLayerSignals(data: OmicsRow[]): LayerSignalScore[] {
-  const transcripts = data.map(d => d.transcript ?? 0);
-  const proteins = data.map(d => d.protein ?? 0);
-  const metabolites = data.map(d => d.metabolite ?? 0);
-  const foldChanges = data.map(d => Math.abs(d.fold_change ?? 0));
-  const pValues = data.map(d => d.pValue ?? 1);
+  const transcripts = data.map((d) => d.transcript ?? 0);
+  const proteins = data.map((d) => d.protein ?? 0);
+  const metabolites = data.map((d) => d.metabolite ?? 0);
+  const foldChanges = data.map((d) => Math.abs(d.fold_change ?? 0));
+  const pValues = data.map((d) => d.pValue ?? 1);
 
   // Head 1: Variance-weighted attention (which layer has most variance?)
   const tVar = variance(transcripts);
@@ -154,7 +176,7 @@ function computeLayerSignals(data: OmicsRow[]): LayerSignalScore[] {
   const totalVar = tVar + pVar + mVar + 1e-10;
 
   // Head 2: Discordance attention (where do layers disagree?)
-  const discordances = data.map(d => {
+  const discordances = data.map((d) => {
     const t = d.transcript ?? 0;
     const p = d.protein ?? 0;
     const m = d.metabolite ?? 0;
@@ -166,7 +188,7 @@ function computeLayerSignals(data: OmicsRow[]): LayerSignalScore[] {
   const totalDisc = tpDisc + pmDisc + tmDisc + 1e-10;
 
   // Head 3: Significance-weighted attention (which layer's signals are most statistically significant?)
-  const sigGenes = data.filter(d => (d.pValue ?? 1) < 0.05);
+  const sigGenes = data.filter((d) => (d.pValue ?? 1) < 0.05);
   const tSig = sigGenes.reduce((s, d) => s + Math.abs(d.transcript ?? 0), 0);
   const pSig = sigGenes.reduce((s, d) => s + Math.abs(d.protein ?? 0), 0);
   const mSig = sigGenes.reduce((s, d) => s + Math.abs(d.metabolite ?? 0), 0);
@@ -188,21 +210,93 @@ function computeLayerSignals(data: OmicsRow[]): LayerSignalScore[] {
 
   const heads: LayerSignalScore[] = [
     // Variance head
-    { name: 'Variance', layer: 'transcriptomics', weight: tVar / totalVar, signal_strength: tVar, bottleneck_contribution: 0 },
-    { name: 'Variance', layer: 'proteomics', weight: pVar / totalVar, signal_strength: pVar, bottleneck_contribution: 0 },
-    { name: 'Variance', layer: 'metabolomics', weight: mVar / totalVar, signal_strength: mVar, bottleneck_contribution: 0 },
+    {
+      name: "Variance",
+      layer: "transcriptomics",
+      weight: tVar / totalVar,
+      signal_strength: tVar,
+      bottleneck_contribution: 0,
+    },
+    {
+      name: "Variance",
+      layer: "proteomics",
+      weight: pVar / totalVar,
+      signal_strength: pVar,
+      bottleneck_contribution: 0,
+    },
+    {
+      name: "Variance",
+      layer: "metabolomics",
+      weight: mVar / totalVar,
+      signal_strength: mVar,
+      bottleneck_contribution: 0,
+    },
     // Discordance head
-    { name: 'Discordance', layer: 'transcriptomics', weight: (tpDisc + tmDisc) / totalDisc / 2, signal_strength: tpDisc + tmDisc, bottleneck_contribution: 0 },
-    { name: 'Discordance', layer: 'proteomics', weight: (tpDisc + pmDisc) / totalDisc / 2, signal_strength: tpDisc + pmDisc, bottleneck_contribution: 0 },
-    { name: 'Discordance', layer: 'metabolomics', weight: (pmDisc + tmDisc) / totalDisc / 2, signal_strength: pmDisc + tmDisc, bottleneck_contribution: 0 },
+    {
+      name: "Discordance",
+      layer: "transcriptomics",
+      weight: (tpDisc + tmDisc) / totalDisc / 2,
+      signal_strength: tpDisc + tmDisc,
+      bottleneck_contribution: 0,
+    },
+    {
+      name: "Discordance",
+      layer: "proteomics",
+      weight: (tpDisc + pmDisc) / totalDisc / 2,
+      signal_strength: tpDisc + pmDisc,
+      bottleneck_contribution: 0,
+    },
+    {
+      name: "Discordance",
+      layer: "metabolomics",
+      weight: (pmDisc + tmDisc) / totalDisc / 2,
+      signal_strength: pmDisc + tmDisc,
+      bottleneck_contribution: 0,
+    },
     // Significance head
-    { name: 'Significance', layer: 'transcriptomics', weight: tSig / totalSig, signal_strength: tSig, bottleneck_contribution: 0 },
-    { name: 'Significance', layer: 'proteomics', weight: pSig / totalSig, signal_strength: pSig, bottleneck_contribution: 0 },
-    { name: 'Significance', layer: 'metabolomics', weight: mSig / totalSig, signal_strength: mSig, bottleneck_contribution: 0 },
+    {
+      name: "Significance",
+      layer: "transcriptomics",
+      weight: tSig / totalSig,
+      signal_strength: tSig,
+      bottleneck_contribution: 0,
+    },
+    {
+      name: "Significance",
+      layer: "proteomics",
+      weight: pSig / totalSig,
+      signal_strength: pSig,
+      bottleneck_contribution: 0,
+    },
+    {
+      name: "Significance",
+      layer: "metabolomics",
+      weight: mSig / totalSig,
+      signal_strength: mSig,
+      bottleneck_contribution: 0,
+    },
     // Bottleneck head
-    { name: 'Bottleneck', layer: 'transcriptomics', weight: 0.1, signal_strength: postTranslational, bottleneck_contribution: postTranslational / totalBottleneck },
-    { name: 'Bottleneck', layer: 'proteomics', weight: postTranslational / totalBottleneck, signal_strength: postTranslational, bottleneck_contribution: postTranslational / totalBottleneck },
-    { name: 'Bottleneck', layer: 'metabolomics', weight: postMetabolic / totalBottleneck, signal_strength: postMetabolic, bottleneck_contribution: postMetabolic / totalBottleneck },
+    {
+      name: "Bottleneck",
+      layer: "transcriptomics",
+      weight: 0.1,
+      signal_strength: postTranslational,
+      bottleneck_contribution: postTranslational / totalBottleneck,
+    },
+    {
+      name: "Bottleneck",
+      layer: "proteomics",
+      weight: postTranslational / totalBottleneck,
+      signal_strength: postTranslational,
+      bottleneck_contribution: postTranslational / totalBottleneck,
+    },
+    {
+      name: "Bottleneck",
+      layer: "metabolomics",
+      weight: postMetabolic / totalBottleneck,
+      signal_strength: postMetabolic,
+      bottleneck_contribution: postMetabolic / totalBottleneck,
+    },
   ];
 
   return heads;
@@ -248,14 +342,14 @@ export class OmicsFoundationModel {
    */
   computeEmbeddings(): EmbeddingPoint[] {
     this.think(
-      'Beginning cross-modal embedding. Z-score normalizing each omics layer independently, then computing Log2 fold changes relative to median baseline.',
-      ['transcriptomics', 'proteomics', 'metabolomics'],
-      'normalize_and_embed',
+      "Beginning cross-modal embedding. Z-score normalizing each omics layer independently, then computing Log2 fold changes relative to median baseline.",
+      ["transcriptomics", "proteomics", "metabolomics"],
+      "normalize_and_embed",
     );
 
-    const transcripts = this.data.map(d => d.transcript ?? 0);
-    const proteins = this.data.map(d => d.protein ?? 0);
-    const metabolites = this.data.map(d => d.metabolite ?? 0);
+    const transcripts = this.data.map((d) => d.transcript ?? 0);
+    const proteins = this.data.map((d) => d.protein ?? 0);
+    const metabolites = this.data.map((d) => d.metabolite ?? 0);
 
     const zT = zScore(transcripts);
     const zP = zScore(proteins);
@@ -277,7 +371,7 @@ export class OmicsFoundationModel {
       points.push({
         id: `${row.id}_t`,
         gene: row.gene,
-        layer: 'transcriptomics',
+        layer: "transcriptomics",
         coords: [baseCoords[0] - 0.15, baseCoords[1], baseCoords[2]],
         normalizedValue: zT[i],
         rawValue: row.transcript ?? 0,
@@ -287,7 +381,7 @@ export class OmicsFoundationModel {
       points.push({
         id: `${row.id}_p`,
         gene: row.gene,
-        layer: 'proteomics',
+        layer: "proteomics",
         coords: [baseCoords[0], baseCoords[1] + 0.15, baseCoords[2]],
         normalizedValue: zP[i],
         rawValue: row.protein ?? 0,
@@ -297,7 +391,7 @@ export class OmicsFoundationModel {
       points.push({
         id: `${row.id}_m`,
         gene: row.gene,
-        layer: 'metabolomics',
+        layer: "metabolomics",
         coords: [baseCoords[0] + 0.15, baseCoords[1], baseCoords[2] - 0.15],
         normalizedValue: zM[i],
         rawValue: row.metabolite ?? 0,
@@ -306,8 +400,8 @@ export class OmicsFoundationModel {
 
     this.think(
       `Embedded ${this.data.length} genes × 3 layers = ${points.length} points in a shared deterministic projection. Cross-modal distances are approximated locally.`,
-      ['transcriptomics', 'proteomics', 'metabolomics'],
-      'embedding_complete',
+      ["transcriptomics", "proteomics", "metabolomics"],
+      "embedding_complete",
     );
 
     return points;
@@ -319,9 +413,9 @@ export class OmicsFoundationModel {
    */
   analyzeBottleneck(): BottleneckSignal {
     this.think(
-      'Running four deterministic layer-signal scores: variance, discordance, significance, and bottleneck. Each score checks which omics layer carries the strongest local signal.',
-      ['transcriptomics', 'proteomics', 'metabolomics'],
-      'layer_signal_scoring',
+      "Running four deterministic layer-signal scores: variance, discordance, significance, and bottleneck. Each score checks which omics layer carries the strongest local signal.",
+      ["transcriptomics", "proteomics", "metabolomics"],
+      "layer_signal_scoring",
     );
 
     const heads = computeLayerSignals(this.data);
@@ -334,7 +428,7 @@ export class OmicsFoundationModel {
     };
 
     const headWeights = [0.2, 0.25, 0.25, 0.3]; // Bottleneck head weighted highest
-    const headNames = ['Variance', 'Discordance', 'Significance', 'Bottleneck'];
+    const headNames = ["Variance", "Discordance", "Significance", "Bottleneck"];
 
     for (const head of heads) {
       const headIdx = headNames.indexOf(head.name);
@@ -349,23 +443,23 @@ export class OmicsFoundationModel {
     const confidence = entries[0][1] / (entries.reduce((s, e) => s + e[1], 0) + 1e-10);
 
     // Generate reasoning
-    const discordantGenes = this.data.filter(d => {
+    const discordantGenes = this.data.filter((d) => {
       const t = d.transcript ?? 0;
       const p = d.protein ?? 0;
       return Math.abs(t - p) > 1.5;
     });
 
     let reasoning: string;
-    if (dominant === 'proteomics' && discordantGenes.length > 0) {
+    if (dominant === "proteomics" && discordantGenes.length > 0) {
       const example = discordantGenes[0];
-      reasoning = `The RNA-seq shows upregulation of ${example.gene}, but proteomics indicates ${(example.protein ?? 0) < (example.transcript ?? 0) ? 'lower' : 'higher'} protein levels. This suggests post-translational regulation. ${discordantGenes.length} genes show transcript-protein discordance > 1.5 log2 units.`;
-    } else if (dominant === 'metabolomics') {
+      reasoning = `The RNA-seq shows upregulation of ${example.gene}, but proteomics indicates ${(example.protein ?? 0) < (example.transcript ?? 0) ? "lower" : "higher"} protein levels. This suggests post-translational regulation. ${discordantGenes.length} genes show transcript-protein discordance > 1.5 log2 units.`;
+    } else if (dominant === "metabolomics") {
       reasoning = `Metabolomics layer carries the strongest bottleneck signal. Despite adequate transcript and protein levels, metabolite pool sizes are limiting. This suggests enzyme kinetic constraints or allosteric regulation rather than expression-level bottlenecks.`;
     } else {
       reasoning = `Transcriptomics dominates the bottleneck signal — gene expression levels are the primary limiter. Upstream promoter engineering or copy-number optimization would have the highest impact on pathway flux.`;
     }
 
-    this.think(reasoning, [dominant], 'bottleneck_identified');
+    this.think(reasoning, [dominant], "bottleneck_identified");
 
     return {
       dominant_layer: dominant,
@@ -383,13 +477,13 @@ export class OmicsFoundationModel {
    * [Identify Gene] → [Map to Protein] → [Trace Local Flux Map] → [Estimate Yield Sensitivity]
    */
   simulatePerturbation(geneId: string, newExpression: number): PerturbationResult {
-    const row = this.data.find(d => d.gene === geneId);
+    const row = this.data.find((d) => d.gene === geneId);
     if (!row) {
       return {
         gene: geneId,
         original_expression: 0,
         perturbed_expression: newExpression,
-        reasoning_chain: [{ step: 'Error', description: `Gene ${geneId} not found in dataset`, evidence: 'N/A' }],
+        reasoning_chain: [{ step: "Error", description: `Gene ${geneId} not found in dataset`, evidence: "N/A" }],
         predicted_yield_change_percent: 0,
         metabolite_shifts: [],
         confidence: 0,
@@ -403,27 +497,28 @@ export class OmicsFoundationModel {
 
     // Step 1: Identify Gene
     const step1: ReasoningStep = {
-      step: 'Identify Gene',
-      description: `${geneId} currently at ${originalExpr.toFixed(2)} log2 FPKM. Perturbation: ${delta > 0 ? '+' : ''}${delta.toFixed(2)} (${delta > 0 ? 'overexpression' : 'knockdown'}).`,
-      evidence: `Dataset row ${row.id}, fold_change=${row.fold_change?.toFixed(2) ?? 'N/A'}`,
+      step: "Identify Gene",
+      description: `${geneId} currently at ${originalExpr.toFixed(2)} log2 FPKM. Perturbation: ${delta > 0 ? "+" : ""}${delta.toFixed(2)} (${delta > 0 ? "overexpression" : "knockdown"}).`,
+      evidence: `Dataset row ${row.id}, fold_change=${row.fold_change?.toFixed(2) ?? "N/A"}`,
     };
 
     // Step 2: Map to Protein
     const proteinLevel = row.protein ?? 0;
     const discordance = Math.abs(originalExpr - proteinLevel);
-    const proteinResponse = discordance > 1.5
-      ? `Post-translational regulation detected (Δ=${discordance.toFixed(2)}). Protein level may not track transcript change 1:1.`
-      : `Protein level tracks transcript well (Δ=${discordance.toFixed(2)}). Expect proportional protein response.`;
+    const proteinResponse =
+      discordance > 1.5
+        ? `Post-translational regulation detected (Δ=${discordance.toFixed(2)}). Protein level may not track transcript change 1:1.`
+        : `Protein level tracks transcript well (Δ=${discordance.toFixed(2)}). Expect proportional protein response.`;
     const proteinScaling = discordance > 1.5 ? 0.5 : 0.85; // attenuation factor
 
     const step2: ReasoningStep = {
-      step: 'Map to Protein',
+      step: "Map to Protein",
       description: `${geneId} encodes ${protein}. Current protein level: ${proteinLevel.toFixed(2)} log2 LFQ. ${proteinResponse}`,
       evidence: `Transcript-protein correlation analysis; discordance = ${discordance.toFixed(2)} log2 units`,
     };
 
     // Step 3: Trace Metabolic Flux
-    const metaboliteShifts: { metabolite: string; delta: number; direction: 'up' | 'down' }[] = [];
+    const metaboliteShifts: { metabolite: string; delta: number; direction: "up" | "down" }[] = [];
     let fluxDescription: string;
 
     if (fluxInfo) {
@@ -433,21 +528,21 @@ export class OmicsFoundationModel {
         metaboliteShifts.push({
           metabolite: met,
           delta: Math.round(shift * 100) / 100,
-          direction: shift > 0 ? 'up' : 'down',
+          direction: shift > 0 ? "up" : "down",
         });
       }
-      fluxDescription = `${protein} directly affects ${fluxInfo.metabolites.join(', ')}. Impact factor: ${fluxInfo.impact_factor}. Effective flux change: ${effectiveDelta.toFixed(2)} log2 units after protein-scaling attenuation.`;
+      fluxDescription = `${protein} directly affects ${fluxInfo.metabolites.join(", ")}. Impact factor: ${fluxInfo.impact_factor}. Effective flux change: ${effectiveDelta.toFixed(2)} log2 units after protein-scaling attenuation.`;
     } else {
       fluxDescription = `No direct flux mapping for ${geneId}. Estimating global effects from fold-change magnitude.`;
       metaboliteShifts.push({
-        metabolite: 'General metabolite pool',
+        metabolite: "General metabolite pool",
         delta: Math.round(delta * proteinScaling * 0.3 * 100) / 100,
-        direction: delta > 0 ? 'up' : 'down',
+        direction: delta > 0 ? "up" : "down",
       });
     }
 
     const step3: ReasoningStep = {
-      step: 'Trace Metabolic Flux',
+      step: "Trace Metabolic Flux",
       description: fluxDescription,
       evidence: `Curated local flux-effect map plus pathway topology labels`,
     };
@@ -458,15 +553,15 @@ export class OmicsFoundationModel {
       : delta * proteinScaling * 3;
 
     const step4: ReasoningStep = {
-      step: 'Estimate Yield Sensitivity',
-      description: `Demo yield sensitivity: ${yieldChange > 0 ? '+' : ''}${yieldChange.toFixed(1)}%. ${Math.abs(yieldChange) > 20 ? 'Large local sensitivity — validate with a real downstream model.' : 'Moderate sensitivity within the local sketch range.'}`,
+      step: "Estimate Yield Sensitivity",
+      description: `Demo yield sensitivity: ${yieldChange > 0 ? "+" : ""}${yieldChange.toFixed(1)}%. ${Math.abs(yieldChange) > 20 ? "Large local sensitivity — validate with a real downstream model." : "Moderate sensitivity within the local sketch range."}`,
       evidence: `Linear flux-yield sketch with protein-scaling correction. Score degrades beyond ±2 log2 adjustment.`,
     };
 
     this.think(
-      `Sensitivity sketch for ${geneId} (${delta > 0 ? 'OE' : 'KD'} by ${Math.abs(delta).toFixed(1)} log2): ${protein} local flux change maps to ${metaboliteShifts.length} metabolites. Estimated demo yield shift: ${yieldChange.toFixed(1)}%.`,
-      ['transcriptomics', 'proteomics', 'metabolomics'],
-      'sensitivity_sketch_complete',
+      `Sensitivity sketch for ${geneId} (${delta > 0 ? "OE" : "KD"} by ${Math.abs(delta).toFixed(1)} log2): ${protein} local flux change maps to ${metaboliteShifts.length} metabolites. Estimated demo yield shift: ${yieldChange.toFixed(1)}%.`,
+      ["transcriptomics", "proteomics", "metabolomics"],
+      "sensitivity_sketch_complete",
     );
 
     return {
@@ -485,14 +580,14 @@ export class OmicsFoundationModel {
    * transcript, protein, and metabolite values across all genes.
    */
   computeCorrelationMatrix(): { layers: [OmicsLayer, OmicsLayer]; r: number; p_approx: number }[] {
-    const t = this.data.map(d => d.transcript ?? 0);
-    const p = this.data.map(d => d.protein ?? 0);
-    const m = this.data.map(d => d.metabolite ?? 0);
+    const t = this.data.map((d) => d.transcript ?? 0);
+    const p = this.data.map((d) => d.protein ?? 0);
+    const m = this.data.map((d) => d.metabolite ?? 0);
 
     return [
-      { layers: ['transcriptomics', 'proteomics'], ...pearson(t, p) },
-      { layers: ['proteomics', 'metabolomics'], ...pearson(p, m) },
-      { layers: ['transcriptomics', 'metabolomics'], ...pearson(t, m) },
+      { layers: ["transcriptomics", "proteomics"], ...pearson(t, p) },
+      { layers: ["proteomics", "metabolomics"], ...pearson(p, m) },
+      { layers: ["transcriptomics", "metabolomics"], ...pearson(t, m) },
     ];
   }
 }
@@ -503,7 +598,9 @@ function pearson(x: number[], y: number[]): { r: number; p_approx: number } {
   if (n < 3) return { r: 0, p_approx: 1 };
   const mx = x.reduce((a, b) => a + b, 0) / n;
   const my = y.reduce((a, b) => a + b, 0) / n;
-  let num = 0, dx2 = 0, dy2 = 0;
+  let num = 0,
+    dx2 = 0,
+    dy2 = 0;
   for (let i = 0; i < n; i++) {
     const dx = x[i] - mx;
     const dy = y[i] - my;
@@ -521,11 +618,15 @@ function pearson(x: number[], y: number[]): { r: number; p_approx: number } {
 
 function normalCDF(x: number): number {
   // Abramowitz & Stegun approximation
-  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
-  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const a1 = 0.254829592,
+    a2 = -0.284496736,
+    a3 = 1.421413741;
+  const a4 = -1.453152027,
+    a5 = 1.061405429,
+    p = 0.3275911;
   const sign = x < 0 ? -1 : 1;
   x = Math.abs(x) / Math.SQRT2;
   const t = 1 / (1 + p * x);
-  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
   return 0.5 * (1 + sign * y);
 }

@@ -1,11 +1,8 @@
-'use client';
+"use client";
 
-import { PROEVOL_THEME } from '../shared';
-import type {
-  ProEvolBandSemantic,
-  ProEvolValidity,
-} from '../../../../domain/proevolArtifact';
-import { THEME } from '../../../../theme';
+import type { ProEvolBandSemantic, ProEvolValidity } from "../../../../domain/proevolArtifact";
+import { THEME } from "../../../../theme";
+import { PROEVOL_THEME } from "../shared";
 
 interface ValidityIndicatorProps {
   validity: ProEvolValidity;
@@ -25,27 +22,27 @@ function copyFor(validity: ProEvolValidity, bandSemantic: ProEvolBandSemantic): 
   // Truth boundary: 'EXPERIMENT-BACKED' is reserved for actual measurement.
   // Modeled artifacts always read as 'MODEL-DERIVED', regardless of validity tier,
   // so the UI never accidentally claims wet-lab uncertainty.
-  if (bandSemantic === 'measurement' && validity === 'real') {
+  if (bandSemantic === "measurement" && validity === "real") {
     return {
-      label: 'EXPERIMENT-BACKED',
+      label: "EXPERIMENT-BACKED",
       tone: PROEVOL_THEME.successHigh,
       explanation:
-        'Frequencies and bands are derived from supplied per-replicate read counts. Bands are 95% CIs across biological replicates.',
+        "Frequencies and bands are derived from supplied per-replicate read counts. Bands are 95% CIs across biological replicates.",
     };
   }
-  if (validity === 'partial') {
+  if (validity === "partial") {
     return {
-      label: 'MODEL-DERIVED · CONTEXT',
+      label: "MODEL-DERIVED · CONTEXT",
       tone: PROEVOL_THEME.riskLow,
       explanation:
-        'Counts are model draws shaped by upstream Nexus-Bio context. Bands represent spread across model draws, not biological replicates.',
+        "Counts are model draws shaped by upstream Nexus-Bio context. Bands represent spread across model draws, not biological replicates.",
     };
   }
   return {
-    label: 'MODEL-DERIVED · DEMO',
+    label: "MODEL-DERIVED · DEMO",
     tone: PROEVOL_THEME.riskMedium,
     explanation:
-      'No upstream context. Counts and bands come from the campaign engine only — treat as illustrative, not measurement.',
+      "No upstream context. Counts and bands come from the campaign engine only — treat as illustrative, not measurement.",
   };
 }
 
@@ -57,26 +54,26 @@ export default function ValidityIndicator({
   compact = false,
 }: ValidityIndicatorProps) {
   const copy = copyFor(validity, bandSemantic);
-  const isModeled = bandSemantic === 'modeled';
-  const replicateNoun = isModeled ? 'model draw' : 'replicate';
+  const isModeled = bandSemantic === "modeled";
+  const replicateNoun = isModeled ? "model draw" : "replicate";
   return (
     <div
       style={{
-        display: 'inline-grid',
-        gap: compact ? '2px' : '6px',
-        padding: compact ? '6px 10px' : '10px 14px',
-        borderRadius: 'var(--nb-radius-md)',
+        display: "inline-grid",
+        gap: compact ? "2px" : "6px",
+        padding: compact ? "6px 10px" : "10px 14px",
+        borderRadius: "var(--nb-radius-md)",
         border: `1px solid ${copy.tone}55`,
         background: `${copy.tone}14`,
         minWidth: 0,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span
           style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '999px',
+            width: "8px",
+            height: "8px",
+            borderRadius: "999px",
             background: copy.tone,
             boxShadow: `0 0 8px ${copy.tone}aa`,
           }}
@@ -84,8 +81,8 @@ export default function ValidityIndicator({
         <span
           style={{
             fontFamily: THEME.MONO,
-            fontSize: 'var(--nb-fs-xs)',
-            letterSpacing: '0.14em',
+            fontSize: "var(--nb-fs-xs)",
+            letterSpacing: "0.14em",
             color: copy.tone,
             fontWeight: 700,
           }}
@@ -96,12 +93,13 @@ export default function ValidityIndicator({
           <span
             style={{
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
-              letterSpacing: '0.08em',
+              fontSize: "var(--nb-fs-xs)",
+              letterSpacing: "0.08em",
               color: PROEVOL_THEME.muted,
             }}
           >
-            n = {replicateCount} {replicateNoun}{replicateCount === 1 ? '' : 's'}
+            n = {replicateCount} {replicateNoun}
+            {replicateCount === 1 ? "" : "s"}
           </span>
         ) : null}
       </div>
@@ -109,7 +107,7 @@ export default function ValidityIndicator({
         <div
           style={{
             fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-sm)',
+            fontSize: "var(--nb-fs-sm)",
             color: PROEVOL_THEME.value,
             lineHeight: 1.55,
           }}
@@ -121,7 +119,7 @@ export default function ValidityIndicator({
         <div
           style={{
             fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-xs)',
+            fontSize: "var(--nb-fs-xs)",
             color: PROEVOL_THEME.muted,
             lineHeight: 1.5,
           }}

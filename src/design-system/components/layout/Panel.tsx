@@ -1,21 +1,14 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import {
-  colors,
-  spacing,
-  typography,
-  borderRadius,
-  shadows,
-  transitions,
-} from '../../tokens';
+import type React from "react";
+import { useCallback, useMemo, useState } from "react";
+import { borderRadius, colors, shadows, spacing, transitions, typography } from "../../tokens";
 
 // ---------------------------------------------------------------------------
 // Constants — glass-morphism panel surfaces
 // ---------------------------------------------------------------------------
 
-const PANEL_GRADIENT =
-  'linear-gradient(180deg, rgba(31, 37, 44, 0.96) 0%, rgba(22, 27, 32, 0.94) 100%)';
+const PANEL_GRADIENT = "linear-gradient(180deg, rgba(31, 37, 44, 0.96) 0%, rgba(22, 27, 32, 0.94) 100%)";
 
-const BORDER = 'rgba(255, 255, 255, 0.08)';
+const BORDER = "rgba(255, 255, 255, 0.08)";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,7 +45,7 @@ function ChevronIcon({ collapsed }: { collapsed: boolean }) {
       xmlns="http://www.w3.org/2000/svg"
       style={{
         transition: `transform ${transitions.duration.normal} ${transitions.easing.apple}`,
-        transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+        transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
         flexShrink: 0,
       }}
       aria-hidden="true"
@@ -92,16 +85,16 @@ export function Panel({
 
   const wrapperStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
       background: PANEL_GRADIENT,
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
       border: `1px solid ${BORDER}`,
       borderRadius: borderRadius.xl,
       boxShadow: shadows.sm,
-      overflow: 'hidden',
+      overflow: "hidden",
       fontFamily: typography.fontFamily.sans,
     }),
     [],
@@ -111,13 +104,13 @@ export function Panel({
 
   const headerStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'flex',
-      alignItems: 'center',
+      display: "flex",
+      alignItems: "center",
       gap: spacing.sm,
       padding: `${spacing.md} ${spacing.base}`,
-      minHeight: '40px',
-      cursor: collapsible ? 'pointer' : 'default',
-      userSelect: collapsible ? 'none' : undefined,
+      minHeight: "40px",
+      cursor: collapsible ? "pointer" : "default",
+      userSelect: collapsible ? "none" : undefined,
       transition: transitions.preset.bg,
     }),
     [collapsible],
@@ -125,9 +118,9 @@ export function Panel({
 
   const titleBlockStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '2px',
+      display: "flex",
+      flexDirection: "column",
+      gap: "2px",
       flex: 1,
       minWidth: 0,
     }),
@@ -142,9 +135,9 @@ export function Panel({
       lineHeight: typography.lineHeight.tight,
       letterSpacing: typography.letterSpacing.tight,
       margin: 0,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
     }),
     [],
   );
@@ -157,17 +150,17 @@ export function Panel({
       lineHeight: typography.lineHeight.normal,
       letterSpacing: typography.letterSpacing.normal,
       margin: 0,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
     }),
     [],
   );
 
   const actionsStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'flex',
-      alignItems: 'center',
+      display: "flex",
+      alignItems: "center",
       gap: spacing.xs,
       flexShrink: 0,
       color: colors.text.tertiary,
@@ -177,26 +170,26 @@ export function Panel({
 
   const collapseToggleStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '24px',
-      height: '24px',
-      border: 'none',
-      background: 'transparent',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "24px",
+      height: "24px",
+      border: "none",
+      background: "transparent",
       borderRadius: borderRadius.sm,
       color: colors.text.tertiary,
-      cursor: 'pointer',
+      cursor: "pointer",
       flexShrink: 0,
-      transition: [transitions.preset.color, transitions.preset.bg].join(', '),
+      transition: [transitions.preset.color, transitions.preset.bg].join(", "),
     }),
     [],
   );
 
   const contentOuterStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'grid',
-      gridTemplateRows: collapsed ? '0fr' : '1fr',
+      display: "grid",
+      gridTemplateRows: collapsed ? "0fr" : "1fr",
       transition: `grid-template-rows ${transitions.duration.slow} ${transitions.easing.apple}`,
     }),
     [collapsed],
@@ -204,7 +197,7 @@ export function Panel({
 
   const contentInnerStyle: React.CSSProperties = useMemo(
     () => ({
-      overflow: 'hidden',
+      overflow: "hidden",
     }),
     [],
   );
@@ -218,10 +211,10 @@ export function Panel({
 
   const headerDividerStyle: React.CSSProperties = useMemo(
     () => ({
-      height: '1px',
+      height: "1px",
       background: BORDER,
       margin: 0,
-      border: 'none',
+      border: "none",
     }),
     [],
   );
@@ -236,13 +229,13 @@ export function Panel({
           <div
             style={headerStyle}
             onClick={collapsible ? toggleCollapsed : undefined}
-            role={collapsible ? 'button' : undefined}
+            role={collapsible ? "button" : undefined}
             aria-expanded={collapsible ? !collapsed : undefined}
             tabIndex={collapsible ? 0 : undefined}
             onKeyDown={
               collapsible
                 ? (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       toggleCollapsed();
                     }

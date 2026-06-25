@@ -9,34 +9,33 @@
 // TOKENS
 // ============================================================================
 
+export type { Tokens } from "./tokens";
 export {
-  colors,
-  spacing,
-  typography,
   borderRadius,
-  shadows,
-  transitions,
-  zIndex,
   breakpoints,
+  colors,
+  shadows,
+  spacing,
   tokens,
-} from './tokens';
-
-export type { Tokens } from './tokens';
+  transitions,
+  typography,
+  zIndex,
+} from "./tokens";
 
 // ============================================================================
 // COMPONENTS
 // ============================================================================
 
-export * from './components';
+export * from "./components";
 
 // ============================================================================
 // RE-EXPORT EXISTING COMPONENTS
 // ============================================================================
 
 // Re-export shared IDE components that are part of the design system
-export { default as DataTable } from '../components/ide/shared/DataTable';
-export { default as LegacyMetricCard } from '../components/ide/shared/MetricCard';
-export { default as Pagination } from '../components/ide/shared/Pagination';
+export { default as DataTable } from "../components/ide/shared/DataTable";
+export { default as LegacyMetricCard } from "../components/ide/shared/MetricCard";
+export { default as Pagination } from "../components/ide/shared/Pagination";
 
 // Re-export theme tokens from workbench (backward compatibility)
-export { PATHD_THEME as workbenchTheme } from '../components/workbench/workbenchTheme';
+export { PATHD_THEME as workbenchTheme } from "../components/workbench/workbenchTheme";

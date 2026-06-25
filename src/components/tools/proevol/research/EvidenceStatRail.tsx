@@ -1,13 +1,10 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
-import { PROEVOL_THEME } from '../shared';
-import type {
-  ConfidenceInterval,
-  ProEvolResearchSummary,
-} from '../../../../services/proevolAnalysis';
-import type { ProEvolBandSemantic } from '../../../../domain/proevolArtifact';
-import { THEME } from '../../../../theme';
+import type { ReactNode } from "react";
+import type { ProEvolBandSemantic } from "../../../../domain/proevolArtifact";
+import type { ConfidenceInterval, ProEvolResearchSummary } from "../../../../services/proevolAnalysis";
+import { THEME } from "../../../../theme";
+import { PROEVOL_THEME } from "../shared";
 
 interface EvidenceStatRailProps {
   research: ProEvolResearchSummary;
@@ -15,7 +12,7 @@ interface EvidenceStatRailProps {
 }
 
 function formatBand(ci: ConfidenceInterval | null, formatter: (value: number) => string) {
-  if (!ci) return '—';
+  if (!ci) return "—";
   return `${formatter(ci.lower)} – ${formatter(ci.upper)}`;
 }
 
@@ -25,7 +22,7 @@ function formatBand(ci: ConfidenceInterval | null, formatter: (value: number) =>
  * adapt to `bandSemantic` so the rail never claims a CI it doesn't have.
  */
 export default function EvidenceStatRail({ research, bandSemantic }: EvidenceStatRailProps) {
-  const bandLabel = bandSemantic === 'measurement' ? '95% CI' : 'model spread';
+  const bandLabel = bandSemantic === "measurement" ? "95% CI" : "model spread";
 
   const lastDiversity = research.diversity[research.diversity.length - 1];
   const effectiveN = lastDiversity ? lastDiversity.effectiveVariantCount : null;
@@ -40,59 +37,45 @@ export default function EvidenceStatRail({ research, bandSemantic }: EvidenceSta
   return (
     <div
       style={{
-        display: 'grid',
-        gap: '10px',
-        gridAutoRows: 'min-content',
-        padding: '10px 12px',
-        borderRadius: 'var(--nb-radius-md)',
+        display: "grid",
+        gap: "10px",
+        gridAutoRows: "min-content",
+        padding: "10px 12px",
+        borderRadius: "var(--nb-radius-md)",
         border: `1px solid ${PROEVOL_THEME.border}`,
         background: PROEVOL_THEME.surface,
         minWidth: 0,
-        alignSelf: 'stretch',
+        alignSelf: "stretch",
       }}
     >
       <div style={kickerStyle}>last-round signal</div>
       <Row
         label="Shannon entropy"
-        value={
-          research.lastRoundShannon
-            ? `${research.lastRoundShannon.mean.toFixed(2)} bits`
-            : '—'
-        }
-        detail={`${bandLabel} ${formatBand(
-          research.lastRoundShannon,
-          (value) => value.toFixed(2),
-        )}`}
+        value={research.lastRoundShannon ? `${research.lastRoundShannon.mean.toFixed(2)} bits` : "—"}
+        detail={`${bandLabel} ${formatBand(research.lastRoundShannon, (value) => value.toFixed(2))}`}
         accent={PROEVOL_THEME.mint}
       />
       <Row
         label="Top-1 share"
-        value={
-          research.lastRoundTopShare
-            ? `${(research.lastRoundTopShare.mean * 100).toFixed(1)}%`
-            : '—'
-        }
-        detail={`${bandLabel} ${formatBand(
-          research.lastRoundTopShare,
-          (value) => `${(value * 100).toFixed(1)}%`,
-        )}`}
+        value={research.lastRoundTopShare ? `${(research.lastRoundTopShare.mean * 100).toFixed(1)}%` : "—"}
+        detail={`${bandLabel} ${formatBand(research.lastRoundTopShare, (value) => `${(value * 100).toFixed(1)}%`)}`}
         accent={PROEVOL_THEME.coral}
       />
       <Row
         label="Effective variants"
-        value={effectiveN != null ? effectiveN.toFixed(1) : '—'}
-        detail={observedN != null ? `${observedN} observed with reads > 0` : '—'}
+        value={effectiveN != null ? effectiveN.toFixed(1) : "—"}
+        detail={observedN != null ? `${observedN} observed with reads > 0` : "—"}
         accent={PROEVOL_THEME.sky}
       />
       <Row
         label="Δ Shannon last round"
-        value={`${research.shannonDelta >= 0 ? '+' : ''}${research.shannonDelta.toFixed(2)} bits`}
+        value={`${research.shannonDelta >= 0 ? "+" : ""}${research.shannonDelta.toFixed(2)} bits`}
         detail={
           research.shannonDelta < -0.15
-            ? 'sharp narrowing'
+            ? "sharp narrowing"
             : research.shannonDelta > 0.15
-              ? 'still broadening'
-              : 'stable'
+              ? "still broadening"
+              : "stable"
         }
         accent={shannonDeltaTone}
       />
@@ -102,10 +85,10 @@ export default function EvidenceStatRail({ research, bandSemantic }: EvidenceSta
 
 const kickerStyle = {
   fontFamily: THEME.MONO,
-  fontSize: 'var(--nb-fs-xs)',
-  letterSpacing: '0.14em',
+  fontSize: "var(--nb-fs-xs)",
+  letterSpacing: "0.14em",
   color: PROEVOL_THEME.label,
-  textTransform: 'uppercase' as const,
+  textTransform: "uppercase" as const,
 };
 
 function Row({
@@ -122,28 +105,28 @@ function Row({
   return (
     <div
       style={{
-        display: 'grid',
-        gap: '2px',
-        padding: '5px 0 7px',
+        display: "grid",
+        gap: "2px",
+        padding: "5px 0 7px",
         borderTop: `1px solid ${PROEVOL_THEME.border}`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
         <span
           style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '999px',
+            width: "6px",
+            height: "6px",
+            borderRadius: "999px",
             background: accent,
           }}
         />
         <span
           style={{
             fontFamily: THEME.MONO,
-            fontSize: 'var(--nb-fs-xs)',
+            fontSize: "var(--nb-fs-xs)",
             color: PROEVOL_THEME.label,
-            letterSpacing: '0.10em',
-            textTransform: 'uppercase',
+            letterSpacing: "0.10em",
+            textTransform: "uppercase",
           }}
         >
           {label}
@@ -152,10 +135,10 @@ function Row({
       <div
         style={{
           fontFamily: THEME.SANS,
-          fontSize: 'var(--nb-fs-md)',
+          fontSize: "var(--nb-fs-md)",
           fontWeight: 700,
           color: PROEVOL_THEME.value,
-          letterSpacing: '-0.02em',
+          letterSpacing: "-0.02em",
         }}
       >
         {value}
@@ -163,7 +146,7 @@ function Row({
       <div
         style={{
           fontFamily: THEME.SANS,
-          fontSize: 'var(--nb-fs-xs)',
+          fontSize: "var(--nb-fs-xs)",
           color: PROEVOL_THEME.muted,
           lineHeight: 1.4,
         }}

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * AxonOrchestratorProvider — shared Axon orchestration layer.
  *
@@ -24,58 +24,25 @@
  * keeps the provider purely about orchestration.
  */
 
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { AxonOrchestrator, type AxonTask, type AxonTool } from "../services/AxonOrchestrator";
+import { type AxonAdapterRegistry, buildDefaultAxonAdapterRegistry } from "../services/axonAdapterRegistry";
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-import { AxonOrchestrator, type AxonTask, type AxonTool } from '../services/AxonOrchestrator';
-import {
-  buildDefaultAxonAdapterRegistry,
-  type AxonAdapterRegistry,
-} from '../services/axonAdapterRegistry';
-import {
-  loadPersistedQueue,
-  reconstituteTasks,
-  savePersistedQueue,
-} from '../services/axonQueuePersistence';
-import { publishTaskOutcome } from '../services/axonWriteback';
-import {
-  buildAxonPlan,
-  type AxonPlan,
-  type AxonPlanStep,
-} from '../services/axonPlanner';
-import {
-  buildLogEntry,
-  type AxonLogEntry,
-  type AxonLogPhase,
-} from '../services/axonExecutionLog';
-import {
-  buildDefaultEvidenceRegistry,
-  type EvidenceAdapterRegistry,
-} from '../services/axonEvidenceAdapter';
-import {
-  noopAutonomyLoop,
-  boundedAutonomyLoop,
-  type AutonomyLoop,
   type AutonomyDecisionContext,
-} from '../services/axonAutonomyLoop';
-import type { WorkbenchCopilotContext } from '../services/axonContext';
-import {
-  classifyAxonDomain,
-  type AxonDomainClassification,
-} from '../services/axonDomainClassifier';
-import {
-  buildAxonSession,
-  type AxonSession,
-} from '../services/axonSessionView';
-import { useWorkbenchStore } from '../store/workbenchStore';
-import { useUIStore } from '../store/uiStore';
+  type AutonomyLoop,
+  boundedAutonomyLoop,
+  noopAutonomyLoop,
+} from "../services/axonAutonomyLoop";
+import type { WorkbenchCopilotContext } from "../services/axonContext";
+import { type AxonDomainClassification, classifyAxonDomain } from "../services/axonDomainClassifier";
+import { buildDefaultEvidenceRegistry, type EvidenceAdapterRegistry } from "../services/axonEvidenceAdapter";
+import { type AxonLogEntry, type AxonLogPhase, buildLogEntry } from "../services/axonExecutionLog";
+import { type AxonPlan, type AxonPlanStep, buildAxonPlan } from "../services/axonPlanner";
+import { loadPersistedQueue, reconstituteTasks, savePersistedQueue } from "../services/axonQueuePersistence";
+import { type AxonSession, buildAxonSession } from "../services/axonSessionView";
+import { publishTaskOutcome } from "../services/axonWriteback";
+import { useUIStore } from "../store/uiStore";
+import { useWorkbenchStore } from "../store/workbenchStore";
 
 export interface AxonEnqueueOptions {
   tool: AxonTool;
@@ -94,7 +61,7 @@ export interface AxonPlanAndRunResult {
   skippedStepIds: string[];
   classification: AxonDomainClassification;
   /** Reason the planner was short-circuited, if any. */
-  shortCircuit?: 'off-domain' | 'no-prose-eligible' | null;
+  shortCircuit?: "off-domain" | "no-prose-eligible" | null;
 }
 
 export interface AxonOrchestratorContextValue {
@@ -158,10 +125,7 @@ export function AxonOrchestratorProvider({
   if (!orchestratorRef.current) orchestratorRef.current = new AxonOrchestrator();
   const orchestrator = orchestratorRef.current;
 
-  const registry = useMemo(
-    () => registryOverride ?? buildDefaultAxonAdapterRegistry(),
-    [registryOverride],
-  );
+  const registry = useMemo(() => registryOverride ?? buildDefaultAxonAdapterRegistry(), [registryOverride]);
   const adapters = useMemo(() => registry.toMap(), [registry]);
 
   const [tasks, setTasks] = useState<AxonTask[]>([]);
@@ -202,7 +166,7 @@ export function AxonOrchestratorProvider({
     (
       phase: AxonLogPhase,
       message: string,
-      extras: Partial<Omit<AxonLogEntry, 'id' | 'timestamp' | 'phase' | 'message'>> = {},
+      extras: Partial<Omit<AxonLogEntry, "id" | "timestamp" | "phase" | "message">> = {},
     ) => {
       const entry = buildLogEntry({ phase, message, ...extras });
       setLogs((prev) => {
@@ -239,11 +203,9 @@ export function AxonOrchestratorProvider({
     orchestrator.restoreTasks(restored);
     if (interrupted > 0) {
       setHadInterruptedTasks(true);
-      pushLog(
-        'interrupted',
-        `Restored ${interrupted} task(s) as interrupted — previous session ended mid-run.`,
-        { metadata: { interruptedCount: interrupted } },
-      );
+      pushLog("interrupted", `Restored ${interrupted} task(s) as interrupted — previous session ended mid-run.`, {
+        metadata: { interruptedCount: interrupted },
+      });
     }
   }, [orchestrator, disablePersistence, pushLog]);
 
@@ -258,13 +220,13 @@ export function AxonOrchestratorProvider({
   const publishedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     for (const task of tasks) {
-      if (task.status !== 'done' && task.status !== 'error') continue;
+      if (task.status !== "done" && task.status !== "error") continue;
       if (publishedRef.current.has(task.id)) continue;
       publishedRef.current.add(task.id);
       publishTaskOutcome(task, { appendAxonRun, addToolRun });
       pushLog(
-        'writeback-emitted',
-        `Writeback: ${task.tool.toUpperCase()} ${task.status === 'done' ? 'result' : 'error'} published to workbench ledger.`,
+        "writeback-emitted",
+        `Writeback: ${task.tool.toUpperCase()} ${task.status === "done" ? "result" : "error"} published to workbench ledger.`,
         {
           taskId: task.id,
           planId: task.planId,
@@ -279,11 +241,11 @@ export function AxonOrchestratorProvider({
         setActivePlan((prev) => {
           if (!prev || prev.id !== task.planId) return prev;
           const nextSteps = prev.steps.map((s) =>
-            s.id === task.planStepId ? { ...s, status: task.status as AxonPlanStep['status'] } : s,
+            s.id === task.planStepId ? { ...s, status: task.status as AxonPlanStep["status"] } : s,
           );
           return { ...prev, steps: nextSteps };
         });
-        updateAxonPlanStep(task.planId, task.planStepId, { status: task.status as AxonPlanStep['status'] });
+        updateAxonPlanStep(task.planId, task.planStepId, { status: task.status as AxonPlanStep["status"] });
       }
     }
 
@@ -293,11 +255,11 @@ export function AxonOrchestratorProvider({
       const key = `blocked-${b.id}`;
       if (publishedRef.current.has(key)) continue;
       publishedRef.current.add(key);
-      pushLog(
-        'blocked-dependency',
-        `Task "${b.label}" cannot run — upstream dependency failed or was cancelled.`,
-        { taskId: b.id, tool: b.tool, planId: b.planId },
-      );
+      pushLog("blocked-dependency", `Task "${b.label}" cannot run — upstream dependency failed or was cancelled.`, {
+        taskId: b.id,
+        tool: b.tool,
+        planId: b.planId,
+      });
     }
   }, [tasks, appendAxonRun, addToolRun, pushLog, orchestrator, updateAxonPlanStep]);
 
@@ -311,13 +273,13 @@ export function AxonOrchestratorProvider({
   ): AxonTask | null {
     if (!registry.isSupported(opts.tool)) {
       appendConsole({
-        level: 'error',
-        module: 'axon',
+        level: "error",
+        module: "axon",
         message: `No adapter registered for "${opts.tool}" — enqueue refused.`,
       });
-      pushLog('info', `Enqueue refused — no adapter for "${opts.tool}".`, {
+      pushLog("info", `Enqueue refused — no adapter for "${opts.tool}".`, {
         tool: opts.tool,
-        metadata: { reason: 'unsupported' },
+        metadata: { reason: "unsupported" },
       });
       return null;
     }
@@ -331,11 +293,11 @@ export function AxonOrchestratorProvider({
       meta: opts.meta,
     });
     appendConsole({
-      level: 'info',
-      module: 'axon',
+      level: "info",
+      module: "axon",
       message: `Queued ${opts.tool} task · ${task.id}`,
     });
-    pushLog('enqueued', `Queued ${opts.tool.toUpperCase()} — "${opts.label}"`, {
+    pushLog("enqueued", `Queued ${opts.tool.toUpperCase()} — "${opts.label}"`, {
       taskId: task.id,
       tool: opts.tool,
       planId: opts.planId,
@@ -356,36 +318,36 @@ export function AxonOrchestratorProvider({
     try {
       let peek = orchestrator.peekNextRunnable();
       while (peek) {
-        pushLog('started', `Started ${peek.tool.toUpperCase()} — "${peek.label}"`, {
+        pushLog("started", `Started ${peek.tool.toUpperCase()} — "${peek.label}"`, {
           taskId: peek.id,
           tool: peek.tool,
           planId: peek.planId,
         });
-        pushLog('adapter-invoked', `Adapter invoked for ${peek.tool.toUpperCase()}.`, {
+        pushLog("adapter-invoked", `Adapter invoked for ${peek.tool.toUpperCase()}.`, {
           taskId: peek.id,
           tool: peek.tool,
           planId: peek.planId,
         });
         const finished = await orchestrator.runNext(adapters);
         if (!finished) return;
-        if (finished.status === 'done') {
+        if (finished.status === "done") {
           appendConsole({
-            level: 'success',
-            module: 'axon',
+            level: "success",
+            module: "axon",
             message: `${finished.tool} task complete · ${finished.id}`,
           });
-          pushLog('completed', `${finished.tool.toUpperCase()} task complete.`, {
+          pushLog("completed", `${finished.tool.toUpperCase()} task complete.`, {
             taskId: finished.id,
             tool: finished.tool,
             planId: finished.planId,
           });
-        } else if (finished.status === 'error') {
+        } else if (finished.status === "error") {
           appendConsole({
-            level: 'error',
-            module: 'axon',
-            message: `${finished.tool} task failed · ${finished.error ?? 'unknown error'}`,
+            level: "error",
+            module: "axon",
+            message: `${finished.tool} task failed · ${finished.error ?? "unknown error"}`,
           });
-          pushLog('failed', `${finished.tool.toUpperCase()} task failed: ${finished.error ?? 'unknown error'}`, {
+          pushLog("failed", `${finished.tool.toUpperCase()} task failed: ${finished.error ?? "unknown error"}`, {
             taskId: finished.id,
             tool: finished.tool,
             planId: finished.planId,
@@ -409,35 +371,27 @@ export function AxonOrchestratorProvider({
     setLastRequest(opts.request);
     setLastContext(opts.context);
 
-    pushLog(
-      'info',
-      `Domain classified as "${classification.category}". ${classification.reason}`,
-      {
-        metadata: {
-          category: classification.category,
-          signals: classification.signals.slice(0, 4).join(',') || 'none',
-          shouldPlan: classification.shouldPlan,
-        },
+    pushLog("info", `Domain classified as "${classification.category}". ${classification.reason}`, {
+      metadata: {
+        category: classification.category,
+        signals: classification.signals.slice(0, 4).join(",") || "none",
+        shouldPlan: classification.shouldPlan,
       },
-    );
+    });
 
     // PR-5 honesty gate: off-domain queries never reach the biosynthesis
     // planner. We clear any previous plan so the session viewer shows
     // only the advisory card — no half-executed state carries over.
-    if (classification.category === 'off-domain') {
+    if (classification.category === "off-domain") {
       setActivePlan(null);
       setAxonPlanStore(null);
-      pushLog(
-        'info',
-        'Planner skipped — request outside Nexus-Bio scope.',
-        { metadata: { reason: 'off-domain' } },
-      );
+      pushLog("info", "Planner skipped — request outside Nexus-Bio scope.", { metadata: { reason: "off-domain" } });
       return {
         plan: null,
         enqueuedStepIds: [],
         skippedStepIds: [],
         classification,
-        shortCircuit: 'off-domain',
+        shortCircuit: "off-domain",
       };
     }
 
@@ -448,17 +402,15 @@ export function AxonOrchestratorProvider({
     if (!classification.shouldPlan) {
       setActivePlan(null);
       setAxonPlanStore(null);
-      pushLog(
-        'info',
-        `Planner skipped — category "${classification.category}" does not trigger tool execution.`,
-        { metadata: { reason: 'no-plan-for-category' } },
-      );
+      pushLog("info", `Planner skipped — category "${classification.category}" does not trigger tool execution.`, {
+        metadata: { reason: "no-plan-for-category" },
+      });
       return {
         plan: null,
         enqueuedStepIds: [],
         skippedStepIds: [],
         classification,
-        shortCircuit: 'no-prose-eligible',
+        shortCircuit: "no-prose-eligible",
       };
     }
 
@@ -486,13 +438,12 @@ export function AxonOrchestratorProvider({
         taskId: s.taskId,
       })),
     });
-    pushLog(
-      'plan-created',
-      `Plan created · ${plan.steps.length} step(s)`,
-      { planId: plan.id, metadata: { request: plan.request, origin: plan.origin } },
-    );
+    pushLog("plan-created", `Plan created · ${plan.steps.length} step(s)`, {
+      planId: plan.id,
+      metadata: { request: plan.request, origin: plan.origin },
+    });
     for (const w of plan.warnings) {
-      pushLog('plan-warning', w, { planId: plan.id });
+      pushLog("plan-warning", w, { planId: plan.id });
     }
 
     const enqueuedStepIds: string[] = [];
@@ -500,15 +451,13 @@ export function AxonOrchestratorProvider({
     const stepIdToTaskId = new Map<string, string>();
 
     for (const step of plan.steps) {
-      if (step.status === 'unsupported') {
+      if (step.status === "unsupported") {
         skippedStepIds.push(step.id);
         continue;
       }
       // Translate plan-step dependsOn (plan-step ids) into orchestrator
       // task ids, so the scheduler respects the graph we declared.
-      const taskDeps = step.dependsOn
-        .map((id) => stepIdToTaskId.get(id))
-        .filter((id): id is string => Boolean(id));
+      const taskDeps = step.dependsOn.map((id) => stepIdToTaskId.get(id)).filter((id): id is string => Boolean(id));
       const task = enqueueInternal({
         tool: step.tool,
         label: step.title,
@@ -522,8 +471,8 @@ export function AxonOrchestratorProvider({
         stepIdToTaskId.set(step.id, task.id);
         enqueuedStepIds.push(step.id);
         step.taskId = task.id;
-        step.status = 'enqueued';
-        updateAxonPlanStep(plan.id, step.id, { status: 'enqueued', taskId: task.id });
+        step.status = "enqueued";
+        updateAxonPlanStep(plan.id, step.id, { status: "enqueued", taskId: task.id });
       } else {
         skippedStepIds.push(step.id);
       }
@@ -531,11 +480,10 @@ export function AxonOrchestratorProvider({
 
     // Context attachment log is a single event per plan, not per step —
     // the bounded context is the same for every step in this plan.
-    pushLog(
-      'context-attached',
-      `Workbench context attached: ${opts.context.summaryOneLine}`,
-      { planId: plan.id, metadata: opts.context.hasContext ? { summary: opts.context.summaryOneLine } : { summary: 'none' } },
-    );
+    pushLog("context-attached", `Workbench context attached: ${opts.context.summaryOneLine}`, {
+      planId: plan.id,
+      metadata: opts.context.hasContext ? { summary: opts.context.summaryOneLine } : { summary: "none" },
+    });
 
     return { plan, enqueuedStepIds, skippedStepIds, classification, shortCircuit: null };
   }
@@ -543,20 +491,18 @@ export function AxonOrchestratorProvider({
   function cancelTask(id: string) {
     const cancelled = orchestrator.cancel(id);
     if (!cancelled) return;
-    pushLog('cancelled', `Cancelled ${cancelled.tool.toUpperCase()} task.`, {
+    pushLog("cancelled", `Cancelled ${cancelled.tool.toUpperCase()} task.`, {
       taskId: cancelled.id,
       tool: cancelled.tool,
       planId: cancelled.planId,
     });
     if (cancelled.planId && cancelled.planStepId) {
-      updateAxonPlanStep(cancelled.planId, cancelled.planStepId, { status: 'cancelled' });
+      updateAxonPlanStep(cancelled.planId, cancelled.planStepId, { status: "cancelled" });
       setActivePlan((prev) => {
         if (!prev || prev.id !== cancelled.planId) return prev;
         return {
           ...prev,
-          steps: prev.steps.map((s) =>
-            s.id === cancelled.planStepId ? { ...s, status: 'cancelled' } : s,
-          ),
+          steps: prev.steps.map((s) => (s.id === cancelled.planStepId ? { ...s, status: "cancelled" } : s)),
         };
       });
     }
@@ -565,13 +511,13 @@ export function AxonOrchestratorProvider({
   function retryTask(id: string) {
     const retried = orchestrator.retry(id);
     if (!retried) return;
-    pushLog(
-      'retried',
-      `Retry ${retried.tool.toUpperCase()} (retryCount=${retried.retryCount}).`,
-      { taskId: retried.id, tool: retried.tool, planId: retried.planId },
-    );
+    pushLog("retried", `Retry ${retried.tool.toUpperCase()} (retryCount=${retried.retryCount}).`, {
+      taskId: retried.id,
+      tool: retried.tool,
+      planId: retried.planId,
+    });
     if (retried.planId && retried.planStepId) {
-      updateAxonPlanStep(retried.planId, retried.planStepId, { status: 'enqueued' });
+      updateAxonPlanStep(retried.planId, retried.planStepId, { status: "enqueued" });
     }
     // Allow publishTaskOutcome / dep-blocked logs to fire again for this id.
     publishedRef.current.delete(retried.id);
@@ -582,13 +528,13 @@ export function AxonOrchestratorProvider({
   function reorderTask(id: string, newIndex: number): { ok: boolean; reason?: string } {
     const result = orchestrator.reorderPending(id, newIndex);
     if (!result) {
-      pushLog('info', `Reorder refused for task ${id} — illegal move or dependency violation.`, {
+      pushLog("info", `Reorder refused for task ${id} — illegal move or dependency violation.`, {
         taskId: id,
         metadata: { attemptedIndex: newIndex },
       });
-      return { ok: false, reason: 'Illegal reorder (not pending, out of range, or violates dependency).' };
+      return { ok: false, reason: "Illegal reorder (not pending, out of range, or violates dependency)." };
     }
-    pushLog('reordered', `Reordered ${result.tool.toUpperCase()} task.`, {
+    pushLog("reordered", `Reordered ${result.tool.toUpperCase()} task.`, {
       taskId: result.id,
       tool: result.tool,
       planId: result.planId,
@@ -623,31 +569,31 @@ export function AxonOrchestratorProvider({
     const decision = autonomy.decide(ctx);
 
     switch (decision.action) {
-      case 'run-next-step':
+      case "run-next-step":
         autoStepsRef.current++;
-        pushLog('autonomy', `Auto-running: ${decision.reason}`, {
+        pushLog("autonomy", `Auto-running: ${decision.reason}`, {
           taskId: decision.taskId,
           metadata: { autoStep: autoStepsRef.current },
         });
         void drainQueue();
         break;
 
-      case 'retry-task':
+      case "retry-task":
         autoRetriesRef.current++;
-        pushLog('autonomy', `Auto-retrying: ${decision.reason}`, {
+        pushLog("autonomy", `Auto-retrying: ${decision.reason}`, {
           taskId: decision.taskId,
           metadata: { autoRetry: autoRetriesRef.current },
         });
         retryTask(decision.taskId);
         break;
 
-      case 'halt':
-        pushLog('autonomy', `Autonomy halted: ${decision.reason}`, {
+      case "halt":
+        pushLog("autonomy", `Autonomy halted: ${decision.reason}`, {
           metadata: { autoSteps: autoStepsRef.current, autoRetries: autoRetriesRef.current },
         });
         break;
 
-      case 'idle':
+      case "idle":
         // No action needed
         break;
     }
@@ -719,19 +665,13 @@ export function AxonOrchestratorProvider({
     session,
   };
 
-  return (
-    <AxonOrchestratorContext.Provider value={value}>
-      {children}
-    </AxonOrchestratorContext.Provider>
-  );
+  return <AxonOrchestratorContext.Provider value={value}>{children}</AxonOrchestratorContext.Provider>;
 }
 
 export function useAxonOrchestrator(): AxonOrchestratorContextValue {
   const ctx = useContext(AxonOrchestratorContext);
   if (!ctx) {
-    throw new Error(
-      'useAxonOrchestrator must be called inside <AxonOrchestratorProvider>',
-    );
+    throw new Error("useAxonOrchestrator must be called inside <AxonOrchestratorProvider>");
   }
   return ctx;
 }
@@ -750,9 +690,9 @@ export function useAxonOrchestratorOptional(): AxonOrchestratorContextValue | nu
  * so we map here. Each branch is dead-simple and auditable.
  */
 function buildStepInput(step: AxonPlanStep, context: WorkbenchCopilotContext): unknown {
-  if (step.tool === 'pathd') {
+  if (step.tool === "pathd") {
     return {
-      targetProduct: context.targetProduct ?? 'unspecified',
+      targetProduct: context.targetProduct ?? "unspecified",
       hint: step.objective,
     };
   }

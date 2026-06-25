@@ -10,9 +10,9 @@
  * Reference: Anzalone et al. (2019) Nature 576:149-157 (prime editing)
  */
 
-export type EditingMode = 'cas9' | 'base_editing' | 'prime_editing';
-export type BaseEditorType = 'BE3' | 'BE4' | 'ABE';
-export type PrimeEditorType = 'PE2' | 'PE4';
+export type EditingMode = "cas9" | "base_editing" | "prime_editing";
+export type BaseEditorType = "BE3" | "BE4" | "ABE";
+export type PrimeEditorType = "PE2" | "PE4";
 
 export interface CRISPRInput {
   /** Target DNA sequence (coding strand, 5'→3') */
@@ -20,7 +20,7 @@ export interface CRISPRInput {
   /** Target position (0-indexed) for the edit */
   targetPosition: number;
   /** Desired edit type */
-  editType: 'substitution' | 'insertion' | 'deletion';
+  editType: "substitution" | "insertion" | "deletion";
   /** For substitution: desired base change */
   desiredChange?: { from: string; to: string };
   /** For insertion: sequence to insert */
@@ -34,7 +34,7 @@ export interface CRISPRInput {
   /** Prime editor type (if mode=prime_editing) */
   primeEditor?: PrimeEditorType;
   /** Host organism */
-  host: 'ecoli' | 'yeast' | 'human';
+  host: "ecoli" | "yeast" | "human";
   /** High-fidelity mode */
   highFidelity?: boolean;
 }
@@ -78,7 +78,7 @@ export interface EditingResult {
   /** Evidence sources */
   evidence: Array<{
     source: string;
-    type: 'literature' | 'database' | 'predicted';
+    type: "literature" | "database" | "predicted";
     title: string;
   }>;
   /** Design notes */

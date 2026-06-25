@@ -12,35 +12,35 @@
  */
 
 import type {
+  CircuitNode,
   GeneticPart,
   GeneticPartType,
-  CircuitNode,
   SBOLComponent,
   SBOLDocument,
   SBOLInteraction,
   SBOLRole,
-} from '../types';
+} from "../types";
 
 // ── SO Role mapping ───────────────────────────────────────────────────────────
 const ROLE_MAP: Record<GeneticPartType, SBOLRole> = {
-  promoter:   'SO:0000167',
-  rbs:        'SO:0000139',
-  cds:        'SO:0000316',
-  terminator: 'SO:0000141',
+  promoter: "SO:0000167",
+  rbs: "SO:0000139",
+  cds: "SO:0000316",
+  terminator: "SO:0000141",
 };
 
 const ROLE_LABEL: Record<SBOLRole, string> = {
-  'SO:0000167': 'Promoter',
-  'SO:0000139': 'RBS',
-  'SO:0000316': 'CDS',
-  'SO:0000141': 'Terminator',
-  'SO:0000110': 'Sequence Feature',
-  'SO:0000296': 'Origin of Replication',
-  'SO:0000057': 'Operator',
+  "SO:0000167": "Promoter",
+  "SO:0000139": "RBS",
+  "SO:0000316": "CDS",
+  "SO:0000141": "Terminator",
+  "SO:0000110": "Sequence Feature",
+  "SO:0000296": "Origin of Replication",
+  "SO:0000057": "Operator",
 };
 
-const SO_URI_PREFIX = 'http://identifiers.org/SO:';
-const SBO_URI_PREFIX = 'http://identifiers.org/biomodels.sbo/';
+const SO_URI_PREFIX = "http://identifiers.org/SO:";
+const SBO_URI_PREFIX = "http://identifiers.org/biomodels.sbo/";
 
 // ── UUID generator ────────────────────────────────────────────────────────────
 // Prefer the platform CSPRNG (crypto.randomUUID) — Math.random has weak entropy
@@ -48,65 +48,59 @@ const SBO_URI_PREFIX = 'http://identifiers.org/biomodels.sbo/';
 // every tube must have a globally unique identifier.
 function generateUUID(): string {
   const cryptoObj: Crypto | undefined =
-    typeof globalThis !== 'undefined' ? (globalThis as { crypto?: Crypto }).crypto : undefined;
-  if (cryptoObj && typeof cryptoObj.randomUUID === 'function') {
+    typeof globalThis !== "undefined" ? (globalThis as { crypto?: Crypto }).crypto : undefined;
+  if (cryptoObj && typeof cryptoObj.randomUUID === "function") {
     return cryptoObj.randomUUID();
   }
-  if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+  if (cryptoObj && typeof cryptoObj.getRandomValues === "function") {
     const bytes = new Uint8Array(16);
     cryptoObj.getRandomValues(bytes);
     bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
     bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10xx
     const hex: string[] = [];
-    for (let i = 0; i < 16; i++) hex.push(bytes[i].toString(16).padStart(2, '0'));
-    return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
+    for (let i = 0; i < 16; i++) hex.push(bytes[i].toString(16).padStart(2, "0"));
+    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10, 16).join("")}`;
   }
   // Final fallback — environments without Web Crypto. Still RFC 4122 v4 shape.
-  const hex = '0123456789abcdef';
-  let uuid = '';
+  const hex = "0123456789abcdef";
+  let uuid = "";
   for (let i = 0; i < 36; i++) {
-    if (i === 8 || i === 13 || i === 18 || i === 23) uuid += '-';
-    else if (i === 14) uuid += '4';
-    else if (i === 19) uuid += hex[(Math.random() * 4 | 0) + 8];
-    else uuid += hex[Math.random() * 16 | 0];
+    if (i === 8 || i === 13 || i === 18 || i === 23) uuid += "-";
+    else if (i === 14) uuid += "4";
+    else if (i === 19) uuid += hex[((Math.random() * 4) | 0) + 8];
+    else uuid += hex[(Math.random() * 16) | 0];
   }
   return uuid;
 }
 
 // ── Convert GeneticPart[] to SBOLComponent[] ──────────────────────────────────
-function partsToComponents(
-  parts: GeneticPart[],
-  namespace: string,
-): SBOLComponent[] {
-  return parts.map(part => ({
+function partsToComponents(parts: GeneticPart[], namespace: string): SBOLComponent[] {
+  return parts.map((part) => ({
     displayId: part.id,
     name: part.label ?? part.id,
-    role: ROLE_MAP[part.type] ?? 'SO:0000110',
+    role: ROLE_MAP[part.type] ?? "SO:0000110",
     sequence: undefined,
     description: `${ROLE_LABEL[ROLE_MAP[part.type]]} with ${
-      part.strength !== undefined ? `strength ${part.strength.toFixed(2)}` : 'default strength'
+      part.strength !== undefined ? `strength ${part.strength.toFixed(2)}` : "default strength"
     }`,
     namespace,
   }));
 }
 
 // ── Infer interactions from circuit topology ──────────────────────────────────
-function inferInteractions(
-  nodes: CircuitNode[],
-  namespace: string,
-): SBOLInteraction[] {
+function inferInteractions(nodes: CircuitNode[], namespace: string): SBOLInteraction[] {
   const interactions: SBOLInteraction[] = [];
 
   for (const node of nodes) {
-    const promoters = node.parts.filter(p => p.type === 'promoter');
-    const cdsParts  = node.parts.filter(p => p.type === 'cds');
+    const promoters = node.parts.filter((p) => p.type === "promoter");
+    const cdsParts = node.parts.filter((p) => p.type === "cds");
 
     // Promoter → CDS = Genetic Production (SBO:0000589)
     for (const pr of promoters) {
       for (const cds of cdsParts) {
         interactions.push({
           displayId: `${namespace}_interaction_${pr.id}_${cds.id}`,
-          type: 'SBO:0000589',
+          type: "SBO:0000589",
           participantIds: [pr.id, cds.id],
         });
       }
@@ -119,17 +113,15 @@ function inferInteractions(
 // ── Escape XML special characters ─────────────────────────────────────────────
 function escXml(s: string): string {
   return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 // ── Serialize to SBOL 3.0 RDF/XML ────────────────────────────────────────────
-function serializeToXml(
-  doc: Omit<SBOLDocument, 'serializedXml' | 'serializedTurtle'>,
-): string {
+function serializeToXml(doc: Omit<SBOLDocument, "serializedXml" | "serializedTurtle">): string {
   const ns = escXml(doc.namespace);
   const lines: string[] = [
     `<?xml version="1.0" encoding="UTF-8"?>`,
@@ -159,7 +151,9 @@ function serializeToXml(
   // SubComponents
   for (const comp of doc.components) {
     lines.push(`    <sbol:hasFeature>`);
-    lines.push(`      <sbol:SubComponent rdf:about="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(comp.displayId)}">`);
+    lines.push(
+      `      <sbol:SubComponent rdf:about="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(comp.displayId)}">`,
+    );
     lines.push(`        <sbol:displayId>SubComponent_${escXml(comp.displayId)}</sbol:displayId>`);
     lines.push(`        <sbol:instanceOf rdf:resource="${ns}/${escXml(comp.displayId)}"/>`);
     lines.push(`      </sbol:SubComponent>`);
@@ -169,12 +163,16 @@ function serializeToXml(
   // Constraints (ordering: i must precede i+1)
   for (let i = 0; i < doc.components.length - 1; i++) {
     const subj = doc.components[i];
-    const obj  = doc.components[i + 1];
+    const obj = doc.components[i + 1];
     lines.push(`    <sbol:hasConstraint>`);
     lines.push(`      <sbol:Constraint rdf:about="${ns}/${escXml(doc.displayId)}/Constraint_${i}">`);
     lines.push(`        <sbol:restriction rdf:resource="http://sbols.org/v3#precedes"/>`);
-    lines.push(`        <sbol:subject rdf:resource="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(subj.displayId)}"/>`);
-    lines.push(`        <sbol:object rdf:resource="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(obj.displayId)}"/>`);
+    lines.push(
+      `        <sbol:subject rdf:resource="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(subj.displayId)}"/>`,
+    );
+    lines.push(
+      `        <sbol:object rdf:resource="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(obj.displayId)}"/>`,
+    );
     lines.push(`      </sbol:Constraint>`);
     lines.push(`    </sbol:hasConstraint>`);
   }
@@ -184,11 +182,13 @@ function serializeToXml(
     lines.push(`    <sbol:hasInteraction>`);
     lines.push(`      <sbol:Interaction rdf:about="${ns}/${escXml(doc.displayId)}/${escXml(inter.displayId)}">`);
     lines.push(`        <sbol:displayId>${escXml(inter.displayId)}</sbol:displayId>`);
-    lines.push(`        <sbol:type rdf:resource="${SBO_URI_PREFIX}${inter.type.replace('SBO:', '')}"/>`);
+    lines.push(`        <sbol:type rdf:resource="${SBO_URI_PREFIX}${inter.type.replace("SBO:", "")}"/>`);
     for (const pid of inter.participantIds) {
       lines.push(`        <sbol:hasParticipation>`);
       lines.push(`          <sbol:Participation>`);
-      lines.push(`            <sbol:participant rdf:resource="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(pid)}"/>`);
+      lines.push(
+        `            <sbol:participant rdf:resource="${ns}/${escXml(doc.displayId)}/SubComponent_${escXml(pid)}"/>`,
+      );
       lines.push(`          </sbol:Participation>`);
       lines.push(`        </sbol:hasParticipation>`);
     }
@@ -204,9 +204,9 @@ function serializeToXml(
     lines.push(`  <sbol:Component rdf:about="${ns}/${escXml(comp.displayId)}">`);
     lines.push(`    <sbol:displayId>${escXml(comp.displayId)}</sbol:displayId>`);
     lines.push(`    <sbol:name>${escXml(comp.name)}</sbol:name>`);
-    lines.push(`    <dcterms:description>${escXml(comp.description ?? '')}</dcterms:description>`);
+    lines.push(`    <dcterms:description>${escXml(comp.description ?? "")}</dcterms:description>`);
     lines.push(`    <sbol:type rdf:resource="http://www.biopax.org/release/biopax-level3.owl#DnaRegion"/>`);
-    lines.push(`    <sbol:role rdf:resource="${SO_URI_PREFIX}${comp.role.replace('SO:', '')}"/>`);
+    lines.push(`    <sbol:role rdf:resource="${SO_URI_PREFIX}${comp.role.replace("SO:", "")}"/>`);
 
     if (comp.sequence) {
       lines.push(`    <sbol:hasSequence>`);
@@ -223,13 +223,11 @@ function serializeToXml(
   }
 
   lines.push(`</rdf:RDF>`);
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ── Serialize to Turtle (RDF/Turtle) ──────────────────────────────────────────
-function serializeToTurtle(
-  doc: Omit<SBOLDocument, 'serializedXml' | 'serializedTurtle'>,
-): string {
+function serializeToTurtle(doc: Omit<SBOLDocument, "serializedXml" | "serializedTurtle">): string {
   const ns = doc.namespace;
   const lines: string[] = [
     `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .`,
@@ -263,11 +261,11 @@ function serializeToTurtle(
     lines.push(`    sbol:displayId "${comp.displayId}" ;`);
     lines.push(`    sbol:name "${comp.name}" ;`);
     lines.push(`    sbol:type <http://www.biopax.org/release/biopax-level3.owl#DnaRegion> ;`);
-    lines.push(`    sbol:role ${comp.role.replace(':', ':')} .`);
+    lines.push(`    sbol:role ${comp.role.replace(":", ":")} .`);
     lines.push(``);
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -283,12 +281,12 @@ function serializeToTurtle(
 export function serializeToSBOL(
   circuitNodes: CircuitNode[],
   constructName: string,
-  namespace: string = 'https://nexus-bio.org/sbol3',
+  namespace: string = "https://nexus-bio.org/sbol3",
 ): SBOLDocument {
-  const allParts = circuitNodes.flatMap(n => n.parts);
+  const allParts = circuitNodes.flatMap((n) => n.parts);
   const components = partsToComponents(allParts, namespace);
   const interactions = inferInteractions(circuitNodes, namespace);
-  const displayId = constructName.replace(/[^a-zA-Z0-9_]/g, '_');
+  const displayId = constructName.replace(/[^a-zA-Z0-9_]/g, "_");
   const createdAt = new Date().toISOString();
 
   const docBase = {
@@ -314,7 +312,7 @@ export function serializeToSBOL(
 export function serializePartsToSBOL(
   parts: GeneticPart[],
   constructName: string,
-  namespace: string = 'https://nexus-bio.org/sbol3',
+  namespace: string = "https://nexus-bio.org/sbol3",
 ): SBOLDocument {
   const node: CircuitNode = { id: constructName, parts };
   return serializeToSBOL([node], constructName, namespace);
@@ -328,34 +326,44 @@ export function validateSBOL(doc: SBOLDocument): string[] {
   const issues: string[] = [];
 
   if (doc.components.length === 0) {
-    issues.push('ERROR: Document has no components.');
+    issues.push("ERROR: Document has no components.");
   }
 
   for (const comp of doc.components) {
-    if (!comp.displayId || comp.displayId.trim() === '') {
+    if (!comp.displayId || comp.displayId.trim() === "") {
       issues.push(`ERROR: Component missing displayId.`);
     }
-    const validRoles: string[] = ['SO:0000167', 'SO:0000139', 'SO:0000316', 'SO:0000141', 'SO:0000110', 'SO:0000296', 'SO:0000057'];
+    const validRoles: string[] = [
+      "SO:0000167",
+      "SO:0000139",
+      "SO:0000316",
+      "SO:0000141",
+      "SO:0000110",
+      "SO:0000296",
+      "SO:0000057",
+    ];
     if (!validRoles.includes(comp.role)) {
       issues.push(`WARNING: Component "${comp.displayId}" has non-standard role "${comp.role}".`);
     }
   }
 
   // Check construct ordering: promoter should precede RBS should precede CDS should precede terminator
-  const roleOrder = ['SO:0000167', 'SO:0000139', 'SO:0000316', 'SO:0000141'];
+  const roleOrder = ["SO:0000167", "SO:0000139", "SO:0000316", "SO:0000141"];
   let lastIdx = -1;
   for (const comp of doc.components) {
     const idx = roleOrder.indexOf(comp.role);
     if (idx !== -1) {
       if (idx < lastIdx) {
-        issues.push(`WARNING: Part "${comp.displayId}" (${ROLE_LABEL[comp.role]}) appears out of canonical order (P→R→C→T).`);
+        issues.push(
+          `WARNING: Part "${comp.displayId}" (${ROLE_LABEL[comp.role]}) appears out of canonical order (P→R→C→T).`,
+        );
       }
       lastIdx = idx;
     }
   }
 
   if (issues.length === 0) {
-    issues.push('VALID: Document passes all structural checks.');
+    issues.push("VALID: Document passes all structural checks.");
   }
 
   return issues;

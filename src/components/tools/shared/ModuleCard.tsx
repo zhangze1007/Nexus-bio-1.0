@@ -5,10 +5,11 @@
  *
  * Cards now read as white figure sheets seated inside a sepia workbench frame.
  */
-'use client';
-import { motion } from 'framer-motion';
-import type { CSSProperties, ReactNode } from 'react';
-import { THEME } from '../../../theme';
+"use client";
+import { motion } from "framer-motion";
+import type { CSSProperties, ReactNode } from "react";
+import { THEME } from "../../../theme";
+
 interface ModuleCardProps {
   children: ReactNode;
   /** Grid area name (maps to ToolShell gridTemplateAreas) */
@@ -30,7 +31,14 @@ interface ModuleCardProps {
 }
 
 export default function ModuleCard({
-  children, area, active, title, style, colSpan, rowSpan, flush,
+  children,
+  area,
+  active,
+  title,
+  style,
+  colSpan,
+  rowSpan,
+  flush,
   showSignal = false,
 }: ModuleCardProps) {
   return (
@@ -44,21 +52,19 @@ export default function ModuleCard({
         gridArea: area,
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
-        borderRadius: 'var(--nb-radius-xl)',
+        borderRadius: "var(--nb-radius-xl)",
         background: THEME.PANEL_SURFACE,
-        border: active
-          ? `1px solid ${THEME.BORDER_STRONG}`
-          : `1px solid ${THEME.BORDER}`,
+        border: active ? `1px solid ${THEME.BORDER_STRONG}` : `1px solid ${THEME.BORDER}`,
         boxShadow: active
-          ? '0 2px 24px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.08)'
-          : '0 2px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
-        padding: flush ? 0 : '18px',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
+          ? "0 2px 24px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.08)"
+          : "0 2px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)",
+        padding: flush ? 0 : "18px",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
         minWidth: 0,
         minHeight: 0,
-        position: 'relative',
+        position: "relative",
         ...style,
       }}
       className="nb-tool-card"
@@ -66,86 +72,104 @@ export default function ModuleCard({
       <div
         aria-hidden
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
-          background: 'linear-gradient(135deg, rgba(231,199,169,0.08) 0%, rgba(255,255,255,0) 42%, rgba(207,196,227,0.08) 100%)',
-          pointerEvents: 'none',
+          background:
+            "linear-gradient(135deg, rgba(231,199,169,0.08) 0%, rgba(255,255,255,0) 42%, rgba(207,196,227,0.08) 100%)",
+          pointerEvents: "none",
         }}
       />
       {/* ── LIVE signal with wave ripple ── */}
       {showSignal && (
-        <div style={{
-          position: 'absolute',
-          top: flush ? '10px' : '8px',
-          right: flush ? '12px' : '10px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          zIndex: 2,
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: flush ? "10px" : "8px",
+            right: flush ? "12px" : "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            zIndex: 2,
+          }}
+        >
           {/* Dot container with ripple */}
-          <span style={{
-            position: 'relative',
-            width: '6px',
-            height: '6px',
-            flexShrink: 0,
-            display: 'inline-block',
-          }}>
+          <span
+            style={{
+              position: "relative",
+              width: "6px",
+              height: "6px",
+              flexShrink: 0,
+              display: "inline-block",
+            }}
+          >
             {/* Expanding ripple ring */}
-            <span style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              border: '1px solid',
-              borderColor: THEME.CORAL,
-              animation: 'signal-ripple 2s ease-out infinite',
-            }} />
+            <span
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                border: "1px solid",
+                borderColor: THEME.CORAL,
+                animation: "signal-ripple 2s ease-out infinite",
+              }}
+            />
             {/* Second ripple ring (delayed) */}
-            <span style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              border: '1px solid',
-              borderColor: THEME.CORAL,
-              animation: 'signal-ripple 2s ease-out infinite 1s',
-            }} />
+            <span
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                border: "1px solid",
+                borderColor: THEME.CORAL,
+                animation: "signal-ripple 2s ease-out infinite 1s",
+              }}
+            />
             {/* Core dot */}
-            <span style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              background: THEME.CORAL,
-              animation: 'signal-breathe 2.5s ease-in-out infinite',
-            }} />
+            <span
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                background: THEME.CORAL,
+                animation: "signal-breathe 2.5s ease-in-out infinite",
+              }}
+            />
           </span>
-          <span style={{
-            fontFamily: THEME.MONO,
-            fontSize: 'var(--nb-fs-xs)',
-            fontWeight: 600,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: THEME.LABEL,
-          }}>
+          <span
+            style={{
+              fontFamily: THEME.MONO,
+              fontSize: "var(--nb-fs-xs)",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: THEME.LABEL,
+            }}
+          >
             LIVE
           </span>
         </div>
       )}
 
       {title && (
-        <div style={{
-          fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 500,
-          textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? THEME.VALUE : THEME.LABEL,
-          marginBottom: flush ? 0 : '10px',
-          padding: flush ? '12px 14px 0' : 0,
-          flexShrink: 0,
-          position: 'relative',
-          zIndex: 1,
-        }}>
+        <div
+          style={{
+            fontFamily: THEME.SANS,
+            fontSize: "var(--nb-fs-xs)",
+            fontWeight: 500,
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: active ? THEME.VALUE : THEME.LABEL,
+            marginBottom: flush ? 0 : "10px",
+            padding: flush ? "12px 14px 0" : 0,
+            flexShrink: 0,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           {title}
         </div>
       )}
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}>
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
         {children}
       </div>
     </motion.div>

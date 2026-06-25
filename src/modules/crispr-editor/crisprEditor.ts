@@ -14,18 +14,15 @@
  *   ALGORITHM: Rule Set 2 scoring + editing window constraints + off-target k-mer search
  */
 
-import type {
-  CRISPRInput, EditingResult, GuideDesign,
-  EditingMode, BaseEditorType, PrimeEditorType,
-} from './types';
+import type { BaseEditorType, CRISPRInput, EditingMode, EditingResult, GuideDesign, PrimeEditorType } from "./types";
 
 // ── PAM Sequences ──────────────────────────────────────────────────────────
 
 const PAM_SEQUENCES: Record<string, string> = {
-  SpCas9: 'NGG',
-  SpCas9_NG: 'NG',
-  SpRY: 'NRN',
-  Cas12a: 'TTTV',
+  SpCas9: "NGG",
+  SpCas9_NG: "NG",
+  SpRY: "NRN",
+  Cas12a: "TTTV",
 };
 
 // ── Editing Windows ────────────────────────────────────────────────────────
@@ -38,11 +35,11 @@ const PAM_SEQUENCES: Record<string, string> = {
  * Reference: Gaudelli et al. (2017) Science 359:920-924
  */
 const EDITING_WINDOWS: Record<string, [number, number]> = {
-  BE3: [4, 8],    // positions 4-8 from 5' end
-  BE4: [4, 8],    // same as BE3
-  ABE: [4, 7],    // positions 4-7 from 5' end
-  PE2: [0, 20],   // entire spacer (flexible)
-  PE4: [0, 20],   // entire spacer (flexible)
+  BE3: [4, 8], // positions 4-8 from 5' end
+  BE4: [4, 8], // same as BE3
+  ABE: [4, 7], // positions 4-7 from 5' end
+  PE2: [0, 20], // entire spacer (flexible)
+  PE4: [0, 20], // entire spacer (flexible)
 };
 
 // ── Off-Target Scoring ─────────────────────────────────────────────────────
@@ -73,20 +70,17 @@ function offTargetScore(querySeq: string, targetSeq: string): number {
 /**
  * Search for potential off-target sites in a sequence.
  */
-function findOffTargets(
-  spacer: string,
-  targetSequence: string,
-  pam: string,
-): GuideDesign['offTargetSites'] {
-  const sites: GuideDesign['offTargetSites'] = [];
+function findOffTargets(spacer: string, targetSequence: string, pam: string): GuideDesign["offTargetSites"] {
+  const sites: GuideDesign["offTargetSites"] = [];
   const spacerLen = spacer.length;
   const pamLen = pam.length;
 
   for (let i = 0; i <= targetSequence.length - spacerLen - pamLen; i++) {
     const candidate = targetSequence.substring(i, i + spacerLen);
-    const mismatches = spacer.split('').filter((b, j) => b !== candidate[j]).length;
+    const mismatches = spacer.split("").filter((b, j) => b !== candidate[j]).length;
 
-    if (mismatches <= 4) { // allow up to 4 mismatches
+    if (mismatches <= 4) {
+      // allow up to 4 mismatches
       const score = offTargetScore(spacer, candidate);
       sites.push({
         position: i,
@@ -107,24 +101,22 @@ function findOffTargets(
  * Finds PAM sites near the target and designs spacers with
  * optimal on-target score and minimal off-target risk.
  */
-function designGuides(
-  targetSequence: string,
-  targetPosition: number,
-  mode: EditingMode,
-): GuideDesign[] {
+function designGuides(targetSequence: string, targetPosition: number, mode: EditingMode): GuideDesign[] {
   const guides: GuideDesign[] = [];
   const pam = PAM_SEQUENCES.SpCas9;
   const spacerLen = 20;
   const pamLen = pam.length;
 
   // Scan for PAM sites near target position
-  for (let i = Math.max(0, targetPosition - spacerLen - pamLen);
-       i <= Math.min(targetSequence.length - spacerLen - pamLen, targetPosition + 10);
-       i++) {
+  for (
+    let i = Math.max(0, targetPosition - spacerLen - pamLen);
+    i <= Math.min(targetSequence.length - spacerLen - pamLen, targetPosition + 10);
+    i++
+  ) {
     const pamSite = targetSequence.substring(i + spacerLen, i + spacerLen + pamLen);
 
     // Check PAM match (simplified: check for NGG)
-    if (pamSite.length >= 3 && pamSite[2] === 'G') {
+    if (pamSite.length >= 3 && pamSite[2] === "G") {
       const spacer = targetSequence.substring(i, i + spacerLen);
 
       // On-target score (simplified Rule Set 2)
@@ -136,7 +128,7 @@ function designGuides(
       const offTargets = findOffTargets(spacer, targetSequence, pam);
 
       // Editing window
-      const window = EDITING_WINDOWS[mode === 'base_editing' ? 'BE3' : mode === 'prime_editing' ? 'PE2' : 'BE3'];
+      const window = EDITING_WINDOWS[mode === "base_editing" ? "BE3" : mode === "prime_editing" ? "PE2" : "BE3"];
       const targetInWindow = targetPosition >= i + window[0] && targetPosition <= i + window[1];
 
       guides.push({
@@ -179,8 +171,8 @@ export function designCRISPREdit(input: CRISPRInput): EditingResult {
     insertion,
     deletionLength,
     mode,
-    baseEditor = 'BE3',
-    primeEditor = 'PE2',
+    baseEditor = "BE3",
+    primeEditor = "PE2",
     host,
     highFidelity = false,
   } = input;
@@ -190,13 +182,13 @@ export function designCRISPREdit(input: CRISPRInput): EditingResult {
     return {
       mode,
       guides: [],
-      predictedEdit: 'invalid',
+      predictedEdit: "invalid",
       predictedEfficiency: 0,
       offTargetRisk: 0,
       isAcceptable: false,
-      rejectionReason: 'Target position out of sequence bounds',
+      rejectionReason: "Target position out of sequence bounds",
       evidence: [],
-      designNotes: ['Invalid target position'],
+      designNotes: ["Invalid target position"],
     };
   }
 
@@ -207,46 +199,56 @@ export function designCRISPREdit(input: CRISPRInput): EditingResult {
     return {
       mode,
       guides: [],
-      predictedEdit: 'no_guide',
+      predictedEdit: "no_guide",
       predictedEfficiency: 0,
       offTargetRisk: 0,
       isAcceptable: false,
-      rejectionReason: 'No suitable PAM sites found near target position',
+      rejectionReason: "No suitable PAM sites found near target position",
       evidence: [],
-      designNotes: ['No PAM sites found near target'],
+      designNotes: ["No PAM sites found near target"],
     };
   }
 
   const bestGuide = guides[0];
 
   // Mode-specific analysis
-  let predictedEdit = '';
+  let predictedEdit = "";
   let predictedEfficiency = 0;
   let offTargetRisk = 0;
 
   switch (mode) {
-    case 'cas9': {
+    case "cas9": {
       predictedEdit = `DSB at position ${targetPosition}, repair via NHEJ`;
       predictedEfficiency = bestGuide.onTargetScore * 0.8; // NHEJ efficiency
       break;
     }
-    case 'base_editing': {
+    case "base_editing": {
       if (!desiredChange) {
         return {
-          mode, guides, predictedEdit: 'no_change', predictedEfficiency: 0,
-          offTargetRisk: 0, isAcceptable: false,
-          rejectionReason: 'Base editing requires desiredChange (from → to)',
-          evidence: [], designNotes: ['Missing desiredChange for base editing'],
+          mode,
+          guides,
+          predictedEdit: "no_change",
+          predictedEfficiency: 0,
+          offTargetRisk: 0,
+          isAcceptable: false,
+          rejectionReason: "Base editing requires desiredChange (from → to)",
+          evidence: [],
+          designNotes: ["Missing desiredChange for base editing"],
         };
       }
 
       // Check if edit falls in editing window
       if (!bestGuide.targetInWindow) {
         return {
-          mode, guides, predictedEdit: 'out_of_window', predictedEfficiency: 0,
-          offTargetRisk: 0, isAcceptable: false,
+          mode,
+          guides,
+          predictedEdit: "out_of_window",
+          predictedEfficiency: 0,
+          offTargetRisk: 0,
+          isAcceptable: false,
           rejectionReason: `Target position ${targetPosition} is outside editing window [${bestGuide.editingWindow[0]}, ${bestGuide.editingWindow[1]}]`,
-          evidence: [], designNotes: ['Target outside editing window'],
+          evidence: [],
+          designNotes: ["Target outside editing window"],
         };
       }
 
@@ -254,24 +256,34 @@ export function designCRISPREdit(input: CRISPRInput): EditingResult {
       const fromBase = desiredChange.from.toUpperCase();
       const toBase = desiredChange.to.toUpperCase();
 
-      if (baseEditor === 'BE3' || baseEditor === 'BE4') {
+      if (baseEditor === "BE3" || baseEditor === "BE4") {
         // CBE: C→T (or G→A on opposite strand)
-        if (fromBase !== 'C' || toBase !== 'T') {
+        if (fromBase !== "C" || toBase !== "T") {
           return {
-            mode, guides, predictedEdit: 'incompatible', predictedEfficiency: 0,
-            offTargetRisk: 0, isAcceptable: false,
+            mode,
+            guides,
+            predictedEdit: "incompatible",
+            predictedEfficiency: 0,
+            offTargetRisk: 0,
+            isAcceptable: false,
             rejectionReason: `${baseEditor} only supports C→T edits, requested ${fromBase}→${toBase}`,
-            evidence: [], designNotes: ['Incompatible edit for CBE'],
+            evidence: [],
+            designNotes: ["Incompatible edit for CBE"],
           };
         }
-      } else if (baseEditor === 'ABE') {
+      } else if (baseEditor === "ABE") {
         // ABE: A→G (or T→C on opposite strand)
-        if (fromBase !== 'A' || toBase !== 'G') {
+        if (fromBase !== "A" || toBase !== "G") {
           return {
-            mode, guides, predictedEdit: 'incompatible', predictedEfficiency: 0,
-            offTargetRisk: 0, isAcceptable: false,
+            mode,
+            guides,
+            predictedEdit: "incompatible",
+            predictedEfficiency: 0,
+            offTargetRisk: 0,
+            isAcceptable: false,
             rejectionReason: `ABE only supports A→G edits, requested ${fromBase}→${toBase}`,
-            evidence: [], designNotes: ['Incompatible edit for ABE'],
+            evidence: [],
+            designNotes: ["Incompatible edit for ABE"],
           };
         }
       }
@@ -280,19 +292,24 @@ export function designCRISPREdit(input: CRISPRInput): EditingResult {
       predictedEfficiency = bestGuide.onTargetScore * 0.6; // base editing efficiency
       break;
     }
-    case 'prime_editing': {
-      if (editType === 'substitution' && desiredChange) {
+    case "prime_editing": {
+      if (editType === "substitution" && desiredChange) {
         predictedEdit = `PE: ${desiredChange.from}→${desiredChange.to} at position ${targetPosition}`;
-      } else if (editType === 'insertion' && insertion) {
+      } else if (editType === "insertion" && insertion) {
         predictedEdit = `PE: insert ${insertion} at position ${targetPosition}`;
-      } else if (editType === 'deletion' && deletionLength) {
+      } else if (editType === "deletion" && deletionLength) {
         predictedEdit = `PE: delete ${deletionLength} bp at position ${targetPosition}`;
       } else {
         return {
-          mode, guides, predictedEdit: 'invalid_edit', predictedEfficiency: 0,
-          offTargetRisk: 0, isAcceptable: false,
-          rejectionReason: 'Prime editing requires valid editType and corresponding parameters',
-          evidence: [], designNotes: ['Invalid prime editing parameters'],
+          mode,
+          guides,
+          predictedEdit: "invalid_edit",
+          predictedEfficiency: 0,
+          offTargetRisk: 0,
+          isAcceptable: false,
+          rejectionReason: "Prime editing requires valid editType and corresponding parameters",
+          evidence: [],
+          designNotes: ["Invalid prime editing parameters"],
         };
       }
 
@@ -303,17 +320,17 @@ export function designCRISPREdit(input: CRISPRInput): EditingResult {
   }
 
   // Off-target risk
-  const highRiskOffTargets = bestGuide.offTargetSites.filter(s => s.score > 0.5);
-  offTargetRisk = highRiskOffTargets.length > 0
-    ? Math.max(...highRiskOffTargets.map(s => s.score))
-    : 0;
+  const highRiskOffTargets = bestGuide.offTargetSites.filter((s) => s.score > 0.5);
+  offTargetRisk = highRiskOffTargets.length > 0 ? Math.max(...highRiskOffTargets.map((s) => s.score)) : 0;
 
   // Acceptability
   const isAcceptable = predictedEfficiency > 0.1 && offTargetRisk < 0.5 && bestGuide.targetInWindow;
   const rejectionReason = !isAcceptable
-    ? !bestGuide.targetInWindow ? 'Target outside editing window'
-      : offTargetRisk >= 0.5 ? 'High off-target risk'
-      : 'Low predicted efficiency'
+    ? !bestGuide.targetInWindow
+      ? "Target outside editing window"
+      : offTargetRisk >= 0.5
+        ? "High off-target risk"
+        : "Low predicted efficiency"
     : undefined;
 
   return {
@@ -325,11 +342,11 @@ export function designCRISPREdit(input: CRISPRInput): EditingResult {
     isAcceptable,
     rejectionReason,
     evidence: [
-      { source: 'Rule Set 2', type: 'literature', title: 'Doench et al. (2016) Nat Biotechnol 34:184' },
-      { source: 'CRISPOR', type: 'database', title: 'Concordet & Haeussler (2018) Bioinformatics 34:2243' },
+      { source: "Rule Set 2", type: "literature", title: "Doench et al. (2016) Nat Biotechnol 34:184" },
+      { source: "CRISPOR", type: "database", title: "Concordet & Haeussler (2018) Bioinformatics 34:2243" },
     ],
     designNotes: [
-      `Mode: ${mode}, Editor: ${mode === 'base_editing' ? baseEditor : mode === 'prime_editing' ? primeEditor : 'SpCas9'}`,
+      `Mode: ${mode}, Editor: ${mode === "base_editing" ? baseEditor : mode === "prime_editing" ? primeEditor : "SpCas9"}`,
       `Best guide: ${bestGuide.sequence} (score=${bestGuide.onTargetScore})`,
       `Editing window: [${bestGuide.editingWindow[0]}, ${bestGuide.editingWindow[1]}]`,
       `Target in window: ${bestGuide.targetInWindow}`,

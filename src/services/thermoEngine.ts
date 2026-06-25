@@ -18,7 +18,7 @@
  *   - eQuilibrator 3 (Beber et al. 2022, Nucleic Acids Research)
  */
 
-import { estimateFormationEnergy, GroupContributionResult } from '../utils/groupContribution';
+import { estimateFormationEnergy, type GroupContributionResult } from "../utils/groupContribution";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -80,9 +80,9 @@ export function calcTransformedGibbs(
   nH: number = 0,
   deltaZSquared: number = 0,
 ): number {
-  if (temp <= 0) throw new Error('Temperature must be positive (K)');
-  if (ionicStrength < 0) throw new Error('Ionic strength must be non-negative');
-  if (pH < 0 || pH > 14) throw new Error('pH must be between 0 and 14');
+  if (temp <= 0) throw new Error("Temperature must be positive (K)");
+  if (ionicStrength < 0) throw new Error("Ionic strength must be non-negative");
+  if (pH < 0 || pH > 14) throw new Error("pH must be between 0 and 14");
 
   // pH-dependent proton contribution
   const protonTerm = R * temp * LN10 * (pH - 7) * nH;
@@ -92,9 +92,7 @@ export function calcTransformedGibbs(
   //   ΔG_DH = +9.205 · Δz² · √I / (1 + 1.6 · √I)
   // where Δz² = Σ_products(zi²) - Σ_reactants(zi²)
   const sqrtI = Math.sqrt(ionicStrength);
-  const debyeHuckel = deltaZSquared !== 0
-    ? 9.205 * deltaZSquared * sqrtI / (1 + 1.6 * sqrtI)
-    : 0;
+  const debyeHuckel = deltaZSquared !== 0 ? (9.205 * deltaZSquared * sqrtI) / (1 + 1.6 * sqrtI) : 0;
 
   return dG0 + protonTerm + debyeHuckel;
 }
@@ -109,7 +107,7 @@ export function calcTransformedGibbs(
  * @returns Transformed equilibrium constant
  */
 export function calcTransformedKeq(dGTransformed: number, temp: number): number {
-  if (temp <= 0) throw new Error('Temperature must be positive (K)');
+  if (temp <= 0) throw new Error("Temperature must be positive (K)");
   return Math.exp(-dGTransformed / (R * temp));
 }
 
@@ -146,14 +144,9 @@ export interface PathwayStep {
  *   { dG0: -14.2, nH: 0, z: 0 },  // PFK
  * ], 7.0, 0.1, 298.15);
  */
-export function calcPathwayDeltaG(
-  steps: PathwayStep[],
-  pH: number,
-  ionicStrength: number,
-  temp: number,
-): number {
+export function calcPathwayDeltaG(steps: PathwayStep[], pH: number, ionicStrength: number, temp: number): number {
   if (steps.length === 0) {
-    throw new Error('Pathway must have at least one step');
+    throw new Error("Pathway must have at least one step");
   }
 
   return steps.reduce((sum, step) => {
@@ -184,7 +177,7 @@ export function calcPathwayDeltaG(
  * Standard thermodynamic relation: ΔG° = -RT·ln(K_eq)
  */
 export function calcKeq(dG0: number, temp: number): number {
-  if (temp <= 0) throw new Error('Temperature must be positive (K)');
+  if (temp <= 0) throw new Error("Temperature must be positive (K)");
   return Math.exp(-dG0 / (R * temp));
 }
 
@@ -222,12 +215,8 @@ export function calcKeq(dG0: number, temp: number): number {
  * // Q = (1e-3 × 5e-3) / 10e-3 = 5e-4
  * // ΔG = -30.5 + 0.008314 × 298.15 × ln(5e-4) ≈ -49.4 kJ/mol
  */
-export function calcDeltaG(
-  dG0: number,
-  temp: number,
-  concentrations: Record<string, number>,
-): number {
-  if (temp <= 0) throw new Error('Temperature must be positive (K)');
+export function calcDeltaG(dG0: number, temp: number, concentrations: Record<string, number>): number {
+  if (temp <= 0) throw new Error("Temperature must be positive (K)");
 
   const keys = Object.keys(concentrations);
   if (keys.length === 0) {
@@ -243,9 +232,9 @@ export function calcDeltaG(
     const conc = concentrations[key];
     if (conc < 0) throw new Error(`Concentration for "${key}" must be non-negative`);
 
-    if (key.startsWith('product_')) {
+    if (key.startsWith("product_")) {
       products.push(conc);
-    } else if (key.startsWith('reactant_')) {
+    } else if (key.startsWith("reactant_")) {
       reactants.push(conc);
     } else {
       // If no prefix, treat as reactant by default
@@ -254,13 +243,11 @@ export function calcDeltaG(
   }
 
   if (reactants.length === 0) {
-    throw new Error('At least one reactant concentration is required');
+    throw new Error("At least one reactant concentration is required");
   }
 
   // Calculate reaction quotient Q
-  const productProd = products.length > 0
-    ? products.reduce((a, b) => a * b, 1)
-    : 1; // If no products specified, Q = 1/reactants
+  const productProd = products.length > 0 ? products.reduce((a, b) => a * b, 1) : 1; // If no products specified, Q = 1/reactants
   const reactantProd = reactants.reduce((a, b) => a * b, 1);
 
   if (reactantProd === 0) {
@@ -285,8 +272,8 @@ export function calcDeltaG(
  * @returns Actual ΔG in kJ/mol
  */
 export function calcDeltaGFromQ(dG0: number, temp: number, Q: number): number {
-  if (temp <= 0) throw new Error('Temperature must be positive (K)');
-  if (Q < 0) throw new Error('Reaction quotient Q must be non-negative');
+  if (temp <= 0) throw new Error("Temperature must be positive (K)");
+  if (Q < 0) throw new Error("Reaction quotient Q must be non-negative");
   if (Q === 0) return Infinity;
   return dG0 + R * temp * Math.log(Q);
 }
@@ -296,7 +283,7 @@ export function calcDeltaGFromQ(dG0: number, temp: number, Q: number): number {
 // ---------------------------------------------------------------------------
 
 /** eQuilibrator API base URL */
-const EQUILIBRATOR_API_BASE = 'https://equilibrator.weizmann.ac.il/api/v2';
+const EQUILIBRATOR_API_BASE = "https://equilibrator.weizmann.ac.il/api/v2";
 
 /** Timeout for eQuilibrator API calls (ms) */
 const EQUILIBRATOR_TIMEOUT = 8000;
@@ -312,7 +299,7 @@ export interface EquilibratorCompoundResult {
   /** KEGG compound ID if available */
   keggId?: string;
   /** Source identifier */
-  source: 'equilibrator';
+  source: "equilibrator";
 }
 
 /**
@@ -332,9 +319,7 @@ export interface EquilibratorCompoundResult {
  * @scientific_provenance
  * eQuilibrator 3 (Beber et al. 2022) Nucleic Acids Research 50(D1):D663-D669
  */
-export async function fetchEquilibratorDeltaG(
-  compoundName: string,
-): Promise<EquilibratorCompoundResult | null> {
+export async function fetchEquilibratorDeltaG(compoundName: string): Promise<EquilibratorCompoundResult | null> {
   if (!compoundName || compoundName.trim().length === 0) return null;
 
   const query = compoundName.trim();
@@ -344,7 +329,7 @@ export async function fetchEquilibratorDeltaG(
     const searchUrl = `${EQUILIBRATOR_API_BASE}/search?query=${encodeURIComponent(query)}`;
     const searchResponse = await fetch(searchUrl, {
       signal: AbortSignal.timeout(EQUILIBRATOR_TIMEOUT),
-      headers: { Accept: 'application/json' },
+      headers: { Accept: "application/json" },
     });
 
     if (!searchResponse.ok) return null;
@@ -355,14 +340,13 @@ export async function fetchEquilibratorDeltaG(
     // eQuilibrator search returns an array of { name, model_ids, ... }
     const compounds: unknown[] = Array.isArray(searchData)
       ? searchData
-      : searchData?.compounds ?? searchData?.results ?? [];
+      : (searchData?.compounds ?? searchData?.results ?? []);
 
     if (compounds.length === 0) return null;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const firstHit = compounds[0] as any;
-    const compoundId: string | undefined =
-      firstHit?.model_ids?.[0] ?? firstHit?.id ?? firstHit?.kegg_id;
+    const compoundId: string | undefined = firstHit?.model_ids?.[0] ?? firstHit?.id ?? firstHit?.kegg_id;
 
     if (!compoundId) return null;
 
@@ -371,7 +355,7 @@ export async function fetchEquilibratorDeltaG(
     const compoundUrl = `${EQUILIBRATOR_API_BASE}/compound?ids=${encodeURIComponent(compoundId)}`;
     const compoundResponse = await fetch(compoundUrl, {
       signal: AbortSignal.timeout(EQUILIBRATOR_TIMEOUT),
-      headers: { Accept: 'application/json' },
+      headers: { Accept: "application/json" },
     });
 
     if (!compoundResponse.ok) return null;
@@ -385,16 +369,15 @@ export async function fetchEquilibratorDeltaG(
     if (!entry) return null;
 
     // The formation energy field varies by API version
-    const dGf0: number | undefined =
-      entry.dgf0 ?? entry.dG_f ?? entry.formation_energy ?? entry.dg0_prime;
+    const dGf0: number | undefined = entry.dgf0 ?? entry.dG_f ?? entry.formation_energy ?? entry.dg0_prime;
 
     if (dGf0 === undefined || dGf0 === null || !Number.isFinite(dGf0)) return null;
 
     return {
       dGf0,
       name: entry.name ?? query,
-      keggId: compoundId.startsWith('C') ? compoundId : undefined,
-      source: 'equilibrator',
+      keggId: compoundId.startsWith("C") ? compoundId : undefined,
+      source: "equilibrator",
     };
   } catch {
     // Network error, timeout, parse error — all return null gracefully
@@ -409,7 +392,7 @@ export async function fetchEquilibratorDeltaG(
 /**
  * Confidence levels for group contribution estimates.
  */
-export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'none';
+export type ConfidenceLevel = "high" | "medium" | "low" | "none";
 
 /**
  * Result with confidence metadata.
@@ -422,7 +405,7 @@ export interface ThermoEstimate {
   /** Number of functional groups identified */
   groupsFound: number;
   /** Source of the estimate */
-  source: 'group_contribution' | 'equilibrator';
+  source: "group_contribution" | "equilibrator";
   /** eQuilibrator result if fetched */
   equilibratorResult?: EquilibratorCompoundResult;
 }
@@ -440,10 +423,10 @@ export interface ThermoEstimate {
  */
 export function adaptGroupContributionResult(result: GroupContributionResult): ThermoEstimate {
   let confidence: ConfidenceLevel;
-  if (result.confidence === 0) confidence = 'none';
-  else if (result.confidence <= 0.3) confidence = 'low';
-  else if (result.confidence <= 0.7) confidence = 'medium';
-  else confidence = 'high';
+  if (result.confidence === 0) confidence = "none";
+  else if (result.confidence <= 0.3) confidence = "low";
+  else if (result.confidence <= 0.7) confidence = "medium";
+  else confidence = "high";
 
   const groupsFound = result.matchedGroups.reduce((sum, g) => sum + g.count, 0);
 
@@ -451,7 +434,7 @@ export function adaptGroupContributionResult(result: GroupContributionResult): T
     dGf0: result.deltaGf,
     confidence,
     groupsFound,
-    source: 'group_contribution',
+    source: "group_contribution",
   };
 }
 
@@ -486,9 +469,9 @@ export async function estimateFormationEnergyWithFallback(
     if (apiResult) {
       return {
         dGf0: apiResult.dGf0,
-        confidence: 'high',
+        confidence: "high",
         groupsFound: 0,
-        source: 'equilibrator',
+        source: "equilibrator",
         equilibratorResult: apiResult,
       };
     }
@@ -499,10 +482,7 @@ export async function estimateFormationEnergyWithFallback(
   const localEstimate = adaptGroupContributionResult(estimateFormationEnergy(smiles));
 
   // If confidence is high/medium, return local result
-  if (
-    localEstimate.confidence === 'high' ||
-    localEstimate.confidence === 'medium'
-  ) {
+  if (localEstimate.confidence === "high" || localEstimate.confidence === "medium") {
     return localEstimate;
   }
 
@@ -512,9 +492,9 @@ export async function estimateFormationEnergyWithFallback(
     if (apiResult) {
       return {
         dGf0: apiResult.dGf0,
-        confidence: 'high',
+        confidence: "high",
         groupsFound: localEstimate.groupsFound,
-        source: 'equilibrator',
+        source: "equilibrator",
         equilibratorResult: apiResult,
       };
     }
@@ -532,21 +512,15 @@ export async function estimateFormationEnergyWithFallback(
  * @param referenceDGf0 - Known reference ΔG°f to use if local confidence is low
  * @returns Formation energy estimate
  */
-export function estimateFormationEnergyLocal(
-  smiles: string,
-  referenceDGf0?: number,
-): ThermoEstimate {
+export function estimateFormationEnergyLocal(smiles: string, referenceDGf0?: number): ThermoEstimate {
   const local = adaptGroupContributionResult(estimateFormationEnergy(smiles));
 
-  if (
-    (local.confidence === 'none' || local.confidence === 'low') &&
-    referenceDGf0 !== undefined
-  ) {
+  if ((local.confidence === "none" || local.confidence === "low") && referenceDGf0 !== undefined) {
     return {
       dGf0: referenceDGf0,
-      confidence: 'medium',
+      confidence: "medium",
       groupsFound: local.groupsFound,
-      source: 'equilibrator', // treating reference as authoritative
+      source: "equilibrator", // treating reference as authoritative
     };
   }
 

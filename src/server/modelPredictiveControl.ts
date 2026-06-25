@@ -71,11 +71,7 @@ export interface MPCResult {
  * ═══════════════════════════════════════════════════════════════ */
 
 /** Finite-difference Jacobian of f: R^n → R^n  w.r.t. `x`. */
-function jacobianX(
-  f: (x: number[], u: number[]) => number[],
-  x: number[],
-  u: number[],
-): number[][] {
+function jacobianX(f: (x: number[], u: number[]) => number[], x: number[], u: number[]): number[][] {
   const n = x.length;
   const eps = 1e-6;
   const f0 = f(x, u);
@@ -92,11 +88,7 @@ function jacobianX(
 }
 
 /** Finite-difference Jacobian of f w.r.t. `u`. */
-function jacobianU(
-  f: (x: number[], u: number[]) => number[],
-  x: number[],
-  u: number[],
-): number[][] {
+function jacobianU(f: (x: number[], u: number[]) => number[], x: number[], u: number[]): number[][] {
   const n = x.length;
   const m = u.length;
   const eps = 1e-6;
@@ -193,9 +185,7 @@ function buildPredictionMatrices(
 
   // PhiX[k] = A^k   — contribution of initial state to step k
   const PhiXList: number[][][] = [];
-  let Ak: number[][] = Array.from({ length: n }, (_, i) =>
-    Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)),
-  );
+  let Ak: number[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
   for (let k = 0; k <= Np; k++) {
     PhiXList.push(Ak);
     Ak = matMul(A, Ak);
@@ -410,9 +400,7 @@ export function runMPC(
   const m = costWeights.control.length;
 
   // State trajectory storage: trajectories[d][t]
-  const trajectories: number[][] = Array.from({ length: n }, (_, d) =>
-    new Array(nSteps + 1).fill(initialState[d]),
-  );
+  const trajectories: number[][] = Array.from({ length: n }, (_, d) => new Array(nSteps + 1).fill(initialState[d]));
   const controlSignals: number[] = new Array(nSteps);
   let totalCost = 0;
   let allFeasible = true;
@@ -431,7 +419,10 @@ export function runMPC(
 
     // 2. Solve QP
     const { uOpt, feasible } = solveQP(
-      x, A, B, d,
+      x,
+      A,
+      B,
+      d,
       setpoint,
       costWeights.state,
       costWeights.control,
@@ -462,10 +453,7 @@ export function runMPC(
     for (let d = 0; d < n; d++) {
       trajectories[d][t + 1] = xNext[d];
       // Check actual state constraints (tolerance for numerical noise)
-      if (
-        xNext[d] < stateConstraints.min[d] - 1e-3 ||
-        xNext[d] > stateConstraints.max[d] + 1e-3
-      ) {
+      if (xNext[d] < stateConstraints.min[d] - 1e-3 || xNext[d] > stateConstraints.max[d] + 1e-3) {
         allFeasible = false;
       }
     }

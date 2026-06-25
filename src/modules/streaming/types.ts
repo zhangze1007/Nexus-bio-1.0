@@ -7,7 +7,7 @@
  */
 
 /** Message types supported by the streaming protocol */
-export type MessageType = 'subscribe' | 'unsubscribe' | 'publish' | 'heartbeat' | 'error';
+export type MessageType = "subscribe" | "unsubscribe" | "publish" | "heartbeat" | "error";
 
 /**
  * Standard message format for all streaming communication.
@@ -51,7 +51,7 @@ export interface ClientInfo {
 // ── Anomaly Detection Types ──────────────────────────────────────────────────
 
 /** Severity levels for anomaly events */
-export type Severity = 'low' | 'medium' | 'high' | 'critical';
+export type Severity = "low" | "medium" | "high" | "critical";
 
 /**
  * An event emitted when an anomaly is detected.
@@ -147,9 +147,9 @@ export interface StreamingStackOptions {
  */
 export interface StreamingStack {
   /** The WebSocket streaming server */
-  server: import('./server').StreamingServer;
+  server: import("./server").StreamingServer;
   /** The multi-stage data processing pipeline */
-  pipeline: import('./pipeline').StreamingPipeline;
+  pipeline: import("./pipeline").StreamingPipeline;
   /** The composite anomaly detector */
-  detector: import('./anomaly').AnomalyDetector;
+  detector: import("./anomaly").AnomalyDetector;
 }

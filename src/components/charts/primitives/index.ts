@@ -7,27 +7,21 @@
  * least one real caller.
  */
 
-export { default as ErrorBarChart } from './ErrorBarChart';
-export type { ErrorBarDatum, ErrorBarChartProps } from './ErrorBarChart';
-
-export { default as ConfidenceLineChart } from './ConfidenceLineChart';
+export type { ChartAxisLabelsProps } from "./ChartAxisLabels";
+export { default as ChartAxisLabels } from "./ChartAxisLabels";
+export type { ChartGridProps } from "./ChartGrid";
+export { default as ChartGrid } from "./ChartGrid";
+export type { ChartLegendItem, ChartLegendProps } from "./ChartLegend";
+export { default as ChartLegend } from "./ChartLegend";
 export type {
   ConfidenceLineChartProps,
   ConfidenceSeries,
   ConfidenceSeriesPoint,
-} from './ConfidenceLineChart';
-
-export { default as SVGChartContainer } from './SVGChartContainer';
-export type { SVGChartContainerProps } from './SVGChartContainer';
-
-export { default as ChartGrid } from './ChartGrid';
-export type { ChartGridProps } from './ChartGrid';
-
-export { default as ChartAxisLabels } from './ChartAxisLabels';
-export type { ChartAxisLabelsProps } from './ChartAxisLabels';
-
-export { default as ChartLegend } from './ChartLegend';
-export type { ChartLegendProps, ChartLegendItem } from './ChartLegend';
-
-export { default as HeatmapGrid } from './HeatmapGrid';
-export type { HeatmapGridProps } from './HeatmapGrid';
+} from "./ConfidenceLineChart";
+export { default as ConfidenceLineChart } from "./ConfidenceLineChart";
+export type { ErrorBarChartProps, ErrorBarDatum } from "./ErrorBarChart";
+export { default as ErrorBarChart } from "./ErrorBarChart";
+export type { HeatmapGridProps } from "./HeatmapGrid";
+export { default as HeatmapGrid } from "./HeatmapGrid";
+export type { SVGChartContainerProps } from "./SVGChartContainer";
+export { default as SVGChartContainer } from "./SVGChartContainer";

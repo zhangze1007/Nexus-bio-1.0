@@ -8,8 +8,8 @@
  * and extracts primals (variable values) and duals (shadow prices).
  */
 
-import highsLoader from 'highs';
-import type { HighsSolution } from 'highs';
+import type { HighsSolution } from "highs";
+import highsLoader from "highs";
 
 /* ------------------------------------------------------------------ */
 /*  Public interface                                                   */
@@ -46,12 +46,12 @@ export interface QPTerm {
 
 export interface LPModel {
   name?: string;
-  sense: 'minimize' | 'maximize';
+  sense: "minimize" | "maximize";
   objective: LPVariable[];
   constraints: LPConstraint[];
   bounds?: LPBound[];
-  binaries?: string[];   // variable names that must be binary (0 or 1)
-  integers?: string[];   // variable names that must be integer
+  binaries?: string[]; // variable names that must be binary (0 or 1)
+  integers?: string[]; // variable names that must be integer
   /**
    * Quadratic objective terms. When present, the objective becomes:
    *   linear (from `objective`) + quadratic (from `quadratic`)
@@ -61,7 +61,7 @@ export interface LPModel {
 }
 
 export interface LPSolution {
-  status: 'optimal' | 'infeasible' | 'unbounded' | 'error';
+  status: "optimal" | "infeasible" | "unbounded" | "error";
   objectiveValue: number;
   primals: Record<string, number>;
   duals: Record<string, number>;
@@ -102,7 +102,7 @@ function escapeName(name: string): string {
  */
 function formatTerm(coef: number, name: string): string {
   const escaped = escapeName(name);
-  if (coef === 0) return '';
+  if (coef === 0) return "";
   if (coef === 1) return `+ ${escaped}`;
   if (coef === -1) return `- ${escaped}`;
   if (coef > 0) return `+ ${coef} ${escaped}`;
@@ -111,7 +111,7 @@ function formatTerm(coef: number, name: string): string {
 
 function formatObjectiveTerm(coef: number, name: string): string {
   const escaped = escapeName(name);
-  if (coef === 0) return '';
+  if (coef === 0) return "";
   if (coef === 1) return escaped;
   if (coef === -1) return `- ${escaped}`;
   if (coef > 0) return `${coef} ${escaped}`;
@@ -127,22 +127,20 @@ function buildLPString(model: LPModel): string {
   const lines: string[] = [];
 
   // Objective section
-  const senseStr = model.sense === 'maximize' ? 'Maximize' : 'Minimize';
-  const objName = model.name ? escapeName(model.name) : 'obj';
+  const senseStr = model.sense === "maximize" ? "Maximize" : "Minimize";
+  const objName = model.name ? escapeName(model.name) : "obj";
   lines.push(senseStr);
   lines.push(` ${objName}:`);
 
   // Build objective line, handling first term sign
-  const objTerms = model.objective
-    .filter((v) => v.coef !== 0)
-    .map((v) => formatObjectiveTerm(v.coef, v.name));
+  const objTerms = model.objective.filter((v) => v.coef !== 0).map((v) => formatObjectiveTerm(v.coef, v.name));
 
   if (objTerms.length > 0) {
     // First term: don't add '+' prefix
     let firstLine = `    ${objTerms[0]}`;
     for (let i = 1; i < objTerms.length; i++) {
       const term = objTerms[i];
-      if (term.startsWith('-')) {
+      if (term.startsWith("-")) {
         firstLine += ` ${term}`;
       } else {
         firstLine += ` + ${term}`;
@@ -150,25 +148,23 @@ function buildLPString(model: LPModel): string {
     }
     lines.push(firstLine);
   } else {
-    lines.push('    0');
+    lines.push("    0");
   }
 
   // Subject To section
-  lines.push('Subject To');
+  lines.push("Subject To");
   for (const con of model.constraints) {
     const conName = escapeName(con.name);
-    const terms = con.vars
-      .filter((v) => v.coef !== 0)
-      .map((v) => formatTerm(v.coef, v.name));
+    const terms = con.vars.filter((v) => v.coef !== 0).map((v) => formatTerm(v.coef, v.name));
 
     let expr: string;
     if (terms.length === 0) {
-      expr = '0';
+      expr = "0";
     } else {
       // Join terms, handling spacing
-      expr = terms.join(' ');
+      expr = terms.join(" ");
       // Remove leading '+ ' if present
-      expr = expr.replace(/^\+\s*/, '');
+      expr = expr.replace(/^\+\s*/, "");
     }
 
     // Handle bounds: equality or range constraint
@@ -196,7 +192,7 @@ function buildLPString(model: LPModel): string {
 
   // Quadratic section — for QP support (HiGHS CPLEX LP format)
   if (model.quadratic && model.quadratic.length > 0) {
-    const objName = model.name ? escapeName(model.name) : 'obj';
+    const objName = model.name ? escapeName(model.name) : "obj";
     const qTerms = model.quadratic
       .filter((t) => t.coef !== 0)
       .map((t) => {
@@ -212,8 +208,8 @@ function buildLPString(model: LPModel): string {
         return `[ ${t.coef} ${v1} * ${v2} ]`;
       });
     if (qTerms.length > 0) {
-      lines.push('Quadratic');
-      lines.push(` ${objName}: ${qTerms.join(' + ')}`);
+      lines.push("Quadratic");
+      lines.push(` ${objName}: ${qTerms.join(" + ")}`);
     }
   }
 
@@ -245,16 +241,19 @@ function buildLPString(model: LPModel): string {
       return b && (b.lb !== 0 || b.ub !== Infinity);
     });
 
-  if (boundsNeeded || [...allVarNames].some((name) => {
-    const b = model.bounds?.find((bb) => bb.name === name);
-    return b && b.lb < 0;
-  })) {
-    lines.push('Bounds');
+  if (
+    boundsNeeded ||
+    [...allVarNames].some((name) => {
+      const b = model.bounds?.find((bb) => bb.name === name);
+      return b && b.lb < 0;
+    })
+  ) {
+    lines.push("Bounds");
     for (const name of allVarNames) {
       const b = model.bounds?.find((bb) => bb.name === name);
       if (b) {
-        const lbStr = b.lb === -Infinity ? '-inf' : String(b.lb);
-        const ubStr = b.ub === Infinity ? '+inf' : String(b.ub);
+        const lbStr = b.lb === -Infinity ? "-inf" : String(b.lb);
+        const ubStr = b.ub === Infinity ? "+inf" : String(b.ub);
         if (b.lb !== 0 || b.ub !== Infinity) {
           lines.push(` ${lbStr} <= ${escapeName(name)} <= ${ubStr}`);
         }
@@ -264,7 +263,7 @@ function buildLPString(model: LPModel): string {
 
   // Binary section — variables restricted to {0, 1}
   if (model.binaries && model.binaries.length > 0) {
-    lines.push('Binary');
+    lines.push("Binary");
     for (const varName of model.binaries) {
       lines.push(`  ${escapeName(varName)}`);
     }
@@ -272,38 +271,36 @@ function buildLPString(model: LPModel): string {
 
   // General section — variables restricted to integer values
   if (model.integers && model.integers.length > 0) {
-    lines.push('General');
+    lines.push("General");
     for (const varName of model.integers) {
       lines.push(`  ${escapeName(varName)}`);
     }
   }
 
-  lines.push('End');
-  return lines.join('\n');
+  lines.push("End");
+  return lines.join("\n");
 }
 
 /* ------------------------------------------------------------------ */
 /*  Status mapping                                                     */
 /* ------------------------------------------------------------------ */
 
-function mapStatus(
-  highsStatus: string,
-): 'optimal' | 'infeasible' | 'unbounded' | 'error' {
+function mapStatus(highsStatus: string): "optimal" | "infeasible" | "unbounded" | "error" {
   switch (highsStatus) {
-    case 'Optimal':
-      return 'optimal';
-    case 'Infeasible':
-    case 'Primal infeasible or unbounded':
-      return 'infeasible';
-    case 'Unbounded':
-      return 'unbounded';
-    case 'Time limit reached':
-    case 'Iteration limit reached':
-    case 'Bound on objective reached':
-    case 'Target for objective reached':
-      return 'infeasible'; // treat as non-optimal
+    case "Optimal":
+      return "optimal";
+    case "Infeasible":
+    case "Primal infeasible or unbounded":
+      return "infeasible";
+    case "Unbounded":
+      return "unbounded";
+    case "Time limit reached":
+    case "Iteration limit reached":
+    case "Bound on objective reached":
+    case "Target for objective reached":
+      return "infeasible"; // treat as non-optimal
     default:
-      return 'error'; // Load error, Model error, Presolve error, etc.
+      return "error"; // Load error, Model error, Presolve error, etc.
   }
 }
 
@@ -331,9 +328,9 @@ export async function solveLP(model: LPModel): Promise<LPSolution> {
     });
   } catch (err) {
     const solveTime = performance.now() - startTime;
-    console.error('[HiGHS] solve() threw:', err instanceof Error ? err.message : err);
+    console.error("[HiGHS] solve() threw:", err instanceof Error ? err.message : err);
     return {
-      status: 'error',
+      status: "error",
       objectiveValue: 0,
       primals: {},
       duals: {},
@@ -351,7 +348,7 @@ export async function solveLP(model: LPModel): Promise<LPSolution> {
     for (const [name, col] of Object.entries(solution.Columns)) {
       primals[name] = col.Primal ?? 0;
       // Dual is available on linear solutions
-      if ('Dual' in col) {
+      if ("Dual" in col) {
         duals[name] = (col as { Dual: number }).Dual ?? 0;
       }
     }
@@ -360,7 +357,7 @@ export async function solveLP(model: LPModel): Promise<LPSolution> {
   // Extract constraint duals from rows
   if (solution.Rows && Array.isArray(solution.Rows)) {
     for (const row of solution.Rows) {
-      if ('Dual' in row && row.Name) {
+      if ("Dual" in row && row.Name) {
         duals[row.Name] = (row as { Dual: number }).Dual ?? 0;
       }
     }

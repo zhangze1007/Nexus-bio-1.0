@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { SessionProvider } from 'next-auth/react';
+import { SessionProvider } from "next-auth/react";
 
 /**
  * Client-side wrapper for Auth.js SessionProvider.

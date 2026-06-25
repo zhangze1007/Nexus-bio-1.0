@@ -38,7 +38,7 @@ export interface RBSConfig {
   /** Coding sequence starting with ATG/GUG/UUG start codon (5' to 3'). */
   cdsSequence: string;
   /** Target organism. */
-  organism: 'ecoli' | 'scerevisiae';
+  organism: "ecoli" | "scerevisiae";
 }
 
 export interface RBSResult {
@@ -66,7 +66,7 @@ export interface RBSResult {
  * 16S rRNA 3' anti-Shine-Dalgarno sequence (E. coli): 3'-AUUCCUCC-5'
  * Its complement (Shine-Dalgarno consensus): 5'-AGGAGG-3'
  */
-const SD_CONSENSUS = 'AGGAGG';
+const SD_CONSENSUS = "AGGAGG";
 
 /**
  * Gas constant × temperature at 37 °C.
@@ -80,10 +80,22 @@ const RT = 1.987e-3 * 310.15; // ≈ 0.616 kcal/mol
  * Values represent ΔG°37 for each dinucleotide pair in a helix.
  */
 const NN_PARAMS: Record<string, number> = {
-  AA: -0.9, AU: -1.1, AG: -1.3, AC: -1.3,
-  UA: -1.3, UU: -0.9, UG: -1.3, UC: -2.1,
-  GA: -1.6, GU: -1.3, GG: -1.8, GC: -2.7,
-  CA: -1.6, CU: -1.3, CG: -2.1, CC: -1.8,
+  AA: -0.9,
+  AU: -1.1,
+  AG: -1.3,
+  AC: -1.3,
+  UA: -1.3,
+  UU: -0.9,
+  UG: -1.3,
+  UC: -2.1,
+  GA: -1.6,
+  GU: -1.3,
+  GG: -1.8,
+  GC: -2.7,
+  CA: -1.6,
+  CU: -1.3,
+  CG: -2.1,
+  CC: -1.8,
 };
 
 /**
@@ -91,9 +103,12 @@ const NN_PARAMS: Record<string, number> = {
  * AUG is the canonical start codon with the most favorable energy.
  */
 const START_CODON_ENERGY: Record<string, number> = {
-  ATG: -1.194, AUG: -1.194,
-  GTG: 0.016,  GUG: 0.016,
-  TTG: 0.767,  UUG: 0.767,
+  ATG: -1.194,
+  AUG: -1.194,
+  GTG: 0.016,
+  GUG: 0.016,
+  TTG: 0.767,
+  UUG: 0.767,
 };
 
 /**
@@ -114,12 +129,12 @@ const SPACING_COEFF = 0.045;
 
 /** Convert a DNA sequence to RNA (T → U), uppercased. */
 function dnaToRna(seq: string): string {
-  return seq.toUpperCase().replace(/T/g, 'U');
+  return seq.toUpperCase().replace(/T/g, "U");
 }
 
 /** Convert an RNA sequence to DNA (U → T), uppercased. */
 function rnaToDna(seq: string): string {
-  return seq.toUpperCase().replace(/U/g, 'T');
+  return seq.toUpperCase().replace(/U/g, "T");
 }
 
 /**
@@ -127,11 +142,11 @@ function rnaToDna(seq: string): string {
  * A↔U, G↔C
  */
 function rnaComplement(seq: string): string {
-  const map: Record<string, string> = { A: 'U', U: 'A', G: 'C', C: 'G' };
+  const map: Record<string, string> = { A: "U", U: "A", G: "C", C: "G" };
   return seq
-    .split('')
-    .map((ch) => map[ch] ?? 'N')
-    .join('');
+    .split("")
+    .map((ch) => map[ch] ?? "N")
+    .join("");
 }
 
 /**
@@ -139,7 +154,7 @@ function rnaComplement(seq: string): string {
  * Both strands are given 5'→3'. We walk paired dinucleotides.
  */
 function nearestNeighborEnergy(strand5to3: string): number {
-  const s = strand5to3.toUpperCase().replace(/T/g, 'U');
+  const s = strand5to3.toUpperCase().replace(/T/g, "U");
   let dG = 0;
   for (let i = 0; i < s.length - 1; i++) {
     const pair = s[i] + s[i + 1];
@@ -156,13 +171,11 @@ function nearestNeighborEnergy(strand5to3: string): number {
  * subsequences of AGGAGG (6, 5, 4, 3, or 2 nt) in the RBS and return
  * the longest match with its computed ΔG_mRNA_rRNA.
  */
-function findBestSDMatch(
-  rbsSeq: string,
-): { sdMatch: string; sdEndPos: number; dG_mRNA_rRNA: number } {
-  const rbs = rbsSeq.toUpperCase().replace(/T/g, 'U');
+function findBestSDMatch(rbsSeq: string): { sdMatch: string; sdEndPos: number; dG_mRNA_rRNA: number } {
+  const rbs = rbsSeq.toUpperCase().replace(/T/g, "U");
   const rnaSD = dnaToRna(SD_CONSENSUS); // AGGAGG in RNA
 
-  let bestMatch = '';
+  let bestMatch = "";
   let bestEndPos = -1;
   let bestEnergy = 0;
 
@@ -176,7 +189,7 @@ function findBestSDMatch(
       if (window === sdFragment) {
         // Found a match — compute energy of the mRNA-rRNA duplex
         const dG = nearestNeighborEnergy(sdFragment);
-        if (bestMatch === '' || len > bestMatch.length) {
+        if (bestMatch === "" || len > bestMatch.length) {
           bestMatch = sdFragment;
           bestEndPos = i + len; // 3' end of the SD match in RBS
           bestEnergy = dG;
@@ -186,8 +199,8 @@ function findBestSDMatch(
   }
 
   // If no SD match found, return weak default
-  if (bestMatch === '') {
-    return { sdMatch: '', sdEndPos: -1, dG_mRNA_rRNA: 0 };
+  if (bestMatch === "") {
+    return { sdMatch: "", sdEndPos: -1, dG_mRNA_rRNA: 0 };
   }
 
   return { sdMatch: bestMatch, sdEndPos: bestEndPos, dG_mRNA_rRNA: bestEnergy };
@@ -198,18 +211,14 @@ function findBestSDMatch(
  * Returns the first 3 nucleotides uppercased with T→U conversion.
  */
 function extractStartCodon(cds: string): string {
-  return cds.substring(0, 3).toUpperCase().replace(/T/g, 'U');
+  return cds.substring(0, 3).toUpperCase().replace(/T/g, "U");
 }
 
 /**
  * Count the number of nucleotides between the 3' end of the SD match
  * and the first nucleotide of the start codon in the full mRNA.
  */
-function computeSpacing(
-  rbsSeq: string,
-  cdsSeq: string,
-  sdEndPos: number,
-): number {
+function computeSpacing(rbsSeq: string, cdsSeq: string, sdEndPos: number): number {
   // The spacing is measured from the end of the SD match to the start codon
   // In the full mRNA: ...rbs...|cds...
   // The start codon begins at position rbs.length in the full mRNA
@@ -241,7 +250,7 @@ export function calculateRBSStrength(config: RBSConfig): RBSResult {
   const spacing = computeSpacing(rbsSequence, cdsSequence, sdEndPos);
 
   // 3. Spacing penalty
-  const deltaG_spacing = SPACING_COEFF * Math.pow(spacing - OPTIMAL_SPACING, 2);
+  const deltaG_spacing = SPACING_COEFF * (spacing - OPTIMAL_SPACING) ** 2;
 
   // 4. Start codon energy
   const startCodon = extractStartCodon(cdsSequence);

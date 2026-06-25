@@ -3,14 +3,10 @@
  * Extracted from FBASimPage.tsx for modularity.
  */
 
-import {
-  REACTION_DEFS,
-  YEAST_REACTION_DEFS,
-  SHARED_METABOLITES,
-} from '../../../data/mockFBA';
-import type { FBAOutput, CommunityFBAOutput } from '../../../data/mockFBA';
+import type { CommunityFBAOutput, FBAOutput } from "../../../data/mockFBA";
+import { REACTION_DEFS, SHARED_METABOLITES, YEAST_REACTION_DEFS } from "../../../data/mockFBA";
 
-export type SimMode = 'single' | 'community';
+export type SimMode = "single" | "community";
 
 export function round(value: number): number {
   return Math.round(value * 10) / 10;

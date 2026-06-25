@@ -24,23 +24,16 @@
  *     upstream step id in `dependsOn`.
  */
 
-import type { AxonTool } from './AxonOrchestrator';
-import type { WorkbenchCopilotContext } from './axonContext';
-import { GOLDEN_PATH_TOOL_IDS, type ToolId } from '../domain/workflowContract';
-import { getToolContract } from './workflowRegistry';
+import { GOLDEN_PATH_TOOL_IDS, type ToolId } from "../domain/workflowContract";
+import type { AxonTool } from "./AxonOrchestrator";
+import type { WorkbenchCopilotContext } from "./axonContext";
+import { getToolContract } from "./workflowRegistry";
 
 export const MAX_PLAN_STEPS = 5;
 export const MAX_PLAN_DEPTH = 1;
 export const MAX_PLAN_RETRIES = 2;
 
-export type AxonPlanStepStatus =
-  | 'planned'
-  | 'enqueued'
-  | 'running'
-  | 'done'
-  | 'error'
-  | 'cancelled'
-  | 'unsupported';
+export type AxonPlanStepStatus = "planned" | "enqueued" | "running" | "done" | "error" | "cancelled" | "unsupported";
 
 export interface AxonPlanStep {
   id: string;
@@ -59,7 +52,7 @@ export interface AxonPlanStep {
 export interface AxonPlan {
   id: string;
   createdAt: number;
-  origin: 'user' | 'auto';
+  origin: "user" | "auto";
   request: string;
   steps: AxonPlanStep[];
   warnings: string[];
@@ -74,35 +67,35 @@ export interface PlannerSupport {
 export interface PlannerOptions {
   now?: () => number;
   idFactory?: (prefix: string) => string;
-  origin?: 'user' | 'auto';
+  origin?: "user" | "auto";
 }
 
 const PATHD_KEYWORDS = [
-  'pathway',
-  'design',
-  'route',
-  'biosynthesis',
-  'biosynthesise',
-  'biosynthesize',
-  'produce',
-  'synth',
-  'synthesi',
-  'steps to',
-  'how do we make',
-  'how to make',
+  "pathway",
+  "design",
+  "route",
+  "biosynthesis",
+  "biosynthesise",
+  "biosynthesize",
+  "produce",
+  "synth",
+  "synthesi",
+  "steps to",
+  "how do we make",
+  "how to make",
 ];
 
 const FBASIM_KEYWORDS = [
-  'flux',
-  'fba',
-  'objective',
-  'yield',
-  'growth rate',
-  'carbon efficiency',
-  'knockout',
-  'optimi',
-  'balance',
-  'bottleneck',
+  "flux",
+  "fba",
+  "objective",
+  "yield",
+  "growth rate",
+  "carbon efficiency",
+  "knockout",
+  "optimi",
+  "balance",
+  "bottleneck",
 ];
 
 // Phase-1 — Workflow Control Plane: per-tool keyword bags. Keys are
@@ -113,18 +106,18 @@ const FBASIM_KEYWORDS = [
 const TOOL_KEYWORDS: Partial<Record<ToolId, readonly string[]>> = {
   pathd: PATHD_KEYWORDS,
   fbasim: FBASIM_KEYWORDS,
-  catdes: ['catalyst design', 'enzyme design', 'redesign catalyst', 'binding affinity', 'mutagenesis'],
-  dyncon: ['feedback control', 'dynamic control', 'controller', 'bioreactor', 'pid'],
-  cellfree: ['cell-free', 'cellfree', 'txtl', 'tx-tl', 'in-vitro prototype', 'cfps'],
-  dbtlflow: ['dbtl', 'design build test learn', 'iteration ledger', 'protocol generation'],
-  cethx: ['thermodynamic', 'delta g', 'gibbs free energy', 'atp yield'],
-  proevol: ['directed evolution', 'protein evolution', 'campaign', 'fitness landscape', 'survivor selection'],
-  genmim: ['genome minimization', 'crispri', 'gene minimization', 'chassis minimization'],
-  gecair: ['gene circuit', 'logic gate', 'hill curve', 'circuit topology'],
-  multio: ['multi-omics', 'multio', 'transcriptomics proteomics', 'volcano plot', 'omics decomposition'],
-  scspatial: ['single-cell', 'spatial transcriptomics', 'visium', 'umap', 'paga'],
-  'metabolic-eng': ['metabolic engineering lab', '3d metabolic'],
-  nexai: ['research agent', 'literature synthesis', 'citation graph'],
+  catdes: ["catalyst design", "enzyme design", "redesign catalyst", "binding affinity", "mutagenesis"],
+  dyncon: ["feedback control", "dynamic control", "controller", "bioreactor", "pid"],
+  cellfree: ["cell-free", "cellfree", "txtl", "tx-tl", "in-vitro prototype", "cfps"],
+  dbtlflow: ["dbtl", "design build test learn", "iteration ledger", "protocol generation"],
+  cethx: ["thermodynamic", "delta g", "gibbs free energy", "atp yield"],
+  proevol: ["directed evolution", "protein evolution", "campaign", "fitness landscape", "survivor selection"],
+  genmim: ["genome minimization", "crispri", "gene minimization", "chassis minimization"],
+  gecair: ["gene circuit", "logic gate", "hill curve", "circuit topology"],
+  multio: ["multi-omics", "multio", "transcriptomics proteomics", "volcano plot", "omics decomposition"],
+  scspatial: ["single-cell", "spatial transcriptomics", "visium", "umap", "paga"],
+  "metabolic-eng": ["metabolic engineering lab", "3d metabolic"],
+  nexai: ["research agent", "literature synthesis", "citation graph"],
 };
 
 function hasAny(text: string, keywords: string[]): boolean {
@@ -141,17 +134,18 @@ function truncate(s: string, max: number): string {
 }
 
 function inputSummaryForPathd(context: WorkbenchCopilotContext): string {
-  const target = context.targetProduct ?? 'unspecified target';
-  const ev = context.evidenceTotal > 0
-    ? `${context.evidenceSelected}/${context.evidenceTotal} evidence items`
-    : 'no selected evidence';
+  const target = context.targetProduct ?? "unspecified target";
+  const ev =
+    context.evidenceTotal > 0
+      ? `${context.evidenceSelected}/${context.evidenceTotal} evidence items`
+      : "no selected evidence";
   return `target=${target}, ${ev}`;
 }
 
 function inputSummaryForFbasim(context: WorkbenchCopilotContext): string {
   return context.targetProduct
     ? `species from context, objective tied to ${context.targetProduct}`
-    : 'default species, default objective';
+    : "default species, default objective";
 }
 
 /**
@@ -167,7 +161,7 @@ export function buildAxonPlan(
 ): AxonPlan {
   const now = options.now ?? Date.now;
   const idFactory = options.idFactory ?? defaultIdFactory;
-  const origin = options.origin ?? 'user';
+  const origin = options.origin ?? "user";
   const trimmed = request.trim();
   const text = trimmed.toLowerCase();
 
@@ -188,62 +182,60 @@ export function buildAxonPlan(
   ): AxonPlanStep {
     const supported = support.isSupported(tool);
     if (!supported) {
-      warnings.push(
-        `Tool "${tool}" is not registered in the adapter registry — step kept in plan as unsupported.`,
-      );
+      warnings.push(`Tool "${tool}" is not registered in the adapter registry — step kept in plan as unsupported.`);
     }
     return {
-      id: idFactory('step'),
+      id: idFactory("step"),
       title,
       tool,
       objective,
       inputSummary,
       expectedOutput,
       dependsOn,
-      status: supported ? 'planned' : 'unsupported',
+      status: supported ? "planned" : "unsupported",
       reason,
     };
   }
 
   if (wantsPathd && wantsFbasim) {
     const pathd = stepFor(
-      'pathd',
-      'Design pathway',
-      'Propose an end-to-end pathway for the target product.',
+      "pathd",
+      "Design pathway",
+      "Propose an end-to-end pathway for the target product.",
       inputSummaryForPathd(context),
-      'Node list + edges + bottleneck hints',
-      'Request mentions both pathway design and flux analysis; pathway must exist before fluxes can be computed.',
+      "Node list + edges + bottleneck hints",
+      "Request mentions both pathway design and flux analysis; pathway must exist before fluxes can be computed.",
     );
     const fba = stepFor(
-      'fbasim',
-      'Flux-balance analysis',
-      'Compute steady-state fluxes for the designed pathway; surface bottlenecks.',
+      "fbasim",
+      "Flux-balance analysis",
+      "Compute steady-state fluxes for the designed pathway; surface bottlenecks.",
       inputSummaryForFbasim(context),
-      'Objective value + flux map + shadow prices',
-      'Flux analysis depends on the upstream pathway design step.',
+      "Objective value + flux map + shadow prices",
+      "Flux analysis depends on the upstream pathway design step.",
       [pathd.id],
     );
     steps.push(pathd, fba);
   } else if (wantsFbasim) {
     steps.push(
       stepFor(
-        'fbasim',
-        'Flux-balance analysis',
-        'Compute steady-state fluxes on the active workbench metabolic model.',
+        "fbasim",
+        "Flux-balance analysis",
+        "Compute steady-state fluxes on the active workbench metabolic model.",
         inputSummaryForFbasim(context),
-        'Objective value + flux map + shadow prices',
-        'Request aligns with FBA analysis; no upstream pathway design required.',
+        "Objective value + flux map + shadow prices",
+        "Request aligns with FBA analysis; no upstream pathway design required.",
       ),
     );
   } else if (wantsPathd) {
     steps.push(
       stepFor(
-        'pathd',
-        'Design pathway',
-        'Propose an end-to-end pathway for the target product.',
+        "pathd",
+        "Design pathway",
+        "Propose an end-to-end pathway for the target product.",
         inputSummaryForPathd(context),
-        'Node list + edges + bottleneck hints',
-        'Request aligns with pathway design; workbench has a target product or the request names one.',
+        "Node list + edges + bottleneck hints",
+        "Request aligns with pathway design; workbench has a target product or the request names one.",
       ),
     );
   }
@@ -255,7 +247,7 @@ export function buildAxonPlan(
   // bit-exact for the existing test matrix.
   const alreadyEnqueued = new Set(steps.map((s) => s.tool));
   for (const tool of Object.keys(TOOL_KEYWORDS) as ToolId[]) {
-    if (tool === 'pathd' || tool === 'fbasim') continue; // handled above
+    if (tool === "pathd" || tool === "fbasim") continue; // handled above
     if (alreadyEnqueued.has(tool)) continue;
     const bag = TOOL_KEYWORDS[tool] ?? [];
     if (!hasAny(text, bag as string[])) continue;
@@ -266,9 +258,9 @@ export function buildAxonPlan(
         tool,
         `${tool.toUpperCase()} — ${contract.primaryIntent}`,
         contract.validityBaseline.reason,
-        context.targetProduct ? `target=${context.targetProduct}` : 'no target in context',
-        contract.outputArtifacts.map((a) => a.payloadPath).join(', ') || 'no declared outputs',
-        `Matched ${tool} contract keywords; ${contract.isGoldenPath ? 'golden-path' : 'sidecar'} step.`,
+        context.targetProduct ? `target=${context.targetProduct}` : "no target in context",
+        contract.outputArtifacts.map((a) => a.payloadPath).join(", ") || "no declared outputs",
+        `Matched ${tool} contract keywords; ${contract.isGoldenPath ? "golden-path" : "sidecar"} step.`,
       ),
     );
     alreadyEnqueued.add(tool);
@@ -293,21 +285,19 @@ export function buildAxonPlan(
   // the UI can render "no actionable step proposed" instead of nothing.
   if (steps.length === 0) {
     warnings.push(
-      'No supported tool matched the request. Rephrase with pathway-design or flux-analysis intent, or enqueue a tool manually.',
+      "No supported tool matched the request. Rephrase with pathway-design or flux-analysis intent, or enqueue a tool manually.",
     );
   }
 
   // Enforce cap — should never fire with current heuristic, but lets
   // future planners fail loudly instead of silently ballooning.
   if (steps.length > MAX_PLAN_STEPS) {
-    warnings.push(
-      `Plan truncated to ${MAX_PLAN_STEPS} steps (was ${steps.length}).`,
-    );
+    warnings.push(`Plan truncated to ${MAX_PLAN_STEPS} steps (was ${steps.length}).`);
     steps.length = MAX_PLAN_STEPS;
   }
 
   return {
-    id: idFactory('plan'),
+    id: idFactory("plan"),
     createdAt: now(),
     origin,
     request: truncate(trimmed, 500),
@@ -321,7 +311,7 @@ export function buildAxonPlan(
  * Pretty short label for the UI: "2-step plan · pathd → fbasim".
  */
 export function summarisePlan(plan: AxonPlan): string {
-  if (plan.steps.length === 0) return 'No plan steps';
-  const toolChain = plan.steps.map((s) => s.tool).join(' → ');
+  if (plan.steps.length === 0) return "No plan steps";
+  const toolChain = plan.steps.map((s) => s.tool).join(" → ");
   return `${plan.steps.length}-step plan · ${toolChain}`;
 }

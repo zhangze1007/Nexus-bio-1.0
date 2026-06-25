@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
 
 type TouchState = {
   active: boolean;
@@ -7,14 +7,14 @@ type TouchState = {
 };
 
 const INTERACTIVE_SELECTOR = [
-  'input',
-  'button',
-  'a',
-  'textarea',
-  'select',
+  "input",
+  "button",
+  "a",
+  "textarea",
+  "select",
   '[role="button"]',
   '[data-touch-scroll-ignore="true"]',
-].join(', ');
+].join(", ");
 
 function isInteractiveTarget(target: EventTarget | null) {
   return target instanceof Element && Boolean(target.closest(INTERACTIVE_SELECTOR));
@@ -47,58 +47,68 @@ export function usePathdFloatingPanelScroll() {
     }
   }, []);
 
-  const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
-    event.stopPropagation();
+  const handleTouchStart = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      event.stopPropagation();
 
-    const panel = event.currentTarget;
-    if (panel.scrollHeight <= panel.clientHeight || isInteractiveTarget(event.target)) {
-      resetTouchState();
-      return;
-    }
+      const panel = event.currentTarget;
+      if (panel.scrollHeight <= panel.clientHeight || isInteractiveTarget(event.target)) {
+        resetTouchState();
+        return;
+      }
 
-    const touch = event.changedTouches[0];
-    if (!touch) {
-      resetTouchState();
-      return;
-    }
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        resetTouchState();
+        return;
+      }
 
-    touchState.current.active = true;
-    touchState.current.identifier = touch.identifier;
-    touchState.current.lastY = touch.clientY;
-  }, [resetTouchState]);
+      touchState.current.active = true;
+      touchState.current.identifier = touch.identifier;
+      touchState.current.lastY = touch.clientY;
+    },
+    [resetTouchState],
+  );
 
-  const handleTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
-    event.stopPropagation();
+  const handleTouchMove = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      event.stopPropagation();
 
-    const state = touchState.current;
-    if (!state.active) return;
+      const state = touchState.current;
+      if (!state.active) return;
 
-    const panel = event.currentTarget;
-    if (panel.scrollHeight <= panel.clientHeight) {
-      resetTouchState();
-      return;
-    }
+      const panel = event.currentTarget;
+      if (panel.scrollHeight <= panel.clientHeight) {
+        resetTouchState();
+        return;
+      }
 
-    const touch = Array.from(event.changedTouches).find((item) => item.identifier === state.identifier)
-      ?? Array.from(event.touches).find((item) => item.identifier === state.identifier);
+      const touch =
+        Array.from(event.changedTouches).find((item) => item.identifier === state.identifier) ??
+        Array.from(event.touches).find((item) => item.identifier === state.identifier);
 
-    if (!touch) return;
+      if (!touch) return;
 
-    const deltaY = touch.clientY - state.lastY;
-    if (deltaY === 0) return;
+      const deltaY = touch.clientY - state.lastY;
+      if (deltaY === 0) return;
 
-    panel.scrollTop -= deltaY;
-    state.lastY = touch.clientY;
-    event.preventDefault();
-  }, [resetTouchState]);
+      panel.scrollTop -= deltaY;
+      state.lastY = touch.clientY;
+      event.preventDefault();
+    },
+    [resetTouchState],
+  );
 
-  const handleTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
-    event.stopPropagation();
+  const handleTouchEnd = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      event.stopPropagation();
 
-    const state = touchState.current;
-    const ended = Array.from(event.changedTouches).some((touch) => touch.identifier === state.identifier);
-    if (ended) resetTouchState();
-  }, [resetTouchState]);
+      const state = touchState.current;
+      const ended = Array.from(event.changedTouches).some((touch) => touch.identifier === state.identifier);
+      if (ended) resetTouchState();
+    },
+    [resetTouchState],
+  );
 
   return {
     containPanelInteraction,

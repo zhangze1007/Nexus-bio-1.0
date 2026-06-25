@@ -27,7 +27,7 @@
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
 export interface ScSpatialInput {
-  expressionMatrix: number[][];   // [cells × genes]
+  expressionMatrix: number[][]; // [cells × genes]
   geneNames: string[];
   cellCoordinates: Array<{ x: number; y: number }>;
   qcParams?: {
@@ -47,7 +47,7 @@ export interface ClusterResult {
 
 export interface SpatiallyVariableGene {
   geneName: string;
-  moransI: number;          // -1 to 1 (spatial autocorrelation)
+  moransI: number; // -1 to 1 (spatial autocorrelation)
   pValue: number;
   significant: boolean;
 }
@@ -66,9 +66,7 @@ export interface ScSpatialResult {
 /**
  * QC filtering + library-size normalization + log1p transform.
  */
-function processData(
-  input: ScSpatialInput,
-): {
+function processData(input: ScSpatialInput): {
   filteredMatrix: number[][];
   filteredGenes: string[];
   filteredCoords: Array<{ x: number; y: number }>;
@@ -86,23 +84,26 @@ function processData(
   for (let i = 0; i < input.expressionMatrix.length; i++) {
     const row = input.expressionMatrix[i];
     const totalCounts = row.reduce((s, v) => s + v, 0);
-    const nGenes = row.filter(v => v > 0).length;
+    const nGenes = row.filter((v) => v > 0).length;
     if (totalCounts >= minCounts && nGenes >= minGenes) {
       filteredIndices.push(i);
     }
   }
 
-  solverCalls.push({ solver: 'qc::filter', description: `${filteredIndices.length}/${input.expressionMatrix.length} cells pass QC` });
+  solverCalls.push({
+    solver: "qc::filter",
+    description: `${filteredIndices.length}/${input.expressionMatrix.length} cells pass QC`,
+  });
 
   // Library-size normalize + log1p
-  const filteredMatrix = filteredIndices.map(i => {
+  const filteredMatrix = filteredIndices.map((i) => {
     const row = input.expressionMatrix[i];
     const total = row.reduce((s, v) => s + v, 0);
-    return row.map(v => Math.log1p((v / Math.max(total, 1)) * 10000));
+    return row.map((v) => Math.log1p((v / Math.max(total, 1)) * 10000));
   });
 
   const filteredGenes = input.geneNames;
-  const filteredCoords = filteredIndices.map(i => input.cellCoordinates[i]);
+  const filteredCoords = filteredIndices.map((i) => input.cellCoordinates[i]);
 
   return { filteredMatrix, filteredGenes, filteredCoords, filteredIndices, solverCalls };
 }
@@ -122,7 +123,7 @@ function analyzeClusters(
   solverCalls: Array<{ solver: string; description: string }>;
 } {
   const solverCalls: Array<{ solver: string; description: string }> = [];
-  solverCalls.push({ solver: 'clustering::kmeans', description: `${nClusters} clusters on ${matrix.length} cells` });
+  solverCalls.push({ solver: "clustering::kmeans", description: `${nClusters} clusters on ${matrix.length} cells` });
 
   // K-means with iterative centroid updates (max 20 iterations)
   const nGenes = matrix[0]?.length ?? 0;
@@ -137,7 +138,7 @@ function analyzeClusters(
 
   for (let iter = 0; iter < maxIter; iter++) {
     // Assign cells to nearest centroid
-    const newAssignments = matrix.map(row => {
+    const newAssignments = matrix.map((row) => {
       let minDist = Infinity;
       let bestK = 0;
       for (let k = 0; k < nClusters; k++) {
@@ -145,7 +146,10 @@ function analyzeClusters(
         for (let j = 0; j < nGenes; j++) {
           dist += (row[j] - centroids[k][j]) ** 2;
         }
-        if (dist < minDist) { minDist = dist; bestK = k; }
+        if (dist < minDist) {
+          minDist = dist;
+          bestK = k;
+        }
       }
       return bestK;
     });
@@ -168,25 +172,32 @@ function analyzeClusters(
   // Build cluster results
   const clusters: ClusterResult[] = [];
   for (let k = 0; k < nClusters; k++) {
-    const cellIndices = assignments.reduce((acc, a, i) => a === k ? [...acc, i] : acc, [] as number[]);
+    const cellIndices = assignments.reduce((acc, a, i) => (a === k ? [...acc, i] : acc), [] as number[]);
 
     // Mean expression
     const meanExpression: Record<string, number> = {};
     for (let j = 0; j < geneNames.length; j++) {
       const values = cellIndices.map((ci: number) => matrix[ci][j]);
-      meanExpression[geneNames[j]] = values.length > 0
-        ? values.reduce((s: number, v: number) => s + v, 0) / values.length
-        : 0;
+      meanExpression[geneNames[j]] =
+        values.length > 0 ? values.reduce((s: number, v: number) => s + v, 0) / values.length : 0;
     }
 
     // Spatial center and spread
     const cx = cellIndices.reduce((s: number, ci: number) => s + coords[ci].x, 0) / Math.max(cellIndices.length, 1);
     const cy = cellIndices.reduce((s: number, ci: number) => s + coords[ci].y, 0) / Math.max(cellIndices.length, 1);
-    const spread = cellIndices.reduce((s: number, ci: number) =>
-      s + Math.sqrt((coords[ci].x - cx) ** 2 + (coords[ci].y - cy) ** 2), 0
-    ) / Math.max(cellIndices.length, 1);
+    const spread =
+      cellIndices.reduce(
+        (s: number, ci: number) => s + Math.sqrt((coords[ci].x - cx) ** 2 + (coords[ci].y - cy) ** 2),
+        0,
+      ) / Math.max(cellIndices.length, 1);
 
-    clusters.push({ clusterId: k, cellIndices, meanExpression, spatialCenter: { x: cx, y: cy }, spatialSpread: Math.round(spread * 100) / 100 });
+    clusters.push({
+      clusterId: k,
+      cellIndices,
+      meanExpression,
+      spatialCenter: { x: cx, y: cy },
+      spatialSpread: Math.round(spread * 100) / 100,
+    });
   }
 
   return { clusters, solverCalls };
@@ -206,7 +217,10 @@ function interpretSpatial(
   solverCalls: Array<{ solver: string; description: string }>;
 } {
   const solverCalls: Array<{ solver: string; description: string }> = [];
-  solverCalls.push({ solver: 'spatial::moransI', description: `${geneNames.length} genes tested for spatial autocorrelation` });
+  solverCalls.push({
+    solver: "spatial::moransI",
+    description: `${geneNames.length} genes tested for spatial autocorrelation`,
+  });
 
   const n = matrix.length;
   if (n < 3) return { spatiallyVariableGenes: [], solverCalls };
@@ -227,7 +241,7 @@ function interpretSpatial(
   // Compute Moran's I for each gene
   const svgs: SpatiallyVariableGene[] = [];
   for (let g = 0; g < geneNames.length; g++) {
-    const values = matrix.map(row => row[g]);
+    const values = matrix.map((row) => row[g]);
     const mean = values.reduce((s, v) => s + v, 0) / n;
     const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
 
@@ -242,7 +256,7 @@ function interpretSpatial(
       }
     }
 
-    const moransI = totalW > 0 ? (n / totalW) * numerator / (variance * n) : 0;
+    const moransI = totalW > 0 ? ((n / totalW) * numerator) / (variance * n) : 0;
 
     // Asymptotic p-value under H0: I ~ N(E[I], Var[I])
     // E[I] = -1 / (n - 1)
@@ -286,7 +300,11 @@ export function runScSpatialPipeline(input: ScSpatialInput): ScSpatialResult {
   allSolverCalls.push(...clusterCalls);
 
   // Agent C: Spatial interpretation
-  const { spatiallyVariableGenes, solverCalls: spatialCalls } = interpretSpatial(filteredMatrix, filteredCoords, filteredGenes);
+  const { spatiallyVariableGenes, solverCalls: spatialCalls } = interpretSpatial(
+    filteredMatrix,
+    filteredCoords,
+    filteredGenes,
+  );
   allSolverCalls.push(...spatialCalls);
 
   return {
@@ -294,7 +312,7 @@ export function runScSpatialPipeline(input: ScSpatialInput): ScSpatialResult {
     nCellsAfterQC: filteredIndices.length,
     clusters,
     spatiallyVariableGenes,
-    trajectoryPseudotime: null,  // would need PAGA
+    trajectoryPseudotime: null, // would need PAGA
     allSolverCalls,
   };
 }
@@ -312,6 +330,6 @@ function normalCDF(x: number): number {
   const sign = x < 0 ? -1 : 1;
   const absX = Math.abs(x);
   const t = 1 / (1 + p * absX);
-  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX / 2);
+  const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp((-absX * absX) / 2);
   return 0.5 * (1 + sign * y);
 }

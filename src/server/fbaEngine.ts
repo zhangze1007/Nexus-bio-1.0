@@ -1,10 +1,10 @@
-import { solveLP, type LPModel } from './highsSolver';
-import { SHARED_METABOLITES, type CommunityFBAOutput, type FBAOutput } from '../data/mockFBA';
-import { IJO1366_REACTIONS, IJO1366_METABOLITES, IJO1366_STATS } from '../data/iJO1366Subset';
-import type { BiGGReaction } from '../services/database/biggClient';
+import { IJO1366_METABOLITES, IJO1366_REACTIONS, IJO1366_STATS } from "../data/iJO1366Subset";
+import { type CommunityFBAOutput, type FBAOutput, SHARED_METABOLITES } from "../data/mockFBA";
+import type { BiGGReaction } from "../services/database/biggClient";
+import { type LPModel, solveLP } from "./highsSolver";
 
-export type FBAObjective = 'biomass' | 'atp' | 'product';
-export type FBASpecies = 'ecoli' | 'yeast';
+export type FBAObjective = "biomass" | "atp" | "product";
+export type FBASpecies = "ecoli" | "yeast";
 
 export interface SingleSpeciesFBARequest {
   species: FBASpecies;
@@ -17,8 +17,8 @@ export interface SingleSpeciesFBARequest {
 export interface CommunityFBARequest {
   objective: FBAObjective;
   alpha?: number;
-  ecoli: Omit<SingleSpeciesFBARequest, 'species' | 'objective'>;
-  yeast: Omit<SingleSpeciesFBARequest, 'species' | 'objective'>;
+  ecoli: Omit<SingleSpeciesFBARequest, "species" | "objective">;
+  yeast: Omit<SingleSpeciesFBARequest, "species" | "objective">;
 }
 
 type ReactionBound = {
@@ -48,7 +48,7 @@ type NetworkSpec = {
     request: SingleSpeciesFBARequest,
     status: number,
     objectiveValue: number,
-  ) => Omit<FBAOutput, 'sensitivityCoefficients'>;
+  ) => Omit<FBAOutput, "sensitivityCoefficients">;
 };
 
 function round(value: number, digits = 4) {
@@ -56,50 +56,106 @@ function round(value: number, digits = 4) {
   return Math.round(value * factor) / factor;
 }
 
-import { clamp } from '../utils/math';
+import { clamp } from "../utils/math";
 
 const ECOLI_NETWORK: NetworkSpec = {
-  species: 'ecoli',
+  species: "ecoli",
   reactions: [
-    { id: 'GLCpts', lb: 0, ub: ({ glucoseUptake }) => clamp(glucoseUptake, 0, 25) },
-    { id: 'PGI', lb: 0, ub: 100 },
-    { id: 'PFK', lb: 0, ub: 100 },
-    { id: 'FBA', lb: 0, ub: 100 },
-    { id: 'GAPD', lb: 0, ub: 200 },
-    { id: 'PYK', lb: 0, ub: 100 },
-    { id: 'PDH', lb: 0, ub: 100 },
-    { id: 'O2tx', lb: 0, ub: ({ oxygenUptake }) => clamp(oxygenUptake, 0, 25) },
-    { id: 'BIOMASS', lb: 0, ub: 100 },
-    { id: 'PRODUCT', lb: 0, ub: 100 },
+    { id: "GLCpts", lb: 0, ub: ({ glucoseUptake }) => clamp(glucoseUptake, 0, 25) },
+    { id: "PGI", lb: 0, ub: 100 },
+    { id: "PFK", lb: 0, ub: 100 },
+    { id: "FBA", lb: 0, ub: 100 },
+    { id: "GAPD", lb: 0, ub: 200 },
+    { id: "PYK", lb: 0, ub: 100 },
+    { id: "PDH", lb: 0, ub: 100 },
+    { id: "O2tx", lb: 0, ub: ({ oxygenUptake }) => clamp(oxygenUptake, 0, 25) },
+    { id: "BIOMASS", lb: 0, ub: 100 },
+    { id: "PRODUCT", lb: 0, ub: 100 },
   ],
   constraints: [
-    { name: 'g6p_balance', vars: [{ name: 'GLCpts', coef: 1 }, { name: 'PGI', coef: -1 }] },
-    { name: 'f6p_balance', vars: [{ name: 'PGI', coef: 1 }, { name: 'PFK', coef: -1 }] },
-    { name: 'fbp_balance', vars: [{ name: 'PFK', coef: 1 }, { name: 'FBA', coef: -1 }] },
-    { name: 'gap_balance', vars: [{ name: 'FBA', coef: 2 }, { name: 'GAPD', coef: -1 }] },
-    { name: 'pep_balance', vars: [{ name: 'GAPD', coef: 1 }, { name: 'PYK', coef: -1 }] },
-    { name: 'pyr_balance', vars: [{ name: 'PYK', coef: 1 }, { name: 'PDH', coef: -1 }] },
-    { name: 'accoa_balance', vars: [{ name: 'PDH', coef: 1 }, { name: 'BIOMASS', coef: -1 }, { name: 'PRODUCT', coef: -1 }] },
-    { name: 'oxygen_balance', vars: [{ name: 'O2tx', coef: 1 }, { name: 'PDH', coef: -1 }] },
+    {
+      name: "g6p_balance",
+      vars: [
+        { name: "GLCpts", coef: 1 },
+        { name: "PGI", coef: -1 },
+      ],
+    },
+    {
+      name: "f6p_balance",
+      vars: [
+        { name: "PGI", coef: 1 },
+        { name: "PFK", coef: -1 },
+      ],
+    },
+    {
+      name: "fbp_balance",
+      vars: [
+        { name: "PFK", coef: 1 },
+        { name: "FBA", coef: -1 },
+      ],
+    },
+    {
+      name: "gap_balance",
+      vars: [
+        { name: "FBA", coef: 2 },
+        { name: "GAPD", coef: -1 },
+      ],
+    },
+    {
+      name: "pep_balance",
+      vars: [
+        { name: "GAPD", coef: 1 },
+        { name: "PYK", coef: -1 },
+      ],
+    },
+    {
+      name: "pyr_balance",
+      vars: [
+        { name: "PYK", coef: 1 },
+        { name: "PDH", coef: -1 },
+      ],
+    },
+    {
+      name: "accoa_balance",
+      vars: [
+        { name: "PDH", coef: 1 },
+        { name: "BIOMASS", coef: -1 },
+        { name: "PRODUCT", coef: -1 },
+      ],
+    },
+    {
+      name: "oxygen_balance",
+      vars: [
+        { name: "O2tx", coef: 1 },
+        { name: "PDH", coef: -1 },
+      ],
+    },
   ],
-  glucoseConstraint: 'g6p_balance',
-  oxygenConstraint: 'oxygen_balance',
+  glucoseConstraint: "g6p_balance",
+  oxygenConstraint: "oxygen_balance",
   objectives: {
-    biomass: [{ name: 'BIOMASS', coef: 1 }, { name: 'PRODUCT', coef: 0.08 }],
-    product: [{ name: 'PRODUCT', coef: 1 }, { name: 'BIOMASS', coef: 0.05 }],
+    biomass: [
+      { name: "BIOMASS", coef: 1 },
+      { name: "PRODUCT", coef: 0.08 },
+    ],
+    product: [
+      { name: "PRODUCT", coef: 1 },
+      { name: "BIOMASS", coef: 0.05 },
+    ],
     atp: [
-      { name: 'GAPD', coef: 1 },
-      { name: 'PYK', coef: 1 },
-      { name: 'PDH', coef: 1.2 },
-      { name: 'BIOMASS', coef: 0.15 },
+      { name: "GAPD", coef: 1 },
+      { name: "PYK", coef: 1 },
+      { name: "PDH", coef: 1.2 },
+      { name: "BIOMASS", coef: 0.15 },
     ],
   },
   deriveMetrics: (vars, _request, status, objectiveValue) => {
     const glc = vars.GLCpts ?? 0;
     const biomass = vars.BIOMASS ?? 0;
     const product = vars.PRODUCT ?? 0;
-    const atpYield = glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0) + (vars.PDH ?? 0) * 0.5) / glc : 0;
-    const carbonEfficiency = glc > 1e-9 ? (((biomass * 4.6) + (product * 6)) / (glc * 6)) * 100 : 0;
+    const atpYield =
+      glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0) + (vars.PDH ?? 0) * 0.5) / glc : 0;
+    const carbonEfficiency = glc > 1e-9 ? ((biomass * 4.6 + product * 6) / (glc * 6)) * 100 : 0;
     const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {
@@ -130,50 +186,113 @@ const ECOLI_NETWORK: NetworkSpec = {
 };
 
 const YEAST_NETWORK: NetworkSpec = {
-  species: 'yeast',
+  species: "yeast",
   reactions: [
-    { id: 'HXT', lb: 0, ub: ({ glucoseUptake }) => clamp(glucoseUptake, 0, 20) },
-    { id: 'HXK', lb: 0, ub: 100 },
-    { id: 'PGI_y', lb: 0, ub: 100 },
-    { id: 'PFK_y', lb: 0, ub: 100 },
-    { id: 'TPI', lb: 0, ub: 200 },
-    { id: 'PDC', lb: 0, ub: 100 },
-    { id: 'ADH', lb: 0, ub: 100 },
-    { id: 'ACS', lb: 0, ub: 100 },
-    { id: 'IDH', lb: 0, ub: 100 },
-    { id: 'O2tx_y', lb: 0, ub: ({ oxygenUptake }) => clamp(oxygenUptake, 0, 20) },
-    { id: 'BIOMASS_y', lb: 0, ub: 100 },
-    { id: 'PRODUCT_y', lb: 0, ub: 100 },
+    { id: "HXT", lb: 0, ub: ({ glucoseUptake }) => clamp(glucoseUptake, 0, 20) },
+    { id: "HXK", lb: 0, ub: 100 },
+    { id: "PGI_y", lb: 0, ub: 100 },
+    { id: "PFK_y", lb: 0, ub: 100 },
+    { id: "TPI", lb: 0, ub: 200 },
+    { id: "PDC", lb: 0, ub: 100 },
+    { id: "ADH", lb: 0, ub: 100 },
+    { id: "ACS", lb: 0, ub: 100 },
+    { id: "IDH", lb: 0, ub: 100 },
+    { id: "O2tx_y", lb: 0, ub: ({ oxygenUptake }) => clamp(oxygenUptake, 0, 20) },
+    { id: "BIOMASS_y", lb: 0, ub: 100 },
+    { id: "PRODUCT_y", lb: 0, ub: 100 },
   ],
   constraints: [
-    { name: 'glc_balance', vars: [{ name: 'HXT', coef: 1 }, { name: 'HXK', coef: -1 }] },
-    { name: 'g6p_balance', vars: [{ name: 'HXK', coef: 1 }, { name: 'PGI_y', coef: -1 }] },
-    { name: 'f6p_balance', vars: [{ name: 'PGI_y', coef: 1 }, { name: 'PFK_y', coef: -1 }] },
-    { name: 'fbp_balance', vars: [{ name: 'PFK_y', coef: 1 }, { name: 'TPI', coef: -1 }] },
-    { name: 'fermentation_branch', vars: [{ name: 'TPI', coef: 1 }, { name: 'PDC', coef: -1 }] },
-    { name: 'ethanol_branch', vars: [{ name: 'PDC', coef: 1 }, { name: 'ADH', coef: -1 }, { name: 'ACS', coef: -1 }] },
-    { name: 'oxygen_balance', vars: [{ name: 'O2tx_y', coef: 1 }, { name: 'ACS', coef: -1 }] },
-    { name: 'accoa_balance', vars: [{ name: 'ACS', coef: 1 }, { name: 'IDH', coef: -1 }] },
-    { name: 'growth_balance', vars: [{ name: 'IDH', coef: 1 }, { name: 'BIOMASS_y', coef: -1 }, { name: 'PRODUCT_y', coef: -1 }] },
+    {
+      name: "glc_balance",
+      vars: [
+        { name: "HXT", coef: 1 },
+        { name: "HXK", coef: -1 },
+      ],
+    },
+    {
+      name: "g6p_balance",
+      vars: [
+        { name: "HXK", coef: 1 },
+        { name: "PGI_y", coef: -1 },
+      ],
+    },
+    {
+      name: "f6p_balance",
+      vars: [
+        { name: "PGI_y", coef: 1 },
+        { name: "PFK_y", coef: -1 },
+      ],
+    },
+    {
+      name: "fbp_balance",
+      vars: [
+        { name: "PFK_y", coef: 1 },
+        { name: "TPI", coef: -1 },
+      ],
+    },
+    {
+      name: "fermentation_branch",
+      vars: [
+        { name: "TPI", coef: 1 },
+        { name: "PDC", coef: -1 },
+      ],
+    },
+    {
+      name: "ethanol_branch",
+      vars: [
+        { name: "PDC", coef: 1 },
+        { name: "ADH", coef: -1 },
+        { name: "ACS", coef: -1 },
+      ],
+    },
+    {
+      name: "oxygen_balance",
+      vars: [
+        { name: "O2tx_y", coef: 1 },
+        { name: "ACS", coef: -1 },
+      ],
+    },
+    {
+      name: "accoa_balance",
+      vars: [
+        { name: "ACS", coef: 1 },
+        { name: "IDH", coef: -1 },
+      ],
+    },
+    {
+      name: "growth_balance",
+      vars: [
+        { name: "IDH", coef: 1 },
+        { name: "BIOMASS_y", coef: -1 },
+        { name: "PRODUCT_y", coef: -1 },
+      ],
+    },
   ],
-  glucoseConstraint: 'glc_balance',
-  oxygenConstraint: 'oxygen_balance',
+  glucoseConstraint: "glc_balance",
+  oxygenConstraint: "oxygen_balance",
   objectives: {
-    biomass: [{ name: 'BIOMASS_y', coef: 1 }, { name: 'PRODUCT_y', coef: 0.08 }],
-    product: [{ name: 'PRODUCT_y', coef: 1 }, { name: 'BIOMASS_y', coef: 0.05 }],
+    biomass: [
+      { name: "BIOMASS_y", coef: 1 },
+      { name: "PRODUCT_y", coef: 0.08 },
+    ],
+    product: [
+      { name: "PRODUCT_y", coef: 1 },
+      { name: "BIOMASS_y", coef: 0.05 },
+    ],
     atp: [
-      { name: 'TPI', coef: 0.8 },
-      { name: 'ADH', coef: 0.3 },
-      { name: 'IDH', coef: 1.1 },
-      { name: 'BIOMASS_y', coef: 0.15 },
+      { name: "TPI", coef: 0.8 },
+      { name: "ADH", coef: 0.3 },
+      { name: "IDH", coef: 1.1 },
+      { name: "BIOMASS_y", coef: 0.15 },
     ],
   },
   deriveMetrics: (vars, _request, status, objectiveValue) => {
     const glc = vars.HXT ?? 0;
     const biomass = vars.BIOMASS_y ?? 0;
     const product = vars.PRODUCT_y ?? 0;
-    const atpYield = glc > 1e-9 ? ((vars.TPI ?? 0) + (vars.ADH ?? 0) * 0.4 + (vars.IDH ?? 0) - (vars.PFK_y ?? 0)) / glc : 0;
-    const carbonEfficiency = glc > 1e-9 ? (((biomass * 4.2) + (product * 5.6)) / (glc * 6)) * 100 : 0;
+    const atpYield =
+      glc > 1e-9 ? ((vars.TPI ?? 0) + (vars.ADH ?? 0) * 0.4 + (vars.IDH ?? 0) - (vars.PFK_y ?? 0)) / glc : 0;
+    const carbonEfficiency = glc > 1e-9 ? ((biomass * 4.2 + product * 5.6) / (glc * 6)) * 100 : 0;
     const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {
@@ -226,12 +345,12 @@ async function buildAndSolve(
   const bounds = network.reactions.map((r) => ({
     name: r.id,
     lb: r.lb,
-    ub: knockoutSet.has(r.id) ? 0 : (typeof r.ub === 'function' ? r.ub(request) : r.ub),
+    ub: knockoutSet.has(r.id) ? 0 : typeof r.ub === "function" ? r.ub(request) : r.ub,
   }));
 
   const model: LPModel = {
     name: `fba_${network.species}`,
-    sense: 'maximize',
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -245,10 +364,10 @@ async function buildAndSolve(
   }
 
   // status 2 = optimal (mirrors GLPK GLP_OPT), 4 = infeasible
-  if (result.status === 'error') {
-    console.warn('[FBA] Solver error — returning zeroed fluxes. This usually indicates a HiGHS WASM issue.');
+  if (result.status === "error") {
+    console.warn("[FBA] Solver error — returning zeroed fluxes. This usually indicates a HiGHS WASM issue.");
   }
-  const status = result.status === 'optimal' ? 2 : 4;
+  const status = result.status === "optimal" ? 2 : 4;
   return { vars, status, z: result.objectiveValue, duals: result.duals };
 }
 
@@ -307,12 +426,12 @@ export function buildAuthorityFBAModel(request: SingleSpeciesFBARequest): LPMode
   const bounds = network.reactions.map((r) => ({
     name: r.id,
     lb: r.lb,
-    ub: knockoutSet.has(r.id) ? 0 : (typeof r.ub === 'function' ? r.ub(clamped) : r.ub),
+    ub: knockoutSet.has(r.id) ? 0 : typeof r.ub === "function" ? r.ub(clamped) : r.ub,
   }));
 
   return {
     name: `fba_${network.species}`,
-    sense: 'maximize',
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -344,14 +463,14 @@ export function buildAuthorityFBAModel(request: SingleSpeciesFBARequest): LPMode
 export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): Promise<CommunityFBAOutput> {
   const alpha = clamp(request.alpha ?? 0.5, 0, 1);
   const ecoli = await solveAuthorityFBA({
-    species: 'ecoli',
+    species: "ecoli",
     objective: request.objective,
     glucoseUptake: request.ecoli.glucoseUptake,
     oxygenUptake: request.ecoli.oxygenUptake,
     knockouts: request.ecoli.knockouts ?? [],
   });
   const yeast = await solveAuthorityFBA({
-    species: 'yeast',
+    species: "yeast",
     objective: request.objective,
     glucoseUptake: request.yeast.glucoseUptake,
     oxygenUptake: request.yeast.oxygenUptake,
@@ -359,8 +478,8 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
   });
 
   const exchangeFluxes = SHARED_METABOLITES.map((metabolite) => {
-    const exporter = metabolite.exporterStrain === 'ecoli' ? ecoli : yeast;
-    const importer = metabolite.importerStrain === 'ecoli' ? ecoli : yeast;
+    const exporter = metabolite.exporterStrain === "ecoli" ? ecoli : yeast;
+    const importer = metabolite.importerStrain === "ecoli" ? ecoli : yeast;
     const exporterScale = exporter.feasible ? Math.max(exporter.growthRate, exporter.carbonEfficiency / 100) : 0;
     const importerScale = importer.feasible ? Math.max(importer.growthRate, importer.atpYield / 4) : 0;
     const flux = metabolite.baseFlux * clamp(exporterScale * 1.6, 0, 2.4) * clamp(importerScale * 1.4, 0, 2);
@@ -375,10 +494,10 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
   });
 
   const ecoliFeedingBonus = exchangeFluxes
-    .filter((flux) => flux.toStrain === 'ecoli')
+    .filter((flux) => flux.toStrain === "ecoli")
     .reduce((sum, flux) => sum + flux.flux * 0.018, 0);
   const yeastFeedingBonus = exchangeFluxes
-    .filter((flux) => flux.toStrain === 'yeast')
+    .filter((flux) => flux.toStrain === "yeast")
     .reduce((sum, flux) => sum + flux.flux * 0.018, 0);
 
   const adjustedEcoliGrowth = round(ecoli.growthRate + ecoliFeedingBonus, 4);
@@ -401,7 +520,7 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
 // than the hand-written 10-reaction toy networks above.
 
 export interface ExpandedFBARequest {
-  objective: 'biomass' | 'product';
+  objective: "biomass" | "product";
   glucoseUptake: number;
   oxygenUptake: number;
   knockouts?: string[];
@@ -421,10 +540,10 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
   const rxns = IJO1366_REACTIONS;
   const mets = IJO1366_METABOLITES;
   const n = rxns.length;
-  const rxnIds = rxns.map(r => r.id);
+  const rxnIds = rxns.map((r) => r.id);
 
   // Build LPModel for HiGHS
-  const objRxn = request.objective === 'product' ? 'PRODUCT' : 'BIOMASS';
+  const objRxn = request.objective === "product" ? "PRODUCT" : "BIOMASS";
   const objective = [{ name: objRxn, coef: 1 }];
 
   // Stoichiometric constraints: S · v = 0 (mass balance)
@@ -441,8 +560,8 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
   const bounds = rxns.map((r) => {
     let lb = r.lb;
     // Set exchange reaction lower bounds as maximum uptake allowed
-    if (r.id === 'EX_glc_e') lb = -clamp(request.glucoseUptake, 0, 25);
-    if (r.id === 'EX_o2_e') lb = -clamp(request.oxygenUptake, 0, 25);
+    if (r.id === "EX_glc_e") lb = -clamp(request.glucoseUptake, 0, 25);
+    if (r.id === "EX_o2_e") lb = -clamp(request.oxygenUptake, 0, 25);
     return {
       name: r.id,
       lb,
@@ -451,8 +570,8 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
   });
 
   const model: LPModel = {
-    name: 'fba_iJO1366',
-    sense: 'maximize',
+    name: "fba_iJO1366",
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -477,7 +596,7 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
     fluxes,
     growthRate: round(fluxes.BIOMASS),
     objectiveValue: round(result.objectiveValue),
-    feasible: result.status === 'optimal' && result.objectiveValue > 1e-6,
+    feasible: result.status === "optimal" && result.objectiveValue > 1e-6,
     stats: IJO1366_STATS,
     subsystemFluxSums,
   };
@@ -494,7 +613,7 @@ export interface DynamicFBAOptions {
 }
 
 function findExchangeReaction(reactions: DynamicReaction[], metaboliteSuffix: string): DynamicReaction | undefined {
-  return reactions.find(r => r.id.startsWith('EX_') && r.id.includes(metaboliteSuffix));
+  return reactions.find((r) => r.id.startsWith("EX_") && r.id.includes(metaboliteSuffix));
 }
 
 function findMetaboliteConstraint(metId: string): string {
@@ -519,20 +638,20 @@ export async function solveDynamicFBA(
 
   const objective = [{ name: objectiveId, coef: 1 }];
 
-  const constraints = Array.from(allMetIds).map(metId => ({
+  const constraints = Array.from(allMetIds).map((metId) => ({
     name: `${metId}_balance`,
     vars: reactions
-      .filter(r => r.stoichiometry[metId] !== undefined)
-      .map(r => ({ name: r.id, coef: r.stoichiometry[metId] })),
+      .filter((r) => r.stoichiometry[metId] !== undefined)
+      .map((r) => ({ name: r.id, coef: r.stoichiometry[metId] })),
     lb: 0,
     ub: 0,
   }));
 
-  const bounds = reactions.map(r => {
+  const bounds = reactions.map((r) => {
     let lb = r.lb;
-    if (r.id.startsWith('EX_')) {
-      const isGlucose = r.id.includes('glc') || r.id.includes('glu');
-      const isOxygen = r.id.includes('o2') || r.id.includes('O2');
+    if (r.id.startsWith("EX_")) {
+      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
+      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
       if (isGlucose) lb = -Math.abs(glucoseUptake);
       if (isOxygen) lb = -Math.abs(oxygenUptake);
     }
@@ -544,8 +663,8 @@ export async function solveDynamicFBA(
   });
 
   const model: LPModel = {
-    name: 'fba_dynamic',
-    sense: 'maximize',
+    name: "fba_dynamic",
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -558,14 +677,10 @@ export async function solveDynamicFBA(
     fluxes[r.id] = round(result.primals[r.id] ?? 0);
   }
 
-  const glcRxn = findExchangeReaction(reactions, 'glc');
-  const o2Rxn = findExchangeReaction(reactions, 'o2');
-  const glcConstraint = glcRxn ? findMetaboliteConstraint(
-    Object.keys(glcRxn.stoichiometry)[0]
-  ) : '';
-  const o2Constraint = o2Rxn ? findMetaboliteConstraint(
-    Object.keys(o2Rxn.stoichiometry)[0]
-  ) : '';
+  const glcRxn = findExchangeReaction(reactions, "glc");
+  const o2Rxn = findExchangeReaction(reactions, "o2");
+  const glcConstraint = glcRxn ? findMetaboliteConstraint(Object.keys(glcRxn.stoichiometry)[0]) : "";
+  const o2Constraint = o2Rxn ? findMetaboliteConstraint(Object.keys(o2Rxn.stoichiometry)[0]) : "";
 
   const glucoseShadow = glcConstraint ? (result.duals[glcConstraint] ?? 0) : 0;
   const oxygenShadow = o2Constraint ? (result.duals[o2Constraint] ?? 0) : 0;
@@ -579,7 +694,7 @@ export async function solveDynamicFBA(
   const atpYield = 0;
   const carbonEfficiency = glcFlux > 1e-9 ? (biomassFlux / glcFlux) * 60 : 0;
   const growthRate = biomassFlux;
-  const feasible = result.status === 'optimal' && result.objectiveValue > 1e-6;
+  const feasible = result.status === "optimal" && result.objectiveValue > 1e-6;
 
   return {
     fluxes,

@@ -21,7 +21,7 @@
  * - Karzbrun et al. (2011) Mol Syst Biol — Resource competition model
  */
 
-import { clamp } from '../utils/math';
+import { clamp } from "../utils/math";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -180,17 +180,17 @@ export interface CFSFullResult {
 //  Internal Helpers
 // ═══════════════════════════════════════════════════════════════
 
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 // Kinetic constants for energy coupling
 // Full provenance: src/services/cellFreeParameterSources.ts
-const K_NTP = 0.3;           // mM — NTP Km for transcription. Heuristic: BRENDA range 0.01-1 mM for RNAPs
-const K_AA  = 0.2;           // mM — amino-acid Km for translation. Heuristic: BRENDA range 0.01-0.5 mM
-const K_ATP_ENERGY = 0.1;    // mM — ATP half-saturation for energy modulation. Dead code (unused)
-const K_CONSUME_TX = 0.003;  // mM NTP/nM mRNA — transcription cost. Silverman et al. 2010 Table S1: NTP consumption ~3 mM/h for TX
-const K_CONSUME_TL = 0.008;  // mM ATP/nM protein — translation cost. Silverman et al. 2010: amino acid consumption ~8 mM/h for TL at 30°C
+const K_NTP = 0.3; // mM — NTP Km for transcription. Heuristic: BRENDA range 0.01-1 mM for RNAPs
+const K_AA = 0.2; // mM — amino-acid Km for translation. Heuristic: BRENDA range 0.01-0.5 mM
+const K_ATP_ENERGY = 0.1; // mM — ATP half-saturation for energy modulation. Dead code (unused)
+const K_CONSUME_TX = 0.003; // mM NTP/nM mRNA — transcription cost. Silverman et al. 2010 Table S1: NTP consumption ~3 mM/h for TX
+const K_CONSUME_TL = 0.008; // mM ATP/nM protein — translation cost. Silverman et al. 2010: amino acid consumption ~8 mM/h for TL at 30°C
 const K_GTP_CONSUME = 0.004; // mM GTP/nM protein — EF-Tu/EF-G GTPase. Silverman et al. 2010: GTP hydrolysis rate
-const K_AA_CONSUME  = 2e-6;  // mM AA/nM·residue — Sun et al. 2013: amino acid depletion rate in PURE system
+const K_AA_CONSUME = 2e-6; // mM AA/nM·residue — Sun et al. 2013: amino acid depletion rate in PURE system
 const K_NTP_CONSUME = 0.001; // mM NTP/nM mRNA — additional NTP consumption
 
 /**
@@ -213,11 +213,7 @@ interface ODEState {
  * @param ribosomeTotal - total ribosome pool
  * @returns converged R_free value
  */
-function solveRibosomeFree(
-  mRNAs: number[],
-  constructs: GeneConstruct[],
-  ribosomeTotal: number,
-): number {
+function solveRibosomeFree(mRNAs: number[], constructs: GeneConstruct[], ribosomeTotal: number): number {
   let rFree = ribosomeTotal;
   const MAX_ITER = 30;
   const CONVERGENCE_TOL = 0.01;
@@ -227,14 +223,18 @@ function solveRibosomeFree(
   for (let iter = 0; iter < MAX_ITER; iter++) {
     let rBoundSum = 0;
     for (let i = 0; i < mRNAs.length; i++) {
-      rBoundSum += mRNAs[i] * rFree / (constructs[i].K_tl + rFree);
+      rBoundSum += (mRNAs[i] * rFree) / (constructs[i].K_tl + rFree);
     }
     const rFreeTarget = Math.max(0, ribosomeTotal - rBoundSum);
     const rFreeNew = rFree + DAMPING * (rFreeTarget - rFree);
     const residual = Math.abs(rFreeNew - rFree);
 
-    if (residual < CONVERGENCE_TOL) { return rFreeNew; }
-    if (residual > prevResidual * 10 && iter > 5) { return rFreeNew; }
+    if (residual < CONVERGENCE_TOL) {
+      return rFreeNew;
+    }
+    if (residual > prevResidual * 10 && iter > 5) {
+      return rFreeNew;
+    }
 
     prevResidual = residual;
     rFree = rFreeNew;
@@ -261,20 +261,18 @@ function computeDerivatives(
 
   // Unpack energy compartment (last 5 entries)
   const eidx = 2 * n;
-  const atp  = Math.max(0, v[eidx]);
-  const gtp  = Math.max(0, v[eidx + 1]);
-  const pep  = Math.max(0, v[eidx + 2]);
-  const aa   = Math.max(0, v[eidx + 3]);
+  const atp = Math.max(0, v[eidx]);
+  const gtp = Math.max(0, v[eidx + 1]);
+  const pep = Math.max(0, v[eidx + 2]);
+  const aa = Math.max(0, v[eidx + 3]);
   const ntps = Math.max(0, v[eidx + 4]);
 
   // Energy modulation factor: scales all rates when ATP < 20 % initial
-  const energyMod = atp < atpInit20
-    ? clamp(atp / atpInit20, 0, 1)
-    : 1.0;
+  const energyMod = atp < atpInit20 ? clamp(atp / atpInit20, 0, 1) : 1.0;
 
   // NTP- and AA-dependent saturation terms
   const ntpFactor = ntps / (K_NTP + ntps);
-  const aaFactor  = aa  / (K_AA  + aa);
+  const aaFactor = aa / (K_AA + aa);
 
   // --- Ribosome competition (shared solver) ---
   const mRNAs: number[] = [];
@@ -306,7 +304,7 @@ function computeDerivatives(
     const tlRate = c.k_tl * mRNA * ribFrac * aaFactor * energyMod;
     const dProtein = tlRate;
 
-    dv[2 * i]     = dmRNA;
+    dv[2 * i] = dmRNA;
     dv[2 * i + 1] = dProtein;
 
     totalTxFlux += txRate;
@@ -316,15 +314,14 @@ function computeDerivatives(
 
   // Energy derivatives
   // ATP is consumed by translation AND transcription (~25% of NTPs are ATP)
-  dv[eidx]     = -K_CONSUME_TL * totalTlFlux
-                 - K_CONSUME_TX * totalTxFlux * 0.25
-                 + params.pepRegenerationRate * pep
-                 - params.energyDecayRate * atp;                      // dATP
-  dv[eidx + 1] = -K_GTP_CONSUME * totalTlFlux
-                 - K_CONSUME_TX * totalTxFlux * 0.25
-                 - params.energyDecayRate * gtp;                      // dGTP
-  dv[eidx + 2] = -params.pepRegenerationRate * pep;                  // dPEP
-  dv[eidx + 3] = -K_AA_CONSUME * totalAaFlux;                        // dAA
+  dv[eidx] =
+    -K_CONSUME_TL * totalTlFlux -
+    K_CONSUME_TX * totalTxFlux * 0.25 +
+    params.pepRegenerationRate * pep -
+    params.energyDecayRate * atp; // dATP
+  dv[eidx + 1] = -K_GTP_CONSUME * totalTlFlux - K_CONSUME_TX * totalTxFlux * 0.25 - params.energyDecayRate * gtp; // dGTP
+  dv[eidx + 2] = -params.pepRegenerationRate * pep; // dPEP
+  dv[eidx + 3] = -K_AA_CONSUME * totalAaFlux; // dAA
   dv[eidx + 4] = -K_CONSUME_TX * totalTxFlux; // dNTP (NTP consumed per mRNA synthesised)
 
   return dv;
@@ -383,10 +380,7 @@ function rk4Step(
  * @returns full simulation result including per-gene time-series, resource
  *          time-series, and steady-state metrics
  */
-export function simulateCFPS(
-  constructs: GeneConstruct[],
-  params: CFSParameters,
-): CFSSimulationResult {
+export function simulateCFPS(constructs: GeneConstruct[], params: CFSParameters): CFSSimulationResult {
   // ---- Apply BRENDA overrides to construct kinetics when provided ----
   // BRENDA Km → K_tl (ribosome half-saturation, nM)
   // BRENDA Kcat → k_tl (translation rate, nM/min)
@@ -397,28 +391,30 @@ export function simulateCFPS(
   const originalKtl: number[] = [];
   const originalKtlK: number[] = [];
 
-  const activeConstructs = (hasBrendaKm || hasBrendaKcat)
-    ? constructs.map((c) => {
-        originalKtl.push(c.k_tl);
-        originalKtlK.push(c.K_tl);
-        return {
-          ...c,
-          ...(hasBrendaKm ? { K_tl: params.brendaKm! * 1000 } : {}),    // mM → nM
-          ...(hasBrendaKcat ? { k_tl: params.brendaKcat! * 60 } : {}),   // 1/s → 1/min (rate per ribosome)
-        };
-      })
-    : constructs;
+  const activeConstructs =
+    hasBrendaKm || hasBrendaKcat
+      ? constructs.map((c) => {
+          originalKtl.push(c.k_tl);
+          originalKtlK.push(c.K_tl);
+          return {
+            ...c,
+            ...(hasBrendaKm ? { K_tl: params.brendaKm! * 1000 } : {}), // mM → nM
+            ...(hasBrendaKcat ? { k_tl: params.brendaKcat! * 60 } : {}), // 1/s → 1/min (rate per ribosome)
+          };
+        })
+      : constructs;
 
-  const brendaOverrides: BRENDAOverrides | null = (hasBrendaKm || hasBrendaKcat)
-    ? {
-        kmApplied: hasBrendaKm,
-        kcatApplied: hasBrendaKcat,
-        originalKtl,
-        originalKtlK,
-        brendaKm: params.brendaKm ?? null,
-        brendaKcat: params.brendaKcat ?? null,
-      }
-    : null;
+  const brendaOverrides: BRENDAOverrides | null =
+    hasBrendaKm || hasBrendaKcat
+      ? {
+          kmApplied: hasBrendaKm,
+          kcatApplied: hasBrendaKcat,
+          originalKtl,
+          originalKtlK,
+          brendaKm: params.brendaKm ?? null,
+          brendaKcat: params.brendaKcat ?? null,
+        }
+      : null;
 
   const n = activeConstructs.length;
   const dt = params.timeStep;
@@ -428,7 +424,7 @@ export function simulateCFPS(
 
   // Initialise state vector: [mRNA_0, P_0, ..., mRNA_{n-1}, P_{n-1}, ATP, GTP, PEP, AA, NTPs]
   const initVals = new Array<number>(2 * n + 5).fill(0);
-  initVals[2 * n]     = params.initialEnergy.atp;
+  initVals[2 * n] = params.initialEnergy.atp;
   initVals[2 * n + 1] = params.initialEnergy.gtp;
   initVals[2 * n + 2] = params.initialEnergy.pep;
   initVals[2 * n + 3] = params.initialEnergy.aminoAcids;
@@ -438,8 +434,9 @@ export function simulateCFPS(
 
   // Pre-allocate recording arrays
   const timeArr: number[] = [];
-  const geneRec: { mRNA: number[]; protein: number[]; tlRate: number[]; ribFrac: number[] }[] =
-    activeConstructs.map(() => ({ mRNA: [], protein: [], tlRate: [], ribFrac: [] }));
+  const geneRec: { mRNA: number[]; protein: number[]; tlRate: number[]; ribFrac: number[] }[] = activeConstructs.map(
+    () => ({ mRNA: [], protein: [], tlRate: [], ribFrac: [] }),
+  );
   const resRec = {
     ribosomeFree: [] as number[],
     ribosomeUtil: [] as number[],
@@ -466,14 +463,14 @@ export function simulateCFPS(
     const rFree = solveRibosomeFree(mRNAs, activeConstructs, params.ribosomeTotal);
 
     const eidx = 2 * n;
-    const atp  = Math.max(0, v[eidx]);
-    const gtp  = Math.max(0, v[eidx + 1]);
-    const pep  = Math.max(0, v[eidx + 2]);
-    const aa   = Math.max(0, v[eidx + 3]);
+    const atp = Math.max(0, v[eidx]);
+    const gtp = Math.max(0, v[eidx + 1]);
+    const pep = Math.max(0, v[eidx + 2]);
+    const aa = Math.max(0, v[eidx + 3]);
     const ntps = Math.max(0, v[eidx + 4]);
 
     const energyMod = atp < atpInit20 ? clamp(atp / atpInit20, 0, 1) : 1.0;
-    const aaFactor  = aa / (K_AA + aa);
+    const aaFactor = aa / (K_AA + aa);
 
     // Per-gene recording
     for (let i = 0; i < n; i++) {
@@ -481,7 +478,7 @@ export function simulateCFPS(
       const protein = Math.max(0, v[2 * i + 1]);
       const ribFrac = rFree / (activeConstructs[i].K_tl + rFree);
       const tlRate = activeConstructs[i].k_tl * mRNA * ribFrac * aaFactor * energyMod;
-      const rBound_i = mRNA * rFree / (activeConstructs[i].K_tl + rFree);
+      const rBound_i = (mRNA * rFree) / (activeConstructs[i].K_tl + rFree);
 
       geneRec[i].mRNA.push(mRNA);
       geneRec[i].protein.push(protein);
@@ -498,12 +495,11 @@ export function simulateCFPS(
     resRec.aa.push(aa);
     resRec.ntps.push(ntps);
     // Composite energy index: geometric mean of normalised ATP, GTP, NTPs
-    const eIdx = Math.pow(
-      clamp(atp / atpInit, 0, 1) *
-      clamp(gtp / params.initialEnergy.gtp, 0, 1) *
-      clamp(ntps / params.initialEnergy.ntps, 0, 1),
-      1 / 3,
-    );
+    const eIdx =
+      (clamp(atp / atpInit, 0, 1) *
+        clamp(gtp / params.initialEnergy.gtp, 0, 1) *
+        clamp(ntps / params.initialEnergy.ntps, 0, 1)) **
+      (1 / 3);
     resRec.energyIdx.push(eIdx);
 
     // RK4 step
@@ -542,7 +538,10 @@ export function simulateCFPS(
     const half = maxP * 0.5;
     let timeToHalf = params.simulationTime;
     for (let s = 0; s < pArr.length; s++) {
-      if (pArr[s] >= half) { timeToHalf = timeArr[s]; break; }
+      if (pArr[s] >= half) {
+        timeToHalf = timeArr[s];
+        break;
+      }
     }
     return {
       geneId: c.id,
@@ -559,11 +558,14 @@ export function simulateCFPS(
   let energyDepletionTime = params.simulationTime;
   const threshold10 = atpInit * 0.1;
   for (let s = 0; s < resRec.atp.length; s++) {
-    if (resRec.atp[s] < threshold10) { energyDepletionTime = timeArr[s]; break; }
+    if (resRec.atp[s] < threshold10) {
+      energyDepletionTime = timeArr[s];
+      break;
+    }
   }
 
   // Resource-limited if ribosome utilisation ever exceeds 80 %
-  const isResourceLimited = resRec.ribosomeUtil.some(u => u > 0.8);
+  const isResourceLimited = resRec.ribosomeUtil.some((u) => u > 0.8);
 
   return {
     genes,
@@ -614,10 +616,13 @@ export function fitPlateReaderKinetics(
     if (nFit < 2) continue;
 
     // Simple linear regression: fluorescence = a + b * time  →  rate = b
-    let sumT = 0, sumF = 0, sumTF = 0, sumTT = 0;
+    let sumT = 0,
+      sumF = 0,
+      sumTF = 0,
+      sumTT = 0;
     for (let i = 0; i < nFit; i++) {
-      sumT  += sorted[i].time;
-      sumF  += sorted[i].fluorescence;
+      sumT += sorted[i].time;
+      sumF += sorted[i].fluorescence;
       sumTF += sorted[i].time * sorted[i].fluorescence;
       sumTT += sorted[i].time * sorted[i].time;
     }
@@ -629,22 +634,25 @@ export function fitPlateReaderKinetics(
   const nPts = concentrations.length;
 
   // Michaelis-Menten model: v = Vmax * S / (Kd + S)
-  const mmModel = (s: number, vmax: number, kd: number) => vmax * s / (kd + s);
+  const mmModel = (s: number, vmax: number, kd: number) => (vmax * s) / (kd + s);
 
   // ---- Levenberg-Marquardt ----
   // Use BRENDA-sourced initial guesses when available for better convergence
   let vmax = brendaHints?.kcat
-    ? brendaHints.kcat * 60  // 1/s → 1/min (unit conversion for the fitter)
+    ? brendaHints.kcat * 60 // 1/s → 1/min (unit conversion for the fitter)
     : Math.max(...rates) * 1.2;
   let kd = brendaHints?.km
-    ? brendaHints.km          // already in mM, use directly
+    ? brendaHints.km // already in mM, use directly
     : concentrations[Math.floor(nPts / 2)] || 10;
   let lambda = 0.01;
 
   for (let iter = 0; iter < 200; iter++) {
     // Compute Jacobian and residuals
-    let JtJ00 = 0, JtJ01 = 0, JtJ11 = 0;
-    let JtR0 = 0, JtR1 = 0;
+    let JtJ00 = 0,
+      JtJ01 = 0,
+      JtJ11 = 0;
+    let JtR0 = 0,
+      JtR1 = 0;
     let ssRes = 0;
 
     for (let i = 0; i < nPts; i++) {
@@ -655,13 +663,13 @@ export function fitPlateReaderKinetics(
 
       // Partial derivatives
       const dVmax = s / (kd + s);
-      const dKd   = -vmax * s / ((kd + s) * (kd + s));
+      const dKd = (-vmax * s) / ((kd + s) * (kd + s));
 
       JtJ00 += dVmax * dVmax;
       JtJ01 += dVmax * dKd;
       JtJ11 += dKd * dKd;
-      JtR0  += dVmax * r;
-      JtR1  += dKd * r;
+      JtR0 += dVmax * r;
+      JtR1 += dKd * r;
     }
 
     // Marquardt diagonal scaling: (J^T J + λ · diag(J^T J)) δ = J^T r
@@ -673,16 +681,16 @@ export function fitPlateReaderKinetics(
     if (Math.abs(det) < 1e-30) break;
 
     let dVmax = (a11 * JtR0 - a01 * JtR1) / det;
-    let dKd   = (a00 * JtR1 - a01 * JtR0) / det;
+    let dKd = (a00 * JtR1 - a01 * JtR0) / det;
 
     // Trust region: clamp step to max 50 % relative change per parameter
     const maxDVmax = 0.5 * Math.abs(vmax);
-    const maxDKd   = 0.5 * Math.abs(kd);
+    const maxDKd = 0.5 * Math.abs(kd);
     if (Math.abs(dVmax) > maxDVmax) dVmax = Math.sign(dVmax) * maxDVmax;
-    if (Math.abs(dKd)   > maxDKd)   dKd   = Math.sign(dKd)   * maxDKd;
+    if (Math.abs(dKd) > maxDKd) dKd = Math.sign(dKd) * maxDKd;
 
     const vmaxNew = Math.max(1e-6, vmax + dVmax);
-    const kdNew   = Math.max(1e-6, kd + dKd);
+    const kdNew = Math.max(1e-6, kd + dKd);
 
     // Evaluate new cost
     let ssNew = 0;
@@ -699,13 +707,13 @@ export function fitPlateReaderKinetics(
       lambda *= 2.0;
     }
 
-    if (Math.abs(dVmax / Math.max(1e-10, vmax)) < 1e-8 &&
-        Math.abs(dKd / Math.max(1e-10, kd)) < 1e-8) break;
+    if (Math.abs(dVmax / Math.max(1e-10, vmax)) < 1e-8 && Math.abs(dKd / Math.max(1e-10, kd)) < 1e-8) break;
   }
 
   // R²
   const meanRate = rates.reduce((s, v) => s + v, 0) / nPts;
-  let ssTot = 0, ssResFinal = 0;
+  let ssTot = 0,
+    ssResFinal = 0;
   const residuals: number[] = [];
   for (let i = 0; i < nPts; i++) {
     const pred = mmModel(concentrations[i], vmax, kd);
@@ -732,18 +740,28 @@ export function fitPlateReaderKinetics(
     }
 
     // Quick LM on bootstrap sample (fewer iterations)
-    let bVmax = vmax, bKd = kd, bLam = 0.01;
+    let bVmax = vmax,
+      bKd = kd,
+      bLam = 0.01;
     for (let it = 0; it < 50; it++) {
-      let J00 = 0, J01 = 0, J11 = 0, Jr0 = 0, Jr1 = 0, ss = 0;
+      let J00 = 0,
+        J01 = 0,
+        J11 = 0,
+        Jr0 = 0,
+        Jr1 = 0,
+        ss = 0;
       for (let i = 0; i < nPts; i++) {
         const s = bootConc[i];
         const pred = mmModel(s, bVmax, bKd);
         const r = bootRate[i] - pred;
         ss += r * r;
         const d0 = s / (bKd + s);
-        const d1 = -bVmax * s / ((bKd + s) * (bKd + s));
-        J00 += d0 * d0; J01 += d0 * d1; J11 += d1 * d1;
-        Jr0 += d0 * r;  Jr1 += d1 * r;
+        const d1 = (-bVmax * s) / ((bKd + s) * (bKd + s));
+        J00 += d0 * d0;
+        J01 += d0 * d1;
+        J11 += d1 * d1;
+        Jr0 += d0 * r;
+        Jr1 += d1 * r;
       }
       // Marquardt diagonal scaling + trust region (same as main loop)
       const det = J00 * (1 + bLam) * J11 * (1 + bLam) - J01 * J01;
@@ -761,8 +779,13 @@ export function fitPlateReaderKinetics(
         const r = bootRate[i] - mmModel(bootConc[i], nv, nk);
         ssN += r * r;
       }
-      if (ssN < ss) { bVmax = nv; bKd = nk; bLam *= 0.5; }
-      else { bLam *= 2; }
+      if (ssN < ss) {
+        bVmax = nv;
+        bKd = nk;
+        bLam *= 0.5;
+      } else {
+        bLam *= 2;
+      }
     }
     vmaxSamples.push(bVmax);
     kdSamples.push(bKd);
@@ -789,7 +812,7 @@ export function fitPlateReaderKinetics(
     r_squared: rSquared,
     residuals,
     fittedCurve,
-    model: 'Michaelis-Menten',
+    model: "Michaelis-Menten",
   };
 }
 
@@ -813,9 +836,9 @@ export function estimateIvIvHeuristic(input: IvIvInput): IvIvPrediction {
   // ---- Generate deterministic heuristic weights via SeededRNG ----
   const rng = new SeededRNG(12345);
 
-  const nInput   = 7;
-  const nHidden  = 16;
-  const nOutput  = 1;
+  const nInput = 7;
+  const nHidden = 16;
+  const nOutput = 1;
 
   // He initialisation scale
   const scale1 = Math.sqrt(2 / nInput);
@@ -843,8 +866,8 @@ export function estimateIvIvHeuristic(input: IvIvInput): IvIvPrediction {
 
   // ---- Normalise inputs ----
   // Feature ranges (approx): vmax[0–1000], kd[0–100], maxP[0–5000], prom[0–1], rbs[0–1], len[50–2000], cai[0–1]
-  const means  = [250, 25, 1000, 0.5, 0.5, 500, 0.6];
-  const stdevs = [200, 20,  800, 0.3, 0.3, 400, 0.2];
+  const means = [250, 25, 1000, 0.5, 0.5, 500, 0.6];
+  const stdevs = [200, 20, 800, 0.3, 0.3, 400, 0.2];
 
   const raw = [
     input.invitro_vmax,
@@ -873,47 +896,47 @@ export function estimateIvIvHeuristic(input: IvIvInput): IvIvPrediction {
 
   // Map to plausible expression range: sigmoid → [100, 50000] molecules/cell
   const sigmoid = 1 / (1 + Math.exp(-rawOutput));
-  let basePrediction = 100 + sigmoid * 49900;
+  const basePrediction = 100 + sigmoid * 49900;
 
   // ---- Biological correction factors ----
   const corrections: { factor: string; adjustment: number; reason: string }[] = [];
 
   // 1. Protein folding efficiency
-  const foldingPenalty = input.proteinLength > 500
-    ? 1 - 0.15 * Math.min(1, (input.proteinLength - 500) / 1500)
-    : 1.0;
+  const foldingPenalty = input.proteinLength > 500 ? 1 - 0.15 * Math.min(1, (input.proteinLength - 500) / 1500) : 1.0;
   corrections.push({
-    factor: 'Protein folding',
+    factor: "Protein folding",
     adjustment: foldingPenalty,
-    reason: input.proteinLength > 500
-      ? `Large protein (${input.proteinLength} aa) — reduced folding efficiency in vivo`
-      : 'Protein within typical folding range',
+    reason:
+      input.proteinLength > 500
+        ? `Large protein (${input.proteinLength} aa) — reduced folding efficiency in vivo`
+        : "Protein within typical folding range",
   });
 
   // 2. Codon bias penalty
   const codonPenalty = 0.5 + 0.5 * input.codonAdaptation;
   corrections.push({
-    factor: 'Codon adaptation',
+    factor: "Codon adaptation",
     adjustment: codonPenalty,
-    reason: input.codonAdaptation < 0.5
-      ? `Low CAI (${input.codonAdaptation.toFixed(2)}) — rare codons slow translation in vivo`
-      : `Good CAI (${input.codonAdaptation.toFixed(2)})`,
+    reason:
+      input.codonAdaptation < 0.5
+        ? `Low CAI (${input.codonAdaptation.toFixed(2)}) — rare codons slow translation in vivo`
+        : `Good CAI (${input.codonAdaptation.toFixed(2)})`,
   });
 
   // 3. Promoter context (in-vivo chromatin / supercoiling)
   const promoterContext = 0.6 + 0.4 * input.promoterStrength;
   corrections.push({
-    factor: 'Promoter context',
+    factor: "Promoter context",
     adjustment: promoterContext,
-    reason: 'In-vivo chromatin and supercoiling modulate promoter activity differently than cell-free',
+    reason: "In-vivo chromatin and supercoiling modulate promoter activity differently than cell-free",
   });
 
   // 4. RBS sequestration in vivo (secondary structure formation)
   const rbsSequestration = 0.7 + 0.3 * input.rbsStrength;
   corrections.push({
-    factor: 'RBS sequestration',
+    factor: "RBS sequestration",
     adjustment: rbsSequestration,
-    reason: 'mRNA secondary structure can sequester the RBS in vivo, reducing translation initiation',
+    reason: "mRNA secondary structure can sequester the RBS in vivo, reducing translation initiation",
   });
 
   const totalCorrection = foldingPenalty * codonPenalty * promoterContext * rbsSequestration;
@@ -925,15 +948,16 @@ export function estimateIvIvHeuristic(input: IvIvInput): IvIvPrediction {
   const scalingFactor = finalExpression / Math.max(1, input.invitro_maxProtein);
 
   // Confidence heuristic: higher when inputs are in typical ranges
-  const inRange = (v: number, lo: number, hi: number) => v >= lo && v <= hi ? 1 : 0.7;
+  const inRange = (v: number, lo: number, hi: number) => (v >= lo && v <= hi ? 1 : 0.7);
   const confidence = clamp(
     0.5 +
-    0.1 * inRange(input.invitro_vmax, 10, 800) +
-    0.1 * inRange(input.invitro_kd, 1, 80) +
-    0.1 * inRange(input.proteinLength, 100, 1500) +
-    0.1 * inRange(input.codonAdaptation, 0.3, 1.0) +
-    0.1 * totalCorrection,
-    0.3, 0.95,
+      0.1 * inRange(input.invitro_vmax, 10, 800) +
+      0.1 * inRange(input.invitro_kd, 1, 80) +
+      0.1 * inRange(input.proteinLength, 100, 1500) +
+      0.1 * inRange(input.codonAdaptation, 0.3, 1.0) +
+      0.1 * totalCorrection,
+    0.3,
+    0.95,
   );
 
   const reasoning = [
@@ -942,8 +966,11 @@ export function estimateIvIvHeuristic(input: IvIvInput): IvIvPrediction {
     `After biological corrections (total factor ${totalCorrection.toFixed(3)}): `,
     `predicted in-vivo expression ≈ ${finalExpression} molecules/cell `,
     `(${foldChange.toFixed(1)}× relative to median E. coli protein). `,
-    corrections.filter(c => c.adjustment < 0.95).map(c => c.reason).join('; '),
-  ].join('');
+    corrections
+      .filter((c) => c.adjustment < 0.95)
+      .map((c) => c.reason)
+      .join("; "),
+  ].join("");
 
   return {
     invivo_expression: finalExpression,
@@ -968,50 +995,50 @@ export function estimateIvIvHeuristic(input: IvIvInput): IvIvPrediction {
 export function generateDefaultConstructs(): GeneConstruct[] {
   return [
     {
-      id: 'gfp_reporter',
-      name: 'GFP Reporter',
-      promoter: 'T7',
-      rbs: 'BBa_B0034',
-      cds: 'sfGFP',
-      dnaConcentration: 10,     // nM
-      k_tx: 2.5,                // nM/min — T7 RNAP is very fast
-                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
-      d_mRNA: 0.08,             // 1/min — ~12 min half-life
-                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
-      k_tl: 4.0,                // nM/min — strong RBS
-                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
-      K_tl: 50,                 // nM — ribosome affinity (0.5 mM)
-                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
-      proteinLength: 239,       // sfGFP
-      color: '#4ade80',         // green
+      id: "gfp_reporter",
+      name: "GFP Reporter",
+      promoter: "T7",
+      rbs: "BBa_B0034",
+      cds: "sfGFP",
+      dnaConcentration: 10, // nM
+      k_tx: 2.5, // nM/min — T7 RNAP is very fast
+      // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
+      d_mRNA: 0.08, // 1/min — ~12 min half-life
+      // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
+      k_tl: 4.0, // nM/min — strong RBS
+      // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
+      K_tl: 50, // nM — ribosome affinity (0.5 mM)
+      // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
+      proteinLength: 239, // sfGFP
+      color: "#4ade80", // green
     },
     {
-      id: 'ads_enzyme',
-      name: 'ADS (Amorpha-4,11-diene synthase)',
-      promoter: 'sigma70',
-      rbs: 'BBa_B0032',
-      cds: 'ADS',
-      dnaConcentration: 15,     // nM — Heuristic: typical plasmid concentration for cell-free
-      k_tx: 0.8,                // nM/min — Heuristic: sigma70 ~3-5x weaker than T7 (BRENDA EC 2.7.7.6 vs 2.7.7.60)
-      d_mRNA: 0.1,              // 1/min — Heuristic: sigma70 mRNA ~7 min half-life (faster than T7)
-      k_tl: 2.0,                // nM/min — Heuristic: BBa_B0032 is a medium-strength RBS (iGEM registry)
-      K_tl: 80,                 // nM — Heuristic: weaker ribosome binding than BBa_B0034
-      proteinLength: 563,       // ADS from A. annua — Ro et al. 2006 (doi: 10.1038/nature04894)
-      color: '#60a5fa',         // blue
+      id: "ads_enzyme",
+      name: "ADS (Amorpha-4,11-diene synthase)",
+      promoter: "sigma70",
+      rbs: "BBa_B0032",
+      cds: "ADS",
+      dnaConcentration: 15, // nM — Heuristic: typical plasmid concentration for cell-free
+      k_tx: 0.8, // nM/min — Heuristic: sigma70 ~3-5x weaker than T7 (BRENDA EC 2.7.7.6 vs 2.7.7.60)
+      d_mRNA: 0.1, // 1/min — Heuristic: sigma70 mRNA ~7 min half-life (faster than T7)
+      k_tl: 2.0, // nM/min — Heuristic: BBa_B0032 is a medium-strength RBS (iGEM registry)
+      K_tl: 80, // nM — Heuristic: weaker ribosome binding than BBa_B0034
+      proteinLength: 563, // ADS from A. annua — Ro et al. 2006 (doi: 10.1038/nature04894)
+      color: "#60a5fa", // blue
     },
     {
-      id: 'cyp71av1',
-      name: 'CYP71AV1 (Cytochrome P450)',
-      promoter: 'Ptac',
-      rbs: 'BBa_B0031',
-      cds: 'CYP71AV1',
-      dnaConcentration: 20,     // nM — Heuristic: typical plasmid concentration for cell-free
-      k_tx: 0.5,                // nM/min — Heuristic: Ptac is a hybrid tac promoter, weaker than sigma70 consensus
-      d_mRNA: 0.12,             // 1/min — Heuristic: Ptac mRNA ~6 min half-life
-      k_tl: 1.0,                // nM/min — Heuristic: BBa_B0031 is a weak RBS (iGEM registry)
-      K_tl: 120,                // nM — Heuristic: lower ribosome affinity for weak RBS
-      proteinLength: 496,       // CYP71AV1 from A. annua — Ro et al. 2006 (doi: 10.1038/nature04894)
-      color: '#f472b6',         // pink
+      id: "cyp71av1",
+      name: "CYP71AV1 (Cytochrome P450)",
+      promoter: "Ptac",
+      rbs: "BBa_B0031",
+      cds: "CYP71AV1",
+      dnaConcentration: 20, // nM — Heuristic: typical plasmid concentration for cell-free
+      k_tx: 0.5, // nM/min — Heuristic: Ptac is a hybrid tac promoter, weaker than sigma70 consensus
+      d_mRNA: 0.12, // 1/min — Heuristic: Ptac mRNA ~6 min half-life
+      k_tl: 1.0, // nM/min — Heuristic: BBa_B0031 is a weak RBS (iGEM registry)
+      K_tl: 120, // nM — Heuristic: lower ribosome affinity for weak RBS
+      proteinLength: 496, // CYP71AV1 from A. annua — Ro et al. 2006 (doi: 10.1038/nature04894)
+      color: "#f472b6", // pink
     },
   ];
 }
@@ -1028,21 +1055,21 @@ export function generateDefaultConstructs(): GeneConstruct[] {
  */
 export function generateDefaultParameters(): CFSParameters {
   return {
-    ribosomeTotal: 500,         // nM — Karzbrun et al. 2011 (doi: 10.1038/msb.2011.74)
-    rnap_total: 75,             // nM — Karzbrun et al. 2011: ~50-100 nM RNAP, 75 as midpoint
-    reactionVolume: 10,         // μL — Typical microplate well volume for cell-free reactions
-    temperature: 30,            // °C — E. coli S30 optimal; 37°C causes protein aggregation in vitro
+    ribosomeTotal: 500, // nM — Karzbrun et al. 2011 (doi: 10.1038/msb.2011.74)
+    rnap_total: 75, // nM — Karzbrun et al. 2011: ~50-100 nM RNAP, 75 as midpoint
+    reactionVolume: 10, // μL — Typical microplate well volume for cell-free reactions
+    temperature: 30, // °C — E. coli S30 optimal; 37°C causes protein aggregation in vitro
     initialEnergy: {
-      atp: 1.5,                 // mM — Calhoun & Swartz 2005 (doi: 10.1002/bit.20379)
-      gtp: 1.0,                 // mM — Calhoun & Swartz 2005: GTP ~1 mM
-      pep: 33,                  // mM — Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
-      aminoAcids: 10.0,         // mM — Jewett & Swartz 2004: amino acid mix ~10 mM
-      ntps: 3.5,                // mM — Silverman et al. 2010: NTP pool ~3.5 mM
+      atp: 1.5, // mM — Calhoun & Swartz 2005 (doi: 10.1002/bit.20379)
+      gtp: 1.0, // mM — Calhoun & Swartz 2005: GTP ~1 mM
+      pep: 33, // mM — Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
+      aminoAcids: 10.0, // mM — Jewett & Swartz 2004: amino acid mix ~10 mM
+      ntps: 3.5, // mM — Silverman et al. 2010: NTP pool ~3.5 mM
     },
-    energyDecayRate: 0.004,     // 1/min — Silverman et al. 2010: energy decay ~4%/min
+    energyDecayRate: 0.004, // 1/min — Silverman et al. 2010: energy decay ~4%/min
     pepRegenerationRate: 0.005, // 1/min — Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
-    simulationTime: 240,        // 4 hours — typical cell-free reaction duration
-    timeStep: 0.5,              // min — numerical integration step
+    simulationTime: 240, // 4 hours — typical cell-free reaction duration
+    timeStep: 0.5, // min — numerical integration step
   };
 }
 
@@ -1065,7 +1092,7 @@ export function computeReproducibility(
   const rng = new SeededRNG(42);
 
   for (let trial = 0; trial < nTrials; trial++) {
-    const perturbedConstructs = constructs.map(c => ({
+    const perturbedConstructs = constructs.map((c) => ({
       ...c,
       k_tx: c.k_tx * (1 + (rng.next() * 2 - 1) * perturbationFraction),
       k_tl: c.k_tl * (1 + (rng.next() * 2 - 1) * perturbationFraction),
@@ -1073,7 +1100,7 @@ export function computeReproducibility(
     }));
 
     const result = simulateCFPS(perturbedConstructs, params);
-    const maxProtein = Math.max(...result.genes.map(g => Math.max(...g.protein)));
+    const maxProtein = Math.max(...result.genes.map((g) => Math.max(...g.protein)));
     yields.push(maxProtein);
   }
 
@@ -1104,15 +1131,15 @@ export function generateMockPlateReaderData(): PlateReaderDataPoint[] {
   const timepoints = 20;
   const maxTime = 60; // minutes
 
-  const VMAX = 450;   // RFU/min
-  const KD   = 8.5;   // nM
+  const VMAX = 450; // RFU/min
+  const KD = 8.5; // nM
 
-  const wellLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const wellLetters = ["A", "B", "C", "D", "E", "F"];
   const data: PlateReaderDataPoint[] = [];
 
   for (let ci = 0; ci < concentrations.length; ci++) {
     const conc = concentrations[ci];
-    const rate = conc === 0 ? 0 : VMAX * conc / (KD + conc);
+    const rate = conc === 0 ? 0 : (VMAX * conc) / (KD + conc);
 
     for (let rep = 0; rep < replicates; rep++) {
       const well = `${wellLetters[ci]}${rep + 1}`;
@@ -1167,18 +1194,15 @@ export function runFullCFSPipeline(
 
   // 2. Plate-reader kinetic fitting (user data if provided, otherwise mock)
   // Pass BRENDA hints to the fitter as initial guesses when available
-  const brendaHints = (simParams.brendaKm || simParams.brendaKcat)
-    ? { km: simParams.brendaKm, kcat: simParams.brendaKcat }
-    : undefined;
-  const plateData = userPlateData && userPlateData.length > 0
-    ? userPlateData
-    : generateMockPlateReaderData();
+  const brendaHints =
+    simParams.brendaKm || simParams.brendaKcat ? { km: simParams.brendaKm, kcat: simParams.brendaKcat } : undefined;
+  const plateData = userPlateData && userPlateData.length > 0 ? userPlateData : generateMockPlateReaderData();
   let fitting: KineticFitResult | null = null;
   try {
     fitting = fitPlateReaderKinetics(plateData, brendaHints);
   } catch {
     fitting = null;
-    console.debug('[CellFreeEngine] Plate reader kinetics fitting failed, continuing without fit');
+    console.debug("[CellFreeEngine] Plate reader kinetics fitting failed, continuing without fit");
   }
 
   // 3. In-vitro → in-vivo translation for first construct
@@ -1190,8 +1214,8 @@ export function runFullCFSPipeline(
       invitro_vmax: fitting.vmax,
       invitro_kd: fitting.kd,
       invitro_maxProtein: ss.maxProtein,
-      promoterStrength: first.promoter === 'T7' ? 0.95 : first.promoter === 'sigma70' ? 0.5 : 0.3,
-      rbsStrength: first.rbs === 'BBa_B0034' ? 0.9 : first.rbs === 'BBa_B0032' ? 0.5 : 0.3,
+      promoterStrength: first.promoter === "T7" ? 0.95 : first.promoter === "sigma70" ? 0.5 : 0.3,
+      rbsStrength: first.rbs === "BBa_B0034" ? 0.9 : first.rbs === "BBa_B0032" ? 0.5 : 0.3,
       proteinLength: first.proteinLength,
       codonAdaptation: 0.75,
     });

@@ -4,8 +4,8 @@
  * Zero cross-domain dependencies. Only reads/writes axonRuns, axonLogs, axonPlan.
  * Extracted from workbenchStore.ts for single-responsibility.
  */
-import type { StateCreator } from 'zustand';
-import type { AxonRunRecord, WorkbenchAxonLogEntry, WorkbenchAxonPlanRecord } from '../workbenchTypes';
+import type { StateCreator } from "zustand";
+import type { AxonRunRecord, WorkbenchAxonLogEntry, WorkbenchAxonPlanRecord } from "../workbenchTypes";
 
 // ── Constants ──
 export const AXON_RUN_LIMIT = 80;
@@ -21,7 +21,11 @@ export interface AxonSlice {
   appendAxonLog: (entry: WorkbenchAxonLogEntry) => void;
   clearAxonLogs: () => void;
   setAxonPlan: (plan: WorkbenchAxonPlanRecord | null) => void;
-  updateAxonPlanStep: (planId: string, stepId: string, patch: Partial<WorkbenchAxonPlanRecord['steps'][number]>) => void;
+  updateAxonPlanStep: (
+    planId: string,
+    stepId: string,
+    patch: Partial<WorkbenchAxonPlanRecord["steps"][number]>,
+  ) => void;
 }
 
 // ── Initial state ──
@@ -66,9 +70,7 @@ export const createAxonSlice: StateCreator<AxonSlice, [], [], AxonSlice> = (set)
       return {
         axonPlan: {
           ...plan,
-          steps: plan.steps.map((s) =>
-            s.id === stepId ? { ...s, ...patch } : s,
-          ),
+          steps: plan.steps.map((s) => (s.id === stepId ? { ...s, ...patch } : s)),
         },
       };
     });

@@ -1,4 +1,4 @@
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 /**
  * OptKnock — Bilevel MILP knockout strategy for coupling growth to product formation.
@@ -29,7 +29,7 @@ import { SeededRNG } from '../utils/seededRng';
  *     - Returns single optimal knockout set (no Pareto enumeration)
  */
 
-import { solveLP, type LPModel, type LPVariable, type LPConstraint, type LPBound } from './highsSolver';
+import { type LPBound, type LPConstraint, type LPModel, type LPVariable, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                  */
@@ -157,12 +157,12 @@ function buildOptKnockLP(
 
   const bounds = reactions.map((r) => {
     let lb = r.lb;
-    if (r.id === 'BIOMASS' || r.id === 'BIOMASS_Ec_iML1515' || r.id === 'BIOMASS_HP_published') {
+    if (r.id === "BIOMASS" || r.id === "BIOMASS_Ec_iML1515" || r.id === "BIOMASS_HP_published") {
       lb = Math.max(lb, growthLB);
     }
-    if (r.id.startsWith('EX_')) {
-      const isGlucose = r.id.includes('glc') || r.id.includes('glu');
-      const isOxygen = r.id.includes('o2') || r.id.includes('O2');
+    if (r.id.startsWith("EX_")) {
+      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
+      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
       if (isGlucose) lb = -Math.abs(glucoseUptake);
       if (isOxygen) lb = -Math.abs(oxygenUptake);
     }
@@ -174,8 +174,8 @@ function buildOptKnockLP(
   });
 
   return {
-    name: 'optknock',
-    sense: 'maximize',
+    name: "optknock",
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -227,9 +227,7 @@ function buildOptKnockMILP(
   const metIds = Array.from(allMetIds);
 
   // Objective: maximize product flux
-  const objective: LPVariable[] = [
-    { name: `v_${productReactionId}`, coef: 1 },
-  ];
+  const objective: LPVariable[] = [{ name: `v_${productReactionId}`, coef: 1 }];
 
   const constraints: LPConstraint[] = [];
 
@@ -295,12 +293,12 @@ function buildOptKnockMILP(
       sdVars.push({ name: `nu_${rxn.id}`, coef: rxn.lb });
     }
   }
-  constraints.push({ name: 'strong_duality', vars: sdVars, lb: 0, ub: 0 });
+  constraints.push({ name: "strong_duality", vars: sdVars, lb: 0, ub: 0 });
 
   // ── 6. Growth lower bound: v_biomass ≥ growthLB ──
   if (growthLB > 0) {
     constraints.push({
-      name: 'growth_lb',
+      name: "growth_lb",
       vars: [{ name: `v_${objectiveId}`, coef: 1 }],
       lb: growthLB,
       ub: Infinity,
@@ -309,7 +307,7 @@ function buildOptKnockMILP(
 
   // ── 7. Knockout budget: Σ z_i ≤ maxKnockouts ──
   constraints.push({
-    name: 'ko_budget',
+    name: "ko_budget",
     vars: candidateIds.map((id) => ({ name: `z_${id}`, coef: 1 })),
     lb: -Infinity,
     ub: maxKnockouts,
@@ -348,9 +346,9 @@ function buildOptKnockMILP(
   for (const rxn of reactions) {
     let lb = rxn.lb;
     const ub = rxn.ub;
-    if (rxn.id.startsWith('EX_')) {
-      const isGlucose = rxn.id.includes('glc') || rxn.id.includes('glu');
-      const isOxygen = rxn.id.includes('o2') || rxn.id.includes('O2');
+    if (rxn.id.startsWith("EX_")) {
+      const isGlucose = rxn.id.includes("glc") || rxn.id.includes("glu");
+      const isOxygen = rxn.id.includes("o2") || rxn.id.includes("O2");
       if (isGlucose) lb = -Math.abs(glucoseUptake);
       if (isOxygen) lb = -Math.abs(oxygenUptake);
     }
@@ -374,8 +372,8 @@ function buildOptKnockMILP(
   }
 
   return {
-    name: 'optknock_milp',
-    sense: 'maximize',
+    name: "optknock_milp",
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -395,17 +393,8 @@ function buildOptKnockMILP(
  * reformulation via strong duality. For larger models, falls back to
  * iterative LP enumeration with sampling.
  */
-export async function runOptKnock(
-  model: OptKnockModel,
-  options: OptKnockOptions = {},
-): Promise<OptKnockResult> {
-  const {
-    maxKnockouts = 3,
-    glucoseUptake = 10,
-    oxygenUptake = 12,
-    growthFraction = 0.01,
-    maxResults = 10,
-  } = options;
+export async function runOptKnock(model: OptKnockModel, options: OptKnockOptions = {}): Promise<OptKnockResult> {
+  const { maxKnockouts = 3, glucoseUptake = 10, oxygenUptake = 12, growthFraction = 0.01, maxResults = 10 } = options;
 
   // Validate product reaction exists
   const hasProduct = model.reactions.some((r) => r.id === model.productReactionId);
@@ -418,17 +407,10 @@ export async function runOptKnock(
   }
 
   // Step 1: Wild-type FBA — maximize growth
-  const wtGrowthLP = buildOptKnockLP(
-    model.reactions,
-    model.objectiveId,
-    [],
-    0,
-    glucoseUptake,
-    oxygenUptake,
-  );
+  const wtGrowthLP = buildOptKnockLP(model.reactions, model.objectiveId, [], 0, glucoseUptake, oxygenUptake);
   const wtGrowthResult = await solveLP(wtGrowthLP);
 
-  if (wtGrowthResult.status !== 'optimal') {
+  if (wtGrowthResult.status !== "optimal") {
     return {
       knockoutSets: [],
       wildtypeGrowthRate: 0,
@@ -449,19 +431,12 @@ export async function runOptKnock(
     oxygenUptake,
   );
   const wtProductResult = await solveLP(wtProductLP);
-  const wildtypeProductFlux = wtProductResult.status === 'optimal'
-    ? round(wtProductResult.objectiveValue)
-    : 0;
+  const wildtypeProductFlux = wtProductResult.status === "optimal" ? round(wtProductResult.objectiveValue) : 0;
 
   // Step 3: Identify candidate reactions for knockout
   const candidateIds = model.reactions
     .map((r) => r.id)
-    .filter(
-      (id) =>
-        !id.startsWith('EX_') &&
-        id !== model.objectiveId &&
-        id !== model.productReactionId,
-    );
+    .filter((id) => !id.startsWith("EX_") && id !== model.objectiveId && id !== model.productReactionId);
 
   if (candidateIds.length === 0) {
     return {
@@ -485,10 +460,8 @@ export async function runOptKnock(
     );
     const milpResult = await solveLP(milp);
 
-    if (milpResult.status === 'optimal') {
-      const knockouts = candidateIds.filter(
-        (id) => (milpResult.primals[`z_${id}`] ?? 0) > 0.5,
-      );
+    if (milpResult.status === "optimal") {
+      const knockouts = candidateIds.filter((id) => (milpResult.primals[`z_${id}`] ?? 0) > 0.5);
       const growthRate = round(milpResult.primals[`v_${model.objectiveId}`] ?? 0);
       const productFlux = round(milpResult.primals[`v_${model.productReactionId}`] ?? 0);
 
@@ -509,9 +482,7 @@ export async function runOptKnock(
     }
 
     // MILP failed — fall through to sequential LP
-    console.warn(
-      '[OptKnock] MILP solver returned non-optimal status, falling back to sequential LP',
-    );
+    console.warn("[OptKnock] MILP solver returned non-optimal status, falling back to sequential LP");
   } else {
     console.warn(
       `[OptKnock] ${candidateIds.length} candidates exceed ${MILP_CANDIDATE_THRESHOLD} threshold; using sequential LP fallback`,
@@ -523,22 +494,13 @@ export async function runOptKnock(
   const results: KnockoutSet[] = [];
 
   for (let k = 1; k <= maxKnockouts; k++) {
-    const combos = useExhaustive
-      ? combinations(candidateIds, k)
-      : sampleCombinations(candidateIds, k, RANDOM_SAMPLES);
+    const combos = useExhaustive ? combinations(candidateIds, k) : sampleCombinations(candidateIds, k, RANDOM_SAMPLES);
 
     for (const combo of combos) {
-      const koGrowthLP = buildOptKnockLP(
-        model.reactions,
-        model.objectiveId,
-        combo,
-        0,
-        glucoseUptake,
-        oxygenUptake,
-      );
+      const koGrowthLP = buildOptKnockLP(model.reactions, model.objectiveId, combo, 0, glucoseUptake, oxygenUptake);
       const koGrowthResult = await solveLP(koGrowthLP);
 
-      if (koGrowthResult.status !== 'optimal' || koGrowthResult.objectiveValue < 1e-6) {
+      if (koGrowthResult.status !== "optimal" || koGrowthResult.objectiveValue < 1e-6) {
         continue;
       }
 
@@ -554,7 +516,7 @@ export async function runOptKnock(
       );
       const koProductResult = await solveLP(koProductLP);
 
-      if (koProductResult.status !== 'optimal') continue;
+      if (koProductResult.status !== "optimal") continue;
 
       const koProductFlux = round(koProductResult.objectiveValue);
 

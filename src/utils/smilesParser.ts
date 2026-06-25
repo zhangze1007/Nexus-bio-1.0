@@ -38,8 +38,8 @@ export interface SMILESGraph {
 /*  Organic subset — lowercase = aromatic                              */
 /* ------------------------------------------------------------------ */
 
-const ORGANIC_UPPER = new Set(['B', 'C', 'N', 'O', 'P', 'S', 'F', 'Cl', 'Br', 'I']);
-const ORGANIC_AROMATIC = new Set(['b', 'c', 'n', 'o', 'p', 's']);
+const ORGANIC_UPPER = new Set(["B", "C", "N", "O", "P", "S", "F", "Cl", "Br", "I"]);
+const ORGANIC_AROMATIC = new Set(["b", "c", "n", "o", "p", "s"]);
 
 function aromaticToElement(ch: string): string {
   return ch.toUpperCase();
@@ -79,7 +79,7 @@ interface ParseState {
 /* ------------------------------------------------------------------ */
 
 function peek(s: ParseState): string {
-  return s.smiles[s.pos] ?? '';
+  return s.smiles[s.pos] ?? "";
 }
 
 function advance(s: ParseState): string {
@@ -123,50 +123,50 @@ function recordAtom(s: ParseState, atom: SMILESAtom): void {
 
 function parseBracketAtom(s: ParseState): SMILESAtom {
   let isAromatic = false;
-  let element = '';
+  let element = "";
   let charge = 0;
 
   const ch = peek(s);
 
   // Aromatic element (lowercase start)
-  if (ch >= 'a' && ch <= 'z') {
+  if (ch >= "a" && ch <= "z") {
     isAromatic = true;
     element = advance(s).toUpperCase();
     const next = peek(s);
-    if (next >= 'a' && next <= 'z') {
+    if (next >= "a" && next <= "z") {
       const two = element + next;
-      if (['Se', 'As', 'Te', 'Si', 'Ge', 'Sn', 'Pb', 'Bi', 'Sb'].includes(two)) {
+      if (["Se", "As", "Te", "Si", "Ge", "Sn", "Pb", "Bi", "Sb"].includes(two)) {
         element = two;
         advance(s);
       }
     }
-  } else if (ch >= 'A' && ch <= 'Z') {
+  } else if (ch >= "A" && ch <= "Z") {
     element = advance(s);
     const next = peek(s);
-    if (next >= 'a' && next <= 'z') {
+    if (next >= "a" && next <= "z") {
       element += advance(s);
     }
   }
 
   // Optional hydrogen count: H, H2, H3 ...
-  if (peek(s) === 'H') {
+  if (peek(s) === "H") {
     advance(s);
     const d = peek(s);
-    if (d >= '0' && d <= '9') {
+    if (d >= "0" && d <= "9") {
       advance(s); // consume digit
     }
   }
 
   // Optional charge: +, ++, +2, -, --, -2
-  while (peek(s) === '+' || peek(s) === '-') {
-    const sign = peek(s) === '+' ? 1 : -1;
+  while (peek(s) === "+" || peek(s) === "-") {
+    const sign = peek(s) === "+" ? 1 : -1;
     advance(s);
     const d = peek(s);
-    if (d >= '0' && d <= '9') {
+    if (d >= "0" && d <= "9") {
       charge += sign * parseInt(advance(s), 10);
     } else {
       let count = 1;
-      while (peek(s) === (sign === 1 ? '+' : '-')) {
+      while (peek(s) === (sign === 1 ? "+" : "-")) {
         count++;
         advance(s);
       }
@@ -175,7 +175,7 @@ function parseBracketAtom(s: ParseState): SMILESAtom {
   }
 
   // Consume ']'
-  if (peek(s) === ']') {
+  if (peek(s) === "]") {
     advance(s);
   }
 
@@ -186,13 +186,15 @@ function parseOrganicAtom(s: ParseState): SMILESAtom | null {
   const ch = peek(s);
 
   // Two-character organic subset
-  if (ch === 'C' && s.smiles[s.pos + 1] === 'l') {
-    advance(s); advance(s);
-    return { element: 'Cl', isAromatic: false, charge: 0, index: s.atoms.length };
+  if (ch === "C" && s.smiles[s.pos + 1] === "l") {
+    advance(s);
+    advance(s);
+    return { element: "Cl", isAromatic: false, charge: 0, index: s.atoms.length };
   }
-  if (ch === 'B' && s.smiles[s.pos + 1] === 'r') {
-    advance(s); advance(s);
-    return { element: 'Br', isAromatic: false, charge: 0, index: s.atoms.length };
+  if (ch === "B" && s.smiles[s.pos + 1] === "r") {
+    advance(s);
+    advance(s);
+    return { element: "Br", isAromatic: false, charge: 0, index: s.atoms.length };
   }
 
   // Single-character organic subset (uppercase)
@@ -216,9 +218,9 @@ function parseOrganicAtom(s: ParseState): SMILESAtom | null {
 
 function parseRingClosure(s: ParseState): void {
   let key: string;
-  if (peek(s) === '%') {
+  if (peek(s) === "%") {
     advance(s);
-    key = '%' + advance(s) + advance(s);
+    key = "%" + advance(s) + advance(s);
   } else {
     key = advance(s);
   }
@@ -255,24 +257,24 @@ function parseRingClosure(s: ParseState): void {
 function parseBondSymbol(s: ParseState): boolean {
   const ch = peek(s);
   switch (ch) {
-    case '-':
+    case "-":
       advance(s);
       s.pendingBond = { order: 1, isAromatic: false };
       return true;
-    case '=':
+    case "=":
       advance(s);
       s.pendingBond = { order: 2, isAromatic: false };
       return true;
-    case '#':
+    case "#":
       advance(s);
       s.pendingBond = { order: 3, isAromatic: false };
       return true;
-    case ':':
+    case ":":
       advance(s);
       s.pendingBond = { order: 1, isAromatic: true };
       return true;
-    case '/':
-    case '\\':
+    case "/":
+    case "\\":
       advance(s);
       s.pendingBond = { order: 1, isAromatic: false };
       return true;
@@ -301,7 +303,7 @@ export function parseSMILES(smiles: string): SMILESGraph {
     const ch = peek(s);
 
     // ---- Branch open ----
-    if (ch === '(') {
+    if (ch === "(") {
       advance(s);
       // Save current atom so we can restore it after the branch
       s.stack.push(s.currentAtom);
@@ -309,7 +311,7 @@ export function parseSMILES(smiles: string): SMILESGraph {
     }
 
     // ---- Branch close ----
-    if (ch === ')') {
+    if (ch === ")") {
       advance(s);
       // Restore current atom to what it was before the branch
       s.currentAtom = s.stack.pop()!;
@@ -317,7 +319,7 @@ export function parseSMILES(smiles: string): SMILESGraph {
     }
 
     // ---- Bracket atom ----
-    if (ch === '[') {
+    if (ch === "[") {
       advance(s);
       const atom = parseBracketAtom(s);
       recordAtom(s, atom);
@@ -325,7 +327,7 @@ export function parseSMILES(smiles: string): SMILESGraph {
     }
 
     // ---- Ring closure (digit or %) ----
-    if ((ch >= '0' && ch <= '9') || ch === '%') {
+    if ((ch >= "0" && ch <= "9") || ch === "%") {
       parseRingClosure(s);
       continue;
     }
@@ -336,7 +338,7 @@ export function parseSMILES(smiles: string): SMILESGraph {
     }
 
     // ---- Dot (disconnected fragments) ----
-    if (ch === '.') {
+    if (ch === ".") {
       advance(s);
       // Next atom starts a new fragment — no implicit bond
       s.currentAtom = -1;

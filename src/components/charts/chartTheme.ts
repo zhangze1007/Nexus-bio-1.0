@@ -10,36 +10,36 @@
  * the design system intentionally does not prescribe.
  */
 
-import { colors, spacing, typography } from '../../design-system/tokens';
-import { THEME } from '../../theme';
+import { colors, spacing, typography } from "../../design-system/tokens";
+import { THEME } from "../../theme";
 
 /* ── Color Palette ────────────────────────────────────────────── */
 
 /** Cool gradient: deep blue → cyan (positive values) */
 export const COOL = {
-  deep:   '#1a1a2e',
-  mid:    '#16213e',
-  bright: '#0f3460',
-  cyan:   '#00d2ff',
-  light:  '#53e0ff',
+  deep: "#1a1a2e",
+  mid: "#16213e",
+  bright: "#0f3460",
+  cyan: "#00d2ff",
+  light: "#53e0ff",
 } as const;
 
 /** Warm gradient: orange → red (negative values / warnings) */
 export const WARM = {
-  orange: '#ff6b35',
-  red:    '#ff0844',
-  amber:  '#ffab40',
+  orange: "#ff6b35",
+  red: "#ff0844",
+  amber: "#ffab40",
 } as const;
 
 /** Phase-specific accent palette (matches PATHD_THEME) */
 export const ACCENT = {
-  mint:      colors.chart.green,    // '#C8E0D0' via tokens
-  sky:       colors.chart.blue,     // '#C8D8E8' via tokens
-  apricot:   colors.chart.gold,     // '#E8DCC8' via tokens
-  coral:     colors.chart.salmon,   // '#FA8072' via tokens
-  lilac:     colors.chart.purple,   // '#DDD0E8' via tokens
-  green:     colors.chart.lime,     // '#93CB52' via tokens
-  yellow:    '#FFFB1F',
+  mint: colors.chart.green, // '#C8E0D0' via tokens
+  sky: colors.chart.blue, // '#C8D8E8' via tokens
+  apricot: colors.chart.gold, // '#E8DCC8' via tokens
+  coral: colors.chart.salmon, // '#FA8072' via tokens
+  lilac: colors.chart.purple, // '#DDD0E8' via tokens
+  green: colors.chart.lime, // '#93CB52' via tokens
+  yellow: "#FFFB1F",
 } as const;
 
 /**
@@ -51,14 +51,14 @@ export const ACCENT = {
  * reproducible series-to-color assignment across charts.
  */
 export const SCI_PALETTE = {
-  blue:      '#56B4E9', // sky blue
-  orange:    '#E69F00', // amber
-  green:     '#009E73', // bluish green
-  yellow:    '#F0E442', // soft yellow
-  navy:      '#0072B2', // blue
-  vermilion: '#D55E00', // vermilion
-  magenta:   '#CC79A7', // reddish purple
-  slate:     '#B8C4D6', // neutral pale (for non-front / muted series)
+  blue: "#56B4E9", // sky blue
+  orange: "#E69F00", // amber
+  green: "#009E73", // bluish green
+  yellow: "#F0E442", // soft yellow
+  navy: "#0072B2", // blue
+  vermilion: "#D55E00", // vermilion
+  magenta: "#CC79A7", // reddish purple
+  slate: "#B8C4D6", // neutral pale (for non-front / muted series)
 } as const;
 
 /**
@@ -86,14 +86,14 @@ export const SCI_SERIES = [
  * Each hue still clears ≥ 3:1 contrast against `#050505`.
  */
 export const SCI_PASTEL = {
-  teal:        '#7FC7C9',
-  lavender:    '#C9A8E8',
-  coral:       '#F0A58A',
-  periwinkle:  '#A8BEEF',
-  olive:       '#9FCC7A',
-  pink:        '#F29BBC',
-  butter:      '#F0D884',
-  mauve:       '#C6A890',
+  teal: "#7FC7C9",
+  lavender: "#C9A8E8",
+  coral: "#F0A58A",
+  periwinkle: "#A8BEEF",
+  olive: "#9FCC7A",
+  pink: "#F29BBC",
+  butter: "#F0D884",
+  mauve: "#C6A890",
 } as const;
 
 /**
@@ -101,14 +101,14 @@ export const SCI_PASTEL = {
  * Same hue family but desaturated to match Nature/Science figure aesthetic.
  */
 export const SCI_PASTEL_MUTED = {
-  teal:       '#5BA3A5',
-  lavender:   '#9B82BF',
-  coral:      '#D4886C',
-  periwinkle: '#7A9BC0',
-  olive:      '#7FA362',
-  pink:       '#C07A96',
-  butter:     '#C4AD66',
-  mauve:      '#A08878',
+  teal: "#5BA3A5",
+  lavender: "#9B82BF",
+  coral: "#D4886C",
+  periwinkle: "#7A9BC0",
+  olive: "#7FA362",
+  pink: "#C07A96",
+  butter: "#C4AD66",
+  mauve: "#A08878",
 } as const;
 
 /**
@@ -117,27 +117,27 @@ export const SCI_PASTEL_MUTED = {
  */
 export const PAPER_THEME = {
   // Canvas
-  bg: '#FAFAF8',
-  bgAlt: '#F5F3EF',
-  border: '#E0DDD8',
+  bg: "#FAFAF8",
+  bgAlt: "#F5F3EF",
+  border: "#E0DDD8",
   borderRadius: 2,
 
   // Grid & axes
-  grid: '#E8E5E0',
+  grid: "#E8E5E0",
   gridWidth: 0.5,
-  axis: '#888888',
+  axis: "#888888",
   axisWidth: 0.75,
 
   // Typography
   tickFont: "'IBM Plex Mono', monospace",
   tickSize: 10,
-  tickColor: '#666666',
+  tickColor: "#666666",
   labelFont: "'Public Sans', sans-serif",
   labelSize: 11,
-  labelColor: '#444444',
+  labelColor: "#444444",
   titleFont: "'Public Sans', sans-serif",
   titleSize: 13,
-  titleColor: '#222222',
+  titleColor: "#222222",
 
   // Data
   linePrimary: 1.5,
@@ -145,21 +145,21 @@ export const PAPER_THEME = {
   bandOpacity: 0.15,
   scatterR: 3,
   scatterFillOpacity: 0.7,
-  scatterStroke: '#333333',
+  scatterStroke: "#333333",
   scatterStrokeWidth: 0.5,
   barFillOpacity: 0.85,
 
   // Tooltip
-  tooltipBg: '#FFFEF9',
-  tooltipBorder: '#D0CDC8',
+  tooltipBg: "#FFFEF9",
+  tooltipBorder: "#D0CDC8",
   tooltipRadius: 4,
-  tooltipShadow: '0 2px 8px rgba(0,0,0,0.12)',
-  tooltipColor: '#333333',
+  tooltipShadow: "0 2px 8px rgba(0,0,0,0.12)",
+  tooltipColor: "#333333",
 
   // Legend
   legendFont: "'Public Sans', sans-serif",
   legendSize: 10,
-  legendColor: '#555555',
+  legendColor: "#555555",
   legendSwatchW: 10,
   legendSwatchH: 3,
 } as const;
@@ -197,17 +197,17 @@ export const SERIES_PALETTE = [
 
 /** Nivo heatmap diverging color scale: cool → neutral → warm */
 export const HEATMAP_COLORS = {
-  cool:    [COOL.deep, COOL.mid, COOL.bright, COOL.cyan],
-  warm:    [WARM.amber, WARM.orange, WARM.red],
-  diverging: [COOL.cyan, '#1a2a3e', '#2a1a1e', WARM.red],
+  cool: [COOL.deep, COOL.mid, COOL.bright, COOL.cyan],
+  warm: [WARM.amber, WARM.orange, WARM.red],
+  diverging: [COOL.cyan, "#1a2a3e", "#2a1a1e", WARM.red],
   sequential: [COOL.deep, COOL.mid, COOL.bright, COOL.cyan, COOL.light],
 } as const;
 
 /* ── Typography ───────────────────────────────────────────────── */
 
 export const FONT = {
-  SANS:  THEME.SANS,
-  MONO:  THEME.MONO,
+  SANS: THEME.SANS,
+  MONO: THEME.MONO,
 } as const;
 
 /* ── Axis & Grid Styling ──────────────────────────────────────── */
@@ -216,7 +216,7 @@ export const FONT = {
 export const AXIS = {
   fontSize: Number(typography.fontSize.sm),
   fontFamily: FONT.SANS,
-  fill: colors.text.primary,  // '#E8E8ED' via tokens
+  fill: colors.text.primary, // '#E8E8ED' via tokens
   tickSize: 4,
   tickPadding: 6,
 } as const;
@@ -230,8 +230,8 @@ export const AXIS_TITLE = {
 } as const;
 
 export const GRID = {
-  stroke: colors.border.subtle,  // 'rgba(255, 255, 255, 0.06)' via tokens
-  strokeDasharray: '2 4',
+  stroke: colors.border.subtle, // 'rgba(255, 255, 255, 0.06)' via tokens
+  strokeDasharray: "2 4",
 } as const;
 
 /* ── Line / Marker Defaults ───────────────────────────────────── */
@@ -257,7 +257,7 @@ export const MARKER = {
 /** Opacity scale for confidence bands — balanced against 0.06 grid. */
 export const BAND = {
   fillOpacity: 0.22,
-  fillOpacityMuted: 0.10,
+  fillOpacityMuted: 0.1,
   strokeOpacity: 0.55,
 } as const;
 
@@ -271,15 +271,15 @@ export const BAND = {
  * without a runtime hex-to-rgb converter.
  */
 export const SEMANTIC = {
-  pass: SCI_PALETTE.green,       // '#009E73'
-  fail: SCI_PALETTE.vermilion,   // '#D55E00'
-  warn: SCI_PALETTE.orange,      // '#E69F00'
+  pass: SCI_PALETTE.green, // '#009E73'
+  fail: SCI_PALETTE.vermilion, // '#D55E00'
+  warn: SCI_PALETTE.orange, // '#E69F00'
 } as const;
 
 export const SEMANTIC_RGB = {
-  pass: '0, 158, 115',
-  fail: '213, 94, 0',
-  warn: '230, 159, 0',
+  pass: "0, 158, 115",
+  fail: "213, 94, 0",
+  warn: "230, 159, 0",
 } as const;
 
 /**
@@ -288,10 +288,10 @@ export const SEMANTIC_RGB = {
  * Recharts `<Cell>` defaults or on hand-rolled SVG circles.
  */
 export const SCATTER = {
-  stroke: 'rgba(255,255,255,0.18)',
+  stroke: "rgba(255,255,255,0.18)",
   strokeWidth: 0.75,
   fillOpacity: 0.72,
-  activeStroke: 'rgba(255,255,255,0.6)',
+  activeStroke: "rgba(255,255,255,0.6)",
   activeStrokeWidth: 1.25,
 } as const;
 
@@ -299,12 +299,12 @@ export const SCATTER = {
 
 export const TOOLTIP_STYLE: React.CSSProperties = {
   background: colors.bg.overlay,
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
   border: `1px solid ${colors.border.default}`,
   borderRadius: 12,
   padding: `${spacing.sm} ${spacing.md}`,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+  boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
   fontFamily: FONT.MONO,
   fontSize: Number(typography.fontSize.xs),
   color: colors.text.primary,
@@ -314,7 +314,7 @@ export const PAPER_TOOLTIP_STYLE: React.CSSProperties = {
   background: PAPER_THEME.tooltipBg,
   border: `1px solid ${PAPER_THEME.tooltipBorder}`,
   borderRadius: PAPER_THEME.tooltipRadius,
-  padding: '6px 10px',
+  padding: "6px 10px",
   boxShadow: PAPER_THEME.tooltipShadow,
   fontFamily: PAPER_THEME.tickFont,
   fontSize: PAPER_THEME.tickSize,
@@ -325,7 +325,7 @@ export const PAPER_TOOLTIP_STYLE: React.CSSProperties = {
 
 export const CHART_CONTAINER: React.CSSProperties = {
   borderRadius: PAPER_THEME.borderRadius,
-  overflow: 'hidden',
+  overflow: "hidden",
 };
 
 /* ── Section Label (11px Bold Uppercase, PATHD style) ─────────── */
@@ -334,7 +334,7 @@ export const SECTION_LABEL: React.CSSProperties = {
   fontFamily: FONT.SANS,
   fontSize: Number(typography.fontSize.xs),
   fontWeight: typography.fontWeight.bold,
-  textTransform: 'uppercase',
+  textTransform: "uppercase",
   letterSpacing: typography.letterSpacing.widest,
   color: colors.text.secondary,
   margin: `0 0 ${spacing.sm}`,
@@ -371,7 +371,7 @@ export const rechartsAxisTitle = {
 
 /** Recharts axis-line default — subtle but present for publication clarity. */
 export const rechartsAxisLine = {
-  stroke: colors.border.strong,  // 'rgba(255, 255, 255, 0.15)' via tokens
+  stroke: colors.border.strong, // 'rgba(255, 255, 255, 0.15)' via tokens
 } as const;
 
 /* ── Axis-Label Builder ───────────────────────────────────────── */
@@ -397,7 +397,7 @@ export const LEGEND_STYLE: React.CSSProperties = {
 /* ── Nivo Theme ───────────────────────────────────────────────── */
 
 export const nivoTheme = {
-  background: 'transparent',
+  background: "transparent",
   text: {
     fontSize: Number(typography.fontSize.sm),
     fill: AXIS.fill,
@@ -429,11 +429,11 @@ export const nivoTheme = {
   tooltip: {
     container: {
       background: colors.bg.overlay,
-      backdropFilter: 'blur(16px)',
+      backdropFilter: "blur(16px)",
       border: `1px solid ${colors.border.default}`,
       borderRadius: 12,
       padding: `${spacing.sm} ${spacing.md}`,
-      boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+      boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
       fontFamily: FONT.MONO,
       fontSize: Number(typography.fontSize.xs),
       color: colors.text.primary,

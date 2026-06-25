@@ -4,33 +4,29 @@
  * State: project
  * Actions: ensureProject, seedDemoProject, resetWorkbench
  */
-import type { StateCreator } from 'zustand';
-import type { WorkbenchState } from './types';
-import type { WorkbenchProjectBrief } from '../workbenchTypes';
-import {
-  createId,
-  buildCheckpoints,
-  createEmptyCheckpoints,
-  shouldAutoSeedDemo,
-} from '../workbenchStoreHelpers';
-import {
-  touchState,
-  buildWorkflowControlSnapshot,
-  getAnalyzeArtifactForState,
-} from './sharedHelpers';
-import { getStageForTool } from '../../components/tools/shared/workbenchConfig';
+import type { StateCreator } from "zustand";
+import { getStageForTool } from "../../components/tools/shared/workbenchConfig";
+import { buildCheckpoints, createEmptyCheckpoints, createId, shouldAutoSeedDemo } from "../workbenchStoreHelpers";
+import type { WorkbenchProjectBrief } from "../workbenchTypes";
+import { buildWorkflowControlSnapshot, getAnalyzeArtifactForState, touchState } from "./sharedHelpers";
+import type { WorkbenchState } from "./types";
 
 // Initial state values that are canonical-state fields owned by project
 export const projectInitialState = {
   project: null as WorkbenchProjectBrief | null,
 };
 
-export const createProjectSlice: StateCreator<WorkbenchState, [], [], {
-  project: WorkbenchProjectBrief | null;
-  ensureProject: (seed?: Partial<WorkbenchProjectBrief>) => void;
-  seedDemoProject: (toolId?: string | null) => void;
-  resetWorkbench: () => void;
-}> = (set, get) => ({
+export const createProjectSlice: StateCreator<
+  WorkbenchState,
+  [],
+  [],
+  {
+    project: WorkbenchProjectBrief | null;
+    ensureProject: (seed?: Partial<WorkbenchProjectBrief>) => void;
+    seedDemoProject: (toolId?: string | null) => void;
+    resetWorkbench: () => void;
+  }
+> = (set, get) => ({
   ...projectInitialState,
 
   ensureProject: (seed) => {
@@ -43,12 +39,12 @@ export const createProjectSlice: StateCreator<WorkbenchState, [], [], {
             updatedAt: now,
           }
         : {
-            id: createId('project'),
-            title: seed?.title ?? 'Synthetic Biology Program',
-            summary: seed?.summary ?? 'Traceable workbench context for Research, Analyze, and Tools.',
-            targetProduct: seed?.targetProduct ?? 'Target Product',
+            id: createId("project"),
+            title: seed?.title ?? "Synthetic Biology Program",
+            summary: seed?.summary ?? "Traceable workbench context for Research, Analyze, and Tools.",
+            targetProduct: seed?.targetProduct ?? "Target Product",
             sourceQuery: seed?.sourceQuery,
-            status: seed?.status ?? 'draft',
+            status: seed?.status ?? "draft",
             isDemo: seed?.isDemo ?? false,
             createdAt: now,
             updatedAt: now,
@@ -65,11 +61,11 @@ export const createProjectSlice: StateCreator<WorkbenchState, [], [], {
     const now = Date.now();
     set((state) => {
       const project = state.project ?? {
-        id: createId('project'),
-        title: 'Artemisinin Demonstration Program',
-        summary: 'Default fallback context used when no research project has been injected yet.',
-        targetProduct: 'Artemisinin',
-        status: 'draft',
+        id: createId("project"),
+        title: "Artemisinin Demonstration Program",
+        summary: "Default fallback context used when no research project has been injected yet.",
+        targetProduct: "Artemisinin",
+        status: "draft",
         isDemo: true,
         createdAt: now,
         updatedAt: now,
@@ -97,7 +93,7 @@ export const createProjectSlice: StateCreator<WorkbenchState, [], [], {
       project: null,
       evidenceItems: [],
       selectedEvidenceIds: [],
-      draftAnalyzeInput: '',
+      draftAnalyzeInput: "",
       workflowArtifact: null,
       analyzeArtifact: null,
       toolRuns: [],
@@ -114,12 +110,12 @@ export const createProjectSlice: StateCreator<WorkbenchState, [], [], {
       experimentRecords: [],
       syncAuditLog: [],
       historyLog: [],
-      syncStatus: 'idle',
+      syncStatus: "idle",
       syncError: null,
       hydratedFromServer: false,
       lastServerSyncAt: null,
       lastServerSyncedRevision: 0,
-      artifactLoadState: 'idle',
+      artifactLoadState: "idle",
       artifactLoadError: null,
       artifactRequestedId: null,
       // Axon state preserved
@@ -133,10 +129,10 @@ export const createProjectSlice: StateCreator<WorkbenchState, [], [], {
 // Inline the initial workflow control to avoid circular dependency
 function createInitialWorkflowControlDefault() {
   return {
-    machineState: 'idle' as const,
-    status: 'idle' as const,
+    machineState: "idle" as const,
+    status: "idle" as const,
     currentToolId: null,
-    nextRecommendedNode: 'pathd' as const,
+    nextRecommendedNode: "pathd" as const,
     missingEvidence: { minRequired: 0, have: 0, kinds: [] as string[] },
     confidence: null,
     uncertainty: null,
@@ -146,8 +142,8 @@ function createInitialWorkflowControlDefault() {
     isDemoOnly: false,
     latestRunStatus: null,
     latestRunToolId: null,
-    reasonCodes: ['NO_TARGET'],
-    explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+    reasonCodes: ["NO_TARGET"],
+    explanation: "No target product set. Set a target via /research or /analyze, then run PATHD.",
     iteration: 0,
     updatedAt: Date.now(),
   };

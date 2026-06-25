@@ -13,18 +13,18 @@
 // ── Confidence Components ──────────────────────────────────────────────────
 
 export interface ConfidenceComponents {
-  solver: number;       // 0-1, from solver convergence/status
-  citation: number;     // 0-1, from citation verification
-  workflow: number;     // 0-1, from workflow supervisor
+  solver: number; // 0-1, from solver convergence/status
+  citation: number; // 0-1, from citation verification
+  workflow: number; // 0-1, from workflow supervisor
   llmSelfReport: number; // 0-1, from response analysis
 }
 
 export interface ConfidenceResult {
-  overall: number;      // 0-1, weighted composite
-  level: 'high' | 'medium' | 'low';
+  overall: number; // 0-1, weighted composite
+  level: "high" | "medium" | "low";
   components: ConfidenceComponents;
-  sources: string[];    // traceable sources for each component
-  badge: string;        // display badge: 🟢 / 🟡 / 🔴
+  sources: string[]; // traceable sources for each component
+  badge: string; // display badge: 🟢 / 🟡 / 🔴
 }
 
 // ── Solver Confidence ──────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ export interface ConfidenceResult {
  * Based on solver convergence, status, and result quality.
  */
 export function extractSolverConfidence(solverResult: unknown, solverName: string): { score: number; source: string } {
-  if (!solverResult || typeof solverResult !== 'object') {
+  if (!solverResult || typeof solverResult !== "object") {
     return { score: 0.3, source: `${solverName}: no result` };
   }
 
@@ -43,7 +43,7 @@ export function extractSolverConfidence(solverResult: unknown, solverName: strin
   // FBA: feasible = high confidence
   if (r.feasible !== undefined) {
     const feasible = r.feasible as boolean;
-    const growthRate = r.growthRate as number ?? 0;
+    const growthRate = (r.growthRate as number) ?? 0;
     if (feasible && growthRate > 0) return { score: 0.9, source: `${solverName}: feasible, growth=${growthRate}` };
     if (feasible) return { score: 0.7, source: `${solverName}: feasible, no growth` };
     return { score: 0.3, source: `${solverName}: infeasible` };
@@ -90,14 +90,15 @@ export function extractSolverConfidence(solverResult: unknown, solverName: strin
 /**
  * Compute confidence from citation verification results.
  */
-export function computeCitationConfidence(
-  citations: Array<{ verificationStatus?: string; relevance?: number }>,
-): { score: number; source: string } {
+export function computeCitationConfidence(citations: Array<{ verificationStatus?: string; relevance?: number }>): {
+  score: number;
+  source: string;
+} {
   if (!citations || citations.length === 0) {
-    return { score: 0.3, source: 'No citations' };
+    return { score: 0.3, source: "No citations" };
   }
 
-  const verified = citations.filter(c => c.verificationStatus === 'verified').length;
+  const verified = citations.filter((c) => c.verificationStatus === "verified").length;
   const total = citations.length;
   const verificationRate = verified / total;
 
@@ -115,15 +116,21 @@ export function computeWorkflowConfidence(
   workflowStatus?: string,
   toolConfidence?: number | null,
 ): { score: number; source: string } {
-  if (!workflowStatus) return { score: 0.5, source: 'No workflow context' };
+  if (!workflowStatus) return { score: 0.5, source: "No workflow context" };
 
   switch (workflowStatus) {
-    case 'complete': return { score: 0.95, source: 'Workflow complete' };
-    case 'ready': return { score: 0.8, source: 'Workflow ready' };
-    case 'blocked': return { score: 0.3, source: 'Workflow blocked' };
-    case 'gated': return { score: 0.4, source: 'Workflow gated' };
-    case 'demoOnly': return { score: 0.2, source: 'Demo data only' };
-    default: return { score: 0.5, source: `Workflow: ${workflowStatus}` };
+    case "complete":
+      return { score: 0.95, source: "Workflow complete" };
+    case "ready":
+      return { score: 0.8, source: "Workflow ready" };
+    case "blocked":
+      return { score: 0.3, source: "Workflow blocked" };
+    case "gated":
+      return { score: 0.4, source: "Workflow gated" };
+    case "demoOnly":
+      return { score: 0.2, source: "Demo data only" };
+    default:
+      return { score: 0.5, source: `Workflow: ${workflowStatus}` };
   }
 }
 
@@ -134,7 +141,7 @@ export function computeWorkflowConfidence(
  * This is the least reliable signal — it's a heuristic.
  */
 export function estimateLLMConfidence(responseText: string): { score: number; source: string } {
-  if (!responseText) return { score: 0.1, source: 'Empty response' };
+  if (!responseText) return { score: 0.1, source: "Empty response" };
 
   let score = 0.5;
   const lower = responseText.toLowerCase();
@@ -171,9 +178,7 @@ export function estimateLLMConfidence(responseText: string): { score: number; so
  *   workflow: 0.20 (process state)
  *   llmSelfReport: 0.20 (least reliable — heuristic)
  */
-export function computeUnifiedConfidence(
-  components: Partial<ConfidenceComponents>,
-): ConfidenceResult {
+export function computeUnifiedConfidence(components: Partial<ConfidenceComponents>): ConfidenceResult {
   const weights = { solver: 0.4, citation: 0.2, workflow: 0.2, llmSelfReport: 0.2 };
   const defaults = { solver: 0.3, citation: 0.3, workflow: 0.5, llmSelfReport: 0.5 };
 
@@ -182,17 +187,18 @@ export function computeUnifiedConfidence(
   const workflow = components.workflow ?? defaults.workflow;
   const llmSelfReport = components.llmSelfReport ?? defaults.llmSelfReport;
 
-  const overall = Math.round(
-    (solver * weights.solver +
-     citation * weights.citation +
-     workflow * weights.workflow +
-     llmSelfReport * weights.llmSelfReport) * 100
-  ) / 100;
+  const overall =
+    Math.round(
+      (solver * weights.solver +
+        citation * weights.citation +
+        workflow * weights.workflow +
+        llmSelfReport * weights.llmSelfReport) *
+        100,
+    ) / 100;
 
-  const level: 'high' | 'medium' | 'low' =
-    overall > 0.7 ? 'high' : overall > 0.4 ? 'medium' : 'low';
+  const level: "high" | "medium" | "low" = overall > 0.7 ? "high" : overall > 0.4 ? "medium" : "low";
 
-  const badge = level === 'high' ? '🟢' : level === 'medium' ? '🟡' : '🔴';
+  const badge = level === "high" ? "🟢" : level === "medium" ? "🟡" : "🔴";
 
   const sources: string[] = [];
   if (components.solver !== undefined) sources.push(`Solver: ${components.solver}`);
@@ -222,7 +228,7 @@ export function computeConfidenceFromResult(
   const solver = extractSolverConfidence(solverResult, solverName);
   const citation = computeCitationConfidence(citations);
   const workflow = computeWorkflowConfidence(workflowStatus);
-  const llm = llmResponse ? estimateLLMConfidence(llmResponse) : { score: 0.5, source: 'No LLM response' };
+  const llm = llmResponse ? estimateLLMConfidence(llmResponse) : { score: 0.5, source: "No LLM response" };
 
   return computeUnifiedConfidence({
     solver: solver.score,

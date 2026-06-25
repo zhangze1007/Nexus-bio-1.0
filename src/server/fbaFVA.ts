@@ -20,7 +20,7 @@
  *     - Solutions at the boundaries of the feasible space may not reflect biologically realistic flux distributions
  *     - Does not account for thermodynamic constraints or enzyme capacity limits
  */
-import { solveLP, type LPModel, type LPSolution } from './highsSolver';
+import { type LPModel, type LPSolution, solveLP } from "./highsSolver";
 
 export interface FVAResult {
   reactionId: string;
@@ -50,11 +50,11 @@ export async function runFVA(
 ): Promise<FVAOutput> {
   const start = Date.now();
 
-  const varsToAnalyze = reactionIds || baseModel.objective.map(v => v.name);
+  const varsToAnalyze = reactionIds || baseModel.objective.map((v) => v.name);
 
   // Add objective constraint: obj >= (1 - tolerance) * optimal
   const objConstraint = {
-    name: 'fva_obj_constraint',
+    name: "fva_obj_constraint",
     vars: baseModel.objective,
     lb: objectiveValue * (1 - tolerance),
     ub: Infinity,
@@ -66,7 +66,7 @@ export async function runFVA(
     // Minimize this variable
     const minModel: LPModel = {
       ...baseModel,
-      sense: 'minimize',
+      sense: "minimize",
       objective: [{ name: varName, coef: 1 }],
       constraints: [...baseModel.constraints, objConstraint],
     };
@@ -74,20 +74,17 @@ export async function runFVA(
     // Maximize this variable
     const maxModel: LPModel = {
       ...baseModel,
-      sense: 'maximize',
+      sense: "maximize",
       objective: [{ name: varName, coef: 1 }],
       constraints: [...baseModel.constraints, objConstraint],
     };
 
-    const [minResult, maxResult] = await Promise.all([
-      solveLP(minModel),
-      solveLP(maxModel),
-    ]);
+    const [minResult, maxResult] = await Promise.all([solveLP(minModel), solveLP(maxModel)]);
 
     results.push({
       reactionId: varName,
-      min: minResult.status === 'optimal' ? minResult.objectiveValue : 0,
-      max: maxResult.status === 'optimal' ? maxResult.objectiveValue : 0,
+      min: minResult.status === "optimal" ? minResult.objectiveValue : 0,
+      max: maxResult.status === "optimal" ? maxResult.objectiveValue : 0,
     });
   }
 

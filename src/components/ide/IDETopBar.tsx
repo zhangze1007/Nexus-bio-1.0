@@ -1,19 +1,19 @@
-'use client';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid, Menu, Terminal } from 'lucide-react';
-import LoginButton from '../auth/LoginButton';
-import { useUIStore } from '../../store/uiStore';
-import { getToolDefinition } from '../tools/shared/toolRegistry';
-import { T } from './tokens';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
+"use client";
+import { Home, LayoutGrid, Menu, Terminal } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useUIStore } from "../../store/uiStore";
+import LoginButton from "../auth/LoginButton";
+import { getToolDefinition } from "../tools/shared/toolRegistry";
+import { PATHD_THEME } from "../workbench/workbenchTheme";
+import { T } from "./tokens";
 
 const SANS = T.SANS;
 const MONO = T.MONO;
 
 const BORDER = PATHD_THEME.sepiaPanelBorder;
-const LABEL  = PATHD_THEME.label;
-const VALUE  = PATHD_THEME.value;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 interface IDETopBarProps {
   moduleId: string;
@@ -25,15 +25,15 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
   const toggleConsole = useUIStore((s) => s.toggleConsole);
   const consoleOpen = useUIStore((s) => s.consoleOpen);
   const consoleEntries = useUIStore((s) => s.consoleEntries);
-  const errorCount = consoleEntries.filter((entry) => entry.level === 'error').length;
+  const errorCount = consoleEntries.filter((entry) => entry.level === "error").length;
   const tool = getToolDefinition(moduleId);
-  const isDirectory = !moduleId || pathname === '/tools' || pathname === '/tools/';
+  const isDirectory = !moduleId || pathname === "/tools" || pathname === "/tools/";
   const isWorkbench = !!moduleId && !isDirectory;
   const toggleSidebar = useUIStore((s) => s.toggleSidebarCollapsed);
 
   return (
     <header className="nb-ide-topbar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1, flexWrap: "wrap" }}>
         {/* Sidebar toggle — only on workbench pages */}
         {isWorkbench && (
           <button
@@ -41,16 +41,16 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             onClick={toggleSidebar}
             aria-label="Toggle sidebar"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
               width: 30,
               height: 30,
               borderRadius: 8,
               background: PATHD_THEME.panelGlassStrong,
               border: `1px solid ${BORDER}`,
               color: LABEL,
-              cursor: 'pointer',
+              cursor: "pointer",
               flexShrink: 0,
               marginRight: 4,
             }}
@@ -59,84 +59,98 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           </button>
         )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
-        <Link
-          href="/"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            textDecoration: 'none',
-            color: LABEL,
-            fontFamily: SANS,
-            fontSize: '11px',
-          }}
-        >
-          <Home size={12} />
-          Home
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+          <Link
+            href="/"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: LABEL,
+              fontFamily: SANS,
+              fontSize: "11px",
+            }}
+          >
+            <Home size={12} />
+            Home
+          </Link>
 
-        <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>/</span>
+          <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>
+            /
+          </span>
 
-        <Link
-          href="/tools"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            textDecoration: 'none',
-            color: isDirectory ? VALUE : LABEL,
-            fontFamily: SANS,
-            fontSize: '11px',
-          }}
-        >
-          <LayoutGrid size={12} />
-          Workbench
-        </Link>
+          <Link
+            href="/tools"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: isDirectory ? VALUE : LABEL,
+              fontFamily: SANS,
+              fontSize: "11px",
+            }}
+          >
+            <LayoutGrid size={12} />
+            Workbench
+          </Link>
 
-        {!isDirectory && tool?.direction && (
-          <>
-            <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>/</span>
+          {!isDirectory && tool?.direction && (
+            <>
+              <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>
+                /
+              </span>
 
-            <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
-              {tool.direction}
-            </span>
-          </>
-        )}
+              <span style={{ fontFamily: MONO, fontSize: "10px", color: LABEL, textTransform: "uppercase" }}>
+                {tool.direction}
+              </span>
+            </>
+          )}
 
-        {!isDirectory && (
-          <>
-            <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>/</span>
+          {!isDirectory && (
+            <>
+              <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>
+                /
+              </span>
 
-            <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textTransform: 'uppercase', fontWeight: 600 }}>
-              {tool?.shortLabel ?? moduleId}
-            </span>
-          </>
-        )}
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: "10px",
+                  color: VALUE,
+                  textTransform: "uppercase",
+                  fontWeight: 600,
+                }}
+              >
+                {tool?.shortLabel ?? moduleId}
+              </span>
+            </>
+          )}
 
-        {tool && (
-          <>
-            <span style={{ color: PATHD_THEME.label }}>·</span>
-            <span
-              style={{
-                minWidth: 0,
-                fontFamily: SANS,
-                fontSize: '12px',
-                fontWeight: 600,
-                color: VALUE,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {tool.name}
-            </span>
-          </>
-        )}
+          {tool && (
+            <>
+              <span style={{ color: PATHD_THEME.label }}>·</span>
+              <span
+                style={{
+                  minWidth: 0,
+                  fontFamily: SANS,
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: VALUE,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {tool.name}
+              </span>
+            </>
+          )}
+        </div>
       </div>
-      </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
         {/*
          * DisplayModeToggle intentionally NOT rendered globally. Pages with real
          * mode-level differences (currently only /tools directory) must mount it
@@ -151,35 +165,35 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           aria-pressed={consoleOpen}
           aria-label="Toggle console"
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            minHeight: '36px',
-            padding: '0 12px',
-            borderRadius: '12px',
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            minHeight: "36px",
+            padding: "0 12px",
+            borderRadius: "12px",
             border: `1px solid ${consoleOpen ? PATHD_THEME.panelBorderStrong : BORDER}`,
             background: PATHD_THEME.panelGlassStrong,
             color: errorCount > 0 ? PATHD_THEME.coral : VALUE,
             fontFamily: SANS,
-            fontSize: '12px',
-            cursor: 'pointer',
+            fontSize: "12px",
+            cursor: "pointer",
           }}
         >
           <Terminal size={13} />
           Console
           <span
             style={{
-              minWidth: '22px',
-              height: '22px',
-              borderRadius: '999px',
-              border: `1px solid ${errorCount > 0 ? 'rgba(232,163,161,0.3)' : BORDER}`,
-              background: errorCount > 0 ? 'rgba(232,163,161,0.14)' : PATHD_THEME.panelSurface,
+              minWidth: "22px",
+              height: "22px",
+              borderRadius: "999px",
+              border: `1px solid ${errorCount > 0 ? "rgba(232,163,161,0.3)" : BORDER}`,
+              background: errorCount > 0 ? "rgba(232,163,161,0.14)" : PATHD_THEME.panelSurface,
               color: errorCount > 0 ? PATHD_THEME.coral : LABEL,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
               fontFamily: MONO,
-              fontSize: '10px',
+              fontSize: "10px",
             }}
           >
             {consoleEntries.length}

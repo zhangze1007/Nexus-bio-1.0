@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
-import { ProEvolCard, PROEVOL_THEME, StatusPill } from './shared';
-import { THEME } from '../../../theme';
+import { useMemo } from "react";
+import type { ProteinEvolutionCampaign, VariantCandidate } from "../../../services/ProEvolCampaignEngine";
+import { THEME } from "../../../theme";
+import { PROEVOL_THEME, ProEvolCard, StatusPill } from "./shared";
 
 function buildLeadPath(campaign: ProteinEvolutionCampaign) {
   const path: VariantCandidate[] = [];
@@ -11,7 +11,7 @@ function buildLeadPath(campaign: ProteinEvolutionCampaign) {
   while (cursor) {
     path.unshift(cursor);
     cursor = cursor.parentId ? campaign.variantIndex[cursor.parentId] : undefined;
-    if (cursor?.id === 'wt') {
+    if (cursor?.id === "wt") {
       path.unshift(cursor);
       break;
     }
@@ -54,12 +54,14 @@ export default function LineageTracePanel({
   }
 
   return (
-    <ProEvolCard
-      eyebrow="Lineage / Evolution Trace"
-      title="Survivor families across selection rounds"
-    >
-      <div style={{ display: 'grid', gap: '12px' }}>
-        <svg role="img" aria-label="PROEVOL lineage trace" viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: '100%' }}>
+    <ProEvolCard eyebrow="Lineage / Evolution Trace" title="Survivor families across selection rounds">
+      <div style={{ display: "grid", gap: "12px" }}>
+        <svg
+          role="img"
+          aria-label="PROEVOL lineage trace"
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ width: "100%", height: "100%" }}
+        >
           <rect width={width} height={height} rx={18} fill="#080b10" />
           {families.map((family, index) => {
             const laneHeight = (height - padY * 2) / Math.max(families.length - 1, 1);
@@ -75,9 +77,22 @@ export default function LineageTracePanel({
           })}
           {Array.from({ length: campaign.totalRounds + 1 }, (_, round) => (
             <g key={round}>
-              <line x1={xForRound(round)} y1={padY - 18} x2={xForRound(round)} y2={height - padY + 14} stroke="rgba(255,255,255,0.06)" />
-              <text x={xForRound(round)} y="22" textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PROEVOL_THEME.label}>
-                {round === 0 ? 'WT' : `R${round}`}
+              <line
+                x1={xForRound(round)}
+                y1={padY - 18}
+                x2={xForRound(round)}
+                y2={height - padY + 14}
+                stroke="rgba(255,255,255,0.06)"
+              />
+              <text
+                x={xForRound(round)}
+                y="22"
+                textAnchor="middle"
+                fontFamily={THEME.MONO}
+                fontSize="10"
+                fill={PROEVOL_THEME.label}
+              >
+                {round === 0 ? "WT" : `R${round}`}
               </text>
             </g>
           ))}
@@ -86,15 +101,22 @@ export default function LineageTracePanel({
             if (!variant.parentId || !variantIds.has(variant.parentId)) return null;
             const parent = campaign.variantIndex[variant.parentId];
             if (!parent || !variantIds.has(parent.id)) return null;
-            const highlighted = leadPath.some((item) => item.id === variant.id) && leadPath.some((item) => item.id === parent.id);
+            const highlighted =
+              leadPath.some((item) => item.id === variant.id) && leadPath.some((item) => item.id === parent.id);
             return (
               <path
                 key={`${parent.id}-${variant.id}`}
                 d={`M ${xForRound(parent.round)} ${yForVariant(parent)} C ${xForRound(parent.round) + 24} ${yForVariant(parent)}, ${xForRound(variant.round) - 24} ${yForVariant(variant)}, ${xForRound(variant.round)} ${yForVariant(variant)}`}
                 fill="none"
-                stroke={highlighted ? PROEVOL_THEME.mint : variant.status === 'selected' ? 'rgba(175,195,214,0.52)' : 'rgba(255,255,255,0.16)'}
+                stroke={
+                  highlighted
+                    ? PROEVOL_THEME.mint
+                    : variant.status === "selected"
+                      ? "rgba(175,195,214,0.52)"
+                      : "rgba(255,255,255,0.16)"
+                }
                 strokeWidth={highlighted ? 2.4 : 1.3}
-                opacity={variant.status === 'selected' ? 1 : 0.62}
+                opacity={variant.status === "selected" ? 1 : 0.62}
               />
             );
           })}
@@ -102,25 +124,24 @@ export default function LineageTracePanel({
           {lineageVariants.map((variant) => {
             const selected = selectedVariantId === variant.id;
             const lead = variant.id === campaign.leadVariant.id;
-            const fill =
-              lead
-                ? PROEVOL_THEME.mint
-                : variant.status === 'selected'
-                  ? PROEVOL_THEME.sky
-                  : variant.status === 'rejected'
-                    ? PROEVOL_THEME.coral
-                    : 'rgba(255,255,255,0.42)';
+            const fill = lead
+              ? PROEVOL_THEME.mint
+              : variant.status === "selected"
+                ? PROEVOL_THEME.sky
+                : variant.status === "rejected"
+                  ? PROEVOL_THEME.coral
+                  : "rgba(255,255,255,0.42)";
             return (
-              <g key={variant.id} onClick={() => onSelectVariant(variant.id)} style={{ cursor: 'pointer' }}>
+              <g key={variant.id} onClick={() => onSelectVariant(variant.id)} style={{ cursor: "pointer" }}>
                 <circle
                   cx={xForRound(variant.round)}
                   cy={yForVariant(variant)}
-                  r={lead ? 6 : selected ? 5 : variant.status === 'selected' ? 4 : 3.2}
+                  r={lead ? 6 : selected ? 5 : variant.status === "selected" ? 4 : 3.2}
                   fill={fill}
-                  stroke={selected ? '#ffffff' : 'rgba(255,255,255,0.45)'}
+                  stroke={selected ? "#ffffff" : "rgba(255,255,255,0.45)"}
                   strokeWidth={selected ? 1.8 : 1}
                 />
-                {(lead || selected) ? (
+                {lead || selected ? (
                   <text
                     x={xForRound(variant.round)}
                     y={yForVariant(variant) - 10}
@@ -137,7 +158,7 @@ export default function LineageTracePanel({
           })}
         </svg>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           <StatusPill tone="cool">lead lineage</StatusPill>
           <StatusPill tone="neutral">survivor branch</StatusPill>
           <StatusPill tone="warm">rejected / dead branch</StatusPill>
@@ -145,31 +166,28 @@ export default function LineageTracePanel({
 
         <div
           style={{
-            display: 'grid',
-            gap: '8px',
-            padding: '12px',
-            borderRadius: 'var(--nb-radius-md)',
+            display: "grid",
+            gap: "8px",
+            padding: "12px",
+            borderRadius: "var(--nb-radius-md)",
             border: `1px solid ${PROEVOL_THEME.border}`,
-            background: 'rgba(255,255,255,0.03)',
+            background: "rgba(255,255,255,0.03)",
           }}
         >
           <div
             style={{
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
+              fontSize: "var(--nb-fs-xs)",
               color: PROEVOL_THEME.label,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
             }}
           >
             Mutation accumulation on the current lead path
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {leadPath.map((variant) => (
-              <StatusPill
-                key={variant.id}
-                tone={variant.id === campaign.leadVariant.id ? 'cool' : 'neutral'}
-              >
+              <StatusPill key={variant.id} tone={variant.id === campaign.leadVariant.id ? "cool" : "neutral"}>
                 {variant.round === 0 ? variant.name : `R${variant.round} ${variant.mutationString}`}
               </StatusPill>
             ))}

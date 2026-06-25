@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ShieldX, Eye, ChevronDown, ChevronUp } from 'lucide-react';
-import { useWorkbenchStore } from '../../store/workbenchStore';
-import type { GateDecision, GateStatus, ClaimSurface } from '../../protocol/nexusTrustRuntime';
-import type { ClaimSurfaceBlockCode } from '../../domain/claimSurfacePolicy';
-import { CLAIM_SURFACE_REASON_CATALOG } from '../../domain/claimSurfaceReasonCatalog';
-import { THEME } from '../../theme';
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, ChevronUp, Eye, ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
+import { useState } from "react";
+import type { ClaimSurfaceBlockCode } from "../../domain/claimSurfacePolicy";
+import { CLAIM_SURFACE_REASON_CATALOG } from "../../domain/claimSurfaceReasonCatalog";
+import type { ClaimSurface, GateDecision, GateStatus } from "../../protocol/nexusTrustRuntime";
+import { useWorkbenchStore } from "../../store/workbenchStore";
+import { THEME } from "../../theme";
 
 // ── Status visual mapping ──────────────────────────────────────────────
 
@@ -22,31 +22,31 @@ interface StatusVisual {
 const STATUS_VISUALS: Record<GateStatus, StatusVisual> = {
   ok: {
     icon: ShieldCheck,
-    label: 'OK',
+    label: "OK",
     color: THEME.MINT,
-    border: 'rgba(191,220,205,0.30)',
-    background: 'rgba(191,220,205,0.08)',
+    border: "rgba(191,220,205,0.30)",
+    background: "rgba(191,220,205,0.08)",
   },
   demoOnly: {
     icon: Eye,
-    label: 'Demo Only',
+    label: "Demo Only",
     color: THEME.APRICOT,
-    border: 'rgba(231,199,169,0.30)',
-    background: 'rgba(231,199,169,0.08)',
+    border: "rgba(231,199,169,0.30)",
+    background: "rgba(231,199,169,0.08)",
   },
   gated: {
     icon: ShieldAlert,
-    label: 'Gated',
+    label: "Gated",
     color: THEME.APRICOT,
-    border: 'rgba(231,199,169,0.30)',
-    background: 'rgba(231,199,169,0.10)',
+    border: "rgba(231,199,169,0.30)",
+    background: "rgba(231,199,169,0.10)",
   },
   blocked: {
     icon: ShieldX,
-    label: 'Blocked',
+    label: "Blocked",
     color: THEME.CORAL,
-    border: 'rgba(232,163,161,0.32)',
-    background: 'rgba(232,163,161,0.10)',
+    border: "rgba(232,163,161,0.32)",
+    background: "rgba(232,163,161,0.10)",
   },
 };
 
@@ -57,34 +57,37 @@ interface CompletionAction {
   description: string;
 }
 
-function getCompletionAction(blockCode: ClaimSurfaceBlockCode | undefined, decision: GateDecision): CompletionAction | null {
+function getCompletionAction(
+  blockCode: ClaimSurfaceBlockCode | undefined,
+  decision: GateDecision,
+): CompletionAction | null {
   if (!blockCode) return null;
 
   const reason = CLAIM_SURFACE_REASON_CATALOG[blockCode];
   if (!reason) return null;
 
   switch (blockCode) {
-    case 'PROVENANCE_REQUIRED':
+    case "PROVENANCE_REQUIRED":
       return {
-        label: 'Re-run with provenance',
+        label: "Re-run with provenance",
         description: reason.suggestedAction,
       };
-    case 'HUMAN_GATE_REQUIRED':
-      return decision.overridePath === 'human-review'
-        ? { label: 'Request human review', description: reason.suggestedAction }
-        : { label: 'Pending review', description: reason.suggestedAction };
-    case 'TIER_NOT_ALLOWED_FOR_SURFACE':
-      return { label: 'Upgrade validity tier', description: reason.suggestedAction };
-    case 'DRAFT_OUTPUT_NOT_EXPORTABLE':
-      return { label: 'Commit output', description: reason.suggestedAction };
-    case 'DEMO_OUTPUT_PROTOCOL_BLOCKED':
-      return { label: 'Use as exploratory only', description: reason.suggestedAction };
-    case 'EXTERNAL_HANDOFF_BLOCKED':
-      return { label: 'Keep in workbench', description: reason.suggestedAction };
-    case 'MISSING_POLICY':
-      return { label: 'Define policy', description: reason.suggestedAction };
+    case "HUMAN_GATE_REQUIRED":
+      return decision.overridePath === "human-review"
+        ? { label: "Request human review", description: reason.suggestedAction }
+        : { label: "Pending review", description: reason.suggestedAction };
+    case "TIER_NOT_ALLOWED_FOR_SURFACE":
+      return { label: "Upgrade validity tier", description: reason.suggestedAction };
+    case "DRAFT_OUTPUT_NOT_EXPORTABLE":
+      return { label: "Commit output", description: reason.suggestedAction };
+    case "DEMO_OUTPUT_PROTOCOL_BLOCKED":
+      return { label: "Use as exploratory only", description: reason.suggestedAction };
+    case "EXTERNAL_HANDOFF_BLOCKED":
+      return { label: "Keep in workbench", description: reason.suggestedAction };
+    case "MISSING_POLICY":
+      return { label: "Define policy", description: reason.suggestedAction };
     default:
-      return { label: 'Resolve', description: reason.suggestedAction };
+      return { label: "Resolve", description: reason.suggestedAction };
   }
 }
 
@@ -100,17 +103,17 @@ function getMissingItems(decision: GateDecision): MissingItem[] {
   const items: MissingItem[] = [];
   const blockCode = decision.blockCode as ClaimSurfaceBlockCode | undefined;
 
-  if (blockCode === 'PROVENANCE_REQUIRED') {
-    items.push({ id: 'provenance', label: 'Provenance', color: THEME.SKY });
+  if (blockCode === "PROVENANCE_REQUIRED") {
+    items.push({ id: "provenance", label: "Provenance", color: THEME.SKY });
   }
-  if (blockCode === 'HUMAN_GATE_REQUIRED') {
-    items.push({ id: 'human-gate', label: 'Human Gate', color: THEME.LILAC });
+  if (blockCode === "HUMAN_GATE_REQUIRED") {
+    items.push({ id: "human-gate", label: "Human Gate", color: THEME.LILAC });
   }
   if (decision.blockedSurfaces.length > 0) {
-    items.push({ id: 'evidence', label: 'Evidence', color: THEME.APRICOT });
+    items.push({ id: "evidence", label: "Evidence", color: THEME.APRICOT });
   }
-  if (blockCode === 'TIER_NOT_ALLOWED_FOR_SURFACE') {
-    items.push({ id: 'validity', label: 'Higher Validity Tier', color: THEME.CORAL });
+  if (blockCode === "TIER_NOT_ALLOWED_FOR_SURFACE") {
+    items.push({ id: "validity", label: "Higher Validity Tier", color: THEME.CORAL });
   }
 
   return items;
@@ -134,33 +137,31 @@ export interface WorkbenchTrustIndicatorProps {
 export default function WorkbenchTrustIndicator({
   toolId,
   compact = false,
-  surface = 'payload',
+  surface = "payload",
   onAction,
 }: WorkbenchTrustIndicatorProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const decision = useWorkbenchStore(
-    (s) => s.payloadAdmissionDecisionsByToolId[toolId],
-  );
+  const decision = useWorkbenchStore((s) => s.payloadAdmissionDecisionsByToolId[toolId]);
 
   // No decision recorded yet — tool hasn't run
   if (!decision) {
     return (
       <div
         style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          height: compact ? '22px' : '26px',
-          padding: '0 8px',
-          borderRadius: '999px',
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          height: compact ? "22px" : "26px",
+          padding: "0 8px",
+          borderRadius: "999px",
           border: `1px solid ${THEME.BORDER}`,
-          background: 'rgba(255,255,255,0.03)',
+          background: "rgba(255,255,255,0.03)",
           fontFamily: THEME.MONO,
-          fontSize: '10px',
+          fontSize: "10px",
           color: THEME.LABEL,
-          letterSpacing: '0.04em',
-          textTransform: 'uppercase',
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
         }}
       >
         <ShieldCheck size={compact ? 11 : 13} color="rgba(226,232,240,0.3)" />
@@ -184,22 +185,22 @@ export default function WorkbenchTrustIndicator({
         aria-expanded={expanded}
         aria-label={`Trust status: ${visual.label}. ${decision.reason}`}
         style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '5px',
-          height: '22px',
-          padding: '0 8px',
-          borderRadius: '999px',
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "5px",
+          height: "22px",
+          padding: "0 8px",
+          borderRadius: "999px",
           border: `1px solid ${visual.border}`,
           background: visual.background,
           fontFamily: THEME.MONO,
-          fontSize: '10px',
+          fontSize: "10px",
           color: visual.color,
-          letterSpacing: '0.04em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-          transition: 'background 0.15s ease, border-color 0.15s ease',
-          whiteSpace: 'nowrap',
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          cursor: "pointer",
+          transition: "background 0.15s ease, border-color 0.15s ease",
+          whiteSpace: "nowrap",
         }}
       >
         <Icon size={11} color={visual.color} />
@@ -207,11 +208,11 @@ export default function WorkbenchTrustIndicator({
         {missingItems.length > 0 && (
           <span
             style={{
-              width: '5px',
-              height: '5px',
-              borderRadius: '999px',
+              width: "5px",
+              height: "5px",
+              borderRadius: "999px",
               background: visual.color,
-              marginLeft: '2px',
+              marginLeft: "2px",
             }}
           />
         )}
@@ -223,27 +224,27 @@ export default function WorkbenchTrustIndicator({
   return (
     <div
       style={{
-        borderRadius: '12px',
+        borderRadius: "12px",
         border: `1px solid ${visual.border}`,
         background: visual.background,
-        padding: '10px 12px',
-        display: 'grid',
-        gap: '8px',
-        transition: 'border-color 0.2s ease',
+        padding: "10px 12px",
+        display: "grid",
+        gap: "8px",
+        transition: "border-color 0.2s ease",
       }}
     >
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: 0 }}>
           <Icon size={15} color={visual.color} style={{ flexShrink: 0 }} />
-          <div style={{ display: 'grid', gap: '2px', minWidth: 0 }}>
+          <div style={{ display: "grid", gap: "2px", minWidth: 0 }}>
             <div
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: '11px',
+                fontSize: "11px",
                 color: visual.color,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
                 fontWeight: 600,
               }}
             >
@@ -252,12 +253,12 @@ export default function WorkbenchTrustIndicator({
             <div
               style={{
                 fontFamily: THEME.SANS,
-                fontSize: '11px',
+                fontSize: "11px",
                 color: THEME.LABEL,
                 lineHeight: 1.4,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
               title={decision.reason}
             >
@@ -270,18 +271,18 @@ export default function WorkbenchTrustIndicator({
             type="button"
             onClick={() => setExpanded((prev) => !prev)}
             aria-expanded={expanded}
-            aria-label={expanded ? 'Collapse details' : 'Expand details'}
+            aria-label={expanded ? "Collapse details" : "Expand details"}
             style={{
-              width: '22px',
-              height: '22px',
-              borderRadius: '999px',
+              width: "22px",
+              height: "22px",
+              borderRadius: "999px",
               border: `1px solid ${THEME.BORDER}`,
-              background: 'rgba(255,255,255,0.04)',
+              background: "rgba(255,255,255,0.04)",
               color: THEME.LABEL,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               flexShrink: 0,
             }}
           >
@@ -292,29 +293,29 @@ export default function WorkbenchTrustIndicator({
 
       {/* Missing items chips */}
       {missingItems.length > 0 && (
-        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
           {missingItems.map((item) => (
             <span
               key={item.id}
               style={{
-                borderRadius: '999px',
+                borderRadius: "999px",
                 border: `1px solid ${item.color}33`,
                 background: `${item.color}12`,
-                padding: '2px 7px',
+                padding: "2px 7px",
                 fontFamily: THEME.MONO,
-                fontSize: '10px',
+                fontSize: "10px",
                 color: item.color,
                 lineHeight: 1.3,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
               }}
             >
               <span
                 style={{
-                  width: '4px',
-                  height: '4px',
-                  borderRadius: '999px',
+                  width: "4px",
+                  height: "4px",
+                  borderRadius: "999px",
                   background: item.color,
                 }}
               />
@@ -326,20 +327,20 @@ export default function WorkbenchTrustIndicator({
 
       {/* Allowed / Blocked surfaces */}
       {(decision.allowedSurfaces.length > 0 || decision.blockedSurfaces.length > 0) && (
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
           {decision.allowedSurfaces.map((s) => (
             <span
               key={`allow-${s}`}
               style={{
-                borderRadius: '999px',
-                border: '1px solid rgba(191,220,205,0.18)',
-                background: 'rgba(191,220,205,0.06)',
-                padding: '1px 6px',
+                borderRadius: "999px",
+                border: "1px solid rgba(191,220,205,0.18)",
+                background: "rgba(191,220,205,0.06)",
+                padding: "1px 6px",
                 fontFamily: THEME.MONO,
-                fontSize: '9px',
-                color: 'rgba(191,220,205,0.7)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
+                fontSize: "9px",
+                color: "rgba(191,220,205,0.7)",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
               }}
             >
               {s}
@@ -349,16 +350,16 @@ export default function WorkbenchTrustIndicator({
             <span
               key={`block-${s}`}
               style={{
-                borderRadius: '999px',
-                border: '1px solid rgba(232,163,161,0.18)',
-                background: 'rgba(232,163,161,0.06)',
-                padding: '1px 6px',
+                borderRadius: "999px",
+                border: "1px solid rgba(232,163,161,0.18)",
+                background: "rgba(232,163,161,0.06)",
+                padding: "1px 6px",
                 fontFamily: THEME.MONO,
-                fontSize: '9px',
-                color: 'rgba(232,163,161,0.6)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                textDecoration: 'line-through',
+                fontSize: "9px",
+                color: "rgba(232,163,161,0.6)",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                textDecoration: "line-through",
               }}
             >
               {s}
@@ -372,28 +373,28 @@ export default function WorkbenchTrustIndicator({
         {expanded && reasonCatalog && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
           >
             <div
               style={{
                 borderTop: `1px solid ${THEME.BORDER}`,
-                paddingTop: '8px',
-                display: 'grid',
-                gap: '6px',
+                paddingTop: "8px",
+                display: "grid",
+                gap: "6px",
               }}
             >
               {/* Block code */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span
                   style={{
                     fontFamily: THEME.MONO,
-                    fontSize: '10px',
+                    fontSize: "10px",
                     color: THEME.LABEL,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
                   }}
                 >
                   Code:
@@ -401,11 +402,11 @@ export default function WorkbenchTrustIndicator({
                 <span
                   style={{
                     fontFamily: THEME.MONO,
-                    fontSize: '10px',
+                    fontSize: "10px",
                     color: visual.color,
                     background: `${visual.color}15`,
-                    padding: '1px 6px',
-                    borderRadius: '4px',
+                    padding: "1px 6px",
+                    borderRadius: "4px",
                   }}
                 >
                   {decision.blockCode}
@@ -416,7 +417,7 @@ export default function WorkbenchTrustIndicator({
               <div
                 style={{
                   fontFamily: THEME.SANS,
-                  fontSize: '11px',
+                  fontSize: "11px",
                   color: THEME.LABEL,
                   lineHeight: 1.5,
                 }}
@@ -428,22 +429,22 @@ export default function WorkbenchTrustIndicator({
               {completionAction && (
                 <button
                   type="button"
-                  onClick={() => onAction?.(decision.blockCode ?? 'unknown', toolId)}
+                  onClick={() => onAction?.(decision.blockCode ?? "unknown", toolId)}
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    padding: '5px 10px',
-                    borderRadius: '8px',
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "5px 10px",
+                    borderRadius: "8px",
                     border: `1px solid ${visual.border}`,
                     background: `${visual.color}12`,
                     color: visual.color,
                     fontFamily: THEME.SANS,
-                    fontSize: '11px',
+                    fontSize: "11px",
                     fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'background 0.15s ease',
-                    alignSelf: 'start',
+                    cursor: "pointer",
+                    transition: "background 0.15s ease",
+                    alignSelf: "start",
                   }}
                 >
                   {completionAction.label}
@@ -451,18 +452,18 @@ export default function WorkbenchTrustIndicator({
               )}
 
               {/* Override path */}
-              {decision.overridePath && decision.overridePath !== 'not-allowed' && (
+              {decision.overridePath && decision.overridePath !== "not-allowed" && (
                 <div
                   style={{
                     fontFamily: THEME.MONO,
-                    fontSize: '10px',
+                    fontSize: "10px",
                     color: THEME.LILAC,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
                   }}
                 >
-                  <span style={{ width: '4px', height: '4px', borderRadius: '999px', background: THEME.LILAC }} />
+                  <span style={{ width: "4px", height: "4px", borderRadius: "999px", background: THEME.LILAC }} />
                   Override: {decision.overridePath}
                 </div>
               )}

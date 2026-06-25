@@ -8,7 +8,7 @@
  * Reference: NIH Guidelines for Research Involving Recombinant DNA (2019)
  */
 
-export type RiskLevel = 'low' | 'moderate' | 'elevated' | 'high' | 'blocked';
+export type RiskLevel = "low" | "moderate" | "elevated" | "high" | "blocked";
 
 export interface RiskAssessment {
   /** Risk level */
@@ -32,34 +32,34 @@ export interface RiskAssessment {
  */
 export const SEQUENCE_RISK_RULES = {
   VIRULENCE_FACTOR: {
-    id: 'VF_MATCH',
-    description: 'Sequence similarity to known virulence factor',
-    baseLevel: 'high' as RiskLevel,
+    id: "VF_MATCH",
+    description: "Sequence similarity to known virulence factor",
+    baseLevel: "high" as RiskLevel,
   },
   TOXIN_GENE: {
-    id: 'TOXIN_MATCH',
-    description: 'Sequence encodes known toxin',
-    baseLevel: 'blocked' as RiskLevel,
+    id: "TOXIN_MATCH",
+    description: "Sequence encodes known toxin",
+    baseLevel: "blocked" as RiskLevel,
   },
   ANTIBIOTIC_RESISTANCE: {
-    id: 'ABR_MATCH',
-    description: 'Antibiotic resistance gene detected',
-    baseLevel: 'elevated' as RiskLevel,
+    id: "ABR_MATCH",
+    description: "Antibiotic resistance gene detected",
+    baseLevel: "elevated" as RiskLevel,
   },
   SELECT_AGENT: {
-    id: 'SELECT_AGENT',
-    description: 'Sequence matches select agent pathogen',
-    baseLevel: 'blocked' as RiskLevel,
+    id: "SELECT_AGENT",
+    description: "Sequence matches select agent pathogen",
+    baseLevel: "blocked" as RiskLevel,
   },
   MODERATE_RISK: {
-    id: 'MODERATE_RISK',
-    description: 'Sequence has moderate biosafety concerns',
-    baseLevel: 'moderate' as RiskLevel,
+    id: "MODERATE_RISK",
+    description: "Sequence has moderate biosafety concerns",
+    baseLevel: "moderate" as RiskLevel,
   },
   LOW_RISK: {
-    id: 'LOW_RISK',
-    description: 'No significant biosafety concerns detected',
-    baseLevel: 'low' as RiskLevel,
+    id: "LOW_RISK",
+    description: "No significant biosafety concerns detected",
+    baseLevel: "low" as RiskLevel,
   },
 } as const;
 
@@ -69,7 +69,7 @@ export const SEQUENCE_RISK_RULES = {
 export function assessSequenceRisk(
   sequence: string,
   host: string,
-  purpose: 'research' | 'production' | 'therapy' | 'environmental',
+  purpose: "research" | "production" | "therapy" | "environmental",
   matchScores?: { virulence: number; toxin: number; selectAgent: number },
 ): RiskAssessment {
   const scores = matchScores || { virulence: 0, toxin: 0, selectAgent: 0 };
@@ -77,11 +77,11 @@ export function assessSequenceRisk(
   // Check select agent (highest priority)
   if (scores.selectAgent > 0.8) {
     return {
-      level: 'blocked',
+      level: "blocked",
       score: 1.0,
-      reason: 'Sequence matches select agent pathogen — blocked by safety policy',
+      reason: "Sequence matches select agent pathogen — blocked by safety policy",
       triggerRule: SEQUENCE_RISK_RULES.SELECT_AGENT.id,
-      recommendedAction: 'This sequence cannot be processed. Contact biosafety officer.',
+      recommendedAction: "This sequence cannot be processed. Contact biosafety officer.",
       canProceed: false,
       requiresHumanReview: true,
     };
@@ -90,11 +90,11 @@ export function assessSequenceRisk(
   // Check toxin
   if (scores.toxin > 0.7) {
     return {
-      level: 'blocked',
+      level: "blocked",
       score: 0.95,
-      reason: 'Sequence similarity to known toxin gene',
+      reason: "Sequence similarity to known toxin gene",
       triggerRule: SEQUENCE_RISK_RULES.TOXIN_GENE.id,
-      recommendedAction: 'This sequence cannot be processed without institutional review.',
+      recommendedAction: "This sequence cannot be processed without institutional review.",
       canProceed: false,
       requiresHumanReview: true,
     };
@@ -102,14 +102,14 @@ export function assessSequenceRisk(
 
   // Check virulence
   if (scores.virulence > 0.6) {
-    const level = purpose === 'therapy' || purpose === 'environmental' ? 'high' : 'elevated';
+    const level = purpose === "therapy" || purpose === "environmental" ? "high" : "elevated";
     return {
       level,
       score: scores.virulence,
-      reason: 'Sequence similarity to known virulence factor',
+      reason: "Sequence similarity to known virulence factor",
       triggerRule: SEQUENCE_RISK_RULES.VIRULENCE_FACTOR.id,
-      recommendedAction: 'Requires institutional biosafety committee review.',
-      canProceed: level !== 'high',
+      recommendedAction: "Requires institutional biosafety committee review.",
+      canProceed: level !== "high",
       requiresHumanReview: true,
     };
   }
@@ -117,11 +117,11 @@ export function assessSequenceRisk(
   // Moderate risk
   if (scores.virulence > 0.3 || scores.toxin > 0.3) {
     return {
-      level: 'moderate',
+      level: "moderate",
       score: Math.max(scores.virulence, scores.toxin),
-      reason: 'Sequence has moderate biosafety concerns',
+      reason: "Sequence has moderate biosafety concerns",
       triggerRule: SEQUENCE_RISK_RULES.MODERATE_RISK.id,
-      recommendedAction: 'Review biosafety considerations before proceeding.',
+      recommendedAction: "Review biosafety considerations before proceeding.",
       canProceed: true,
       requiresHumanReview: false,
     };
@@ -129,11 +129,11 @@ export function assessSequenceRisk(
 
   // Low risk
   return {
-    level: 'low',
+    level: "low",
     score: Math.max(scores.virulence, scores.toxin, scores.selectAgent),
-    reason: 'No significant biosafety concerns detected',
+    reason: "No significant biosafety concerns detected",
     triggerRule: SEQUENCE_RISK_RULES.LOW_RISK.id,
-    recommendedAction: 'No additional safety measures required.',
+    recommendedAction: "No additional safety measures required.",
     canProceed: true,
     requiresHumanReview: false,
   };
@@ -144,11 +144,16 @@ export function assessSequenceRisk(
  */
 export function getRiskColor(level: RiskLevel): string {
   switch (level) {
-    case 'low': return '#4ade80';      // green
-    case 'moderate': return '#fbbf24'; // yellow
-    case 'elevated': return '#fb923c'; // orange
-    case 'high': return '#f87171';     // red
-    case 'blocked': return '#dc2626';  // dark red
+    case "low":
+      return "#4ade80"; // green
+    case "moderate":
+      return "#fbbf24"; // yellow
+    case "elevated":
+      return "#fb923c"; // orange
+    case "high":
+      return "#f87171"; // red
+    case "blocked":
+      return "#dc2626"; // dark red
   }
 }
 
@@ -157,10 +162,15 @@ export function getRiskColor(level: RiskLevel): string {
  */
 export function getRiskLabel(level: RiskLevel): string {
   switch (level) {
-    case 'low': return 'Low Risk';
-    case 'moderate': return 'Moderate Risk';
-    case 'elevated': return 'Elevated Risk';
-    case 'high': return 'High Risk';
-    case 'blocked': return 'Blocked';
+    case "low":
+      return "Low Risk";
+    case "moderate":
+      return "Moderate Risk";
+    case "elevated":
+      return "Elevated Risk";
+    case "high":
+      return "High Risk";
+    case "blocked":
+      return "Blocked";
   }
 }

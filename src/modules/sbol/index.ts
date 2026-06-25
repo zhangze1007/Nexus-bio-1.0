@@ -2,5 +2,5 @@
  * SBOL Module — Public API
  */
 
-export { toSBOL3, exportSBOL3JSON } from './types';
-export type { SBOLComponent, SBOLDesign, SBOLSequence, SBOLRole, SBOLSequenceType } from './types';
+export type { SBOLComponent, SBOLDesign, SBOLRole, SBOLSequence, SBOLSequenceType } from "./types";
+export { exportSBOL3JSON, toSBOL3 } from "./types";

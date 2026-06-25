@@ -7,40 +7,40 @@
  * Dark-theme only. Uses PATHD_THEME accent palette and T token fonts.
  */
 
-import type { CSSProperties } from 'react';
-import type { Variants } from 'framer-motion';
-import { THEME } from '../../theme';
+import type { Variants } from "framer-motion";
+import type { CSSProperties } from "react";
+import { THEME } from "../../theme";
 // ─── Glass Panel Styles ─────────────────────────────────────────────
 
 export const glassPanel: CSSProperties = {
-  background: 'rgba(16, 19, 26, 0.72)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255, 255, 255, 0.06)',
-  borderRadius: '16px',
-  padding: '16px 18px',
-  display: 'grid',
-  gap: '10px',
-  position: 'relative',
-  overflow: 'hidden',
-  transition: 'border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease',
+  background: "rgba(16, 19, 26, 0.72)",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+  border: "1px solid rgba(255, 255, 255, 0.06)",
+  borderRadius: "16px",
+  padding: "16px 18px",
+  display: "grid",
+  gap: "10px",
+  position: "relative",
+  overflow: "hidden",
+  transition: "border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease",
 };
 
 export const glassPanelHover: CSSProperties = {
-  borderColor: 'rgba(255, 255, 255, 0.12)',
-  transform: 'translateY(-2px)',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)',
+  borderColor: "rgba(255, 255, 255, 0.12)",
+  transform: "translateY(-2px)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)",
 };
 
 export const glassPanelInset: CSSProperties = {
-  background: 'rgba(13, 15, 20, 0.6)',
-  backdropFilter: 'blur(8px)',
-  WebkitBackdropFilter: 'blur(8px)',
-  border: '1px solid rgba(255, 255, 255, 0.04)',
-  borderRadius: '12px',
-  padding: '12px 14px',
-  display: 'grid',
-  gap: '6px',
+  background: "rgba(13, 15, 20, 0.6)",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+  border: "1px solid rgba(255, 255, 255, 0.04)",
+  borderRadius: "12px",
+  padding: "12px 14px",
+  display: "grid",
+  gap: "6px",
 };
 
 // ─── Typography Presets ─────────────────────────────────────────────
@@ -48,16 +48,16 @@ export const glassPanelInset: CSSProperties = {
 export const typography = {
   sectionTitle: {
     fontFamily: THEME.MONO,
-    fontSize: '10px',
+    fontSize: "10px",
     color: THEME.LABEL,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
     lineHeight: 1,
   } satisfies CSSProperties,
 
   cardTitle: {
     fontFamily: THEME.SANS,
-    fontSize: '13px',
+    fontSize: "13px",
     color: THEME.VALUE,
     fontWeight: 600,
     lineHeight: 1.3,
@@ -65,28 +65,28 @@ export const typography = {
 
   body: {
     fontFamily: THEME.SANS,
-    fontSize: '12px',
+    fontSize: "12px",
     color: THEME.LABEL,
     lineHeight: 1.6,
   } satisfies CSSProperties,
 
   caption: {
     fontFamily: THEME.MONO,
-    fontSize: '10px',
+    fontSize: "10px",
     color: THEME.LABEL,
     lineHeight: 1.4,
   } satisfies CSSProperties,
 
   metric: {
     fontFamily: THEME.MONO,
-    fontSize: '10px',
+    fontSize: "10px",
     color: THEME.VALUE,
     lineHeight: 1,
   } satisfies CSSProperties,
 
   label: {
     fontFamily: THEME.SANS,
-    fontSize: '12px',
+    fontSize: "12px",
     color: THEME.VALUE,
     fontWeight: 600,
     lineHeight: 1.3,
@@ -94,26 +94,26 @@ export const typography = {
 
   overline: {
     fontFamily: THEME.MONO,
-    fontSize: '11px',
+    fontSize: "11px",
     color: THEME.LABEL,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.1em',
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.1em",
     lineHeight: 1,
   } satisfies CSSProperties,
 
   /** Key-value pair label (left side) */
   kvLabel: {
     fontFamily: THEME.MONO,
-    fontSize: '10px',
+    fontSize: "10px",
     color: THEME.LABEL,
-    minWidth: '80px',
+    minWidth: "80px",
     flexShrink: 0,
   } satisfies CSSProperties,
 
   /** Key-value pair value (right side) */
   kvValue: {
     fontFamily: THEME.MONO,
-    fontSize: '10px',
+    fontSize: "10px",
     color: THEME.VALUE,
   } satisfies CSSProperties,
 };
@@ -121,17 +121,17 @@ export const typography = {
 // ─── Status Chip Presets ────────────────────────────────────────────
 
 const chipBase: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  padding: '3px 10px',
-  borderRadius: '999px',
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "3px 10px",
+  borderRadius: "999px",
   fontFamily: THEME.MONO,
-  fontSize: '10px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
+  fontSize: "10px",
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
   lineHeight: 1,
-  whiteSpace: 'nowrap',
-  transition: 'background 0.2s ease, border-color 0.2s ease',
+  whiteSpace: "nowrap",
+  transition: "background 0.2s ease, border-color 0.2s ease",
 };
 
 export const statusChip = {
@@ -148,35 +148,35 @@ export const statusChip = {
     ...chipBase,
     border: `1px solid ${THEME.CHIP_BORDER_WARM}`,
     background: THEME.CHIP_WARM,
-    color: 'rgba(255, 228, 194, 0.94)',
+    color: "rgba(255, 228, 194, 0.94)",
   } satisfies CSSProperties,
 
   draft: {
     ...chipBase,
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    background: 'rgba(255, 255, 255, 0.04)',
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    background: "rgba(255, 255, 255, 0.04)",
     color: THEME.VALUE,
   } satisfies CSSProperties,
 
   success: {
     ...chipBase,
-    border: '1px solid rgba(191, 220, 205, 0.22)',
-    background: 'rgba(191, 220, 205, 0.12)',
+    border: "1px solid rgba(191, 220, 205, 0.22)",
+    background: "rgba(191, 220, 205, 0.12)",
     color: THEME.MINT,
   } satisfies CSSProperties,
 
   blocked: {
     ...chipBase,
-    border: '1px solid rgba(232, 163, 161, 0.22)',
-    background: 'rgba(232, 163, 161, 0.12)',
+    border: "1px solid rgba(232, 163, 161, 0.22)",
+    background: "rgba(232, 163, 161, 0.12)",
     color: THEME.CORAL,
   } satisfies CSSProperties,
 
   neutral: {
     ...chipBase,
-    border: '1px solid rgba(255, 255, 255, 0.08)',
+    border: "1px solid rgba(255, 255, 255, 0.08)",
     background: THEME.CHIP_NEUTRAL,
-    color: 'rgba(255, 255, 255, 0.76)',
+    color: "rgba(255, 255, 255, 0.76)",
   } satisfies CSSProperties,
 };
 
@@ -186,14 +186,14 @@ export function iconContainer(accent: string, size = 24): CSSProperties {
   return {
     width: `${size}px`,
     height: `${size}px`,
-    borderRadius: '999px',
+    borderRadius: "999px",
     border: `1px solid ${accent}33`,
     background: `${accent}15`,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
-    transition: 'background 0.2s ease, border-color 0.2s ease',
+    transition: "background 0.2s ease, border-color 0.2s ease",
   };
 }
 
@@ -216,7 +216,7 @@ export const cardVariants: Variants = {
     y: -2,
     transition: {
       duration: 0.2,
-      ease: 'easeOut',
+      ease: "easeOut",
     },
   },
 };
@@ -239,7 +239,7 @@ export const chipVariants: Variants = {
     scale: 1,
     transition: {
       duration: 0.2,
-      ease: 'easeOut',
+      ease: "easeOut",
     },
   },
 };
@@ -247,57 +247,57 @@ export const chipVariants: Variants = {
 // ─── Layout Helpers ─────────────────────────────────────────────────
 
 export const sectionHeaderRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
 };
 
 export const metricRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'baseline',
-  gap: '8px',
-  flexWrap: 'wrap',
+  display: "flex",
+  alignItems: "baseline",
+  gap: "8px",
+  flexWrap: "wrap",
 };
 
 export const metricLabel: CSSProperties = {
   fontFamily: THEME.MONO,
-  fontSize: '10px',
+  fontSize: "10px",
   color: THEME.LABEL,
-  minWidth: '72px',
+  minWidth: "72px",
   flexShrink: 0,
 };
 
 export const metricValue: CSSProperties = {
   fontFamily: THEME.MONO,
-  fontSize: '10px',
+  fontSize: "10px",
   color: THEME.VALUE,
 };
 
 export const kvGrid: CSSProperties = {
-  display: 'grid',
-  gap: '4px',
+  display: "grid",
+  gap: "4px",
   fontFamily: THEME.MONO,
-  fontSize: '10px',
+  fontSize: "10px",
   color: THEME.LABEL,
   lineHeight: 1.5,
 };
 
 export const chipRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  flexWrap: 'wrap',
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  flexWrap: "wrap",
 };
 
 export const cardGrid: CSSProperties = {
-  display: 'grid',
-  gap: '12px',
+  display: "grid",
+  gap: "12px",
 };
 
 export const twoColumnGrid: CSSProperties = {
-  display: 'grid',
-  gap: '12px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+  display: "grid",
+  gap: "12px",
+  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
 };
 
 // ─── Accent Left Border ────────────────────────────────────────────
@@ -305,19 +305,19 @@ export const twoColumnGrid: CSSProperties = {
 export function accentLeftBorder(accent: string, width = 3): CSSProperties {
   return {
     borderLeft: `${width}px solid ${accent}55`,
-    paddingLeft: '14px',
+    paddingLeft: "14px",
   };
 }
 
 // ─── Utility: Format Timestamp ──────────────────────────────────────
 
 export function formatTimestamp(ts: number): string {
-  if (!ts) return 'Pending';
+  if (!ts) return "Pending";
   return new Date(ts).toLocaleString([], {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -325,21 +325,21 @@ export function formatTimestamp(ts: number): string {
 
 export function statusAccent(status: string): string {
   switch (status) {
-    case 'committed':
-    case 'complete':
+    case "committed":
+    case "complete":
       return THEME.MINT;
-    case 'ready':
+    case "ready":
       return THEME.SKY;
-    case 'blocked':
+    case "blocked":
       return THEME.CORAL;
-    case 'gated':
-    case 'attention':
+    case "gated":
+    case "attention":
       return THEME.APRICOT;
-    case 'demoOnly':
+    case "demoOnly":
       return THEME.APRICOT;
-    case 'draft':
+    case "draft":
       return THEME.LILAC;
-    case 'recorded':
+    case "recorded":
     default:
       return THEME.LABEL;
   }
@@ -347,13 +347,13 @@ export function statusAccent(status: string): string {
 
 // ─── Utility: Status → Chip Style ───────────────────────────────────
 
-export function getChipStyle(status: 'recorded' | 'committed' | 'attention' | 'draft'): CSSProperties {
+export function getChipStyle(status: "recorded" | "committed" | "attention" | "draft"): CSSProperties {
   switch (status) {
-    case 'committed':
+    case "committed":
       return statusChip.committed;
-    case 'attention':
+    case "attention":
       return statusChip.attention;
-    case 'draft':
+    case "draft":
       return statusChip.draft;
     default:
       return statusChip.neutral;
@@ -363,30 +363,30 @@ export function getChipStyle(status: 'recorded' | 'committed' | 'attention' | 'd
 // ─── Layout Primitives (tool page tab/rail system) ────────────────────
 
 export const tabContainer: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
+  display: "flex",
+  flexDirection: "column",
   flex: 1,
   minHeight: 0,
 };
 
 export const tabContent: CSSProperties = {
   flex: 1,
-  display: 'flex',
+  display: "flex",
   minHeight: 0,
-  overflow: 'hidden',
+  overflow: "hidden",
 };
 
 export const railMainLayout: CSSProperties = {
-  display: 'flex',
+  display: "flex",
   flex: 1,
   minHeight: 0,
 };
 
 export const mainVizArea: CSSProperties = {
   flex: 1,
-  position: 'relative',
-  display: 'flex',
-  flexDirection: 'column',
+  position: "relative",
+  display: "flex",
+  flexDirection: "column",
   minHeight: 0,
-  padding: '12px',
+  padding: "12px",
 };

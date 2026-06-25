@@ -1,4 +1,4 @@
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 /**
  * MOFA+ Multi-Omics Factor Analysis
@@ -163,8 +163,8 @@ function solveRidge(A: number[][], B: number[][], lambda: number): number[][] {
  */
 function nanToZero(data: number[][]): { clean: number[][]; mask: boolean[][] } {
   return {
-    clean: data.map(row => row.map(v => (Number.isFinite(v) ? v : 0))),
-    mask: data.map(row => row.map(v => Number.isFinite(v))),
+    clean: data.map((row) => row.map((v) => (Number.isFinite(v) ? v : 0))),
+    mask: data.map((row) => row.map((v) => Number.isFinite(v))),
   };
 }
 
@@ -208,8 +208,8 @@ export function runMOFA(input: MOFAInput): MOFAResult {
   const nViews = viewNames.length;
 
   // Clamp nFactors to min(nSamples, minFeatureDim)
-  let requestedFactors = input.nFactors ?? 5;
-  const minFeatures = Math.min(...viewNames.map(v => input.views[v][0].length));
+  const requestedFactors = input.nFactors ?? 5;
+  const minFeatures = Math.min(...viewNames.map((v) => input.views[v][0].length));
   const nFactors = Math.min(requestedFactors, nSamples, minFeatures);
   const maxIter = input.maxIterations ?? 100;
 
@@ -220,7 +220,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
   }
 
   // Initialize Z randomly [nSamples x nFactors]
-  let Z: number[][] = Array.from({ length: nSamples }, () =>
+  const Z: number[][] = Array.from({ length: nSamples }, () =>
     Array.from({ length: nFactors }, () => (rng.next() - 0.5) * 0.1),
   );
 
@@ -228,9 +228,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
   const W: Record<string, number[][]> = {};
   for (const vn of viewNames) {
     const nf = input.views[vn][0].length;
-    W[vn] = Array.from({ length: nf }, () =>
-      Array.from({ length: nFactors }, () => (rng.next() - 0.5) * 0.1),
-    );
+    W[vn] = Array.from({ length: nf }, () => Array.from({ length: nFactors }, () => (rng.next() - 0.5) * 0.1));
   }
 
   // Noise precision per view (inverse variance)
@@ -337,7 +335,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
 
         // For each feature, solve (ZtZ + diag(alpha/tau) + lambda*I) * w_j = YtZ_j
         // Use per-factor alpha scaled by tau, with small constant regularizer
-        const ardLambda = alpha.map(av => lambda + av / t);
+        const ardLambda = alpha.map((av) => lambda + av / t);
         for (let j = 0; j < nf; j++) {
           const B: number[][] = Array.from({ length: nFactors }, () => [0]);
           for (let a = 0; a < nFactors; a++) B[a][0] = YtZ[j][a];
@@ -448,7 +446,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
     // Total SS (observed entries only)
     let totalSS = 0;
     const meanCols = new Array(nf).fill(0);
-    let nObsPerCol = new Array(nf).fill(0);
+    const nObsPerCol = new Array(nf).fill(0);
     for (let i = 0; i < nSamples; i++) {
       for (let j = 0; j < nf; j++) {
         if (Mv[i][j]) {
@@ -479,7 +477,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
           if (Mv[i][j]) {
             const pred = Z[i][a] * Wv[j][a];
             // Adjust for mean
-            const resid = (Yv[i][j] - meanCols[j]) - pred;
+            const resid = Yv[i][j] - meanCols[j] - pred;
             factorSS += resid * resid;
           }
         }

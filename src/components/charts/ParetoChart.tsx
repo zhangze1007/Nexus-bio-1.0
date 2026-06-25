@@ -1,17 +1,33 @@
-'use client';
+"use client";
 
 import {
-  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
-  ResponsiveContainer, ZAxis,
-} from 'recharts';
-import type { ParetoFrontResult, PathwayCandidate } from '../../services/CatalystDesignerEngine';
-import type { ChartTooltipProps } from '../../types/charts';
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+  ZAxis,
+} from "recharts";
+import { colors, spacing } from "../../design-system/tokens";
+import type { ParetoFrontResult, PathwayCandidate } from "../../services/CatalystDesignerEngine";
+import type { ChartTooltipProps } from "../../types/charts";
 import {
-  ACCENT, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
-  SECTION_LABEL, rechartsGrid, rechartsTick, rechartsAxisTitle,
-  rechartsAxisLine, SCI_PALETTE, fmt2, axisLabel,
-} from './chartTheme';
-import { colors, spacing } from '../../design-system/tokens';
+  ACCENT,
+  axisLabel,
+  CHART_CONTAINER,
+  FONT,
+  fmt2,
+  rechartsAxisLine,
+  rechartsAxisTitle,
+  rechartsGrid,
+  rechartsTick,
+  SCI_PALETTE,
+  SECTION_LABEL,
+  TOOLTIP_STYLE,
+} from "./chartTheme";
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
@@ -24,7 +40,7 @@ function ParetoTooltip({ active, payload }: ChartTooltipProps) {
       <p style={{ margin: 0, fontSize: 11, fontFamily: FONT.SANS, color: colors.text.primary, fontWeight: 600 }}>
         {data.name}
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px', marginTop: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 12px", marginTop: 4 }}>
         <span style={{ fontSize: 9, color: colors.text.tertiary, fontFamily: FONT.SANS }}>Thermo</span>
         <span style={{ fontFamily: FONT.MONO, color: ACCENT.sky }}>{fmt2(data.scores.thermodynamic)}</span>
         <span style={{ fontSize: 9, color: colors.text.tertiary, fontFamily: FONT.SANS }}>Yield</span>
@@ -33,7 +49,7 @@ function ParetoTooltip({ active, payload }: ChartTooltipProps) {
         <span style={{ fontFamily: FONT.MONO, color: ACCENT.apricot }}>{fmt2(data.scores.metabolicCost)}</span>
         <span style={{ fontSize: 9, color: colors.text.tertiary, fontFamily: FONT.SANS }}>Rank</span>
         <span style={{ fontFamily: FONT.MONO, color: data.paretoRank === 0 ? SCI_PALETTE.green : colors.text.primary }}>
-          {data.paretoRank === 0 ? 'Pareto-optimal' : `Rank ${data.paretoRank}`}
+          {data.paretoRank === 0 ? "Pareto-optimal" : `Rank ${data.paretoRank}`}
         </span>
       </div>
     </div>
@@ -42,20 +58,37 @@ function ParetoTooltip({ active, payload }: ChartTooltipProps) {
 
 /* ── Legend Swatch ────────────────────────────────────────────── */
 
-function LegendSwatch({ color, label, strong, muted }: { color: string; label: string; strong?: boolean; muted?: boolean }) {
+function LegendSwatch({
+  color,
+  label,
+  strong,
+  muted,
+}: {
+  color: string;
+  label: string;
+  strong?: boolean;
+  muted?: boolean;
+}) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span style={{
-        width: 10, height: 10, borderRadius: '50%',
-        background: color, opacity: muted ? 0.6 : 1,
-        border: strong ? '1px solid #ffffff' : 'none',
-      }} />
-      <span style={{
-        fontFamily: FONT.SANS,
-        fontSize: 10,
-        color: muted ? colors.text.tertiary : colors.text.primary,
-        fontWeight: strong ? 600 : 500,
-      }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          background: color,
+          opacity: muted ? 0.6 : 1,
+          border: strong ? "1px solid #ffffff" : "none",
+        }}
+      />
+      <span
+        style={{
+          fontFamily: FONT.SANS,
+          fontSize: 10,
+          color: muted ? colors.text.tertiary : colors.text.primary,
+          fontWeight: strong ? 600 : 500,
+        }}
+      >
         {label}
       </span>
     </div>
@@ -70,18 +103,18 @@ interface ParetoChartProps {
 
 export default function ParetoChart({ result }: ParetoChartProps) {
   const { candidates, paretoFront, bestOverall } = result;
-  const frontIds = new Set(paretoFront.map(c => c.id));
+  const frontIds = new Set(paretoFront.map((c) => c.id));
 
   /* Compute axis domains with padding */
-  const thermoVals = candidates.map(c => c.scores.thermodynamic);
-  const yieldVals = candidates.map(c => c.scores.yield);
+  const thermoVals = candidates.map((c) => c.scores.thermodynamic);
+  const yieldVals = candidates.map((c) => c.scores.yield);
   const xMin = Math.min(...thermoVals) - 0.05;
   const xMax = Math.max(...thermoVals) + 0.05;
   const yMin = Math.min(...yieldVals) - 0.05;
   const yMax = Math.max(...yieldVals) + 0.05;
 
   /* Scatter data with visual encoding */
-  const scatterData = candidates.map(c => ({
+  const scatterData = candidates.map((c) => ({
     ...c,
     x: c.scores.thermodynamic,
     y: c.scores.yield,
@@ -101,14 +134,15 @@ export default function ParetoChart({ result }: ParetoChartProps) {
   return (
     <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
       <p style={SECTION_LABEL}>PARETO FRONT — MULTI-OBJECTIVE RANKING</p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '-6px 0 4px' }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: "-6px 0 4px" }}>
         Thermodynamic vs. yield score · circle area proportional to 1/(metabolic cost)
       </p>
       <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary, margin: `0 0 ${spacing.md}` }}>
-        Scores are single-point estimates from the design engine — no uncertainty is visualised here because the underlying engine does not emit replicate intervals.
+        Scores are single-point estimates from the design engine — no uncertainty is visualised here because the
+        underlying engine does not emit replicate intervals.
       </p>
 
-      <div style={{ width: '100%', height: 280 }}>
+      <div style={{ width: "100%", height: 280 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 14, right: 24, left: 12, bottom: 32 }}>
             <CartesianGrid {...rechartsGrid} />
@@ -121,8 +155,8 @@ export default function ParetoChart({ result }: ParetoChartProps) {
               tickLine={false}
               name="Thermodynamic score"
               label={{
-                value: axisLabel('Thermodynamic score', '0-1'),
-                position: 'insideBottom',
+                value: axisLabel("Thermodynamic score", "0-1"),
+                position: "insideBottom",
                 offset: -8,
                 style: rechartsAxisTitle,
               }}
@@ -137,9 +171,9 @@ export default function ParetoChart({ result }: ParetoChartProps) {
               width={52}
               name="Yield score"
               label={{
-                value: axisLabel('Yield score', '0-1'),
+                value: axisLabel("Yield score", "0-1"),
                 angle: -90,
-                position: 'insideLeft',
+                position: "insideLeft",
                 offset: 4,
                 style: rechartsAxisTitle,
               }}
@@ -152,7 +186,7 @@ export default function ParetoChart({ result }: ParetoChartProps) {
                   key={i}
                   fill={entry.isBest ? bestColor : entry.isFront ? frontColor : nonFrontColor}
                   fillOpacity={entry.isBest ? 0.92 : entry.isFront ? 0.78 : 0.28}
-                  stroke={entry.isBest ? '#ffffff' : entry.isFront ? frontColor : 'rgba(184,196,214,0.35)'}
+                  stroke={entry.isBest ? "#ffffff" : entry.isFront ? frontColor : "rgba(184,196,214,0.35)"}
                   strokeWidth={entry.isBest ? 2 : entry.isFront ? 1.25 : 0.75}
                 />
               ))}
@@ -162,34 +196,40 @@ export default function ParetoChart({ result }: ParetoChartProps) {
       </div>
 
       {/* ── Legend: category + candidate names ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0 6px', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "10px 0 6px", flexWrap: "wrap" }}>
         <LegendSwatch color={bestColor} label="Best overall" strong />
         <LegendSwatch color={frontColor} label="Pareto-optimal" />
         <LegendSwatch color={nonFrontColor} label="Dominated" muted />
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {candidates.map(c => {
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {candidates.map((c) => {
           const isFront = frontIds.has(c.id);
           const isBest = c.id === bestOverall;
           const chipColor = isBest ? bestColor : isFront ? frontColor : nonFrontColor;
           return (
-            <div key={c.id} style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '2px 10px', borderRadius: 8,
-              background: `${chipColor}14`,
-              border: `1px solid ${chipColor}${isFront || isBest ? '55' : '22'}`,
-            }}>
+            <div
+              key={c.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "2px 10px",
+                borderRadius: 8,
+                background: `${chipColor}14`,
+                border: `1px solid ${chipColor}${isFront || isBest ? "55" : "22"}`,
+              }}
+            >
               {isBest && <span style={{ fontSize: 10, color: bestColor }}>*</span>}
-              <span style={{
-                fontFamily: FONT.SANS,
-                fontSize: 10,
-                color: isFront ? colors.text.primary : colors.text.secondary,
-              }}>
+              <span
+                style={{
+                  fontFamily: FONT.SANS,
+                  fontSize: 10,
+                  color: isFront ? colors.text.primary : colors.text.secondary,
+                }}
+              >
                 {c.name}
               </span>
-              <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: colors.text.disabled }}>
-                R{c.paretoRank}
-              </span>
+              <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: colors.text.disabled }}>R{c.paretoRank}</span>
             </div>
           );
         })}

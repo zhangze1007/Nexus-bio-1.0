@@ -1,5 +1,5 @@
-'use client';
-import { useRef, useState, useEffect, type ReactNode } from 'react';
+"use client";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 interface ResponsiveContainerProps {
   children: (width: number, height: number) => ReactNode;
@@ -7,17 +7,13 @@ interface ResponsiveContainerProps {
   minHeight?: number;
 }
 
-export default function ResponsiveContainer({
-  children,
-  style,
-  minHeight = 200,
-}: ResponsiveContainerProps) {
+export default function ResponsiveContainer({ children, style, minHeight = 200 }: ResponsiveContainerProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 520, height: minHeight });
 
   useEffect(() => {
     if (!ref.current) return;
-    const observer = new ResizeObserver(entries => {
+    const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
         setSize({
@@ -31,7 +27,7 @@ export default function ResponsiveContainer({
   }, [minHeight]);
 
   return (
-    <div ref={ref} style={{ width: '100%', minHeight, ...style }}>
+    <div ref={ref} style={{ width: "100%", minHeight, ...style }}>
       {children(size.width, size.height)}
     </div>
   );

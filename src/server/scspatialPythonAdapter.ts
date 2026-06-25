@@ -14,7 +14,7 @@ import type {
   ScSpatialQueryResponse,
   ScSpatialSVGResult,
   ScSpatialValidity,
-} from '../types/scspatial';
+} from "../types/scspatial";
 
 interface PythonQueryResponse {
   artifactId: string;
@@ -117,18 +117,17 @@ interface PythonQueryResponse {
  * ScSpatialQueryResponse format the frontend expects.
  */
 export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQueryResponse {
-  const validity: ScSpatialValidity =
-    py.validity === 'real' ? 'real' : py.validity === 'partial' ? 'partial' : 'demo';
+  const validity: ScSpatialValidity = py.validity === "real" ? "real" : py.validity === "partial" ? "partial" : "demo";
 
   // Build available genes from points' expression data
   // (Python backend doesn't return a gene list separately)
   const availableGenes: string[] = [];
 
   // Build available clusters
-  const availableClusters = py.rightPanel.clusterSummaries.map(cs => cs.clusterLabel);
+  const availableClusters = py.rightPanel.clusterSummaries.map((cs) => cs.clusterLabel);
 
   // Adapt center points
-  const points = py.centerView.points.map(p => ({
+  const points = py.centerView.points.map((p) => ({
     id: p.id,
     clusterId: p.clusterId,
     clusterLabel: p.clusterLabel,
@@ -145,14 +144,14 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
   // Adapt trajectory
   const trajectory = py.centerView.trajectory
     ? {
-        nodes: py.centerView.trajectory.nodes.map(n => ({
+        nodes: py.centerView.trajectory.nodes.map((n) => ({
           clusterId: n.clusterId,
           clusterLabel: n.clusterLabel,
           x: n.x,
           y: n.y,
           cellCount: n.cellCount,
         })),
-        edges: py.centerView.trajectory.edges.map(e => ({
+        edges: py.centerView.trajectory.edges.map((e) => ({
           from: e.from,
           to: e.to,
           weight: e.weight,
@@ -161,19 +160,19 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
     : { nodes: [], edges: [] };
 
   // Adapt cluster summaries
-  const clusterSummaries: ScSpatialClusterSummary[] = py.rightPanel.clusterSummaries.map(cs => ({
+  const clusterSummaries: ScSpatialClusterSummary[] = py.rightPanel.clusterSummaries.map((cs) => ({
     clusterId: cs.clusterId,
     clusterLabel: cs.clusterLabel,
     cellCount: cs.cellCount,
     meanExpression: cs.meanExpression,
     meanPseudotime: 0,
-    fate: cs.fate as 'productive' | 'stressed' | 'quiescent' || 'quiescent',
+    fate: (cs.fate as "productive" | "stressed" | "quiescent") || "quiescent",
     topGenes: cs.topGenes,
     spatiallyLocalized: false,
   }));
 
   // Adapt hotspots
-  const hotspots: ScSpatialHotspotSummary[] = py.rightPanel.hotspots.map(h => ({
+  const hotspots: ScSpatialHotspotSummary[] = py.rightPanel.hotspots.map((h) => ({
     geneSymbol: h.geneSymbol,
     moranI: h.moranI,
     zScore: h.moranI * 10, // Approximate z-score from Moran's I
@@ -181,12 +180,12 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
     qValue: h.pvalAdj,
     pvalAdj: h.pvalAdj,
     isSpatiallyRestricted: (h.moranI || 0) > 0.1,
-    hotspot: (h.moranI || 0) > 0.1 ? 'high' as const : 'ns' as const,
-    spatialPattern: h.spatialPattern as 'clustered' | 'dispersed' | 'random',
+    hotspot: (h.moranI || 0) > 0.1 ? ("high" as const) : ("ns" as const),
+    spatialPattern: h.spatialPattern as "clustered" | "dispersed" | "random",
   }));
 
   // Adapt coexpression
-  const coexpression: ScSpatialCoexpressionSummary[] = py.rightPanel.coexpression.map(c => ({
+  const coexpression: ScSpatialCoexpressionSummary[] = py.rightPanel.coexpression.map((c) => ({
     geneSymbol: c.geneSymbol,
     correlation: c.correlation,
   }));
@@ -199,7 +198,7 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
         cellCount: py.rightPanel.selectedClusterSummary.cellCount,
         meanExpression: py.rightPanel.selectedClusterSummary.meanExpression,
         meanPseudotime: 0,
-        fate: py.rightPanel.selectedClusterSummary.fate as 'productive' | 'stressed' | 'quiescent' || 'quiescent',
+        fate: (py.rightPanel.selectedClusterSummary.fate as "productive" | "stressed" | "quiescent") || "quiescent",
         topGenes: py.rightPanel.selectedClusterSummary.topGenes,
         spatiallyLocalized: false,
       }
@@ -237,11 +236,11 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
       selectedGene: py.selection.selectedGene,
       selectedCluster: py.selection.selectedCluster,
       selectedCellId: py.selection.selectedCellId,
-      viewMode: py.selection.viewMode as import('../types/scspatial').ScSpatialViewMode,
+      viewMode: py.selection.viewMode as import("../types/scspatial").ScSpatialViewMode,
       developerMode: false,
     },
     centerView: {
-      mode: (py.selection.viewMode || 'spatial-2d') as import('../types/scspatial').ScSpatialViewMode,
+      mode: (py.selection.viewMode || "spatial-2d") as import("../types/scspatial").ScSpatialViewMode,
       points,
       xLabel: py.centerView.xLabel,
       yLabel: py.centerView.yLabel,
@@ -256,7 +255,7 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
       spatiallyVariableGenes: [] as ScSpatialSVGResult[],
       niches: [] as ScSpatialNiche[],
       provenance: {
-        source: 'upload' as const,
+        source: "upload" as const,
         fileName: py.datasetMeta.fileName,
         validity,
         warnings: py.datasetMeta.warnings,
@@ -264,15 +263,15 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
       },
     },
     exportData: {
-      clusterAnnotations: py.exportData.clusterAnnotations.map(c => ({
-        cellId: String(c.cellId ?? ''),
-        clusterLabel: String(c.clusterLabel ?? ''),
-        cellType: String(c.cellType ?? ''),
+      clusterAnnotations: py.exportData.clusterAnnotations.map((c) => ({
+        cellId: String(c.cellId ?? ""),
+        clusterLabel: String(c.clusterLabel ?? ""),
+        cellType: String(c.cellType ?? ""),
         sampleId: c.sampleId != null ? String(c.sampleId) : null,
         condition: c.condition != null ? String(c.condition) : null,
       })),
       hotspotTable: hotspots,
-      spatialPoints: points.map(p => ({
+      spatialPoints: points.map((p) => ({
         cellId: p.id,
         clusterLabel: p.clusterLabel,
         x: p.x,
@@ -286,8 +285,15 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
       availableEmbeddings: [],
       availableLayers: [],
     },
-    analysis: (py as unknown as Record<string, unknown>).analysis as import('../types/scspatial').ScSpatialAnalysisResults | undefined,
-    heImage: (py as unknown as Record<string, unknown>).heImage as import('../types/scspatial').ScSpatialNormalizedArtifact['heImage'] | undefined ?? undefined,
-    spatialFormat: ((py as unknown as Record<string, unknown>).spatialFormat as import('../types/scspatial').ScSpatialNormalizedArtifact['spatialFormat']) || undefined,
+    analysis: (py as unknown as Record<string, unknown>).analysis as
+      | import("../types/scspatial").ScSpatialAnalysisResults
+      | undefined,
+    heImage:
+      ((py as unknown as Record<string, unknown>).heImage as
+        | import("../types/scspatial").ScSpatialNormalizedArtifact["heImage"]
+        | undefined) ?? undefined,
+    spatialFormat:
+      ((py as unknown as Record<string, unknown>)
+        .spatialFormat as import("../types/scspatial").ScSpatialNormalizedArtifact["spatialFormat"]) || undefined,
   };
 }

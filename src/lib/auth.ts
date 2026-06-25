@@ -1,7 +1,7 @@
-import NextAuth, { type NextAuthConfig } from 'next-auth';
-import GitHub from 'next-auth/providers/github';
-import Google from 'next-auth/providers/google';
-import { getLibsqlClient } from './db';
+import NextAuth, { type NextAuthConfig } from "next-auth";
+import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+import { getLibsqlClient } from "./db";
 
 /**
  * Auth.js v5 configuration for Nexus-Bio researcher accounts.
@@ -11,7 +11,7 @@ import { getLibsqlClient } from './db';
  * Database: upserts user on sign-in via the `signIn` callback
  */
 
-declare module 'next-auth' {
+declare module "next-auth" {
   interface Session {
     user: {
       id: string;
@@ -31,7 +31,7 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth' {
+declare module "next-auth" {
   interface JWT {
     id?: string;
     institution?: string | null;
@@ -54,12 +54,12 @@ const authConfig: NextAuthConfig = {
   ],
 
   pages: {
-    signIn: '/login',
-    error: '/login',
+    signIn: "/login",
+    error: "/login",
   },
 
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 days (reduced from 30 for better security)
   },
 
@@ -88,14 +88,14 @@ const authConfig: NextAuthConfig = {
             user.email,
             user.name || null,
             user.image || null,
-            account?.provider || 'unknown',
+            account?.provider || "unknown",
             account?.providerAccountId || null,
             now,
             now,
           ],
         });
       } catch (err) {
-        console.error('Auth signIn upsert failed:', err);
+        console.error("Auth signIn upsert failed:", err);
         // Still allow sign-in even if DB write fails
       }
 
@@ -115,7 +115,7 @@ const authConfig: NextAuthConfig = {
         try {
           const client = getLibsqlClient();
           const result = await client.execute({
-            sql: 'SELECT institution, research_area, orcid FROM users WHERE email = ?',
+            sql: "SELECT institution, research_area, orcid FROM users WHERE email = ?",
             args: [token.email as string],
           });
           const row = result.rows[0] as Record<string, string> | undefined;

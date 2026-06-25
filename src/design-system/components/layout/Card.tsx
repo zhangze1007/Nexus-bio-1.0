@@ -1,25 +1,19 @@
-import React from 'react';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  shadows,
-  transitions,
-} from '../../tokens';
+import React from "react";
+import { borderRadius, colors, shadows, spacing, transitions } from "../../tokens";
 
 // ---------------------------------------------------------------------------
 // Panel surface constants (mirrors THEME values for layout primitives)
 // ---------------------------------------------------------------------------
 
-const PANEL_BG = '#050505';
-const PANEL_STRONG = '#111318';
-const PANEL_GLASS = 'rgba(28, 34, 40, 0.84)';
+const PANEL_BG = "#050505";
+const PANEL_STRONG = "#111318";
+const PANEL_GLASS = "rgba(28, 34, 40, 0.84)";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type CardVariant = 'default' | 'elevated' | 'glass';
+type CardVariant = "default" | "elevated" | "glass";
 
 interface CardProps {
   /** Card content */
@@ -27,7 +21,7 @@ interface CardProps {
   /** Additional CSS class names */
   className?: string;
   /** Padding size — maps to design-system spacing tokens (default: 'base') */
-  padding?: 'sm' | 'md' | 'base' | 'lg' | 'xl';
+  padding?: "sm" | "md" | "base" | "lg" | "xl";
   /** Enable hover elevation effect */
   hoverable?: boolean;
   /** Click handler — also sets cursor to pointer */
@@ -40,7 +34,7 @@ interface CardProps {
 // Padding map (from design-system spacing tokens)
 // ---------------------------------------------------------------------------
 
-const paddingMap: Record<NonNullable<CardProps['padding']>, string> = {
+const paddingMap: Record<NonNullable<CardProps["padding"]>, string> = {
   sm: spacing.sm,
   md: spacing.md,
   base: spacing.base,
@@ -65,9 +59,9 @@ const variantBorders: Record<CardVariant, string> = {
 };
 
 const variantShadows: Record<CardVariant, string> = {
-  default: 'none',
+  default: "none",
   elevated: shadows.sm,
-  glass: 'none',
+  glass: "none",
 };
 
 const variantHoverShadows: Record<CardVariant, string> = {
@@ -89,50 +83,46 @@ const variantHoverBorders: Record<CardVariant, string> = {
 export function Card({
   children,
   className,
-  padding = 'base',
+  padding = "base",
   hoverable = false,
   onClick,
-  variant = 'default',
+  variant = "default",
 }: CardProps) {
   const [hovered, setHovered] = React.useState(false);
 
   const isInteractive = hoverable || !!onClick;
 
   const baseStyle: React.CSSProperties = {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
     padding: paddingMap[padding],
     borderRadius: borderRadius.xl,
     backgroundColor: variantBackgrounds[variant],
     border: variantBorders[variant],
     boxShadow: variantShadows[variant],
-    cursor: onClick ? 'pointer' : isInteractive ? 'pointer' : 'default',
-    transition: [
-      transitions.preset.shadow,
-      transitions.preset.border,
-      transitions.preset.transform,
-    ].join(', '),
+    cursor: onClick ? "pointer" : isInteractive ? "pointer" : "default",
+    transition: [transitions.preset.shadow, transitions.preset.border, transitions.preset.transform].join(", "),
 
     // Hover elevation
     ...(hovered && isInteractive
       ? {
           boxShadow: variantHoverShadows[variant],
           border: variantHoverBorders[variant],
-          transform: 'translateY(-1px)',
+          transform: "translateY(-1px)",
         }
       : {}),
   };
 
   // Glass variant gets backdrop-filter
-  if (variant === 'glass') {
-    (baseStyle as Record<string, unknown>).backdropFilter = 'blur(12px)';
-    (baseStyle as Record<string, unknown>).WebkitBackdropFilter = 'blur(12px)';
+  if (variant === "glass") {
+    (baseStyle as Record<string, unknown>).backdropFilter = "blur(12px)";
+    (baseStyle as Record<string, unknown>).WebkitBackdropFilter = "blur(12px)";
   }
 
   return (
     <div
-      role={onClick ? 'button' : undefined}
+      role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       className={className}
       style={baseStyle}
@@ -140,7 +130,7 @@ export function Card({
       onKeyDown={
         onClick
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 onClick(e as unknown as React.MouseEvent<HTMLDivElement>);
               }

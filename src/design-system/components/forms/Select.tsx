@@ -1,19 +1,6 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-  useMemo,
-} from 'react';
-import {
-  colors,
-  spacing,
-  typography,
-  borderRadius,
-  shadows,
-  transitions,
-  zIndex,
-} from '../../tokens';
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { borderRadius, colors, shadows, spacing, transitions, typography, zIndex } from "../../tokens";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,18 +45,12 @@ function ChevronIcon({ open }: { open: boolean }) {
       xmlns="http://www.w3.org/2000/svg"
       style={{
         transition: `transform ${transitions.duration.normal} ${transitions.easing.apple}`,
-        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        transform: open ? "rotate(180deg)" : "rotate(0deg)",
         flexShrink: 0,
       }}
       aria-hidden="true"
     >
-      <path
-        d="M4 6L8 10L12 6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -85,7 +66,7 @@ export function Select({
   onChange,
   disabled = false,
   error,
-  placeholder = 'Select an option',
+  placeholder = "Select an option",
   className,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
@@ -96,10 +77,7 @@ export function Select({
   const listRef = useRef<HTMLUListElement>(null);
 
   // Find the currently selected option for display
-  const selectedOption = useMemo(
-    () => options.find((opt) => opt.value === value),
-    [options, value],
-  );
+  const selectedOption = useMemo(() => options.find((opt) => opt.value === value), [options, value]);
 
   // ---- Helpers ---------------------------------------------------------------
 
@@ -131,15 +109,12 @@ export function Select({
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(e.target as Node)
-      ) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         closeDropdown();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open, closeDropdown]);
 
   // ---- Scroll focused option into view ---------------------------------------
@@ -147,7 +122,7 @@ export function Select({
   useEffect(() => {
     if (!open || focusedIndex < 0 || !listRef.current) return;
     const item = listRef.current.children[focusedIndex] as HTMLElement | undefined;
-    item?.scrollIntoView({ block: 'nearest' });
+    item?.scrollIntoView({ block: "nearest" });
   }, [open, focusedIndex]);
 
   // ---- Keyboard navigation ---------------------------------------------------
@@ -157,8 +132,8 @@ export function Select({
       if (disabled) return;
 
       switch (e.key) {
-        case 'Enter':
-        case ' ': {
+        case "Enter":
+        case " ": {
           e.preventDefault();
           if (!open) {
             openDropdown();
@@ -167,7 +142,7 @@ export function Select({
           }
           break;
         }
-        case 'ArrowDown': {
+        case "ArrowDown": {
           e.preventDefault();
           if (!open) {
             openDropdown();
@@ -180,7 +155,7 @@ export function Select({
           });
           break;
         }
-        case 'ArrowUp': {
+        case "ArrowUp": {
           e.preventDefault();
           if (!open) {
             openDropdown();
@@ -193,14 +168,14 @@ export function Select({
           });
           break;
         }
-        case 'Home': {
+        case "Home": {
           if (!open) return;
           e.preventDefault();
           const first = options.findIndex((opt) => !opt.disabled);
           if (first >= 0) setFocusedIndex(first);
           break;
         }
-        case 'End': {
+        case "End": {
           if (!open) return;
           e.preventDefault();
           for (let i = options.length - 1; i >= 0; i--) {
@@ -211,14 +186,14 @@ export function Select({
           }
           break;
         }
-        case 'Escape': {
+        case "Escape": {
           if (open) {
             e.preventDefault();
             closeDropdown();
           }
           break;
         }
-        case 'Tab': {
+        case "Tab": {
           if (open) closeDropdown();
           break;
         }
@@ -233,11 +208,11 @@ export function Select({
 
   const wrapperStyle: React.CSSProperties = useMemo(
     () => ({
-      position: 'relative',
-      display: 'flex',
-      flexDirection: 'column',
+      position: "relative",
+      display: "flex",
+      flexDirection: "column",
       gap: spacing.xs,
-      width: '100%',
+      width: "100%",
     }),
     [],
   );
@@ -256,44 +231,29 @@ export function Select({
 
   const triggerStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
       gap: spacing.sm,
-      width: '100%',
-      minHeight: '40px',
+      width: "100%",
+      minHeight: "40px",
       padding: `${spacing.sm} ${spacing.md}`,
-      backgroundColor: error
-        ? colors.state.errorMuted
-        : 'rgba(255, 255, 255, 0.04)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      border: `1px solid ${
-        error
-          ? colors.state.error
-          : open
-            ? colors.border.accent
-            : colors.border.default
-      }`,
+      backgroundColor: error ? colors.state.errorMuted : "rgba(255, 255, 255, 0.04)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: `1px solid ${error ? colors.state.error : open ? colors.border.accent : colors.border.default}`,
       borderRadius: borderRadius.md,
-      boxShadow: open
-        ? error
-          ? shadows.glowError
-          : shadows.glowPrimary
-        : shadows.inner,
+      boxShadow: open ? (error ? shadows.glowError : shadows.glowPrimary) : shadows.inner,
       color: selectedOption ? colors.text.primary : colors.text.tertiary,
       fontFamily: typography.fontFamily.sans,
       fontSize: typography.fontSize.md,
       fontWeight: typography.fontWeight.regular,
       lineHeight: typography.lineHeight.normal,
       letterSpacing: typography.letterSpacing.normal,
-      cursor: disabled ? 'not-allowed' : 'pointer',
+      cursor: disabled ? "not-allowed" : "pointer",
       opacity: disabled ? 0.5 : 1,
-      outline: 'none',
-      transition: [
-        transitions.preset.border,
-        transitions.preset.shadow,
-      ].join(', '),
+      outline: "none",
+      transition: [transitions.preset.border, transitions.preset.shadow].join(", "),
     }),
     [error, open, selectedOption, disabled],
   );
@@ -301,19 +261,19 @@ export function Select({
   const valueStyle: React.CSSProperties = useMemo(
     () => ({
       flex: 1,
-      textAlign: 'left' as const,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
+      textAlign: "left" as const,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
     }),
     [],
   );
 
   const chevronStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       color: open ? colors.accent.primary : colors.text.tertiary,
       transition: transitions.preset.color,
     }),
@@ -322,24 +282,24 @@ export function Select({
 
   const dropdownStyle: React.CSSProperties = useMemo(
     () => ({
-      position: 'absolute',
-      top: '100%',
+      position: "absolute",
+      top: "100%",
       left: 0,
       right: 0,
       marginTop: spacing.xs,
-      maxHeight: '240px',
-      overflowY: 'auto',
+      maxHeight: "240px",
+      overflowY: "auto",
       padding: spacing.xs,
       backgroundColor: colors.bg.elevated,
-      backdropFilter: 'blur(24px)',
-      WebkitBackdropFilter: 'blur(24px)',
+      backdropFilter: "blur(24px)",
+      WebkitBackdropFilter: "blur(24px)",
       border: `1px solid ${colors.border.default}`,
       borderRadius: borderRadius.md,
       boxShadow: shadows.lg,
       zIndex: zIndex.dropdown,
-      listStyle: 'none',
+      listStyle: "none",
       margin: `${spacing.xs} 0 0 0`,
-      outline: 'none',
+      outline: "none",
     }),
     [],
   );
@@ -375,19 +335,13 @@ export function Select({
         aria-invalid={!!error}
         aria-label={label}
         aria-controls={open ? `${label}-listbox` : undefined}
-        aria-activedescendant={
-          open && focusedIndex >= 0
-            ? `${label}-option-${focusedIndex}`
-            : undefined
-        }
+        aria-activedescendant={open && focusedIndex >= 0 ? `${label}-option-${focusedIndex}` : undefined}
         disabled={disabled}
         onClick={() => (open ? closeDropdown() : openDropdown())}
         onKeyDown={handleKeyDown}
         style={triggerStyle}
       >
-        <span style={valueStyle}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
+        <span style={valueStyle}>{selectedOption ? selectedOption.label : placeholder}</span>
         <span style={chevronStyle}>
           <ChevronIcon open={open} />
         </span>
@@ -395,46 +349,34 @@ export function Select({
 
       {/* Dropdown list */}
       {open && (
-        <ul
-          ref={listRef}
-          id={`${label}-listbox`}
-          role="listbox"
-          aria-label={label}
-          style={dropdownStyle}
-        >
+        <ul ref={listRef} id={`${label}-listbox`} role="listbox" aria-label={label} style={dropdownStyle}>
           {options.map((opt, idx) => {
             const isSelected = opt.value === value;
             const isFocused = idx === focusedIndex;
             const isDisabled = !!opt.disabled;
 
             const optionStyle: React.CSSProperties = {
-              display: 'flex',
-              alignItems: 'center',
+              display: "flex",
+              alignItems: "center",
               gap: spacing.sm,
               padding: `${spacing.sm} ${spacing.md}`,
               borderRadius: borderRadius.sm,
               fontSize: typography.fontSize.md,
               fontFamily: typography.fontFamily.sans,
-              fontWeight: isSelected
-                ? typography.fontWeight.medium
-                : typography.fontWeight.regular,
-              color: isDisabled
-                ? colors.text.disabled
-                : isSelected
-                  ? colors.text.primary
-                  : colors.text.secondary,
+              fontWeight: isSelected ? typography.fontWeight.medium : typography.fontWeight.regular,
+              color: isDisabled ? colors.text.disabled : isSelected ? colors.text.primary : colors.text.secondary,
               backgroundColor: isFocused
-                ? 'rgba(255, 255, 255, 0.08)'
+                ? "rgba(255, 255, 255, 0.08)"
                 : isSelected
-                  ? 'rgba(81, 81, 205, 0.12)'
-                  : 'transparent',
-              cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  ? "rgba(81, 81, 205, 0.12)"
+                  : "transparent",
+              cursor: isDisabled ? "not-allowed" : "pointer",
               opacity: isDisabled ? 0.4 : 1,
               transition: transitions.preset.bg,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              userSelect: 'none',
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              userSelect: "none",
               lineHeight: typography.lineHeight.normal,
             };
 

@@ -21,10 +21,10 @@
  */
 
 // Physical constants
-const R = 8.314;        // J/(mol·K) — Gas constant
-const k_B = 1.381e-23;  // J/K — Boltzmann constant
-const h = 6.626e-34;    // J·s — Planck constant
-const N_A = 6.022e23;   // 1/mol — Avogadro's number
+const R = 8.314; // J/(mol·K) — Gas constant
+const k_B = 1.381e-23; // J/K — Boltzmann constant
+const h = 6.626e-34; // J·s — Planck constant
+const N_A = 6.022e23; // 1/mol — Avogadro's number
 
 /**
  * Calculate rate constant using Eyring equation.
@@ -53,12 +53,7 @@ export function eyringRateConstant(deltaG_ddagger: number, temperature: number):
  * @param km - Michaelis constant (mM)
  * @returns Reaction rate (mM/s)
  */
-export function michaelisMentenRate(
-  kcat: number,
-  enzymeConc: number,
-  substrate: number,
-  km: number
-): number {
+export function michaelisMentenRate(kcat: number, enzymeConc: number, substrate: number, km: number): number {
   if (km + substrate === 0) return 0;
   return (kcat * enzymeConc * substrate) / (km + substrate);
 }
@@ -114,17 +109,12 @@ export function inverseEyring(rateConstant: number, temperature: number): number
  * @param Ea - Activation energy (kJ/mol)
  * @returns Rate constant at T2 (1/s)
  */
-export function arrheniusCorrection(
-  k1: number,
-  T1: number,
-  T2: number,
-  Ea: number
-): number {
+export function arrheniusCorrection(k1: number, T1: number, T2: number, Ea: number): number {
   // Convert kJ/mol to J/mol
   const Ea_J = Ea * 1000;
 
   // k(T2) = k(T1) × exp[(Ea/R) × (1/T1 - 1/T2)]
-  const exponent = (Ea_J / R) * (1/T1 - 1/T2);
+  const exponent = (Ea_J / R) * (1 / T1 - 1 / T2);
   return k1 * Math.exp(exponent);
 }
 
@@ -139,12 +129,7 @@ export function arrheniusCorrection(
  * @param width - Bell curve width (default 2.0)
  * @returns Activity at given pH
  */
-export function phCorrection(
-  activity: number,
-  pH: number,
-  pH_opt: number,
-  width: number = 2.0
-): number {
+export function phCorrection(activity: number, pH: number, pH_opt: number, width: number = 2.0): number {
   const delta = pH - pH_opt;
   return activity * Math.exp(-(delta * delta) / (2 * width * width));
 }
@@ -165,18 +150,18 @@ export function temperatureCorrection(
   activity: number,
   T: number,
   T_opt: number,
-  Ea: number = 50,  // kJ/mol — typical for catalysis
-  Ed: number = 200  // kJ/mol — typical for denaturation
+  Ea: number = 50, // kJ/mol — typical for catalysis
+  Ed: number = 200, // kJ/mol — typical for denaturation
 ): number {
   // Catalytic rate increases with temperature
-  const k_cat = Math.exp(-Ea * 1000 / (R * T));
+  const k_cat = Math.exp((-Ea * 1000) / (R * T));
 
   // Denaturation increases rapidly at high temperature
-  const k_den = Math.exp(-Ed * 1000 / (R * T));
+  const k_den = Math.exp((-Ed * 1000) / (R * T));
 
   // Net activity is product of catalysis and stability
-  const k_cat_opt = Math.exp(-Ea * 1000 / (R * T_opt));
-  const k_den_opt = Math.exp(-Ed * 1000 / (R * T_opt));
+  const k_cat_opt = Math.exp((-Ea * 1000) / (R * T_opt));
+  const k_den_opt = Math.exp((-Ed * 1000) / (R * T_opt));
 
   return activity * (k_cat / k_cat_opt) * (k_den_opt / k_den);
 }
@@ -188,28 +173,28 @@ export function temperatureCorrection(
  * @returns Complete kinetics result
  */
 export function calculateEnzymeKinetics(params: {
-  kcat?: number;        // 1/s — from BRENDA
-  km?: number;          // mM — from BRENDA
-  ki?: number;          // mM — from BRENDA
-  enzymeConc: number;   // M
-  substrate: number;    // mM
-  inhibitor?: number;   // mM
+  kcat?: number; // 1/s — from BRENDA
+  km?: number; // mM — from BRENDA
+  ki?: number; // mM — from BRENDA
+  enzymeConc: number; // M
+  substrate: number; // mM
+  inhibitor?: number; // mM
   temperature?: number; // K (default 298.15)
-  pH?: number;          // (default 7.0)
-  pH_opt?: number;      // from BRENDA
-  T_opt?: number;       // K — from BRENDA
+  pH?: number; // (default 7.0)
+  pH_opt?: number; // from BRENDA
+  T_opt?: number; // K — from BRENDA
 }): {
-  rate: number;           // mM/s
-  vmax: number;           // mM/s
-  kcat_eff: number;       // 1/s — effective kcat after corrections
-  km_eff: number;         // mM — effective Km after inhibition
-  inhibition: number;     // Fraction of inhibition (0-1)
+  rate: number; // mM/s
+  vmax: number; // mM/s
+  kcat_eff: number; // 1/s — effective kcat after corrections
+  km_eff: number; // mM — effective Km after inhibition
+  inhibition: number; // Fraction of inhibition (0-1)
   source: string;
 } {
   const {
-    kcat = 10,           // Default kcat if not from BRENDA
-    km = 1,              // Default Km if not from BRENDA
-    ki,                  // Inhibition constant
+    kcat = 10, // Default kcat if not from BRENDA
+    km = 1, // Default Km if not from BRENDA
+    ki, // Inhibition constant
     enzymeConc,
     substrate,
     inhibitor = 0,
@@ -249,11 +234,9 @@ export function calculateEnzymeKinetics(params: {
 
   // Build source label — flag when estimated defaults are used
   const defaultParts: string[] = [];
-  if (usedDefaultKcat) defaultParts.push('kcat=10 s⁻¹');
-  if (usedDefaultKm) defaultParts.push('Km=1 mM');
-  const defaultLabel = defaultParts.length > 0
-    ? ` (estimated default: ${defaultParts.join(', ')})`
-    : '';
+  if (usedDefaultKcat) defaultParts.push("kcat=10 s⁻¹");
+  if (usedDefaultKm) defaultParts.push("Km=1 mM");
+  const defaultLabel = defaultParts.length > 0 ? ` (estimated default: ${defaultParts.join(", ")})` : "";
 
   return {
     rate,
@@ -261,7 +244,7 @@ export function calculateEnzymeKinetics(params: {
     kcat_eff: kcat_ph_corrected,
     km_eff: km_effective,
     inhibition,
-    source: (ki ? 'BRENDA + Eyring' : 'BRENDA') + defaultLabel,
+    source: (ki ? "BRENDA + Eyring" : "BRENDA") + defaultLabel,
   };
 }
 
@@ -295,5 +278,5 @@ export function formatKineticsResult(result: ReturnType<typeof calculateEnzymeKi
 
   lines.push(`Source: ${result.source}`);
 
-  return lines.join('\n');
+  return lines.join("\n");
 }

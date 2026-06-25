@@ -51,7 +51,7 @@ export interface PathwayPrediction {
   predictedYield: number;
   predictedRate: number;
   bottleneckEnzyme: string;
-  bottleneckType: 'expression' | 'activity' | 'substrate' | 'cofactor';
+  bottleneckType: "expression" | "activity" | "substrate" | "cofactor";
   confidence: number;
   featureImportance: Record<string, number>;
 }
@@ -86,9 +86,9 @@ export function extractEnzymeFeatures(sequence: string): EnzymeFeatures {
 
   // Amino acid composition
   const aminoAcidComposition: Record<string, number> = {};
-  const aminoAcids = 'ACDEFGHIKLMNPQRSTVWY';
+  const aminoAcids = "ACDEFGHIKLMNPQRSTVWY";
   for (const aa of aminoAcids) {
-    aminoAcidComposition[aa] = (seq.match(new RegExp(aa, 'g')) || []).length / length;
+    aminoAcidComposition[aa] = (seq.match(new RegExp(aa, "g")) || []).length / length;
   }
 
   // Dipeptide frequency
@@ -96,7 +96,7 @@ export function extractEnzymeFeatures(sequence: string): EnzymeFeatures {
   for (const aa1 of aminoAcids) {
     for (const aa2 of aminoAcids) {
       const dipeptide = aa1 + aa2;
-      const regex = new RegExp(dipeptide, 'g');
+      const regex = new RegExp(dipeptide, "g");
       dipeptideFrequency[dipeptide] = (seq.match(regex) || []).length / Math.max(1, length - 1);
     }
   }
@@ -104,11 +104,28 @@ export function extractEnzymeFeatures(sequence: string): EnzymeFeatures {
   // Molecular weight (approximate)
   // Reference: computed from standard amino acid residue weights
   const aaWeights: Record<string, number> = {
-    A: 89, C: 121, D: 133, E: 147, F: 165, G: 75, H: 155, I: 131,
-    K: 146, L: 131, M: 149, N: 132, P: 115, Q: 146, R: 174, S: 105,
-    T: 119, V: 117, W: 204, Y: 181,
+    A: 89,
+    C: 121,
+    D: 133,
+    E: 147,
+    F: 165,
+    G: 75,
+    H: 155,
+    I: 131,
+    K: 146,
+    L: 131,
+    M: 149,
+    N: 132,
+    P: 115,
+    Q: 146,
+    R: 174,
+    S: 105,
+    T: 119,
+    V: 117,
+    W: 204,
+    Y: 181,
   };
-  const molecularWeight = seq.split('').reduce((sum, aa) => sum + (aaWeights[aa] || 110), 0);
+  const molecularWeight = seq.split("").reduce((sum, aa) => sum + (aaWeights[aa] || 110), 0);
 
   // GC content (from DNA perspective — approximate from amino acid usage)
   const gcContent = aminoAcidComposition.G + aminoAcidComposition.A + aminoAcidComposition.P + aminoAcidComposition.R;
@@ -116,7 +133,7 @@ export function extractEnzymeFeatures(sequence: string): EnzymeFeatures {
   // Predicted stability (estimated from proline content and disulfide bonds)
   const prolineContent = aminoAcidComposition.P || 0;
   const cysteineContent = aminoAcidComposition.C || 0;
-  const predictedStability = Math.min(1, 0.5 + 0.3 * prolineContent + 0.2 * cysteineContent / 2);
+  const predictedStability = Math.min(1, 0.5 + 0.3 * prolineContent + (0.2 * cysteineContent) / 2);
 
   return {
     sequence,
@@ -167,7 +184,7 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
   // EC 1: Oxidoreductases — Rossmann fold (GXGXXG) is the classic signature
   // Reference: Rao & Rossmann (1973) J Mol Biol 76:241-256
   {
-    ecClass: '1.-.-.-',
+    ecClass: "1.-.-.-",
     motif: /G[A-Z]G[A-Z]{2}G/,
     compositionBias: { G: 0.08 }, // high glycine content
     weight: 1.0,
@@ -175,7 +192,7 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
   // EC 2: Transferases — ATP-binding P-loop (GxxxxGK[S/T])
   // Reference: Saraste et al. (1990) Trends Biochem Sci 15:430-434
   {
-    ecClass: '2.-.-.-',
+    ecClass: "2.-.-.-",
     motif: /G[A-Z]{4}GK[ST]/,
     compositionBias: { K: 0.06 }, // lysine-rich for substrate binding
     weight: 1.0,
@@ -183,7 +200,7 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
   // EC 3: Hydrolases — Serine hydrolase (GxSxG) and catalytic triad
   // Reference: Ollis et al. (1992) Protein Eng 5:197-211
   {
-    ecClass: '3.-.-.-',
+    ecClass: "3.-.-.-",
     motif: /G[A-Z]S[A-Z]G/,
     compositionBias: { S: 0.07, D: 0.06 }, // serine + aspartate for catalysis
     weight: 1.0,
@@ -191,7 +208,7 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
   // EC 4: Lyases — PLP-binding domain (lysine + glycine-rich)
   // Reference: Schneider et al. (2000) EMBO J 19:5881-5892
   {
-    ecClass: '4.-.-.-',
+    ecClass: "4.-.-.-",
     motif: /K[A-Z]{2,4}G/,
     compositionBias: { K: 0.07, G: 0.08 },
     weight: 0.8,
@@ -199,7 +216,7 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
   // EC 5: Isomerases — diverse class, proline isomerase signature
   // Reference: Schmid (1993) Mol Microbiol 10:417-422
   {
-    ecClass: '5.-.-.-',
+    ecClass: "5.-.-.-",
     motif: /F[A-Z]{1,3}G[A-Z]{1,2}P/,
     compositionBias: { P: 0.06, G: 0.07 },
     weight: 0.7,
@@ -207,7 +224,7 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
   // EC 6: Ligases — ATP-grasp domain (GxxxxGK + D/E rich)
   // Reference: Galperin & Koonin (1997) Protein Sci 6:2639-2643
   {
-    ecClass: '6.-.-.-',
+    ecClass: "6.-.-.-",
     motif: /G[A-Z]{3}GK/,
     compositionBias: { D: 0.07, E: 0.07 }, // acidic residues for ATP coordination
     weight: 0.9,
@@ -215,9 +232,9 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
   // EC 7: Translocases — membrane-spanning hydrophobic segments
   // Reference: Saier (2000) Microbiol Mol Biol Rev 64:354-411
   {
-    ecClass: '7.-.-.-',
-    motif: /[LIVMFA]{3,}/,  // hydrophobic stretch (transmembrane helix)
-    compositionBias: { L: 0.10, I: 0.07, V: 0.07 }, // hydrophobic-rich
+    ecClass: "7.-.-.-",
+    motif: /[LIVMFA]{3,}/, // hydrophobic stretch (transmembrane helix)
+    compositionBias: { L: 0.1, I: 0.07, V: 0.07 }, // hydrophobic-rich
     weight: 0.6,
   },
 ];
@@ -237,12 +254,12 @@ const ENZYME_SIGNATURES: EnzymeSignature[] = [
  * Reference: PROSITE database (Sigrist et al. 2013 Nucleic Acids Res 41:D344)
  * Reference: Ma et al. (2020) Nat Mach Intell 2:236-245 (ESM-2 integration)
  */
-export async function predictEnzymeFunction(sequence: string): Promise<MLPrediction['enzymeFunction']> {
+export async function predictEnzymeFunction(sequence: string): Promise<MLPrediction["enzymeFunction"]> {
   // Try ESM-2 API first (real ML inference)
   try {
-    const response = await fetch('/api/esm2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/esm2", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sequence }),
       signal: AbortSignal.timeout(15000),
     });
@@ -250,16 +267,18 @@ export async function predictEnzymeFunction(sequence: string): Promise<MLPredict
     const data = await response.json();
     if (data.ok && data.embeddings) {
       // Use ESM-2 embeddings for prediction
-      const pooled = data.embeddings.reduce(
-        (acc: number[], emb: number[]) => acc.map((v, i) => v + (emb[i] || 0)),
-        new Array(data.embeddings[0]?.length || 20).fill(0),
-      ).map((v: number) => v / data.embeddings.length);
+      const pooled = data.embeddings
+        .reduce(
+          (acc: number[], emb: number[]) => acc.map((v, i) => v + (emb[i] || 0)),
+          new Array(data.embeddings[0]?.length || 20).fill(0),
+        )
+        .map((v: number) => v / data.embeddings.length);
 
       // Map embedding statistics to EC classes
       const meanAct = pooled.reduce((s: number, v: number) => s + v, 0) / pooled.length;
       const variance = pooled.reduce((s: number, v: number) => s + (v - meanAct) ** 2, 0) / pooled.length;
 
-      const ecClasses = ['1.-.-.-', '2.-.-.-', '3.-.-.-', '4.-.-.-', '5.-.-.-', '6.-.-.-', '7.-.-.-'];
+      const ecClasses = ["1.-.-.-", "2.-.-.-", "3.-.-.-", "4.-.-.-", "5.-.-.-", "6.-.-.-", "7.-.-.-"];
       // Deterministic mapping from embedding mean to EC class index
       const idx = Math.abs(Math.round(meanAct * 10)) % ecClasses.length;
       const confidence = Math.min(0.95, 0.6 + variance * 10);
@@ -276,7 +295,11 @@ export async function predictEnzymeFunction(sequence: string): Promise<MLPredict
         alternativeECs,
       };
     }
-  } catch (e) { console.warn('[mlMetabolic] ESM-2 unavailable, falling back to rule-based classification:', e instanceof Error ? e.message : e);
+  } catch (e) {
+    console.warn(
+      "[mlMetabolic] ESM-2 unavailable, falling back to rule-based classification:",
+      e instanceof Error ? e.message : e,
+    );
     // API unavailable — fall back to rule-based
   }
 
@@ -313,18 +336,12 @@ export async function predictEnzymeFunction(sequence: string): Promise<MLPredict
   const totalScore = scores.reduce((s, x) => s + Math.max(0, x.score), 0);
 
   // Normalize to confidence
-  const confidence = totalScore > 0
-    ? Math.min(0.95, Math.max(0.1, topScore.score / totalScore))
-    : 0.1;
+  const confidence = totalScore > 0 ? Math.min(0.95, Math.max(0.1, topScore.score / totalScore)) : 0.1;
 
-  const alternativeECs = scores
-    .slice(1, 4)
-    .map(s => ({
-      ec: s.ec,
-      confidence: totalScore > 0
-        ? Math.round(Math.max(0.05, s.score / totalScore) * 100) / 100
-        : 0.05,
-    }));
+  const alternativeECs = scores.slice(1, 4).map((s) => ({
+    ec: s.ec,
+    confidence: totalScore > 0 ? Math.round(Math.max(0.05, s.score / totalScore) * 100) / 100 : 0.05,
+  }));
 
   return {
     predictedEC: topScore.ec,
@@ -361,17 +378,17 @@ export async function predictEnzymeFunction(sequence: string): Promise<MLPredict
 export function predictFluxes(
   geneExpressions: Record<string, number>,
   reactions: string[],
-): MLPrediction['fluxPrediction'] {
+): MLPrediction["fluxPrediction"] {
   const geneNames = Object.keys(geneExpressions);
   const expressionValues = Object.values(geneExpressions);
 
   // Normalize expressions to [0, 1] range for comparison
   const maxExpr = Math.max(...expressionValues, 1);
-  const normalized = expressionValues.map(v => v / maxExpr);
+  const normalized = expressionValues.map((v) => v / maxExpr);
 
   // Monod kinetics parameters for E. coli
   // Reference: Varma & Palsson (1994) Appl Environ Microbiol 60:3724
-  const KM = 0.5;         // mM (half-saturation constant, typical for glucose uptake)
+  const KM = 0.5; // mM (half-saturation constant, typical for glucose uptake)
   const VMAX_BASE = 10.0; // mmol/gDW/h (base vmax for glucose uptake)
 
   // Substrate concentration: use mean expression as proxy for available substrate
@@ -393,7 +410,7 @@ export function predictFluxes(
     const vmax = VMAX_BASE * geneExpr;
 
     // Monod equation: v = vmax · S / (Km + S)
-    const flux = vmax * substrateConc / (KM + substrateConc);
+    const flux = (vmax * substrateConc) / (KM + substrateConc);
 
     predictedFluxes[rxn] = Math.round(flux * 1000) / 1000;
 
@@ -425,11 +442,8 @@ export function predictFluxes(
  *   mATP = 7.6 mmol ATP / gDW / h (maintenance ATP requirement)
  *   P/O ratio = 1.5 (ATP per O atom in oxidative phosphorylation)
  */
-export function predictPathwayYield(
-  features: MetabolicFeatures,
-  pathwayEnzymes: string[],
-): PathwayPrediction {
-  const expressions = pathwayEnzymes.map(e => features.geneExpressions[e] || 0);
+export function predictPathwayYield(features: MetabolicFeatures, pathwayEnzymes: string[]): PathwayPrediction {
+  const expressions = pathwayEnzymes.map((e) => features.geneExpressions[e] || 0);
   const meanExpr = expressions.reduce((s, v) => s + v, 0) / expressions.length;
   const maxExpr = Math.max(...expressions, 1);
 
@@ -446,7 +460,7 @@ export function predictPathwayYield(
   // Reference: Varma & Palsson (1994) Appl Environ Microbiol 60:3724
   const O2_SATURATION = 0.21; // fraction of air that is O2
   const KL_A = 200; // h^-1, typical oxygen transfer coefficient
-  const O2_LIMIT = Math.min(1.0, KL_A * O2_SATURATION / (features.growthRate + 0.01));
+  const O2_LIMIT = Math.min(1.0, (KL_A * O2_SATURATION) / (features.growthRate + 0.01));
 
   // 3. Maintenance energy cost
   // Maintenance ATP requirement reduces available energy for product
@@ -459,7 +473,7 @@ export function predictPathwayYield(
   // The bottleneck enzyme limits the overall pathway flux
   // Reference: Kacser & Burns (1973) Symp Soc Exp Biol 27:65-104
   let bottleneckEnzyme = pathwayEnzymes[0];
-  let bottleneckType: PathwayPrediction['bottleneckType'] = 'expression';
+  let bottleneckType: PathwayPrediction["bottleneckType"] = "expression";
   let minExprRatio = 1.0;
 
   const featureImportance: Record<string, number> = {};
@@ -476,7 +490,7 @@ export function predictPathwayYield(
     if (exprRatio < minExprRatio) {
       minExprRatio = exprRatio;
       bottleneckEnzyme = enzyme;
-      bottleneckType = expr < 0.1 ? 'expression' : 'activity';
+      bottleneckType = expr < 0.1 ? "expression" : "activity";
     }
   }
 
@@ -487,8 +501,8 @@ export function predictPathwayYield(
   const predictedRate = predictedYield * features.growthRate;
 
   // 7. Confidence: based on data completeness and expression levels
-  const exprCoverage = expressions.filter(e => e > 0).length / expressions.length;
-  const confidence = Math.min(0.95, 0.3 + 0.4 * exprCoverage + 0.2 * meanExpr / maxExpr);
+  const exprCoverage = expressions.filter((e) => e > 0).length / expressions.length;
+  const confidence = Math.min(0.95, 0.3 + 0.4 * exprCoverage + (0.2 * meanExpr) / maxExpr);
 
   return {
     predictedYield: Math.round(predictedYield * 1000) / 1000,

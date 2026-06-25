@@ -13,7 +13,7 @@
  *   ALGORITHM: Pearson correlation + bottleneck analysis + efficiency metrics
  */
 
-import type { FluxomicsInput, FluxomicsResult, FluxExpressionCorrelation, BottleneckReaction } from './types';
+import type { BottleneckReaction, FluxExpressionCorrelation, FluxomicsInput, FluxomicsResult } from "./types";
 
 // ── Correlation Analysis ───────────────────────────────────────────────────
 
@@ -29,7 +29,9 @@ function pearsonCorrelation(x: number[], y: number[]): { r: number; pValue: numb
   const xMean = x.reduce((s, v) => s + v, 0) / n;
   const yMean = y.reduce((s, v) => s + v, 0) / n;
 
-  let ssXY = 0, ssXX = 0, ssYY = 0;
+  let ssXY = 0,
+    ssXX = 0,
+    ssYY = 0;
   for (let i = 0; i < n; i++) {
     ssXY += (x[i] - xMean) * (y[i] - yMean);
     ssXX += (x[i] - xMean) ** 2;
@@ -61,8 +63,12 @@ function normalCDF(x: number): number {
 }
 
 function erf(x: number): number {
-  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
-  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const a1 = 0.254829592,
+    a2 = -0.284496736,
+    a3 = 1.421413741;
+  const a4 = -1.453152027,
+    a5 = 1.061405429,
+    p = 0.3275911;
   const sign = x < 0 ? -1 : 1;
   const absX = Math.abs(x);
   const t = 1 / (1 + p * absX);
@@ -74,7 +80,7 @@ function betaRegularized(a: number, b: number, x: number): number {
   if (x <= 0) return 0;
   if (x >= 1) return 1;
   // Use approximation for small x
-  return Math.pow(x, a) * Math.pow(1 - x, b) / (a * betaFunction(a, b));
+  return (x ** a * (1 - x) ** b) / (a * betaFunction(a, b));
 }
 
 function betaFunction(a: number, b: number): number {
@@ -86,13 +92,14 @@ function gammaFunction(z: number): number {
   if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gammaFunction(1 - z));
   z -= 1;
   const g = 7;
-  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
-    771.32342877765313, -176.61502916214059, 12.507343278686905,
-    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+    12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+  ];
   let x = c[0];
   for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
   const t = z + g + 0.5;
-  return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+  return Math.sqrt(2 * Math.PI) * t ** (z + 0.5) * Math.exp(-t) * x;
 }
 
 // ── Bottleneck Analysis ────────────────────────────────────────────────────
@@ -107,10 +114,10 @@ function gammaFunction(z: number): number {
  * Reference: Stephanopoulos et al. (1998) Metabolic Engineering
  */
 function identifyBottlenecks(
-  fluxEstimates: FluxomicsInput['fluxEstimates'],
+  fluxEstimates: FluxomicsInput["fluxEstimates"],
   geneExpression?: Record<string, number>,
 ): BottleneckReaction[] {
-  return fluxEstimates.map(f => {
+  return fluxEstimates.map((f) => {
     // Estimate max capacity from flux level
     // Reactions near their max are bottlenecks
     const maxCapacity = f.flux > 0 ? f.flux / Math.max(0.1, f.confidence) : 1;
@@ -122,7 +129,7 @@ function identifyBottlenecks(
     // Bottleneck: high utilization AND low expression
     const isBottleneck = utilization > 0.8 && expressionLevel < 0.3;
 
-    let recommendation = '';
+    let recommendation = "";
     if (isBottleneck) {
       recommendation = `Overexpress ${f.reactionId} to relieve bottleneck (current utilization: ${(utilization * 100).toFixed(0)}%)`;
     } else if (utilization < 0.2) {
@@ -153,16 +160,14 @@ function identifyBottlenecks(
  * Reference: Stephanopoulos et al. (1998) Metabolic Engineering
  */
 function computeEfficiency(
-  fluxEstimates: FluxomicsInput['fluxEstimates'],
+  fluxEstimates: FluxomicsInput["fluxEstimates"],
   growthRate: number,
-): FluxomicsResult['efficiency'] {
+): FluxomicsResult["efficiency"] {
   // Simplified efficiency calculations
-  const totalInputFlux = fluxEstimates
-    .filter(f => f.flux > 0)
-    .reduce((s, f) => s + f.flux, 0);
+  const totalInputFlux = fluxEstimates.filter((f) => f.flux > 0).reduce((s, f) => s + f.flux, 0);
 
   const productFlux = fluxEstimates
-    .filter(f => f.reactionId.includes('product') || f.reactionId.includes('BIOMASS'))
+    .filter((f) => f.reactionId.includes("product") || f.reactionId.includes("BIOMASS"))
     .reduce((s, f) => s + f.flux, 0);
 
   const carbonEfficiency = totalInputFlux > 0 ? productFlux / totalInputFlux : 0;
@@ -214,8 +219,8 @@ export function analyzeFluxomics(input: FluxomicsInput): FluxomicsResult {
   // Design notes
   const designNotes: string[] = [
     `Analyzed ${input.fluxEstimates.length} flux estimates`,
-    `Correlations: ${correlations.length} computed, ${correlations.filter(c => c.significant).length} significant`,
-    `Bottlenecks: ${bottlenecks.filter(b => b.isBottleneck).length} identified`,
+    `Correlations: ${correlations.length} computed, ${correlations.filter((c) => c.significant).length} significant`,
+    `Bottlenecks: ${bottlenecks.filter((b) => b.isBottleneck).length} identified`,
     `Carbon efficiency: ${(efficiency.carbonEfficiency * 100).toFixed(0)}%`,
   ];
 

@@ -27,30 +27,30 @@
 export interface Metabolite {
   id: string;
   name: string;
-  nCarbon: number;  // number of carbon atoms
-  pool?: number;    // pool size (arbitrary units)
+  nCarbon: number; // number of carbon atoms
+  pool?: number; // pool size (arbitrary units)
 }
 
 export interface Reaction {
   id: string;
   substrates: Array<{ metabolite: string; stoichiometry: number }>;
   products: Array<{ metabolite: string; stoichiometry: number }>;
-  atomMapping?: Record<string, string[]>;  // substrate atom → product atoms
+  atomMapping?: Record<string, string[]>; // substrate atom → product atoms
   reversible?: boolean;
 }
 
 export interface MFAInput {
   metabolites: Metabolite[];
   reactions: Reaction[];
-  labelSubstrate: string;       // which substrate is labeled (e.g., 'glucose')
-  labelPattern: number[];       // which carbons are 13C (0-indexed)
-  measuredMIDs?: Record<string, number[]>;  // metabolite → measured MID
-  objectiveReaction?: string;   // reaction to maximize (e.g., 'BIOMASS')
+  labelSubstrate: string; // which substrate is labeled (e.g., 'glucose')
+  labelPattern: number[]; // which carbons are 13C (0-indexed)
+  measuredMIDs?: Record<string, number[]>; // metabolite → measured MID
+  objectiveReaction?: string; // reaction to maximize (e.g., 'BIOMASS')
 }
 
 export interface MIDResult {
   metabolite: string;
-  mid: number[];                // mass isotopomer distribution
+  mid: number[]; // mass isotopomer distribution
   nCarbon: number;
   simulated: boolean;
 }
@@ -58,15 +58,15 @@ export interface MIDResult {
 export interface FluxEstimate {
   reactionId: string;
   flux: number;
-  confidence: number;           // 0-1
-  direction: 'forward' | 'reverse' | 'bidirectional';
+  confidence: number; // 0-1
+  direction: "forward" | "reverse" | "bidirectional";
 }
 
 export interface MFAResult {
   fluxEstimates: FluxEstimate[];
   mids: MIDResult[];
   objectiveFlux: number;
-  fitQuality: number;           // chi-squared goodness of fit
+  fitQuality: number; // chi-squared goodness of fit
   nIterations: number;
   converged: boolean;
 }
@@ -90,7 +90,7 @@ function decomposeEMU(metabolite: Metabolite): Array<{
     const combinations = generateCombinations(metabolite.nCarbon, size);
     for (const atoms of combinations) {
       emus.push({
-        id: `${metabolite.id}_${atoms.join(',')}`,
+        id: `${metabolite.id}_${atoms.join(",")}`,
         atoms,
         size,
       });
@@ -131,14 +131,14 @@ function generateCombinations(n: number, k: number): number[][] {
  */
 function simulateMID(
   nCarbon: number,
-  labelFraction: number,  // fraction of 13C in precursor
+  labelFraction: number, // fraction of 13C in precursor
 ): number[] {
   const mid: number[] = new Array(nCarbon + 1).fill(0);
 
   // Binomial distribution: P(k labeled out of n) = C(n,k) * p^k * (1-p)^(n-k)
   for (let k = 0; k <= nCarbon; k++) {
     const binomCoeff = binomial(nCarbon, k);
-    const prob = binomCoeff * Math.pow(labelFraction, k) * Math.pow(1 - labelFraction, nCarbon - k);
+    const prob = binomCoeff * labelFraction ** k * (1 - labelFraction) ** (nCarbon - k);
     mid[k] = Math.round(prob * 10000) / 10000;
   }
 
@@ -150,7 +150,7 @@ function binomial(n: number, k: number): number {
   if (k === 0 || k === n) return 1;
   let result = 1;
   for (let i = 0; i < k; i++) {
-    result = result * (n - i) / (i + 1);
+    result = (result * (n - i)) / (i + 1);
   }
   return Math.round(result);
 }
@@ -166,7 +166,7 @@ function simulateReactionMID(
   nCarbon: number,
 ): number[] {
   // Find which substrate contributes to this product
-  const productEntry = reaction.products.find(p => p.metabolite === metaboliteId);
+  const productEntry = reaction.products.find((p) => p.metabolite === metaboliteId);
   if (!productEntry) return new Array(nCarbon + 1).fill(0);
 
   // Simple case: direct transfer from one substrate
@@ -406,14 +406,14 @@ function estimateFluxes(
   const bestFitQuality = r.length > 0 ? currentChi2 / r.length : Infinity;
 
   // Compute objective flux
-  const objectiveIdx = input.reactions.findIndex(rxn => rxn.id === input.objectiveReaction);
+  const objectiveIdx = input.reactions.findIndex((rxn) => rxn.id === input.objectiveReaction);
   const bestObjective = objectiveIdx >= 0 ? v[objectiveIdx] : 0;
 
   const fluxEstimates: FluxEstimate[] = input.reactions.map((rxn, idx) => ({
     reactionId: rxn.id,
     flux: Math.round(v[idx] * 1000) / 1000,
     confidence: Math.max(0, 1 - bestFitQuality),
-    direction: v[idx] > 0.01 ? 'forward' : v[idx] < -0.01 ? 'reverse' : 'bidirectional',
+    direction: v[idx] > 0.01 ? "forward" : v[idx] < -0.01 ? "reverse" : "bidirectional",
   }));
 
   return { fluxEstimates, bestObjective, bestFitQuality: Math.round(bestFitQuality * 10000) / 10000, nIterations };
@@ -457,14 +457,11 @@ function solveLinearSystem(A: number[][], b: number[]): number[] | null {
   return x;
 }
 
-function simulateNetworkMIDs(
-  input: MFAInput,
-  fluxes: number[],
-): Record<string, number[]> {
+function simulateNetworkMIDs(input: MFAInput, fluxes: number[]): Record<string, number[]> {
   const mids: Record<string, number[]> = {};
 
   // Initialize label substrate
-  const labelMet = input.metabolites.find(m => m.id === input.labelSubstrate);
+  const labelMet = input.metabolites.find((m) => m.id === input.labelSubstrate);
   if (labelMet) {
     const labelFraction = input.labelPattern.length / labelMet.nCarbon;
     mids[labelMet.id] = simulateMID(labelMet.nCarbon, labelFraction);
@@ -479,7 +476,7 @@ function simulateNetworkMIDs(
 
     for (const reaction of input.reactions) {
       for (const product of reaction.products) {
-        const met = input.metabolites.find(m => m.id === product.metabolite);
+        const met = input.metabolites.find((m) => m.id === product.metabolite);
         if (met) {
           const newMID = simulateReactionMID(reaction, mids, product.metabolite, met.nCarbon);
           mids[product.metabolite] = newMID;
@@ -534,20 +531,20 @@ export function run13CMFA(input: MFAInput): MFAResult {
     objectiveFlux = result.bestObjective;
     fitQuality = result.bestFitQuality;
     nIterations = result.nIterations;
-    converged = fitQuality < 1.0;  // χ²/dof < 1.0 indicates good fit — Bevington & Robinson (2003)
+    converged = fitQuality < 1.0; // χ²/dof < 1.0 indicates good fit — Bevington & Robinson (2003)
   } else {
     // No measured data — return simulated MIDs only
-    fluxEstimates = input.reactions.map(r => ({
+    fluxEstimates = input.reactions.map((r) => ({
       reactionId: r.id,
       flux: 1.0,
       confidence: 0,
-      direction: 'forward' as const,
+      direction: "forward" as const,
     }));
     converged = false;
   }
 
   // Step 3: Format MID results
-  const mids: MIDResult[] = input.metabolites.map(met => ({
+  const mids: MIDResult[] = input.metabolites.map((met) => ({
     metabolite: met.id,
     mid: simulatedMIDs[met.id] ?? new Array(met.nCarbon + 1).fill(0),
     nCarbon: met.nCarbon,
@@ -593,7 +590,7 @@ export function monteCarloConfidenceIntervals(
     // Perturb measured MIDs with Gaussian noise
     const perturbedMIDs: Record<string, number[]> = {};
     for (const [metId, mid] of Object.entries(input.measuredMIDs ?? {})) {
-      perturbedMIDs[metId] = mid.map(m => {
+      perturbedMIDs[metId] = mid.map((m) => {
         // Box-Muller transform for Gaussian noise
         const u1 = Math.random() || 1e-10;
         const u2 = Math.random();
@@ -605,7 +602,7 @@ export function monteCarloConfidenceIntervals(
     // Re-estimate fluxes
     const perturbedInput = { ...input, measuredMIDs: perturbedMIDs };
     const result = estimateFluxes(perturbedInput, perturbedMIDs);
-    allFluxes.push(result.fluxEstimates.map(f => f.flux));
+    allFluxes.push(result.fluxEstimates.map((f) => f.flux));
   }
 
   // Compute statistics
@@ -614,7 +611,7 @@ export function monteCarloConfidenceIntervals(
   const fluxCIs: Array<[number, number]> = [];
 
   for (let j = 0; j < nReactions; j++) {
-    const values = allFluxes.map(f => f[j]).sort((a, b) => a - b);
+    const values = allFluxes.map((f) => f[j]).sort((a, b) => a - b);
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
     const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
 

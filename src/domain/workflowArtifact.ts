@@ -1,27 +1,27 @@
-import type { PathwayEdge, PathwayNode } from '../types';
-import { sanitizeNodeId } from '../types';
+import type { PathwayEdge, PathwayNode } from "../types";
+import { sanitizeNodeId } from "../types";
 
-export type WorkflowArtifactStatus = 'draft' | 'compiled' | 'error';
-export type ProductSourcePage = 'research' | 'analyze' | 'pathd';
-export type ScientificStage = 'design' | 'simulate-optimize' | 'engineer-host' | 'test-learn';
+export type WorkflowArtifactStatus = "draft" | "compiled" | "error";
+export type ProductSourcePage = "research" | "analyze" | "pathd";
+export type ScientificStage = "design" | "simulate-optimize" | "engineer-host" | "test-learn";
 export type WorkflowNodeRole =
-  | 'metabolite'
-  | 'enzyme'
-  | 'gene'
-  | 'cofactor'
-  | 'intermediate'
-  | 'impurity'
-  | 'hypothesis';
+  | "metabolite"
+  | "enzyme"
+  | "gene"
+  | "cofactor"
+  | "intermediate"
+  | "impurity"
+  | "hypothesis";
 export type WorkflowEdgeRole =
-  | 'evidence-backed-transition'
-  | 'inferred-transition'
-  | 'catalysis'
-  | 'regulation'
-  | 'abstraction';
+  | "evidence-backed-transition"
+  | "inferred-transition"
+  | "catalysis"
+  | "regulation"
+  | "abstraction";
 
 export interface WorkflowEvidencePacket {
   id: string;
-  sourceKind?: 'literature' | 'analysis' | 'tool' | 'system';
+  sourceKind?: "literature" | "analysis" | "tool" | "system";
   title: string;
   abstract: string;
   authors: string[];
@@ -69,7 +69,7 @@ export interface WorkflowArtifact {
   } | null;
   candidateRoutes: WorkflowCandidateRoute[];
   provenance: {
-    compiledFrom: 'literature-bundle' | 'manual-text' | 'pdf' | 'image' | 'url';
+    compiledFrom: "literature-bundle" | "manual-text" | "pdf" | "image" | "url";
     evidencePacketIds: string[];
     sourceProvider?: string | null;
   };
@@ -77,11 +77,11 @@ export interface WorkflowArtifact {
     scientificStage: ScientificStage;
   };
   thermodynamics?: {
-    status: 'placeholder';
+    status: "placeholder";
     concerns?: string[];
   };
   flux?: {
-    status: 'placeholder';
+    status: "placeholder";
     notes?: string[];
   };
   createdAt: number;
@@ -92,46 +92,53 @@ interface CompileWorkflowArtifactOptions {
   id?: string | null;
   previousArtifact?: WorkflowArtifact | null;
   sourcePage: ProductSourcePage;
-  intake: WorkflowArtifact['intake'];
+  intake: WorkflowArtifact["intake"];
   evidencePackets: WorkflowEvidencePacket[];
   nodes: PathwayNode[];
   edges: PathwayEdge[];
-  compiledFrom: WorkflowArtifact['provenance']['compiledFrom'];
+  compiledFrom: WorkflowArtifact["provenance"]["compiledFrom"];
   sourceProvider?: string | null;
 }
 
 const WORKFLOW_SCHEMA_VERSION = 1;
 
 function normalizeSignature(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_");
 }
 
 function inferNodeRole(node: PathwayNode): WorkflowNodeRole {
   switch (node.nodeType) {
-    case 'enzyme':
-      return 'enzyme';
-    case 'gene':
-      return 'gene';
-    case 'cofactor':
-      return 'cofactor';
-    case 'intermediate':
-      return 'intermediate';
-    case 'impurity':
-      return 'impurity';
-    case 'metabolite':
-      return 'metabolite';
+    case "enzyme":
+      return "enzyme";
+    case "gene":
+      return "gene";
+    case "cofactor":
+      return "cofactor";
+    case "intermediate":
+      return "intermediate";
+    case "impurity":
+      return "impurity";
+    case "metabolite":
+      return "metabolite";
     default:
-      return 'hypothesis';
+      return "hypothesis";
   }
 }
 
 function inferEdgeRole(edge: PathwayEdge): WorkflowEdgeRole {
-  if (edge.relationshipType === 'catalyzes') return 'catalysis';
-  if (edge.relationshipType === 'activates' || edge.relationshipType === 'inhibits' || edge.relationshipType === 'regulates') {
-    return 'regulation';
+  if (edge.relationshipType === "catalyzes") return "catalysis";
+  if (
+    edge.relationshipType === "activates" ||
+    edge.relationshipType === "inhibits" ||
+    edge.relationshipType === "regulates"
+  ) {
+    return "regulation";
   }
-  if (edge.relationshipType === 'unknown') return 'abstraction';
-  return edge.evidence ? 'evidence-backed-transition' : 'inferred-transition';
+  if (edge.relationshipType === "unknown") return "abstraction";
+  return edge.evidence ? "evidence-backed-transition" : "inferred-transition";
 }
 
 function makeNodeSignature(node: PathwayNode, role: WorkflowNodeRole) {
@@ -147,8 +154,8 @@ function buildPreviousNodeSignatureIndex(previousArtifact?: WorkflowArtifact | n
 }
 
 function makeUniqueNodeId(baseId: string, usedIds: Set<string>) {
-  let candidate = sanitizeNodeId(baseId || 'workflow_node');
-  if (!candidate) candidate = 'workflow_node';
+  let candidate = sanitizeNodeId(baseId || "workflow_node");
+  if (!candidate) candidate = "workflow_node";
   if (!usedIds.has(candidate)) {
     usedIds.add(candidate);
     return candidate;
@@ -184,10 +191,10 @@ function buildEdgeKey(edge: PathwayEdge, role: WorkflowEdgeRole) {
   return [
     role,
     sanitizeNodeId(edge.start),
-    edge.relationshipType ?? 'unknown',
+    edge.relationshipType ?? "unknown",
     sanitizeNodeId(edge.end),
-    edge.direction ?? 'forward',
-  ].join(':');
+    edge.direction ?? "forward",
+  ].join(":");
 }
 
 function buildStableEdges(edges: PathwayEdge[], nodeIdMap: Map<string, string>) {
@@ -202,18 +209,20 @@ function buildStableEdges(edges: PathwayEdge[], nodeIdMap: Map<string, string>) 
     if (seen.has(key)) return [];
     seen.add(key);
 
-    return [{
-      ...edge,
-      start: resolvedStart,
-      end: resolvedEnd,
-      key,
-      role,
-    } satisfies WorkflowArtifactEdge];
+    return [
+      {
+        ...edge,
+        start: resolvedStart,
+        end: resolvedEnd,
+        key,
+        role,
+      } satisfies WorkflowArtifactEdge,
+    ];
   });
 }
 
-function inferTargetMolecule(nodes: WorkflowArtifactNode[], intake: WorkflowArtifact['intake']) {
-  const preferred = [...nodes].reverse().find((node) => node.role !== 'enzyme' && node.role !== 'gene');
+function inferTargetMolecule(nodes: WorkflowArtifactNode[], intake: WorkflowArtifact["intake"]) {
+  const preferred = [...nodes].reverse().find((node) => node.role !== "enzyme" && node.role !== "gene");
   return intake.targetMolecule ?? preferred?.label ?? nodes[nodes.length - 1]?.label;
 }
 
@@ -224,25 +233,33 @@ function buildCandidateRoutes(
 ): WorkflowCandidateRoute[] {
   if (!nodes.length) return [];
   const routeLabel = targetMolecule
-    ? `${nodes[0]?.label ?? 'Source'} -> ${targetMolecule}`
-    : `${nodes[0]?.label ?? 'Source'} route`;
+    ? `${nodes[0]?.label ?? "Source"} -> ${targetMolecule}`
+    : `${nodes[0]?.label ?? "Source"} route`;
 
-  return [{
-    id: 'primary-route',
-    label: routeLabel,
-    nodeIds: nodes.map((node) => node.id),
-    edgeKeys: edges.map((edge) => edge.key),
-    rank: 1,
-  }];
+  return [
+    {
+      id: "primary-route",
+      label: routeLabel,
+      nodeIds: nodes.map((node) => node.id),
+      edgeKeys: edges.map((edge) => edge.key),
+      rank: 1,
+    },
+  ];
 }
 
 function buildThermodynamicPlaceholder(edges: WorkflowArtifactEdge[]) {
   const concerns = edges
-    .filter((edge) => (edge.predicted_delta_G_kJ_mol ?? 0) > 0 || String(edge.spontaneity ?? '').toLowerCase().includes('non'))
+    .filter(
+      (edge) =>
+        (edge.predicted_delta_G_kJ_mol ?? 0) > 0 ||
+        String(edge.spontaneity ?? "")
+          .toLowerCase()
+          .includes("non"),
+    )
     .slice(0, 4)
-    .map((edge) => `${edge.start} -> ${edge.end}: ${edge.spontaneity ?? 'Condition-dependent thermodynamics'}`);
+    .map((edge) => `${edge.start} -> ${edge.end}: ${edge.spontaneity ?? "Condition-dependent thermodynamics"}`);
 
-  return concerns.length > 0 ? { status: 'placeholder' as const, concerns } : undefined;
+  return concerns.length > 0 ? { status: "placeholder" as const, concerns } : undefined;
 }
 
 export function compileWorkflowArtifact(options: CompileWorkflowArtifactOptions): WorkflowArtifact {
@@ -269,20 +286,23 @@ export function compileWorkflowArtifact(options: CompileWorkflowArtifactOptions)
   const createdAt = previousArtifact?.createdAt ?? Date.now();
 
   return {
-    id: options.id ?? previousArtifact?.id ?? '',
+    id: options.id ?? previousArtifact?.id ?? "",
     schemaVersion: WORKFLOW_SCHEMA_VERSION,
     version: previousArtifact?.version ?? 0,
-    status: 'draft',
+    status: "draft",
     sourcePage: options.sourcePage,
     intake: {
       ...options.intake,
       targetMolecule,
     },
     evidencePackets: options.evidencePackets,
-    atomicPathwayGraph: stableNodes.length > 0 ? {
-      nodes: stableNodes,
-      edges: stableEdges,
-    } : null,
+    atomicPathwayGraph:
+      stableNodes.length > 0
+        ? {
+            nodes: stableNodes,
+            edges: stableEdges,
+          }
+        : null,
     candidateRoutes: buildCandidateRoutes(stableNodes, stableEdges, targetMolecule),
     provenance: {
       compiledFrom: options.compiledFrom,
@@ -290,7 +310,7 @@ export function compileWorkflowArtifact(options: CompileWorkflowArtifactOptions)
       sourceProvider: options.sourceProvider ?? null,
     },
     workbench: {
-      scientificStage: previousArtifact?.workbench.scientificStage ?? 'design',
+      scientificStage: previousArtifact?.workbench.scientificStage ?? "design",
     },
     thermodynamics: buildThermodynamicPlaceholder(stableEdges),
     createdAt,
@@ -298,11 +318,13 @@ export function compileWorkflowArtifact(options: CompileWorkflowArtifactOptions)
   };
 }
 
-export function isCompiledWorkflowArtifact(artifact: WorkflowArtifact | null | undefined): artifact is WorkflowArtifact {
+export function isCompiledWorkflowArtifact(
+  artifact: WorkflowArtifact | null | undefined,
+): artifact is WorkflowArtifact {
   return Boolean(
-    artifact
-    && artifact.status === 'compiled'
-    && artifact.atomicPathwayGraph
-    && artifact.atomicPathwayGraph.nodes.length > 0,
+    artifact &&
+      artifact.status === "compiled" &&
+      artifact.atomicPathwayGraph &&
+      artifact.atomicPathwayGraph.nodes.length > 0,
   );
 }

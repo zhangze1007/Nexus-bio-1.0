@@ -17,60 +17,60 @@
  */
 
 import type {
+  DBTLIteration,
   GeneratedProtocol,
+  GibsonAssemblyPlan,
+  IncubationStep,
   LabwareSlot,
   PipettingStep,
-  IncubationStep,
-  DBTLIteration,
-  GibsonAssemblyPlan,
   ProvenanceRecord,
-} from '../types';
+} from "../types";
 
 // ── Labware catalog ───────────────────────────────────────────────────────────
 const LABWARE = {
-  tipRack20:    'opentrons_96_tiprack_20ul',
-  tipRack300:   'opentrons_96_tiprack_300ul',
-  plate96:      'corning_96_wellplate_360ul_flat',
-  tubeRack15:   'opentrons_15_tuberack_falcon_15ml_conical',
-  reservoir12:  'usascientific_12_reservoir_22ml',
-  deepWell96:   'nest_96_wellplate_2ml_deep',
-  pcrPlate:     'nest_96_wellplate_100ul_pcr_full_skirt',
-  tempMod96:    'opentrons_96_aluminumblock_nest_wellplate_100ul',
+  tipRack20: "opentrons_96_tiprack_20ul",
+  tipRack300: "opentrons_96_tiprack_300ul",
+  plate96: "corning_96_wellplate_360ul_flat",
+  tubeRack15: "opentrons_15_tuberack_falcon_15ml_conical",
+  reservoir12: "usascientific_12_reservoir_22ml",
+  deepWell96: "nest_96_wellplate_2ml_deep",
+  pcrPlate: "nest_96_wellplate_100ul_pcr_full_skirt",
+  tempMod96: "opentrons_96_aluminumblock_nest_wellplate_100ul",
 } as const;
 
-type LabwareId = typeof LABWARE[keyof typeof LABWARE];
+type LabwareId = (typeof LABWARE)[keyof typeof LABWARE];
 
 // Geometry: rows × columns and per-well capacity (µL)
 interface LabwareGeometry {
-  rows: number;            // 'A'..'A'+rows-1
-  cols: number;            // 1..cols
-  wellCapacityUl: number;  // conservative upper bound
-  roleBase: string;        // role prefix used in step source/destination strings
+  rows: number; // 'A'..'A'+rows-1
+  cols: number; // 1..cols
+  wellCapacityUl: number; // conservative upper bound
+  roleBase: string; // role prefix used in step source/destination strings
 }
 
 const GEOMETRY: Record<LabwareId, LabwareGeometry> = {
-  [LABWARE.tipRack20]:   { rows: 8, cols: 12, wellCapacityUl: 0,     roleBase: 'tiprack20' },
-  [LABWARE.tipRack300]:  { rows: 8, cols: 12, wellCapacityUl: 0,     roleBase: 'tiprack300' },
-  [LABWARE.plate96]:     { rows: 8, cols: 12, wellCapacityUl: 360,   roleBase: 'plate' },
-  [LABWARE.tubeRack15]:  { rows: 3, cols: 5,  wellCapacityUl: 15000, roleBase: 'tuberack' },
-  [LABWARE.reservoir12]: { rows: 1, cols: 12, wellCapacityUl: 22000, roleBase: 'reservoir' },
-  [LABWARE.deepWell96]:  { rows: 8, cols: 12, wellCapacityUl: 2000,  roleBase: 'deepwell' },
-  [LABWARE.pcrPlate]:    { rows: 8, cols: 12, wellCapacityUl: 100,   roleBase: 'pcrplate' },
-  [LABWARE.tempMod96]:   { rows: 8, cols: 12, wellCapacityUl: 100,   roleBase: 'tempplate' },
+  [LABWARE.tipRack20]: { rows: 8, cols: 12, wellCapacityUl: 0, roleBase: "tiprack20" },
+  [LABWARE.tipRack300]: { rows: 8, cols: 12, wellCapacityUl: 0, roleBase: "tiprack300" },
+  [LABWARE.plate96]: { rows: 8, cols: 12, wellCapacityUl: 360, roleBase: "plate" },
+  [LABWARE.tubeRack15]: { rows: 3, cols: 5, wellCapacityUl: 15000, roleBase: "tuberack" },
+  [LABWARE.reservoir12]: { rows: 1, cols: 12, wellCapacityUl: 22000, roleBase: "reservoir" },
+  [LABWARE.deepWell96]: { rows: 8, cols: 12, wellCapacityUl: 2000, roleBase: "deepwell" },
+  [LABWARE.pcrPlate]: { rows: 8, cols: 12, wellCapacityUl: 100, roleBase: "pcrplate" },
+  [LABWARE.tempMod96]: { rows: 8, cols: 12, wellCapacityUl: 100, roleBase: "tempplate" },
 };
 
 // Pipette volume ranges (GEN2, Opentrons published specs)
 const PIPETTES = {
-  p20:  { instrument: 'p20_single_gen2',  minUl: 1,  maxUl: 20,  tipRack: LABWARE.tipRack20 },
-  p300: { instrument: 'p300_single_gen2', minUl: 20, maxUl: 300, tipRack: LABWARE.tipRack300 },
+  p20: { instrument: "p20_single_gen2", minUl: 1, maxUl: 20, tipRack: LABWARE.tipRack20 },
+  p300: { instrument: "p300_single_gen2", minUl: 20, maxUl: 300, tipRack: LABWARE.tipRack300 },
 } as const;
 
 type PipetteKey = keyof typeof PIPETTES;
 
 // ── Role resolution ───────────────────────────────────────────────────────────
 interface ResolvedLabware {
-  role: string;            // e.g. 'tuberack_1', 'reservoir_1', 'tiprack20'
-  varName: string;         // Python variable, same as role (sanitized)
+  role: string; // e.g. 'tuberack_1', 'reservoir_1', 'tiprack20'
+  varName: string; // Python variable, same as role (sanitized)
   slot: number;
   labware: LabwareId;
   label: string;
@@ -91,18 +91,18 @@ function resolveLabware(slots: LabwareSlot[]): Map<string, ResolvedLabware> {
     const geometry = GEOMETRY[slot.labware as LabwareId];
     if (!geometry) {
       throw new Error(
-        `protocol-generator: unknown labware '${slot.labware}' in slot ${slot.slot}. `
-        + `Known labware: ${Object.values(LABWARE).join(', ')}.`,
+        `protocol-generator: unknown labware '${slot.labware}' in slot ${slot.slot}. ` +
+          `Known labware: ${Object.values(LABWARE).join(", ")}.`,
       );
     }
     const base = geometry.roleBase;
-    const isTipRack = base === 'tiprack20' || base === 'tiprack300';
+    const isTipRack = base === "tiprack20" || base === "tiprack300";
     let role: string;
     if (isTipRack) {
       if (resolved.has(base)) {
         throw new Error(
-          `protocol-generator: duplicate tip rack '${base}' at slots `
-          + `${resolved.get(base)!.slot} and ${slot.slot}. One per pipette.`,
+          `protocol-generator: duplicate tip rack '${base}' at slots ` +
+            `${resolved.get(base)!.slot} and ${slot.slot}. One per pipette.`,
         );
       }
       role = base;
@@ -132,34 +132,30 @@ function parseReference(
   roles: Map<string, ResolvedLabware>,
   context: string,
 ): { role: ResolvedLabware; well: string } {
-  const parts = ref.split(':');
+  const parts = ref.split(":");
   if (parts.length !== 2 || !parts[0] || !parts[1]) {
-    throw new Error(
-      `protocol-generator: ${context} reference '${ref}' is not '<role>:<well>'.`,
-    );
+    throw new Error(`protocol-generator: ${context} reference '${ref}' is not '<role>:<well>'.`);
   }
   const role = roles.get(parts[0]);
   if (!role) {
     throw new Error(
-      `protocol-generator: ${context} role '${parts[0]}' is not loaded. `
-      + `Loaded roles: ${[...roles.keys()].join(', ') || '(none)'}.`,
+      `protocol-generator: ${context} role '${parts[0]}' is not loaded. ` +
+        `Loaded roles: ${[...roles.keys()].join(", ") || "(none)"}.`,
     );
   }
   const well = parts[1];
   const match = /^([A-Z])([1-9][0-9]?)$/.exec(well);
   if (!match) {
-    throw new Error(
-      `protocol-generator: ${context} well '${well}' is not in A1-style form.`,
-    );
+    throw new Error(`protocol-generator: ${context} well '${well}' is not in A1-style form.`);
   }
-  const rowIdx = match[1].charCodeAt(0) - 'A'.charCodeAt(0);
+  const rowIdx = match[1].charCodeAt(0) - "A".charCodeAt(0);
   const colIdx = parseInt(match[2], 10);
   const geom = role.geometry;
   if (rowIdx < 0 || rowIdx >= geom.rows || colIdx < 1 || colIdx > geom.cols) {
     throw new Error(
-      `protocol-generator: ${context} well '${well}' is outside `
-      + `${role.labware} geometry (rows A–${String.fromCharCode(64 + geom.rows)}, `
-      + `cols 1–${geom.cols}).`,
+      `protocol-generator: ${context} well '${well}' is outside ` +
+        `${role.labware} geometry (rows A–${String.fromCharCode(64 + geom.rows)}, ` +
+        `cols 1–${geom.cols}).`,
     );
   }
   return { role, well };
@@ -167,11 +163,9 @@ function parseReference(
 
 function indexToWell(index: number, rows: number, cols: number): string {
   if (index < 0 || index >= rows * cols) {
-    throw new Error(
-      `protocol-generator: index ${index} exceeds ${rows}×${cols} labware capacity.`,
-    );
+    throw new Error(`protocol-generator: index ${index} exceeds ${rows}×${cols} labware capacity.`);
   }
-  const row = String.fromCharCode('A'.charCodeAt(0) + (index % rows));
+  const row = String.fromCharCode("A".charCodeAt(0) + (index % rows));
   const col = Math.floor(index / rows) + 1;
   return `${row}${col}`;
 }
@@ -179,7 +173,7 @@ function indexToWell(index: number, rows: number, cols: number): string {
 // ── Protocol strategies by DBTL phase ─────────────────────────────────────────
 interface ProtocolStrategy {
   labware: LabwareSlot[];
-  pipettes: { mount: 'left' | 'right'; pipette: string }[];
+  pipettes: { mount: "left" | "right"; pipette: string }[];
   steps: PipettingStep[];
   incubation: IncubationStep[];
 }
@@ -187,27 +181,67 @@ interface ProtocolStrategy {
 function designPhaseProtocol(): ProtocolStrategy {
   return {
     labware: [
-      { slot: 1, labware: LABWARE.tipRack20,   label: 'P20 Tip Rack' },
-      { slot: 2, labware: LABWARE.plate96,     label: 'DNA Assembly Plate' },
-      { slot: 4, labware: LABWARE.tubeRack15,  label: 'DNA Parts Rack' },
-      { slot: 7, labware: LABWARE.tipRack300,  label: 'P300 Tip Rack' },
-      { slot: 8, labware: LABWARE.reservoir12, label: 'Master Mix Reservoir' },
+      { slot: 1, labware: LABWARE.tipRack20, label: "P20 Tip Rack" },
+      { slot: 2, labware: LABWARE.plate96, label: "DNA Assembly Plate" },
+      { slot: 4, labware: LABWARE.tubeRack15, label: "DNA Parts Rack" },
+      { slot: 7, labware: LABWARE.tipRack300, label: "P300 Tip Rack" },
+      { slot: 8, labware: LABWARE.reservoir12, label: "Master Mix Reservoir" },
     ],
     pipettes: [
-      { mount: 'left',  pipette: PIPETTES.p20.instrument },
-      { mount: 'right', pipette: PIPETTES.p300.instrument },
+      { mount: "left", pipette: PIPETTES.p20.instrument },
+      { mount: "right", pipette: PIPETTES.p300.instrument },
     ],
     steps: [
-      { action: 'transfer', pipette: 'p300', volume_ul: 25, source: 'reservoir_1:A1', destination: 'plate_1:A1', new_tip: true, volumeTracking: true },
-      { action: 'aspirate', pipette: 'p20',  volume_ul: 2,  source: 'tuberack_1:A1',  destination: 'plate_1:A1', new_tip: true, volumeTracking: true },
-      { action: 'aspirate', pipette: 'p20',  volume_ul: 2,  source: 'tuberack_1:A2',  destination: 'plate_1:A1', new_tip: true, volumeTracking: true },
-      { action: 'aspirate', pipette: 'p20',  volume_ul: 1,  source: 'tuberack_1:B1',  destination: 'plate_1:A1', new_tip: true, volumeTracking: true },
-      { action: 'mix',      pipette: 'p20',  volume_ul: 15, source: 'plate_1:A1',     destination: 'plate_1:A1', mix_cycles: 5, volumeTracking: true },
+      {
+        action: "transfer",
+        pipette: "p300",
+        volume_ul: 25,
+        source: "reservoir_1:A1",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "aspirate",
+        pipette: "p20",
+        volume_ul: 2,
+        source: "tuberack_1:A1",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "aspirate",
+        pipette: "p20",
+        volume_ul: 2,
+        source: "tuberack_1:A2",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "aspirate",
+        pipette: "p20",
+        volume_ul: 1,
+        source: "tuberack_1:B1",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "mix",
+        pipette: "p20",
+        volume_ul: 15,
+        source: "plate_1:A1",
+        destination: "plate_1:A1",
+        mix_cycles: 5,
+        volumeTracking: true,
+      },
     ],
     incubation: [
-      { temperature_c: 37, duration_min: 60, label: 'Golden Gate assembly' },
-      { temperature_c: 50, duration_min: 5,  label: 'Heat inactivation' },
-      { temperature_c: 4,  duration_min: 0,  label: 'Hold at 4°C' },
+      { temperature_c: 37, duration_min: 60, label: "Golden Gate assembly" },
+      { temperature_c: 50, duration_min: 5, label: "Heat inactivation" },
+      { temperature_c: 4, duration_min: 0, label: "Hold at 4°C" },
     ],
   };
 }
@@ -215,27 +249,59 @@ function designPhaseProtocol(): ProtocolStrategy {
 function buildPhaseProtocol(): ProtocolStrategy {
   return {
     labware: [
-      { slot: 1, labware: LABWARE.tipRack20,   label: 'P20 Tip Rack' },
-      { slot: 2, labware: LABWARE.tipRack300,  label: 'P300 Tip Rack' },
-      { slot: 3, labware: LABWARE.plate96,     label: 'Transformation Plate' },
-      { slot: 5, labware: LABWARE.tubeRack15,  label: 'Competent Cells' },
-      { slot: 8, labware: LABWARE.reservoir12, label: 'SOC / LB Media' },
+      { slot: 1, labware: LABWARE.tipRack20, label: "P20 Tip Rack" },
+      { slot: 2, labware: LABWARE.tipRack300, label: "P300 Tip Rack" },
+      { slot: 3, labware: LABWARE.plate96, label: "Transformation Plate" },
+      { slot: 5, labware: LABWARE.tubeRack15, label: "Competent Cells" },
+      { slot: 8, labware: LABWARE.reservoir12, label: "SOC / LB Media" },
     ],
     pipettes: [
-      { mount: 'left',  pipette: PIPETTES.p20.instrument },
-      { mount: 'right', pipette: PIPETTES.p300.instrument },
+      { mount: "left", pipette: PIPETTES.p20.instrument },
+      { mount: "right", pipette: PIPETTES.p300.instrument },
     ],
     steps: [
-      { action: 'transfer', pipette: 'p300', volume_ul: 50,  source: 'tuberack_1:A1', destination: 'plate_1:A1', new_tip: true, volumeTracking: true },
-      { action: 'aspirate', pipette: 'p20',  volume_ul: 5,   source: 'tuberack_1:B1', destination: 'plate_1:A1', new_tip: true, volumeTracking: true },
-      { action: 'mix',      pipette: 'p20',  volume_ul: 15,  source: 'plate_1:A1',    destination: 'plate_1:A1', mix_cycles: 3, volumeTracking: true },
-      { action: 'transfer', pipette: 'p300', volume_ul: 200, source: 'reservoir_1:A1', destination: 'plate_1:A1', new_tip: true, volumeTracking: true },
+      {
+        action: "transfer",
+        pipette: "p300",
+        volume_ul: 50,
+        source: "tuberack_1:A1",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "aspirate",
+        pipette: "p20",
+        volume_ul: 5,
+        source: "tuberack_1:B1",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "mix",
+        pipette: "p20",
+        volume_ul: 15,
+        source: "plate_1:A1",
+        destination: "plate_1:A1",
+        mix_cycles: 3,
+        volumeTracking: true,
+      },
+      {
+        action: "transfer",
+        pipette: "p300",
+        volume_ul: 200,
+        source: "reservoir_1:A1",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
     ],
     incubation: [
-      { temperature_c: 42, duration_min: 1,   label: 'Heat shock' },
-      { temperature_c: 4,  duration_min: 2,   label: 'Ice recovery' },
-      { temperature_c: 37, duration_min: 60,  shaking_rpm: 220, label: 'SOC recovery' },
-      { temperature_c: 37, duration_min: 960, label: 'Overnight colony growth' },
+      { temperature_c: 42, duration_min: 1, label: "Heat shock" },
+      { temperature_c: 4, duration_min: 2, label: "Ice recovery" },
+      { temperature_c: 37, duration_min: 60, shaking_rpm: 220, label: "SOC recovery" },
+      { temperature_c: 37, duration_min: 960, label: "Overnight colony growth" },
     ],
   };
 }
@@ -243,22 +309,44 @@ function buildPhaseProtocol(): ProtocolStrategy {
 function testPhaseProtocol(): ProtocolStrategy {
   return {
     labware: [
-      { slot: 1, labware: LABWARE.tipRack300,  label: 'P300 Tip Rack' },
-      { slot: 2, labware: LABWARE.deepWell96,  label: 'Culture Deep Well' },
-      { slot: 3, labware: LABWARE.plate96,     label: 'Assay Plate (OD/Fluorescence)' },
-      { slot: 7, labware: LABWARE.reservoir12, label: 'M9 + Glucose Media' },
+      { slot: 1, labware: LABWARE.tipRack300, label: "P300 Tip Rack" },
+      { slot: 2, labware: LABWARE.deepWell96, label: "Culture Deep Well" },
+      { slot: 3, labware: LABWARE.plate96, label: "Assay Plate (OD/Fluorescence)" },
+      { slot: 7, labware: LABWARE.reservoir12, label: "M9 + Glucose Media" },
     ],
-    pipettes: [
-      { mount: 'right', pipette: PIPETTES.p300.instrument },
-    ],
+    pipettes: [{ mount: "right", pipette: PIPETTES.p300.instrument }],
     steps: [
-      { action: 'transfer', pipette: 'p300', volume_ul: 180, source: 'reservoir_1:A1', destination: 'deepwell_1:A1', new_tip: true, volumeTracking: true },
-      { action: 'transfer', pipette: 'p300', volume_ul: 20,  source: 'deepwell_1:A1',  destination: 'plate_1:A1',    new_tip: true, volumeTracking: true },
-      { action: 'mix',      pipette: 'p300', volume_ul: 100, source: 'deepwell_1:A1',  destination: 'deepwell_1:A1', mix_cycles: 3, volumeTracking: true },
+      {
+        action: "transfer",
+        pipette: "p300",
+        volume_ul: 180,
+        source: "reservoir_1:A1",
+        destination: "deepwell_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "transfer",
+        pipette: "p300",
+        volume_ul: 20,
+        source: "deepwell_1:A1",
+        destination: "plate_1:A1",
+        new_tip: true,
+        volumeTracking: true,
+      },
+      {
+        action: "mix",
+        pipette: "p300",
+        volume_ul: 100,
+        source: "deepwell_1:A1",
+        destination: "deepwell_1:A1",
+        mix_cycles: 3,
+        volumeTracking: true,
+      },
     ],
     incubation: [
-      { temperature_c: 30, duration_min: 2880, shaking_rpm: 250, label: 'Production culture (48h)' },
-      { temperature_c: 4,  duration_min: 0,    label: 'Harvest — hold at 4°C' },
+      { temperature_c: 30, duration_min: 2880, shaking_rpm: 250, label: "Production culture (48h)" },
+      { temperature_c: 4, duration_min: 0, label: "Harvest — hold at 4°C" },
     ],
   };
 }
@@ -270,12 +358,12 @@ function gibsonAssemblyProtocol(plan: GibsonAssemblyPlan): ProtocolStrategy {
   const tubeCapacity = tuberack.rows * tuberack.cols; // 15
 
   if (fragmentCount < 1) {
-    throw new Error('protocol-generator: Gibson plan has zero fragments.');
+    throw new Error("protocol-generator: Gibson plan has zero fragments.");
   }
   if (fragmentCount > tubeCapacity) {
     throw new Error(
-      `protocol-generator: ${fragmentCount} fragments exceeds 15-tube rack capacity. `
-      + `Split into multiple assemblies or switch to a 96-well source plate.`,
+      `protocol-generator: ${fragmentCount} fragments exceeds 15-tube rack capacity. ` +
+        `Split into multiple assemblies or switch to a 96-well source plate.`,
     );
   }
 
@@ -283,9 +371,13 @@ function gibsonAssemblyProtocol(plan: GibsonAssemblyPlan): ProtocolStrategy {
 
   // Gibson master mix: 10 µL of 2× NEB E2611
   steps.push({
-    action: 'transfer', pipette: 'p20', volume_ul: 10,
-    source: 'reservoir_1:A1', destination: 'pcrplate_1:A1',
-    new_tip: true, volumeTracking: true,
+    action: "transfer",
+    pipette: "p20",
+    volume_ul: 10,
+    source: "reservoir_1:A1",
+    destination: "pcrplate_1:A1",
+    new_tip: true,
+    volumeTracking: true,
   });
 
   // Per-fragment volume: equal split of a 10 µL pool, clamped to p20 range
@@ -293,9 +385,13 @@ function gibsonAssemblyProtocol(plan: GibsonAssemblyPlan): ProtocolStrategy {
   for (let i = 0; i < fragmentCount; i++) {
     const well = indexToWell(i, tuberack.rows, tuberack.cols);
     steps.push({
-      action: 'aspirate', pipette: 'p20', volume_ul: perFragment,
-      source: `tuberack_1:${well}`, destination: 'pcrplate_1:A1',
-      new_tip: true, volumeTracking: true,
+      action: "aspirate",
+      pipette: "p20",
+      volume_ul: perFragment,
+      source: `tuberack_1:${well}`,
+      destination: "pcrplate_1:A1",
+      new_tip: true,
+      volumeTracking: true,
     });
   }
 
@@ -303,35 +399,43 @@ function gibsonAssemblyProtocol(plan: GibsonAssemblyPlan): ProtocolStrategy {
   const waterVol = 20 - 10 - fragmentCount * perFragment;
   if (waterVol > 0) {
     steps.push({
-      action: 'transfer', pipette: 'p20', volume_ul: waterVol,
-      source: 'reservoir_1:A2', destination: 'pcrplate_1:A1',
-      new_tip: true, volumeTracking: true,
+      action: "transfer",
+      pipette: "p20",
+      volume_ul: waterVol,
+      source: "reservoir_1:A2",
+      destination: "pcrplate_1:A1",
+      new_tip: true,
+      volumeTracking: true,
     });
   }
 
   steps.push({
-    action: 'mix', pipette: 'p20', volume_ul: 15,
-    source: 'pcrplate_1:A1', destination: 'pcrplate_1:A1',
-    mix_cycles: 8, volumeTracking: true,
+    action: "mix",
+    pipette: "p20",
+    volume_ul: 15,
+    source: "pcrplate_1:A1",
+    destination: "pcrplate_1:A1",
+    mix_cycles: 8,
+    volumeTracking: true,
   });
 
   return {
     labware: [
-      { slot: 1,  labware: LABWARE.tipRack20,   label: 'P20 Tip Rack' },
-      { slot: 2,  labware: LABWARE.pcrPlate,    label: 'Gibson Assembly PCR Plate' },
-      { slot: 4,  labware: LABWARE.tubeRack15,  label: `DNA Fragments (${fragmentCount} tubes)` },
-      { slot: 7,  labware: LABWARE.tipRack300,  label: 'P300 Tip Rack' },
-      { slot: 8,  labware: LABWARE.reservoir12, label: 'Master Mix (A1) + Water (A2)' },
-      { slot: 10, labware: LABWARE.tempMod96,   label: 'Temperature Module — Incubation' },
+      { slot: 1, labware: LABWARE.tipRack20, label: "P20 Tip Rack" },
+      { slot: 2, labware: LABWARE.pcrPlate, label: "Gibson Assembly PCR Plate" },
+      { slot: 4, labware: LABWARE.tubeRack15, label: `DNA Fragments (${fragmentCount} tubes)` },
+      { slot: 7, labware: LABWARE.tipRack300, label: "P300 Tip Rack" },
+      { slot: 8, labware: LABWARE.reservoir12, label: "Master Mix (A1) + Water (A2)" },
+      { slot: 10, labware: LABWARE.tempMod96, label: "Temperature Module — Incubation" },
     ],
     pipettes: [
-      { mount: 'left',  pipette: PIPETTES.p20.instrument },
-      { mount: 'right', pipette: PIPETTES.p300.instrument },
+      { mount: "left", pipette: PIPETTES.p20.instrument },
+      { mount: "right", pipette: PIPETTES.p300.instrument },
     ],
     steps,
     incubation: [
-      { temperature_c: 50, duration_min: 60, label: 'Gibson Assembly isothermal reaction' },
-      { temperature_c: 4,  duration_min: 0,  label: 'Hold at 4°C — ready for transformation' },
+      { temperature_c: 50, duration_min: 60, label: "Gibson Assembly isothermal reaction" },
+      { temperature_c: 4, duration_min: 0, label: "Hold at 4°C — ready for transformation" },
     ],
   };
 }
@@ -361,20 +465,20 @@ function validateStrategy(strategy: ProtocolStrategy): {
   // Each loaded instrument must have its tip rack loaded too.
   const pipettesInUse = new Map<PipetteKey, { mount: string; tipRackRole: string }>();
   for (const pip of strategy.pipettes) {
-    const key = (Object.keys(PIPETTES) as PipetteKey[]).find(
-      (k) => PIPETTES[k].instrument === pip.pipette,
-    );
+    const key = (Object.keys(PIPETTES) as PipetteKey[]).find((k) => PIPETTES[k].instrument === pip.pipette);
     if (!key) {
       throw new Error(
-        `protocol-generator: pipette '${pip.pipette}' is not supported. `
-        + `Supported: ${Object.values(PIPETTES).map((p) => p.instrument).join(', ')}.`,
+        `protocol-generator: pipette '${pip.pipette}' is not supported. ` +
+          `Supported: ${Object.values(PIPETTES)
+            .map((p) => p.instrument)
+            .join(", ")}.`,
       );
     }
     const tipRoleBase = GEOMETRY[PIPETTES[key].tipRack].roleBase;
     if (!roles.has(tipRoleBase)) {
       throw new Error(
-        `protocol-generator: pipette '${key}' on '${pip.mount}' requires `
-        + `a '${PIPETTES[key].tipRack}' tip rack but none is loaded.`,
+        `protocol-generator: pipette '${key}' on '${pip.mount}' requires ` +
+          `a '${PIPETTES[key].tipRack}' tip rack but none is loaded.`,
       );
     }
     pipettesInUse.set(key, { mount: pip.mount, tipRackRole: tipRoleBase });
@@ -385,21 +489,21 @@ function validateStrategy(strategy: ProtocolStrategy): {
     const pipSpec = PIPETTES[pipetteKey];
     if (!pipSpec) {
       throw new Error(
-        `protocol-generator: step ${stepIdx + 1} uses unknown pipette key '${step.pipette}'. `
-        + `Expected one of: ${Object.keys(PIPETTES).join(', ')}.`,
+        `protocol-generator: step ${stepIdx + 1} uses unknown pipette key '${step.pipette}'. ` +
+          `Expected one of: ${Object.keys(PIPETTES).join(", ")}.`,
       );
     }
     const loaded = pipettesInUse.get(pipetteKey);
     if (!loaded) {
       throw new Error(
-        `protocol-generator: step ${stepIdx + 1} uses pipette '${pipetteKey}' `
-        + `but no matching instrument is loaded.`,
+        `protocol-generator: step ${stepIdx + 1} uses pipette '${pipetteKey}' ` +
+          `but no matching instrument is loaded.`,
       );
     }
     if (step.volume_ul < pipSpec.minUl || step.volume_ul > pipSpec.maxUl) {
       throw new Error(
-        `protocol-generator: step ${stepIdx + 1} volume ${step.volume_ul} µL `
-        + `is outside ${pipetteKey} range (${pipSpec.minUl}–${pipSpec.maxUl} µL).`,
+        `protocol-generator: step ${stepIdx + 1} volume ${step.volume_ul} µL ` +
+          `is outside ${pipetteKey} range (${pipSpec.minUl}–${pipSpec.maxUl} µL).`,
       );
     }
     return {
@@ -415,26 +519,22 @@ function validateStrategy(strategy: ProtocolStrategy): {
   return { roles, resolvedSteps, pipettesInUse };
 }
 
-function generatePythonCode(
-  protocolName: string,
-  strategy: ProtocolStrategy,
-  provenance?: ProvenanceRecord[],
-): string {
+function generatePythonCode(protocolName: string, strategy: ProtocolStrategy, provenance?: ProvenanceRecord[]): string {
   const { roles, resolvedSteps, pipettesInUse } = validateStrategy(strategy);
   const lines: string[] = [];
 
-  lines.push('from opentrons import protocol_api');
-  lines.push('');
-  lines.push('metadata = {');
+  lines.push("from opentrons import protocol_api");
+  lines.push("");
+  lines.push("metadata = {");
   lines.push(`    'protocolName': ${pyStr(protocolName)},`);
   lines.push(`    'author': 'Nexus-Bio Axon Protocol Generator',`);
   lines.push(`    'apiLevel': '2.15',`);
-  lines.push('}');
-  lines.push('');
+  lines.push("}");
+  lines.push("");
 
   if (provenance && provenance.length > 0) {
-    lines.push('# ── Data provenance (Nexus-Bio UUID tracking) ──');
-    lines.push('PROVENANCE = [');
+    lines.push("# ── Data provenance (Nexus-Bio UUID tracking) ──");
+    lines.push("PROVENANCE = [");
     // Deterministic order: by createdAt, then uuid
     const sorted = [...provenance].sort((a, b) => {
       if (a.createdAt !== b.createdAt) return a.createdAt.localeCompare(b.createdAt);
@@ -449,26 +549,26 @@ function generatePythonCode(
       ];
       if (p.well) entries.push(`'well': ${pyStr(p.well)}`);
       if (p.slot != null) entries.push(`'slot': ${p.slot}`);
-      lines.push(`    {${entries.join(', ')}},`);
+      lines.push(`    {${entries.join(", ")}},`);
     }
-    lines.push(']');
-    lines.push('');
+    lines.push("]");
+    lines.push("");
   }
 
   // Initial source-well volumes: derived from labware capacity for every
   // well that ever appears as an aspirate source.
   const initialVolumes = collectInitialSourceVolumes(resolvedSteps);
 
-  lines.push('def run(protocol: protocol_api.ProtocolContext):');
-  lines.push('    # ── Labware ──');
+  lines.push("def run(protocol: protocol_api.ProtocolContext):");
+  lines.push("    # ── Labware ──");
   for (const role of roles.values()) {
     lines.push(
       `    ${role.varName} = protocol.load_labware(${pyStr(role.labware)}, ${role.slot}, ${pyStr(role.label)})`,
     );
   }
 
-  lines.push('');
-  lines.push('    # ── Pipettes ──');
+  lines.push("");
+  lines.push("    # ── Pipettes ──");
   for (const [key, info] of pipettesInUse.entries()) {
     const pipSpec = PIPETTES[key];
     lines.push(
@@ -476,26 +576,28 @@ function generatePythonCode(
     );
   }
 
-  lines.push('');
-  lines.push('    # ── Volume tracking ──');
-  lines.push('    well_volumes = {');
+  lines.push("");
+  lines.push("    # ── Volume tracking ──");
+  lines.push("    well_volumes = {");
   for (const [wellId, vol] of initialVolumes) {
     lines.push(`        ${pyStr(wellId)}: ${vol},`);
   }
-  lines.push('    }');
-  lines.push('');
-  lines.push('    def track_aspirate(well_id, vol):');
-  lines.push('        if well_id not in well_volumes:');
+  lines.push("    }");
+  lines.push("");
+  lines.push("    def track_aspirate(well_id, vol):");
+  lines.push("        if well_id not in well_volumes:");
   lines.push('            protocol.comment(f"WARNING: aspirating from untracked well {well_id}")');
-  lines.push('            well_volumes[well_id] = 0');
-  lines.push('        if well_volumes[well_id] < vol:');
-  lines.push('            protocol.comment(f"WARNING: {well_id} has {well_volumes[well_id]:.1f} uL left, step needs {vol} uL — risk of air aspiration")');
-  lines.push('        well_volumes[well_id] = max(0, well_volumes[well_id] - vol)');
-  lines.push('');
-  lines.push('    def track_dispense(well_id, vol):');
-  lines.push('        well_volumes[well_id] = well_volumes.get(well_id, 0) + vol');
-  lines.push('');
-  lines.push('    # ── Pipetting logic ──');
+  lines.push("            well_volumes[well_id] = 0");
+  lines.push("        if well_volumes[well_id] < vol:");
+  lines.push(
+    '            protocol.comment(f"WARNING: {well_id} has {well_volumes[well_id]:.1f} uL left, step needs {vol} uL — risk of air aspiration")',
+  );
+  lines.push("        well_volumes[well_id] = max(0, well_volumes[well_id] - vol)");
+  lines.push("");
+  lines.push("    def track_dispense(well_id, vol):");
+  lines.push("        well_volumes[well_id] = well_volumes.get(well_id, 0) + vol");
+  lines.push("");
+  lines.push("    # ── Pipetting logic ──");
 
   resolvedSteps.forEach((rs, i) => {
     const { step, pipetteVarName, source, destination } = rs;
@@ -504,34 +606,34 @@ function generatePythonCode(
     const sourceExpr = `${source.role.varName}.wells_by_name()[${pyStr(source.well)}]`;
     const destExpr = `${destination.role.varName}.wells_by_name()[${pyStr(destination.well)}]`;
 
-    if (step.action === 'aspirate' || step.action === 'transfer') {
+    if (step.action === "aspirate" || step.action === "transfer") {
       lines.push(`    track_aspirate(${pyStr(step.source)}, ${step.volume_ul})`);
       lines.push(`    ${pipetteVarName}.aspirate(${step.volume_ul}, ${sourceExpr})`);
       lines.push(`    track_dispense(${pyStr(step.destination)}, ${step.volume_ul})`);
       lines.push(`    ${pipetteVarName}.dispense(${step.volume_ul}, ${destExpr})`);
-    } else if (step.action === 'dispense') {
+    } else if (step.action === "dispense") {
       lines.push(`    track_dispense(${pyStr(step.destination)}, ${step.volume_ul})`);
       lines.push(`    ${pipetteVarName}.dispense(${step.volume_ul}, ${destExpr})`);
-    } else if (step.action === 'mix') {
+    } else if (step.action === "mix") {
       lines.push(`    ${pipetteVarName}.mix(${step.mix_cycles ?? 3}, ${step.volume_ul}, ${destExpr})`);
     }
     if (step.new_tip) lines.push(`    ${pipetteVarName}.drop_tip()`);
-    lines.push('');
+    lines.push("");
   });
 
   // Temperature module — load only if a tempplate role was declared
-  const hasTempPlate = [...roles.values()].some((r) => r.geometry.roleBase === 'tempplate');
+  const hasTempPlate = [...roles.values()].some((r) => r.geometry.roleBase === "tempplate");
   if (hasTempPlate) {
-    const tempRole = [...roles.values()].find((r) => r.geometry.roleBase === 'tempplate')!;
-    lines.push('    # ── Temperature module control ──');
+    const tempRole = [...roles.values()].find((r) => r.geometry.roleBase === "tempplate")!;
+    lines.push("    # ── Temperature module control ──");
     lines.push(`    temp_mod = protocol.load_module('temperature module gen2', ${tempRole.slot})`);
-    lines.push('');
+    lines.push("");
   }
 
   if (strategy.incubation.length > 0) {
-    lines.push('    # ── Incubation ──');
+    lines.push("    # ── Incubation ──");
     for (const inc of strategy.incubation) {
-      const shake = inc.shaking_rpm ? ` @ ${inc.shaking_rpm} RPM` : '';
+      const shake = inc.shaking_rpm ? ` @ ${inc.shaking_rpm} RPM` : "";
       lines.push(
         `    protocol.comment(${pyStr(`${inc.label}: ${inc.temperature_c}°C for ${inc.duration_min} min${shake}`)})`,
       );
@@ -546,28 +648,28 @@ function generatePythonCode(
         );
       }
     }
-    if (hasTempPlate) lines.push('    temp_mod.deactivate()');
+    if (hasTempPlate) lines.push("    temp_mod.deactivate()");
   }
 
   if (provenance && provenance.length > 0) {
-    lines.push('');
-    lines.push('    # ── Provenance logging ──');
+    lines.push("");
+    lines.push("    # ── Provenance logging ──");
     lines.push('    protocol.comment(f"Provenance: {len(PROVENANCE)} tracked samples")');
-    lines.push('    for entry in PROVENANCE:');
+    lines.push("    for entry in PROVENANCE:");
     lines.push("        protocol.comment(f\"  [{entry['uuid'][:8]}] {entry['type']}: {entry['label']}\")");
   }
 
-  lines.push('');
+  lines.push("");
   lines.push("    protocol.comment('Protocol complete — Nexus-Bio Axon v2.15')");
-  lines.push('');
+  lines.push("");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function collectInitialSourceVolumes(steps: ResolvedStep[]): [string, number][] {
   const volumes = new Map<string, number>();
   for (const rs of steps) {
-    if (rs.step.action === 'aspirate' || rs.step.action === 'transfer' || rs.step.action === 'mix') {
+    if (rs.step.action === "aspirate" || rs.step.action === "transfer" || rs.step.action === "mix") {
       const key = rs.step.source;
       if (!volumes.has(key)) {
         volumes.set(key, rs.source.role.geometry.wellCapacityUl);
@@ -580,7 +682,7 @@ function collectInitialSourceVolumes(steps: ResolvedStep[]): [string, number][] 
 
 /** Emit a safely quoted Python string literal (handles apostrophes and backslashes). */
 function pyStr(value: string): string {
-  const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const escaped = value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   return `'${escaped}'`;
 }
 
@@ -594,22 +696,31 @@ export class ProtocolGenerator {
     const phase = iteration.phase;
     let strategy: ProtocolStrategy;
     switch (phase) {
-      case 'Design': strategy = designPhaseProtocol(); break;
-      case 'Build':  strategy = buildPhaseProtocol();  break;
-      case 'Test':   strategy = testPhaseProtocol();   break;
-      case 'Learn':  strategy = testPhaseProtocol();   break;
-      default:       strategy = designPhaseProtocol();
+      case "Design":
+        strategy = designPhaseProtocol();
+        break;
+      case "Build":
+        strategy = buildPhaseProtocol();
+        break;
+      case "Test":
+        strategy = testPhaseProtocol();
+        break;
+      case "Learn":
+        strategy = testPhaseProtocol();
+        break;
+      default:
+        strategy = designPhaseProtocol();
     }
 
-    const safeHypothesis = iteration.hypothesis.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '_');
+    const safeHypothesis = iteration.hypothesis.slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_");
     const protocolName = `DBTL-${phase}-${iteration.id}_${safeHypothesis}`;
     const pythonCode = generatePythonCode(protocolName, strategy);
 
     return {
-      api_version: '2.15',
+      api_version: "2.15",
       metadata: {
         protocolName,
-        author: 'Nexus-Bio Axon',
+        author: "Nexus-Bio Axon",
         description: `${phase} phase protocol for iteration #${iteration.id}: ${iteration.hypothesis}`,
       },
       labware: strategy.labware,
@@ -630,19 +741,16 @@ export class ProtocolGenerator {
    *   - 50 °C isothermal reaction for 60 min on temperature module
    *   - Every tube traced via ProvenanceRecord UUID
    */
-  generateGibsonAssembly(
-    plan: GibsonAssemblyPlan,
-    provenance: ProvenanceRecord[],
-  ): GeneratedProtocol {
+  generateGibsonAssembly(plan: GibsonAssemblyPlan, provenance: ProvenanceRecord[]): GeneratedProtocol {
     const strategy = gibsonAssemblyProtocol(plan);
-    const protocolName = `Gibson_${plan.targetName.replace(/[^a-zA-Z0-9]/g, '_')}_${plan.fragments.length}frag`;
+    const protocolName = `Gibson_${plan.targetName.replace(/[^a-zA-Z0-9]/g, "_")}_${plan.fragments.length}frag`;
     const pythonCode = generatePythonCode(protocolName, strategy, provenance);
 
     return {
-      api_version: '2.15',
+      api_version: "2.15",
       metadata: {
         protocolName,
-        author: 'Nexus-Bio Axon',
+        author: "Nexus-Bio Axon",
         description: `Gibson Assembly of ${plan.targetName} (${plan.targetLength} bp) from ${plan.fragments.length} fragments. UUID-tracked.`,
       },
       labware: strategy.labware,
@@ -667,9 +775,9 @@ export class ProtocolGenerator {
     // Detect the destination plate's geometry from the first destination role
     const firstDest = base.pipetting_logic[0]?.destination;
     if (!firstDest) {
-      throw new Error('protocol-generator: base protocol has no steps to scale.');
+      throw new Error("protocol-generator: base protocol has no steps to scale.");
     }
-    const destRoleBase = firstDest.split(':')[0];
+    const destRoleBase = firstDest.split(":")[0];
     const destLabware = base.labware.find((lw) => {
       const geom = GEOMETRY[lw.labware as LabwareId];
       return geom && `${geom.roleBase}_1` === destRoleBase;
@@ -687,7 +795,7 @@ export class ProtocolGenerator {
     const scaledSteps: PipettingStep[] = base.pipetting_logic.flatMap((step) =>
       Array.from({ length: wellCount }, (_, w) => {
         const newWell = indexToWell(w, geom.rows, geom.cols);
-        const [destRole] = step.destination.split(':');
+        const [destRole] = step.destination.split(":");
         return {
           ...step,
           destination: `${destRole}:${newWell}`,

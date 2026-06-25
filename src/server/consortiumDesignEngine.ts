@@ -16,7 +16,7 @@
  *   ALGORITHM: SteadyCom LP + QS Hill-function ODE + QR eigenvalue decomposition
  */
 
-import { solveLP, type LPModel } from './highsSolver';
+import { type LPModel, solveLP } from "./highsSolver";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -24,12 +24,12 @@ export interface Strain {
   id: string;
   name: string;
   organism: string;
-  growthRate: number;         // h⁻¹
+  growthRate: number; // h⁻¹
   /** Monod parameters for substrate utilization */
   monod: {
-    muMax: number;            // h⁻¹ — Koch 1998: E. coli ~0.7-1.0
-    ks: number;               // g/L — Koch 1998: glucose ~0.1-0.5
-    yieldCoeff: number;       // gDW/g substrate — Varma & Palsson 1994: ~0.5
+    muMax: number; // h⁻¹ — Koch 1998: E. coli ~0.7-1.0
+    ks: number; // g/L — Koch 1998: glucose ~0.1-0.5
+    yieldCoeff: number; // gDW/g substrate — Varma & Palsson 1994: ~0.5
   };
   metabolites: {
     produces: string[];
@@ -37,10 +37,10 @@ export interface Strain {
   };
   /** Quorum sensing parameters — Waters & Bassler (2005) Annu Rev Cell Dev Biol 21:319 */
   qsParameters?: {
-    ahlProductionRate: number;  // nM/h — Estimated from Winson et al. (2005)
+    ahlProductionRate: number; // nM/h — Estimated from Winson et al. (2005)
     ahlDegradationRate: number; // 1/h — Horswill et al. (2007): ~0.1-0.5
-    threshold: number;          // nM — Waters & Bassler 2005: 1-10 nM
-    hillCoeff: number;          // — Waters & Bassler 2005: n=1-3
+    threshold: number; // nM — Waters & Bassler 2005: 1-10 nM
+    hillCoeff: number; // — Waters & Bassler 2005: n=1-3
   };
 }
 
@@ -48,8 +48,8 @@ export interface CrossFeedingInteraction {
   producer: string;
   consumer: string;
   metabolite: string;
-  flux: number;               // mmol/gDW/h
-  benefit: number;            // growth benefit to consumer
+  flux: number; // mmol/gDW/h
+  benefit: number; // growth benefit to consumer
 }
 
 export interface ConsortiumDesign {
@@ -57,7 +57,7 @@ export interface ConsortiumDesign {
   interactions: CrossFeedingInteraction[];
   communityGrowthRate: number;
   totalProductFlux: number;
-  stability: 'stable' | 'unstable' | 'neutral';
+  stability: "stable" | "unstable" | "neutral";
   stabilityEigenvalues: number[];
   quorumSensingActive: boolean;
   designNotes: string[];
@@ -101,9 +101,9 @@ async function steadyComOptimize(
     for (const met of strain.metabolites.produces) allMetabolites.add(met);
     for (const met of strain.metabolites.consumes) allMetabolites.add(met);
   }
-  const sharedMetabolites = Array.from(allMetabolites).filter(met => {
-    const hasProducer = strains.some(s => s.metabolites.produces.includes(met));
-    const hasConsumer = strains.some(s => s.metabolites.consumes.includes(met));
+  const sharedMetabolites = Array.from(allMetabolites).filter((met) => {
+    const hasProducer = strains.some((s) => s.metabolites.produces.includes(met));
+    const hasConsumer = strains.some((s) => s.metabolites.consumes.includes(met));
     return hasProducer && hasConsumer;
   });
 
@@ -113,7 +113,7 @@ async function steadyComOptimize(
 
   const constraints: Array<{ name: string; vars: Array<{ name: string; coef: number }>; lb: number; ub: number }> = [];
   const bounds: Array<{ name: string; lb: number; ub: number }> = [
-    { name: 'mu', lb: 0.001, ub: 10 }, // Monod 1949: min viable growth; reasonable max
+    { name: "mu", lb: 0.001, ub: 10 }, // Monod 1949: min viable growth; reasonable max
   ];
 
   // Constraint 1: Growth rate bounds per strain (Monod kinetics)
@@ -121,10 +121,10 @@ async function steadyComOptimize(
   for (let i = 0; i < n; i++) {
     const strain = strains[i];
     // Koch (1998): E. coli μmax ~0.7-1.0 h⁻¹, Ks ~0.1-0.5 g/L
-    const muMaxAtConc = strain.monod.muMax * substrateConc / (strain.monod.ks + substrateConc);
+    const muMaxAtConc = (strain.monod.muMax * substrateConc) / (strain.monod.ks + substrateConc);
     constraints.push({
       name: `growth_bound_${i}`,
-      vars: [{ name: 'mu', coef: 1 }],
+      vars: [{ name: "mu", coef: 1 }],
       lb: -Infinity,
       ub: muMaxAtConc,
     });
@@ -143,7 +143,8 @@ async function steadyComOptimize(
         bounds.push({ name: varName, lb: 0, ub: 100 });
         // Capacity bound: production ≤ yield · μmax·S/(Ks+S)
         // Varma & Palsson (1994): flux capacity from yield
-        const maxProd = strain.monod.yieldCoeff * strain.monod.muMax * substrateConc / (strain.monod.ks + substrateConc);
+        const maxProd =
+          (strain.monod.yieldCoeff * strain.monod.muMax * substrateConc) / (strain.monod.ks + substrateConc);
         constraints.push({
           name: `prod_cap_${i}_${met}`,
           vars: [{ name: varName, coef: 1 }],
@@ -154,7 +155,8 @@ async function steadyComOptimize(
         // Sign constraint: consumer exchange ≤ 0
         bounds.push({ name: varName, lb: -100, ub: 0 });
         // Capacity bound: consumption ≥ -μmax·S/(Ks+S) / yield
-        const maxCons = strain.monod.muMax * substrateConc / (strain.monod.ks + substrateConc) / strain.monod.yieldCoeff;
+        const maxCons =
+          (strain.monod.muMax * substrateConc) / (strain.monod.ks + substrateConc) / strain.monod.yieldCoeff;
         constraints.push({
           name: `cons_cap_${i}_${met}`,
           vars: [{ name: varName, coef: 1 }],
@@ -184,10 +186,14 @@ async function steadyComOptimize(
   // This ensures the consumer's growth rate is supported by available metabolite.
   // Zomorrodi & Segre (2016): balanced growth requires exchange-growth coupling
   for (const met of sharedMetabolites) {
-    const producerIndices = strains.reduce<number[]>((acc, s, idx) =>
-      s.metabolites.produces.includes(met) ? [...acc, idx] : acc, []);
-    const consumerIndices = strains.reduce<number[]>((acc, s, idx) =>
-      s.metabolites.consumes.includes(met) ? [...acc, idx] : acc, []);
+    const producerIndices = strains.reduce<number[]>(
+      (acc, s, idx) => (s.metabolites.produces.includes(met) ? [...acc, idx] : acc),
+      [],
+    );
+    const consumerIndices = strains.reduce<number[]>(
+      (acc, s, idx) => (s.metabolites.consumes.includes(met) ? [...acc, idx] : acc),
+      [],
+    );
 
     for (const ci of consumerIndices) {
       const consumer = strains[ci];
@@ -195,8 +201,8 @@ async function steadyComOptimize(
       constraints.push({
         name: `growth_coupling_${ci}_${met}`,
         vars: [
-          { name: 'mu', coef: 1 },
-          ...producerIndices.map(k => ({ name: `v_ex_${k}_${met}`, coef: -consumer.monod.yieldCoeff })),
+          { name: "mu", coef: 1 },
+          ...producerIndices.map((k) => ({ name: `v_ex_${k}_${met}`, coef: -consumer.monod.yieldCoeff })),
         ],
         lb: -Infinity,
         ub: 0,
@@ -205,9 +211,9 @@ async function steadyComOptimize(
   }
 
   const model: LPModel = {
-    name: 'steadycom',
-    sense: 'maximize',
-    objective: [{ name: 'mu', coef: 1 }],
+    name: "steadycom",
+    sense: "maximize",
+    objective: [{ name: "mu", coef: 1 }],
     constraints,
     bounds,
   };
@@ -216,8 +222,8 @@ async function steadyComOptimize(
   try {
     const result = await solveLP(model);
 
-    if (result.status === 'optimal') {
-      const mu = result.primals['mu'] ?? 0;
+    if (result.status === "optimal") {
+      const mu = result.primals["mu"] ?? 0;
       const growthRates = new Array(n).fill(mu);
 
       // Product fluxes from LP exchange variables
@@ -231,32 +237,31 @@ async function steadyComOptimize(
       // Aggregate exchange fluxes (net community exchange)
       const exchangeFluxes: Record<string, number> = {};
       for (const met of sharedMetabolites) {
-        exchangeFluxes[met] = strains.reduce((sum, _, i) =>
-          sum + (result.primals[`v_ex_${i}_${met}`] ?? 0), 0
-        );
+        exchangeFluxes[met] = strains.reduce((sum, _, i) => sum + (result.primals[`v_ex_${i}_${met}`] ?? 0), 0);
       }
 
       return { growthRates, productFluxes, exchangeFluxes };
     }
   } catch (e) {
     // LP solver unavailable — fall through to Monod fallback
-    console.warn('[Consortium] LP solver unavailable, using Monod fallback:', e);
+    console.warn("[Consortium] LP solver unavailable, using Monod fallback:", e);
   }
 
   // ── Fallback: Monod-derived rates ────────────────────────────────────────
   // When LP solver is unavailable, use Monod equation directly.
   // This is an LP-based approximation of community FBA (Zomorrodi & Segre 2016).
   // Reference: Monod (1949) J Bacteriol 56:567
-  const growthRates = strains.map(s =>
-    // μ = μmax · S / (Ks + S) — Monod (1949)
-    s.monod.muMax * substrateConc / (s.monod.ks + substrateConc)
+  const growthRates = strains.map(
+    (s) =>
+      // μ = μmax · S / (Ks + S) — Monod (1949)
+      (s.monod.muMax * substrateConc) / (s.monod.ks + substrateConc),
   );
   const muCommunity = growthRates.reduce((s, mu) => s + mu, 0) / n; // arithmetic mean
 
-  const productFluxes = strains.map(s =>
+  const productFluxes = strains.map((s) =>
     s.metabolites.produces.includes(targetProduct)
       ? muCommunity * s.monod.yieldCoeff // yield-scaled production
-      : 0
+      : 0,
   );
 
   // Exchange fluxes: balanced production/consumption
@@ -315,14 +320,15 @@ function computeCrossFeeding(
 
           // Exchange flux from LP (positive = net production)
           // Cross-feeding flux = producer's contribution to exchange
-          const flux = lpFlux !== undefined
-            ? Math.max(0, lpFlux) * (producerGrowth / Math.max(...growthRates))
-            : producerGrowth * producer.monod.yieldCoeff * (1 / (1 + producer.monod.ks));
+          const flux =
+            lpFlux !== undefined
+              ? Math.max(0, lpFlux) * (producerGrowth / Math.max(...growthRates))
+              : producerGrowth * producer.monod.yieldCoeff * (1 / (1 + producer.monod.ks));
 
           // Benefit: how much does this flux help the consumer grow?
           // Δμ = flux * Yxs_consumer (yield of consumer on this metabolite)
           const consumerGrowth = growthRates[strains.indexOf(consumer)] || consumer.growthRate;
-          const benefit = flux * consumer.monod.yieldCoeff / Math.max(consumerGrowth, 0.001);
+          const benefit = (flux * consumer.monod.yieldCoeff) / Math.max(consumerGrowth, 0.001);
 
           interactions.push({
             producer: producer.id,
@@ -358,8 +364,8 @@ function computeCrossFeeding(
  */
 export function simulateQuorumSensing(
   strains: Strain[],
-  cellDensities: number[],  // cells/mL
-  dt: number = 0.1,         // h
+  cellDensities: number[], // cells/mL
+  dt: number = 0.1, // h
   nSteps: number = 100,
 ): { active: boolean[]; ahlConcentrations: number[] } {
   const n = strains.length;
@@ -367,8 +373,8 @@ export function simulateQuorumSensing(
   const tfActive = new Array(n).fill(0);
 
   // Binding/unbinding rate constants — estimated from LuxR kinetics
-  const kBind = 0.5;    // 1/h — Kjærgaard et al. (2020)
-  const kUnbind = 0.1;  // 1/h
+  const kBind = 0.5; // 1/h — Kjærgaard et al. (2020)
+  const kUnbind = 0.1; // 1/h
 
   for (let step = 0; step < nSteps; step++) {
     for (let i = 0; i < n; i++) {
@@ -385,7 +391,7 @@ export function simulateQuorumSensing(
 
       // TF activation — Hill function
       // Reference: Waters & Bassler (2005) — Hill model for QS
-      const hillTerm = Math.pow(ahl[i], qs.hillCoeff) / (Math.pow(qs.threshold, qs.hillCoeff) + Math.pow(ahl[i], qs.hillCoeff));
+      const hillTerm = ahl[i] ** qs.hillCoeff / (qs.threshold ** qs.hillCoeff + ahl[i] ** qs.hillCoeff);
       const activation = kBind * hillTerm;
       const deactivation = kUnbind * tfActive[i];
 
@@ -420,7 +426,7 @@ export function simulateQuorumSensing(
 function analyzeStability(
   strains: Strain[],
   interactions: CrossFeedingInteraction[],
-): { stable: boolean; eigenvalues: number[]; type: 'stable' | 'unstable' | 'neutral' } {
+): { stable: boolean; eigenvalues: number[]; type: "stable" | "unstable" | "neutral" } {
   const n = strains.length;
 
   // Build Jacobian matrix
@@ -435,8 +441,8 @@ function analyzeStability(
 
   // Off-diagonal: inter-species interactions
   for (const interaction of interactions) {
-    const producerIdx = strains.findIndex(s => s.id === interaction.producer);
-    const consumerIdx = strains.findIndex(s => s.id === interaction.consumer);
+    const producerIdx = strains.findIndex((s) => s.id === interaction.producer);
+    const consumerIdx = strains.findIndex((s) => s.id === interaction.consumer);
     if (producerIdx < 0 || consumerIdx < 0) continue;
 
     // Positive: producer helps consumer (mutualism)
@@ -453,13 +459,13 @@ function analyzeStability(
 
   // Stability: all eigenvalues must have negative real parts
   // Reference: May (1972) — community stable iff max Re(λ) < 0
-  const allNegative = eigenvalues.every(λ => λ < 0);
-  const hasPositive = eigenvalues.some(λ => λ > 0.01);
+  const allNegative = eigenvalues.every((λ) => λ < 0);
+  const hasPositive = eigenvalues.some((λ) => λ > 0.01);
 
-  let type: 'stable' | 'unstable' | 'neutral';
-  if (allNegative) type = 'stable';
-  else if (hasPositive) type = 'unstable';
-  else type = 'neutral';
+  let type: "stable" | "unstable" | "neutral";
+  if (allNegative) type = "stable";
+  else if (hasPositive) type = "unstable";
+  else type = "neutral";
 
   return { stable: allNegative, eigenvalues, type };
 }
@@ -483,7 +489,7 @@ export function computeEigenvaluesQR(A: number[][]): number[] {
   if (n === 1) return [A[0][0]];
 
   // Make a copy (Hessenberg reduction modifies in place)
-  const H: number[][] = A.map(row => [...row]);
+  const H: number[][] = A.map((row) => [...row]);
 
   // Step 1: Reduce to upper Hessenberg form
   // Reference: Golub & Van Loan (2013) Algorithm 7.4.1
@@ -496,7 +502,7 @@ export function computeEigenvaluesQR(A: number[][]): number[] {
     const v: number[] = [x[0] - alpha, ...x.slice(1)];
     const vNorm = Math.sqrt(v.reduce((s, vi) => s + vi * vi, 0));
     if (vNorm < 1e-14) continue;
-    const vUnit = v.map(vi => vi / vNorm);
+    const vUnit = v.map((vi) => vi / vNorm);
 
     // Apply H from left and right: H' = (I - 2vvᵀ)H(I - 2vvᵀ)
     // Left: H[i][j] -= 2 * v[i-k-1] * Σ(v[m-k-1] * H[m][j])
@@ -549,8 +555,8 @@ export function computeEigenvaluesQR(A: number[][]): number[] {
 
     // QR decomposition with shift: H - σI = QR
     // Then H' = RQ + σI
-    const Q: number[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 1 : 0));
-    const R: number[][] = H.map(row => [...row]);
+    const Q: number[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+    const R: number[][] = H.map((row) => [...row]);
 
     // Apply shift
     for (let i = 0; i < n; i++) R[i][i] -= sigma;
@@ -599,8 +605,10 @@ export function computeEigenvaluesQR(A: number[][]): number[] {
   while (i < n) {
     if (i < n - 1 && Math.abs(H[i + 1][i]) > tol) {
       // 2×2 block: complex conjugate pair
-      const a = H[i][i], b = H[i][i + 1];
-      const c = H[i + 1][i], d = H[i + 1][i + 1];
+      const a = H[i][i],
+        b = H[i][i + 1];
+      const c = H[i + 1][i],
+        d = H[i + 1][i + 1];
       const tr = a + d;
       const det = a * d - b * c;
       const disc = tr * tr - 4 * det;
@@ -627,16 +635,16 @@ export async function optimizeConsortium(
   maxStrains: number = 3,
 ): Promise<ConsortiumDesign> {
   // Score strains by relevance to target product
-  const scored = availableStrains.map(strain => {
+  const scored = availableStrains.map((strain) => {
     let score = strain.growthRate;
     if (strain.metabolites.produces.includes(targetProduct)) score += 2;
-    if (strain.metabolites.produces.some(m => m.includes(targetProduct.substring(0, 3)))) score += 1;
+    if (strain.metabolites.produces.some((m) => m.includes(targetProduct.substring(0, 3)))) score += 1;
     return { strain, score };
   });
 
   // Select top strains
   scored.sort((a, b) => b.score - a.score);
-  const selected = scored.slice(0, maxStrains).map(s => s.strain);
+  const selected = scored.slice(0, maxStrains).map((s) => s.strain);
 
   // SteadyCom optimization
   const steadyComResult = await steadyComOptimize(selected, targetProduct);
@@ -653,7 +661,7 @@ export async function optimizeConsortium(
   // Quorum sensing simulation
   const cellDensities = selected.map(() => 1e8); // cells/mL — typical overnight culture
   const qsResult = simulateQuorumSensing(selected, cellDensities);
-  const quorumSensingActive = qsResult.active.some(a => a);
+  const quorumSensingActive = qsResult.active.some((a) => a);
 
   // Stability analysis
   const stabilityResult = analyzeStability(selected, interactions);
@@ -664,14 +672,14 @@ export async function optimizeConsortium(
     communityGrowthRate: Math.round(communityGrowthRate * 1000) / 1000,
     totalProductFlux: Math.round(totalProductFlux * 1000) / 1000,
     stability: stabilityResult.type,
-    stabilityEigenvalues: stabilityResult.eigenvalues.map(λ => Math.round(λ * 1000) / 1000),
+    stabilityEigenvalues: stabilityResult.eigenvalues.map((λ) => Math.round(λ * 1000) / 1000),
     quorumSensingActive,
     designNotes: [
       `${selected.length} strains selected from ${availableStrains.length} candidates`,
       `${interactions.length} cross-feeding interactions identified`,
       `Community growth rate: ${communityGrowthRate.toFixed(3)} h⁻¹ (Monod balanced growth)`,
-      `Stability: ${stabilityResult.type} (QR eigenvalues: ${stabilityResult.eigenvalues.map(λ => λ.toFixed(3)).join(', ')})`,
-      `Quorum sensing: ${quorumSensingActive ? 'active' : 'inactive'}`,
+      `Stability: ${stabilityResult.type} (QR eigenvalues: ${stabilityResult.eigenvalues.map((λ) => λ.toFixed(3)).join(", ")})`,
+      `Quorum sensing: ${quorumSensingActive ? "active" : "inactive"}`,
     ],
   };
 }

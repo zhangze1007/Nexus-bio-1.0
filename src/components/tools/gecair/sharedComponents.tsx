@@ -1,7 +1,7 @@
-'use client';
-import { THEME } from '../../../theme';
-import type { GateType } from '../../../data/mockGECAIR';
-import { hillInhibition } from '../../../data/mockGECAIR';
+"use client";
+import type { GateType } from "../../../data/mockGECAIR";
+import { hillInhibition } from "../../../data/mockGECAIR";
+import { THEME } from "../../../theme";
 
 /** mRNA/protein degradation rate (1/min) — Alon, An Introduction to Systems Biology (2007) */
 export const PROTEIN_DEGRADATION_RATE = 0.0075;
@@ -17,17 +17,27 @@ export const PART_COLORS: Record<string, string> = {
 };
 
 export const TRUTH_TABLE = [
-  { A: 0, B: 0 }, { A: 0, B: 1 }, { A: 1, B: 0 }, { A: 1, B: 1 },
+  { A: 0, B: 0 },
+  { A: 0, B: 1 },
+  { A: 1, B: 0 },
+  { A: 1, B: 1 },
 ];
 
 export function viridisColor(t: number): string {
   // Canonical matplotlib viridis palette (5 stops)
   const stops: [number, number, number][] = [
-    [68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37],
+    [68, 1, 84],
+    [59, 82, 139],
+    [33, 145, 140],
+    [94, 201, 98],
+    [253, 231, 37],
   ];
   const scaled = Math.max(0, Math.min(1, t)) * 4;
-  const lo = Math.floor(scaled), hi = Math.min(4, lo + 1), f = scaled - lo;
-  const [r1, g1, b1] = stops[lo], [r2, g2, b2] = stops[hi];
+  const lo = Math.floor(scaled),
+    hi = Math.min(4, lo + 1),
+    f = scaled - lo;
+  const [r1, g1, b1] = stops[lo],
+    [r2, g2, b2] = stops[hi];
   return `rgb(${Math.round(r1 + (r2 - r1) * f)},${Math.round(g1 + (g2 - g1) * f)},${Math.round(b1 + (b2 - b1) * f)})`;
 }
 
@@ -46,8 +56,8 @@ export function viridisColor(t: number): string {
  * Reference: Buchler et al. (2003) PNAS — combinatorial gene regulation
  */
 export function resolveGateOutput(a: number, b: number, gateType: GateType) {
-  if (gateType === 'AND')  return a * b;
-  if (gateType === 'OR')   return a + b - a * b;
-  if (gateType === 'NAND') return 1 - a * b;
-  return hillInhibition(a);  // NOT: re-apply Hill repression to raw signal
+  if (gateType === "AND") return a * b;
+  if (gateType === "OR") return a + b - a * b;
+  if (gateType === "NAND") return 1 - a * b;
+  return hillInhibition(a); // NOT: re-apply Hill repression to raw signal
 }

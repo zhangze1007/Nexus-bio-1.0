@@ -25,14 +25,14 @@
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface CellFreeSystem {
-  extractType: 'E_coli' | 'wheat_germ' | 'CHO' | 'baculovirus';
-  energySystem: 'PEP' | 'creatine_phosphate' | 'maltodextrin' | 'none';
-  templateDNA: number;         // nM concentration
-  aminoAcids: Record<string, number>;  // mM per amino acid
-  rNTPs: Record<string, number>;       // mM per rNTP
-  cofactors: Record<string, number>;   // mM per cofactor
-  volume: number;              // µL
-  temperature: number;         // °C
+  extractType: "E_coli" | "wheat_germ" | "CHO" | "baculovirus";
+  energySystem: "PEP" | "creatine_phosphate" | "maltodextrin" | "none";
+  templateDNA: number; // nM concentration
+  aminoAcids: Record<string, number>; // mM per amino acid
+  rNTPs: Record<string, number>; // mM per rNTP
+  cofactors: Record<string, number>; // mM per cofactor
+  volume: number; // µL
+  temperature: number; // °C
 }
 
 export interface PathwayStep {
@@ -40,29 +40,29 @@ export interface PathwayStep {
   ecNumber: string;
   substrate: string;
   product: string;
-  kcat: number;                // 1/s
-  km: number;                  // mM
-  enzymeConc: number;          // µM
+  kcat: number; // 1/s
+  km: number; // mM
+  enzymeConc: number; // µM
 }
 
 export interface CellFreeResult {
-  productYield: number;        // mM
-  productivity: number;        // mM/h
+  productYield: number; // mM
+  productivity: number; // mM/h
   stability: {
-    halfLife: number;          // hours
+    halfLife: number; // hours
     limitingFactor: string;
   };
   energyBalance: {
-    atpProduced: number;       // mM
-    atpConsumed: number;       // mM
+    atpProduced: number; // mM
+    atpConsumed: number; // mM
     net: number;
   };
   recommendations: string[];
   timeSeries: Array<{
-    time: number;              // hours
-    product: number;           // mM
-    substrate: number;         // mM
-    atp: number;               // mM
+    time: number; // hours
+    product: number; // mM
+    substrate: number; // mM
+    atp: number; // mM
   }>;
 }
 
@@ -84,12 +84,12 @@ export interface CellFreeResult {
  *   - Reference: Kim & Swartz 2001
  */
 function modelEnergySystem(
-  type: CellFreeSystem['energySystem'],
+  type: CellFreeSystem["energySystem"],
   initialConc: number,
   dt: number,
 ): { atpRate: number; substrateConsumption: number; halfLife: number } {
   switch (type) {
-    case 'PEP':
+    case "PEP":
       // PEP system: pyruvate kinase converts PEP → pyruvate + ATP
       // Rate: ~0.5 mM/min per mM PEP at 37°C
       // Half-life: ~2h — depends on PK stability
@@ -101,7 +101,7 @@ function modelEnergySystem(
         substrateConsumption: 0.5,
         halfLife: 2.0,
       };
-    case 'creatine_phosphate':
+    case "creatine_phosphate":
       // CP system: creatine kinase converts CP + ADP → creatine + ATP
       // Rate: ~2.0 mM/min — fastest energy system
       // Half-life: ~1h — CK is less stable than PK
@@ -112,7 +112,7 @@ function modelEnergySystem(
         substrateConsumption: 2.0,
         halfLife: 1.0,
       };
-    case 'maltodextrin':
+    case "maltodextrin":
       // Maltodextrin system: amylase → glucose → glycolysis → ATP
       // Rate: ~0.1 mM/min — slow but sustained
       // Half-life: ~8h — longest lasting
@@ -147,14 +147,14 @@ export function simulateCellFreePathway(
   const steps = Math.floor(duration / dt);
 
   // Initial conditions
-  let atp = 2.0;        // mM
-  let gtp = 1.0;        // mM
+  let atp = 2.0; // mM
+  const gtp = 1.0; // mM
   let mrna = 0;
   let protein = 0;
-  let substrate = 10;   // mM
+  let substrate = 10; // mM
   let product = 0;
 
-  const timeSeries: CellFreeResult['timeSeries'] = [];
+  const timeSeries: CellFreeResult["timeSeries"] = [];
 
   // Energy system parameters
   const energy = modelEnergySystem(system.energySystem, 10, dt);
@@ -162,8 +162,8 @@ export function simulateCellFreePathway(
   // TX-TL parameters (E. coli S30 extract)
   // Reference: Silverman et al. (2020) Nat Rev Methods Primers 1:30
   // Reference: Sun et al. (2013) ACS Synth Biol 2:1764 (E. coli TX-TL rates)
-  const k_txn = 0.1;       // transcription rate (nM/min) — Sun 2013: ~0.1-0.5 nM/min
-  const k_tln = 0.05;      // translation rate (nM/min) — Sun 2013: ~0.05-0.2 nM/min
+  const k_txn = 0.1; // transcription rate (nM/min) — Sun 2013: ~0.1-0.5 nM/min
+  const k_tln = 0.05; // translation rate (nM/min) — Sun 2013: ~0.05-0.2 nM/min
   const k_deg_mRNA = 0.02; // mRNA degradation (1/min) — half-life ~35 min, E. coli extract
   const k_deg_prot = 0.01; // protein degradation (1/min) — half-life ~70 min, limited proteases
 
@@ -177,16 +177,16 @@ export function simulateCellFreePathway(
     const atpCons = txnRate * 0.5 + tlnRate * 2.0;
     let pathwayFlux = Infinity;
     for (const step of pathway) {
-      const v = step.kcat * step.enzymeConc * sub / (step.km + sub);
+      const v = (step.kcat * step.enzymeConc * sub) / (step.km + sub);
       pathwayFlux = Math.min(pathwayFlux, v);
     }
     pathwayFlux = Math.min(pathwayFlux, sub / dt);
     return [
-      txnRate - k_deg_mRNA * m,         // d(mrna)/dt
-      tlnRate - k_deg_prot * p,          // d(protein)/dt
-      -pathwayFlux,                      // d(substrate)/dt
-      pathwayFlux,                       // d(product)/dt
-      atpRegen - atpCons,                // d(atp)/dt
+      txnRate - k_deg_mRNA * m, // d(mrna)/dt
+      tlnRate - k_deg_prot * p, // d(protein)/dt
+      -pathwayFlux, // d(substrate)/dt
+      pathwayFlux, // d(product)/dt
+      atpRegen - atpCons, // d(atp)/dt
     ];
   };
 
@@ -203,8 +203,8 @@ export function simulateCellFreePathway(
     const y4: State = y.map((yi, i) => yi + dt * k3[i]) as State;
     const k4 = derivatives(y4);
 
-    [mrna, protein, substrate, product, atp] = y.map((yi, i) =>
-      yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+    [mrna, protein, substrate, product, atp] = y.map(
+      (yi, i) => yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]),
     ) as State;
 
     // Clamp non-negative
@@ -213,7 +213,8 @@ export function simulateCellFreePathway(
     substrate = Math.max(0, substrate);
     atp = Math.max(0, atp);
 
-    if (step % Math.floor(0.5 / dt) === 0) { // every 30 min
+    if (step % Math.floor(0.5 / dt) === 0) {
+      // every 30 min
       timeSeries.push({
         time: Math.round(t * 100) / 100,
         product: Math.round(product * 1000) / 1000,
@@ -228,7 +229,7 @@ export function simulateCellFreePathway(
   const productivity = finalProduct / duration;
 
   // Stability: based on ATP and enzyme half-lives
-  const limitingFactor = atp < 0.1 ? 'ATP depletion' : 'Enzyme degradation';
+  const limitingFactor = atp < 0.1 ? "ATP depletion" : "Enzyme degradation";
   const halfLife = atp < 0.1 ? duration * 0.3 : duration * 0.7;
 
   // Energy balance
@@ -237,9 +238,9 @@ export function simulateCellFreePathway(
 
   // Recommendations
   const recommendations: string[] = [];
-  if (atp < 0.5) recommendations.push('Increase energy system concentration — ATP is limiting');
-  if (productivity < 0.5) recommendations.push('Optimize enzyme ratios — pathway flux is low');
-  if (substrate > 5) recommendations.push('Substrate not fully consumed — increase enzyme loading');
+  if (atp < 0.5) recommendations.push("Increase energy system concentration — ATP is limiting");
+  if (productivity < 0.5) recommendations.push("Optimize enzyme ratios — pathway flux is low");
+  if (substrate > 5) recommendations.push("Substrate not fully consumed — increase enzyme loading");
 
   return {
     productYield: Math.round(finalProduct * 1000) / 1000,
@@ -289,7 +290,7 @@ export function optimizeEnzymeRatios(
   // This is deterministic and reproducible
   const ratioSteps = [0.1, 0.3, 0.5, 0.7, 0.9];
   let bestYield = baseline.productYield;
-  let bestRatios = pathway.map(s => s.enzymeConc);
+  let bestRatios = pathway.map((s) => s.enzymeConc);
 
   // For 2-3 enzymes, test all combinations
   // For >3 enzymes, use coordinate descent (optimize one at a time)
@@ -298,7 +299,7 @@ export function optimizeEnzymeRatios(
     const combinations = generateRatioCombinations(nEnzymes, ratioSteps);
     for (const ratios of combinations) {
       const sum = ratios.reduce((a, b) => a + b, 0);
-      const normalized = ratios.map(r => (r / sum) * totalEnzymeBudget);
+      const normalized = ratios.map((r) => (r / sum) * totalEnzymeBudget);
       const testPathway = pathway.map((s, i) => ({ ...s, enzymeConc: normalized[i] }));
       const result = simulateCellFreePathway(system, testPathway);
       if (result.productYield > bestYield) {
@@ -308,7 +309,7 @@ export function optimizeEnzymeRatios(
     }
   } else {
     // Coordinate descent: optimize one enzyme at a time
-    let currentRatios = pathway.map(s => s.enzymeConc / totalEnzymeBudget);
+    const currentRatios = pathway.map((s) => s.enzymeConc / totalEnzymeBudget);
     for (let round = 0; round < 5; round++) {
       for (let e = 0; e < nEnzymes; e++) {
         let bestRatio = currentRatios[e];
@@ -316,7 +317,7 @@ export function optimizeEnzymeRatios(
           const testRatios = [...currentRatios];
           testRatios[e] = ratio;
           const sum = testRatios.reduce((a, b) => a + b, 0);
-          const normalized = testRatios.map(r => (r / sum) * totalEnzymeBudget);
+          const normalized = testRatios.map((r) => (r / sum) * totalEnzymeBudget);
           const testPathway = pathway.map((s, i) => ({ ...s, enzymeConc: normalized[i] }));
           const result = simulateCellFreePathway(system, testPathway);
           if (result.productYield > bestYield) {
@@ -330,12 +331,10 @@ export function optimizeEnzymeRatios(
     }
   }
 
-  const improvement = baseline.productYield > 0
-    ? (bestYield - baseline.productYield) / baseline.productYield
-    : 0;
+  const improvement = baseline.productYield > 0 ? (bestYield - baseline.productYield) / baseline.productYield : 0;
 
   return {
-    optimalRatios: bestRatios.map(r => Math.round(r * 1000) / 1000),
+    optimalRatios: bestRatios.map((r) => Math.round(r * 1000) / 1000),
     maxYield: Math.round(bestYield * 1000) / 1000,
     improvement: Math.round(improvement * 100) / 100,
   };

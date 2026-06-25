@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useId, useRef, useCallback, type KeyboardEvent } from 'react';
-import { motion } from 'framer-motion';
-import { THEME } from '../../../theme';
+import { motion } from "framer-motion";
+import { type KeyboardEvent, useCallback, useId, useRef } from "react";
+import { THEME } from "../../../theme";
 export interface ToolTab {
   id: string;
   label: string;
@@ -28,16 +28,16 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
       if (currentIndex === -1) return;
 
       let nextIndex = currentIndex;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
         nextIndex = (currentIndex + 1) % tabs.length;
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-      } else if (e.key === 'Home') {
+      } else if (e.key === "Home") {
         e.preventDefault();
         nextIndex = 0;
-      } else if (e.key === 'End') {
+      } else if (e.key === "End") {
         e.preventDefault();
         nextIndex = tabs.length - 1;
       } else {
@@ -56,9 +56,9 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
       aria-label="Tool sections"
       onKeyDown={handleKeyDown}
       style={{
-        display: 'flex',
-        gap: '2px',
-        padding: '0 16px',
+        display: "flex",
+        gap: "2px",
+        padding: "0 16px",
         borderBottom: `1px solid ${THEME.BORDER}`,
         background: THEME.PANEL_MUTED,
       }}
@@ -69,7 +69,9 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
         return (
           <button
             key={tab.id}
-            ref={(el) => { tabRefs.current[i] = el; }}
+            ref={(el) => {
+              tabRefs.current[i] = el;
+            }}
             role="tab"
             id={`${instanceId}-tab-${tab.id}`}
             aria-selected={isActive}
@@ -77,29 +79,29 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab.id)}
             style={{
-              position: 'relative',
-              padding: '10px 16px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
+              position: "relative",
+              padding: "10px 16px",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
               fontFamily: THEME.SANS,
-              fontSize: 'var(--nb-fs-sm)',
+              fontSize: "var(--nb-fs-sm)",
               fontWeight: isActive ? 600 : 400,
               color: isActive ? accent : THEME.LABEL,
-              borderRadius: '6px 6px 0 0',
-              transition: 'color 0.2s ease, background 0.15s ease',
-              outline: '2px solid rgba(175,195,214,0.5)',
-              outlineOffset: '2px',
+              borderRadius: "6px 6px 0 0",
+              transition: "color 0.2s ease, background 0.15s ease",
+              outline: "2px solid rgba(175,195,214,0.5)",
+              outlineOffset: "2px",
             }}
             onMouseEnter={(e) => {
               if (!isActive) {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                e.currentTarget.style.background = "rgba(255,255,255,0.04)";
                 e.currentTarget.style.color = THEME.VALUE;
               }
             }}
             onMouseLeave={(e) => {
               if (!isActive) {
-                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.background = "transparent";
                 e.currentTarget.style.color = THEME.LABEL;
               }
             }}
@@ -109,7 +111,7 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
               }
             }}
             onBlur={(e) => {
-              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.boxShadow = "none";
             }}
           >
             {tab.label}
@@ -117,15 +119,15 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
               <motion.div
                 layoutId={`tool-tab-indicator-${instanceId}`}
                 style={{
-                  position: 'absolute',
-                  bottom: '-1px',
+                  position: "absolute",
+                  bottom: "-1px",
                   left: 0,
                   right: 0,
-                  height: '2px',
+                  height: "2px",
                   background: accent,
-                  borderRadius: '2px 2px 0 0',
+                  borderRadius: "2px 2px 0 0",
                 }}
-                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
               />
             )}
           </button>

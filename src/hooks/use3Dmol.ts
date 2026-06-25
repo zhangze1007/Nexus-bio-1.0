@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useRef, useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 // $3Dmol Window declaration is in src/types/3dmol.d.ts
 
 const THREEDMOL_CDNS = [
-  'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.5.3/3Dmol-min.js',
-  'https://3Dmol.org/build/3Dmol-min.js',
+  "https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.5.3/3Dmol-min.js",
+  "https://3Dmol.org/build/3Dmol-min.js",
 ];
 
 /** Load 3Dmol.js from CDN with fallback chain. Resolves when window.$3Dmol is available. */
 export function load3Dmol(): Promise<void> {
-  if (typeof window === 'undefined') return Promise.reject(new Error('No window'));
+  if (typeof window === "undefined") return Promise.reject(new Error("No window"));
   if (window.$3Dmol) return Promise.resolve();
 
   return THREEDMOL_CDNS.reduce<Promise<void>>(
@@ -19,9 +19,9 @@ export function load3Dmol(): Promise<void> {
       chain.catch(
         () =>
           new Promise<void>((resolve, reject) => {
-            const s = document.createElement('script');
+            const s = document.createElement("script");
             s.src = url;
-            s.onload = () => (window.$3Dmol ? resolve() : reject(new Error('3Dmol not defined')));
+            s.onload = () => (window.$3Dmol ? resolve() : reject(new Error("3Dmol not defined")));
             s.onerror = () => reject(new Error(`Failed to load ${url}`));
             document.head.appendChild(s);
           }),
@@ -36,7 +36,7 @@ export interface Use3DmolConfig {
 
 export interface Use3DmolResult {
   viewer: $3DmolViewer | null;
-  status: 'loading' | 'ready' | 'error';
+  status: "loading" | "ready" | "error";
 }
 
 /**
@@ -47,36 +47,45 @@ export function use3Dmol(
   containerRef: React.RefObject<HTMLDivElement | null>,
   config: Use3DmolConfig = {},
 ): Use3DmolResult {
-  const { backgroundColor = '0x0d0f14' } = config;
+  const { backgroundColor = "0x0d0f14" } = config;
   const viewerRef = useRef<$3DmolViewer | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
       if (!containerRef.current) return;
-      setStatus('loading');
+      setStatus("loading");
       try {
         await load3Dmol();
         if (cancelled) return;
-        if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} }
-        containerRef.current.innerHTML = '';
+        if (viewerRef.current) {
+          try {
+            viewerRef.current.clear();
+          } catch {}
+        }
+        containerRef.current.innerHTML = "";
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor, antialias: true,
+          backgroundColor,
+          antialias: true,
         });
         viewerRef.current = viewer;
-        if (!cancelled) setStatus('ready');
+        if (!cancelled) setStatus("ready");
       } catch {
-        if (!cancelled) setStatus('error');
+        if (!cancelled) setStatus("error");
       }
     }
 
     init();
     return () => {
       cancelled = true;
-      if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} }
+      if (viewerRef.current) {
+        try {
+          viewerRef.current.clear();
+        } catch {}
+      }
     };
   }, [backgroundColor, containerRef]);
 

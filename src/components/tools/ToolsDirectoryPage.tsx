@@ -1,108 +1,98 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import {
-  ArrowUpRight,
-  CheckCircle2,
-  Search,
-  SlidersHorizontal,
-  Star,
-  StarOff,
-  Scale,
-  X,
-} from 'lucide-react';
-import EmptyState from '../ide/shared/EmptyState';
-import DisplayModeToggle, { useDisplayMode } from '../ide/shared/DisplayModeToggle';
-import Pagination from '../ide/shared/Pagination';
-import {
-  TOOL_DEFINITIONS,
-  TOOL_DIRECTIONS,
-  type ToolDirection,
-  type ToolDefinition,
-} from './shared/toolRegistry';
-const STORAGE_KEY = 'nexus-bio-favorite-tools';
+import { ArrowUpRight, CheckCircle2, Scale, Search, SlidersHorizontal, Star, StarOff, X } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import DisplayModeToggle, { useDisplayMode } from "../ide/shared/DisplayModeToggle";
+import EmptyState from "../ide/shared/EmptyState";
+import Pagination from "../ide/shared/Pagination";
+import { TOOL_DEFINITIONS, TOOL_DIRECTIONS, type ToolDefinition, type ToolDirection } from "./shared/toolRegistry";
 
-type ShellFilter = 'All' | 'ide' | 'bento';
-type SortMode = 'name' | 'category' | 'workflow';
+const STORAGE_KEY = "nexus-bio-favorite-tools";
 
-import { toolTokens } from '../../hooks/useToolTheme';
-import { THEME } from '../../theme';
+type ShellFilter = "All" | "ide" | "bento";
+type SortMode = "name" | "category" | "workflow";
+
+import { toolTokens } from "../../hooks/useToolTheme";
+import { THEME } from "../../theme";
+
 const { border: BORDER, value: VALUE, label: LABEL } = toolTokens;
 const BORDER_STRONG = THEME.BORDER_STRONG;
 const SURFACE = THEME.PANEL_SURFACE;
 const SURFACE_SOFT = THEME.PANEL_INSET;
-const SURFACE_TINT = 'rgba(255,255,255,0.90)';
-const SHADOW = '0 2px 16px rgba(0,0,0,0.28)';
+const SURFACE_TINT = "rgba(255,255,255,0.90)";
+const SHADOW = "0 2px 16px rgba(0,0,0,0.28)";
 // Dark text for white-pill buttons
 const BTN_TEXT = THEME.PANEL_STRONG;
 
-const DIRECTION_ACCENTS: Record<ToolDirection | 'All', string> = {
+const DIRECTION_ACCENTS: Record<ToolDirection | "All", string> = {
   All: THEME.SKY,
-  'Research Intake': THEME.SKY,
-  'Pathway & Design': THEME.APRICOT,
-  'Structure & Enzyme': THEME.CORAL,
-  'Dynamic & System': THEME.LILAC,
-  'Omics & Spatial': THEME.SKY,
-  'Validation & DBTL': THEME.MINT,
-  'AI Assistant': THEME.LILAC,
+  "Research Intake": THEME.SKY,
+  "Pathway & Design": THEME.APRICOT,
+  "Structure & Enzyme": THEME.CORAL,
+  "Dynamic & System": THEME.LILAC,
+  "Omics & Spatial": THEME.SKY,
+  "Validation & DBTL": THEME.MINT,
+  "AI Assistant": THEME.LILAC,
 };
 
-function getDirectionAccent(direction: ToolDirection | 'All') {
+function getDirectionAccent(direction: ToolDirection | "All") {
   return DIRECTION_ACCENTS[direction];
 }
 
 const DIRECTION_NOTES: Record<string, string> = {
-  'Research Intake': 'Use this layer to move from papers, citations, and evidence into a concrete tool route.',
-  'Pathway & Design': 'Best when the next step is route selection, node inspection, and pathway-level intervention.',
-  'Structure & Enzyme': 'Use for protein structure, catalyst ranking, and evolution-driven design refinement.',
-  'Dynamic & System': 'Use when kinetics, control, thermodynamics, or flux constraints determine the decision.',
-  'Omics & Spatial': 'Use when single-cell, spatial, or multi-omics context is needed to interpret a mechanism.',
-  'Validation & DBTL': 'Use to translate candidates into validation runs, cell-free checks, and engineering workflow.',
-  'AI Assistant': 'Use to synthesize context, compare evidence, and orchestrate next actions across modules.',
+  "Research Intake": "Use this layer to move from papers, citations, and evidence into a concrete tool route.",
+  "Pathway & Design": "Best when the next step is route selection, node inspection, and pathway-level intervention.",
+  "Structure & Enzyme": "Use for protein structure, catalyst ranking, and evolution-driven design refinement.",
+  "Dynamic & System": "Use when kinetics, control, thermodynamics, or flux constraints determine the decision.",
+  "Omics & Spatial": "Use when single-cell, spatial, or multi-omics context is needed to interpret a mechanism.",
+  "Validation & DBTL": "Use to translate candidates into validation runs, cell-free checks, and engineering workflow.",
+  "AI Assistant": "Use to synthesize context, compare evidence, and orchestrate next actions across modules.",
 };
 
-const DIRECTION_CLUSTER_RECIPES: Record<ToolDirection, {
-  demoLabel: string;
-  researchLabel: string;
-  spotlight: string[];
-}> = {
-  'Research Intake': {
-    demoLabel: 'Paper → evidence → tool handoff',
-    researchLabel: 'Source triage, evidence intake, and next-step routing',
-    spotlight: ['litsearch', 'paper-analyzer', 'genbio-ai'],
+const DIRECTION_CLUSTER_RECIPES: Record<
+  ToolDirection,
+  {
+    demoLabel: string;
+    researchLabel: string;
+    spotlight: string[];
+  }
+> = {
+  "Research Intake": {
+    demoLabel: "Paper → evidence → tool handoff",
+    researchLabel: "Source triage, evidence intake, and next-step routing",
+    spotlight: ["litsearch", "paper-analyzer", "genbio-ai"],
   },
-  'Pathway & Design': {
-    demoLabel: '3D pathway storytelling and intervention entry',
-    researchLabel: 'Route inspection, node drill-down, and downstream execution',
-    spotlight: ['pathd', 'catdes'],
+  "Pathway & Design": {
+    demoLabel: "3D pathway storytelling and intervention entry",
+    researchLabel: "Route inspection, node drill-down, and downstream execution",
+    spotlight: ["pathd", "catdes"],
   },
-  'Structure & Enzyme': {
-    demoLabel: 'Candidate enzyme showcase with structure-backed ranking',
-    researchLabel: 'Catalyst comparison, structure review, and evolution campaign strategy',
-    spotlight: ['catdes', 'proevol'],
+  "Structure & Enzyme": {
+    demoLabel: "Candidate enzyme showcase with structure-backed ranking",
+    researchLabel: "Catalyst comparison, structure review, and evolution campaign strategy",
+    spotlight: ["catdes", "proevol"],
   },
-  'Dynamic & System': {
-    demoLabel: 'System constraint story: flux, control, thermo',
-    researchLabel: 'Model tuning, dynamic analysis, and systems-level rejection criteria',
-    spotlight: ['fbasim', 'dyncon', 'cethx'],
+  "Dynamic & System": {
+    demoLabel: "System constraint story: flux, control, thermo",
+    researchLabel: "Model tuning, dynamic analysis, and systems-level rejection criteria",
+    spotlight: ["fbasim", "dyncon", "cethx"],
   },
-  'Omics & Spatial': {
-    demoLabel: 'Layered cell-state and spatial context walkthrough',
-    researchLabel: 'QC, latent embedding, trajectory, and ranked omics evidence',
-    spotlight: ['multio', 'scspatial'],
+  "Omics & Spatial": {
+    demoLabel: "Layered cell-state and spatial context walkthrough",
+    researchLabel: "QC, latent embedding, trajectory, and ranked omics evidence",
+    spotlight: ["multio", "scspatial"],
   },
-  'Validation & DBTL': {
-    demoLabel: 'From construct to validation loop and reactor twin',
-    researchLabel: 'DBTL orchestration, simulation validation, and learn-loop capture',
-    spotlight: ['cellfree', 'dbtlflow', 'genmim'],
+  "Validation & DBTL": {
+    demoLabel: "From construct to validation loop and reactor twin",
+    researchLabel: "DBTL orchestration, simulation validation, and learn-loop capture",
+    spotlight: ["cellfree", "dbtlflow", "genmim"],
   },
-  'AI Assistant': {
-    demoLabel: 'Narrative copilot across the workbench',
-    researchLabel: 'Cross-tool synthesis, comparison, and action orchestration',
-    spotlight: ['genbio-ai'],
+  "AI Assistant": {
+    demoLabel: "Narrative copilot across the workbench",
+    researchLabel: "Cross-tool synthesis, comparison, and action orchestration",
+    spotlight: ["genbio-ai"],
   },
 };
 
@@ -121,30 +111,30 @@ function matchesQuery(tool: ToolDefinition, query: string) {
     ...tool.outputs,
     ...tool.tags,
   ]
-    .join(' ')
+    .join(" ")
     .toLowerCase();
 
   return haystack.includes(query.trim().toLowerCase());
 }
 
 function compareBy(sortMode: SortMode, tool: ToolDefinition) {
-  if (sortMode === 'category') return `${tool.category}-${tool.name}`;
-  if (sortMode === 'workflow') return `${tool.direction}-${tool.shell}-${tool.category}-${tool.name}`;
+  if (sortMode === "category") return `${tool.category}-${tool.name}`;
+  if (sortMode === "workflow") return `${tool.direction}-${tool.shell}-${tool.category}-${tool.name}`;
   return tool.name;
 }
 
 export default function ToolsDirectoryPage() {
   const searchParams = useSearchParams();
-  const initialQuery = searchParams.get('query') ?? '';
-  const initialDirection = searchParams.get('direction') as ToolDirection | null;
-  const initialTool = searchParams.get('tool');
-  const [query, setQuery] = useState('');
-  const [direction, setDirection] = useState<ToolDirection | 'All'>('All');
-  const [shellFilter, setShellFilter] = useState<ShellFilter>('All');
-  const [sortMode, setSortMode] = useState<SortMode>('workflow');
+  const initialQuery = searchParams.get("query") ?? "";
+  const initialDirection = searchParams.get("direction") as ToolDirection | null;
+  const initialTool = searchParams.get("tool");
+  const [query, setQuery] = useState("");
+  const [direction, setDirection] = useState<ToolDirection | "All">("All");
+  const [shellFilter, setShellFilter] = useState<ShellFilter>("All");
+  const [sortMode, setSortMode] = useState<SortMode>("workflow");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
-  const [selectedToolId, setSelectedToolId] = useState<string>(TOOL_DEFINITIONS[0]?.id ?? 'pathd');
+  const [selectedToolId, setSelectedToolId] = useState<string>(TOOL_DEFINITIONS[0]?.id ?? "pathd");
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
@@ -163,7 +153,7 @@ export default function ToolsDirectoryPage() {
       if (!stored) return;
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        setFavoriteIds(parsed.filter((value): value is string => typeof value === 'string'));
+        setFavoriteIds(parsed.filter((value): value is string => typeof value === "string"));
       }
     } catch {
       setFavoriteIds([]);
@@ -179,10 +169,10 @@ export default function ToolsDirectoryPage() {
   }, [favoriteIds, favoritesReady]);
 
   const filteredTools = useMemo(() => {
-      return [...TOOL_DEFINITIONS]
+    return [...TOOL_DEFINITIONS]
       .filter((tool) => matchesQuery(tool, query))
-      .filter((tool) => direction === 'All' || tool.direction === direction)
-      .filter((tool) => shellFilter === 'All' || tool.shell === shellFilter)
+      .filter((tool) => direction === "All" || tool.direction === direction)
+      .filter((tool) => shellFilter === "All" || tool.shell === shellFilter)
       .sort((a, b) => compareBy(sortMode, a).localeCompare(compareBy(sortMode, b)));
   }, [direction, query, shellFilter, sortMode]);
 
@@ -192,7 +182,7 @@ export default function ToolsDirectoryPage() {
 
   useEffect(() => {
     if (!filteredTools.some((tool) => tool.id === selectedToolId)) {
-      setSelectedToolId(filteredTools[0]?.id ?? TOOL_DEFINITIONS[0]?.id ?? 'pathd');
+      setSelectedToolId(filteredTools[0]?.id ?? TOOL_DEFINITIONS[0]?.id ?? "pathd");
     }
   }, [filteredTools, selectedToolId]);
 
@@ -216,11 +206,12 @@ export default function ToolsDirectoryPage() {
   const comparedTools = TOOL_DEFINITIONS.filter((tool) => compareIds.includes(tool.id));
   const relatedTools = useMemo(() => {
     if (!selectedTool) return [];
-    return TOOL_DEFINITIONS.filter((tool) =>
-      tool.id !== selectedTool.id &&
-      (tool.direction === selectedTool.direction ||
-        selectedTool.relatedRoutes?.includes(tool.href) ||
-        tool.relatedRoutes?.includes(selectedTool.href)),
+    return TOOL_DEFINITIONS.filter(
+      (tool) =>
+        tool.id !== selectedTool.id &&
+        (tool.direction === selectedTool.direction ||
+          selectedTool.relatedRoutes?.includes(tool.href) ||
+          tool.relatedRoutes?.includes(selectedTool.href)),
     );
   }, [selectedTool]);
   const relatedPageSize = 3;
@@ -231,28 +222,28 @@ export default function ToolsDirectoryPage() {
     return relatedTools.slice(start, start + relatedPageSize);
   }, [relatedTools, safeRelatedPage]);
   const directionClusters = useMemo(
-    () => TOOL_DIRECTIONS.map((currentDirection) => ({
-      direction: currentDirection,
-      tools: TOOL_DEFINITIONS
-        .filter((tool) => tool.direction === currentDirection)
-        .sort((a, b) => {
-          const aIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(a.id);
-          const bIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(b.id);
-          const aScore = aIndex === -1 ? 99 : aIndex;
-          const bScore = bIndex === -1 ? 99 : bIndex;
-          return aScore - bScore || a.name.localeCompare(b.name);
-        })
-        .slice(0, displayMode === 'demo' ? 2 : 4),
-      total: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection).length,
-      strong3d: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection && tool.threeDPotential === 'strong').length,
-    })),
+    () =>
+      TOOL_DIRECTIONS.map((currentDirection) => ({
+        direction: currentDirection,
+        tools: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection)
+          .sort((a, b) => {
+            const aIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(a.id);
+            const bIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(b.id);
+            const aScore = aIndex === -1 ? 99 : aIndex;
+            const bScore = bIndex === -1 ? 99 : bIndex;
+            return aScore - bScore || a.name.localeCompare(b.name);
+          })
+          .slice(0, displayMode === "demo" ? 2 : 4),
+        total: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection).length,
+        strong3d: TOOL_DEFINITIONS.filter(
+          (tool) => tool.direction === currentDirection && tool.threeDPotential === "strong",
+        ).length,
+      })),
     [displayMode],
   );
 
   function toggleFavorite(toolId: string) {
-    setFavoriteIds((prev) =>
-      prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId],
-    );
+    setFavoriteIds((prev) => (prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId]));
   }
 
   function toggleCompare(toolId: string) {
@@ -266,123 +257,201 @@ export default function ToolsDirectoryPage() {
   return (
     // position:absolute + inset:0 fills the nb-ide-main container provided
     // by the persistent ToolsLayoutShell (app/tools/layout.tsx)
-    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`, color: VALUE, overflow: 'auto' }}>
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
+        color: VALUE,
+        overflow: "auto",
+      }}
+    >
       <main>
-        <section style={{ padding: '32px 18px 20px' }}>
-          <div style={{ maxWidth: '1480px', margin: '0 auto' }}>
+        <section style={{ padding: "32px 18px 20px" }}>
+          <div style={{ maxWidth: "1480px", margin: "0 auto" }}>
             <div
               style={{
-                display: 'grid',
-                gap: '24px',
-                gridTemplateColumns: 'minmax(0, 1fr)',
+                display: "grid",
+                gap: "24px",
+                gridTemplateColumns: "minmax(0, 1fr)",
               }}
             >
               {/* P2.3: merged hero + mode toggle + 4-stage workflow into a single dense section */}
               <section
                 style={{
-                  borderRadius: 'var(--nb-radius-xl)',
+                  borderRadius: "var(--nb-radius-xl)",
                   border: `1px solid ${BORDER}`,
                   background: SURFACE,
-                  padding: '16px 18px',
+                  padding: "16px 18px",
                   boxShadow: SHADOW,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <p style={{ margin: 0, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                    marginBottom: "14px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        color: LABEL,
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Tools Directory
                     </p>
                     {[
-                      { label: 'Tools', value: TOOL_DEFINITIONS.length },
-                      { label: 'Directions', value: TOOL_DIRECTIONS.length },
-                      { label: '3D', value: TOOL_DEFINITIONS.filter((tool) => tool.threeDPotential !== 'none').length },
+                      { label: "Tools", value: TOOL_DEFINITIONS.length },
+                      { label: "Directions", value: TOOL_DIRECTIONS.length },
+                      { label: "3D", value: TOOL_DEFINITIONS.filter((tool) => tool.threeDPotential !== "none").length },
                     ].map((item) => (
-                      <span key={item.label} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, padding: '3px 8px', borderRadius: 'var(--nb-radius-sm)', border: `1px solid ${BORDER}`, background: SURFACE }}>
+                      <span
+                        key={item.label}
+                        style={{
+                          fontFamily: THEME.MONO,
+                          fontSize: "var(--nb-fs-xs)",
+                          color: VALUE,
+                          padding: "3px 8px",
+                          borderRadius: "var(--nb-radius-sm)",
+                          border: `1px solid ${BORDER}`,
+                          background: SURFACE,
+                        }}
+                      >
                         {item.value} {item.label}
                       </span>
                     ))}
                   </div>
                   <DisplayModeToggle />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'stretch', gap: '0', overflowX: 'auto' }}>
-                  {([
-                    {
-                      stage: 1,
-                      label: 'Discover',
-                      tagline: 'Papers → Evidence → Route',
-                      desc: 'Import literature, extract pathway context, and decide which tools to use.',
-                      color: THEME.SKY,
-                      bgColor: `${THEME.SKY}33`,
-                      borderColor: `${THEME.SKY}70`,
-                      directions: ['Research Intake'] as ToolDirection[],
-                      toolIds: ['litsearch', 'paper-analyzer', 'genbio-ai'],
-                    },
-                    {
-                      stage: 2,
-                      label: 'Design',
-                      tagline: 'Pathway → Structure → Candidate',
-                      desc: 'Map routes, inspect enzyme nodes, and rank structural candidates.',
-                      color: THEME.APRICOT,
-                      bgColor: `${THEME.APRICOT}33`,
-                      borderColor: `${THEME.APRICOT}70`,
-                      directions: ['Pathway & Design', 'Structure & Enzyme'] as ToolDirection[],
-                      toolIds: ['pathd', 'catdes', 'proevol'],
-                    },
-                    {
-                      stage: 3,
-                      label: 'Simulate',
-                      tagline: 'Flux → Dynamics → Omics',
-                      desc: 'Run FBA, PID bioreactor control, thermodynamics, and multi-omics analysis.',
-                      color: THEME.LILAC,
-                      bgColor: `${THEME.LILAC}33`,
-                      borderColor: `${THEME.LILAC}70`,
-                      directions: ['Dynamic & System', 'Omics & Spatial'] as ToolDirection[],
-                      toolIds: ['fbasim', 'dyncon', 'cethx'],
-                    },
-                    {
-                      stage: 4,
-                      label: 'Validate',
-                      tagline: 'Cell-free → DBTL → Learn',
-                      desc: 'Translate candidates into cell-free experiments, DBTL loops, and construct generation.',
-                      color: THEME.MINT,
-                      bgColor: `${THEME.MINT}38`,
-                      borderColor: `${THEME.MINT}70`,
-                      directions: ['Validation & DBTL', 'AI Assistant'] as ToolDirection[],
-                      toolIds: ['cellfree', 'dbtlflow', 'genmim'],
-                    },
-                  ] as const).map((s, i, arr) => (
+                <div style={{ display: "flex", alignItems: "stretch", gap: "0", overflowX: "auto" }}>
+                  {(
+                    [
+                      {
+                        stage: 1,
+                        label: "Discover",
+                        tagline: "Papers → Evidence → Route",
+                        desc: "Import literature, extract pathway context, and decide which tools to use.",
+                        color: THEME.SKY,
+                        bgColor: `${THEME.SKY}33`,
+                        borderColor: `${THEME.SKY}70`,
+                        directions: ["Research Intake"] as ToolDirection[],
+                        toolIds: ["litsearch", "paper-analyzer", "genbio-ai"],
+                      },
+                      {
+                        stage: 2,
+                        label: "Design",
+                        tagline: "Pathway → Structure → Candidate",
+                        desc: "Map routes, inspect enzyme nodes, and rank structural candidates.",
+                        color: THEME.APRICOT,
+                        bgColor: `${THEME.APRICOT}33`,
+                        borderColor: `${THEME.APRICOT}70`,
+                        directions: ["Pathway & Design", "Structure & Enzyme"] as ToolDirection[],
+                        toolIds: ["pathd", "catdes", "proevol"],
+                      },
+                      {
+                        stage: 3,
+                        label: "Simulate",
+                        tagline: "Flux → Dynamics → Omics",
+                        desc: "Run FBA, PID bioreactor control, thermodynamics, and multi-omics analysis.",
+                        color: THEME.LILAC,
+                        bgColor: `${THEME.LILAC}33`,
+                        borderColor: `${THEME.LILAC}70`,
+                        directions: ["Dynamic & System", "Omics & Spatial"] as ToolDirection[],
+                        toolIds: ["fbasim", "dyncon", "cethx"],
+                      },
+                      {
+                        stage: 4,
+                        label: "Validate",
+                        tagline: "Cell-free → DBTL → Learn",
+                        desc: "Translate candidates into cell-free experiments, DBTL loops, and construct generation.",
+                        color: THEME.MINT,
+                        bgColor: `${THEME.MINT}38`,
+                        borderColor: `${THEME.MINT}70`,
+                        directions: ["Validation & DBTL", "AI Assistant"] as ToolDirection[],
+                        toolIds: ["cellfree", "dbtlflow", "genmim"],
+                      },
+                    ] as const
+                  ).map((s, i, arr) => (
                     <React.Fragment key={s.stage}>
                       <button
                         type="button"
                         className="nb-tool-toggle"
                         onClick={() => setDirection(s.directions[0])}
                         style={{
-                          flex: '1 1 0',
-                          minWidth: '160px',
-                          padding: '14px 16px',
-                          borderRadius: 'var(--nb-radius-lg)',
+                          flex: "1 1 0",
+                          minWidth: "160px",
+                          padding: "14px 16px",
+                          borderRadius: "var(--nb-radius-lg)",
                           borderColor: s.borderColor,
                           background: s.bgColor,
-                          textAlign: 'left',
+                          textAlign: "left",
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, color: VALUE, opacity: 0.82 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                          <span
+                            style={{
+                              fontFamily: THEME.MONO,
+                              fontSize: "var(--nb-fs-xs)",
+                              fontWeight: 700,
+                              color: VALUE,
+                              opacity: 0.82,
+                            }}
+                          >
                             STAGE {s.stage}
                           </span>
                         </div>
-                        <p style={{ margin: '0 0 4px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: s.color }}>
+                        <p
+                          style={{
+                            margin: "0 0 4px",
+                            fontFamily: THEME.SANS,
+                            fontSize: "var(--nb-fs-md)",
+                            fontWeight: 700,
+                            color: s.color,
+                          }}
+                        >
                           {s.label}
                         </p>
-                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
+                        <p
+                          style={{
+                            margin: "0 0 8px",
+                            fontFamily: THEME.MONO,
+                            fontSize: "var(--nb-fs-xs)",
+                            color: LABEL,
+                          }}
+                        >
                           {s.tagline}
                         </p>
-                        <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: THEME.SANS,
+                            fontSize: "var(--nb-fs-sm)",
+                            lineHeight: 1.5,
+                            color: LABEL,
+                          }}
+                        >
                           {s.desc}
                         </p>
                       </button>
                       {i < arr.length - 1 && (
-                        <div style={{ display: 'flex', alignItems: 'center', padding: '0 6px', flexShrink: 0, color: LABEL, fontSize: 'var(--nb-fs-lg)' }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            padding: "0 6px",
+                            flexShrink: 0,
+                            color: LABEL,
+                            fontSize: "var(--nb-fs-lg)",
+                          }}
+                        >
                           →
                         </div>
                       )}
@@ -390,21 +459,41 @@ export default function ToolsDirectoryPage() {
                   ))}
                 </div>
                 {/* Direction clusters (merged into workflow section — P2.3) */}
-                <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginTop: '16px' }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gap: "12px",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    marginTop: "16px",
+                  }}
+                >
                   {directionClusters.map((cluster) => (
                     <div
                       key={cluster.direction}
                       style={{
-                        borderRadius: 'var(--nb-radius-lg)',
+                        borderRadius: "var(--nb-radius-lg)",
                         border: `1px solid ${direction === cluster.direction ? BORDER_STRONG : BORDER}`,
-                        background: direction === cluster.direction ? `${getDirectionAccent(cluster.direction)}2a` : SURFACE_SOFT,
-                        padding: '14px',
+                        background:
+                          direction === cluster.direction ? `${getDirectionAccent(cluster.direction)}2a` : SURFACE_SOFT,
+                        padding: "14px",
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+                      <div
+                        style={{ display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "8px" }}
+                      >
                         <div>
-                          <p style={{ margin: '0 0 4px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, color: VALUE }}>{cluster.direction}</p>
-                          <p style={{ margin: 0, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
+                          <p
+                            style={{
+                              margin: "0 0 4px",
+                              fontFamily: THEME.SANS,
+                              fontSize: "var(--nb-fs-sm)",
+                              fontWeight: 700,
+                              color: VALUE,
+                            }}
+                          >
+                            {cluster.direction}
+                          </p>
+                          <p style={{ margin: 0, fontFamily: THEME.MONO, fontSize: "var(--nb-fs-xs)", color: LABEL }}>
                             {cluster.total} tools · {cluster.strong3d} strong 3D
                           </p>
                         </div>
@@ -413,37 +502,45 @@ export default function ToolsDirectoryPage() {
                           className="nb-tool-toggle"
                           onClick={() => setDirection(cluster.direction)}
                           style={{
-                            minHeight: '30px',
-                            padding: '0 10px',
-                            borderRadius: '999px',
-                            fontSize: 'var(--nb-fs-xs)',
+                            minHeight: "30px",
+                            padding: "0 10px",
+                            borderRadius: "999px",
+                            fontSize: "var(--nb-fs-xs)",
                           }}
                         >
                           Open
                         </button>
                       </div>
-                      <p style={{ margin: '0 0 10px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.6, color: LABEL }}>
-                        {displayMode === 'demo'
+                      <p
+                        style={{
+                          margin: "0 0 10px",
+                          fontFamily: THEME.SANS,
+                          fontSize: "var(--nb-fs-sm)",
+                          lineHeight: 1.6,
+                          color: LABEL,
+                        }}
+                      >
+                        {displayMode === "demo"
                           ? DIRECTION_CLUSTER_RECIPES[cluster.direction].demoLabel
                           : DIRECTION_CLUSTER_RECIPES[cluster.direction].researchLabel}
                       </p>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                         {cluster.tools.map((tool) => (
                           <Link
                             key={tool.id}
                             href={tool.href}
                             style={{
-                              minHeight: '28px',
-                              padding: '0 10px',
-                              borderRadius: '999px',
+                              minHeight: "28px",
+                              padding: "0 10px",
+                              borderRadius: "999px",
                               border: `1px solid ${BORDER}`,
-                              background: tool.threeDPotential === 'strong' ? `${THEME.MINT}2f` : SURFACE_TINT,
-                              color: tool.threeDPotential === 'strong' ? VALUE : LABEL,
-                              textDecoration: 'none',
-                              display: 'inline-flex',
-                              alignItems: 'center',
+                              background: tool.threeDPotential === "strong" ? `${THEME.MINT}2f` : SURFACE_TINT,
+                              color: tool.threeDPotential === "strong" ? VALUE : LABEL,
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
                               fontFamily: THEME.MONO,
-                              fontSize: 'var(--nb-fs-xs)',
+                              fontSize: "var(--nb-fs-xs)",
                             }}
                           >
                             {tool.shortLabel}
@@ -455,36 +552,54 @@ export default function ToolsDirectoryPage() {
                 </div>
               </section>
 
-              <div className="nb-directory-layout" style={{ display: 'grid', gridTemplateColumns: '280px minmax(0, 1fr) 320px', gap: '18px' }}>
+              <div
+                className="nb-directory-layout"
+                style={{ display: "grid", gridTemplateColumns: "280px minmax(0, 1fr) 320px", gap: "18px" }}
+              >
                 <aside
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
-                    alignSelf: 'start',
-                    position: 'sticky',
-                    top: '84px',
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    alignSelf: "start",
+                    position: "sticky",
+                    top: "84px",
                   }}
                   className="nb-directory-sidebar"
                 >
                   <section
                     style={{
-                      borderRadius: 'var(--nb-radius-xl)',
+                      borderRadius: "var(--nb-radius-xl)",
                       border: `1px solid ${BORDER}`,
                       background: SURFACE,
-                      padding: '16px',
+                      padding: "16px",
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
+                    <p
+                      style={{
+                        margin: "0 0 12px",
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: LABEL,
+                      }}
+                    >
                       Find a tool
                     </p>
-                    <label style={{ display: 'block', marginBottom: '12px' }}>
-                      <span style={{ display: 'none' }}>Search tools</span>
-                      <div style={{ position: 'relative' }}>
+                    <label style={{ display: "block", marginBottom: "12px" }}>
+                      <span style={{ display: "none" }}>Search tools</span>
+                      <div style={{ position: "relative" }}>
                         <Search
                           size={16}
-                          style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: LABEL }}
+                          style={{
+                            position: "absolute",
+                            left: "12px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            color: LABEL,
+                          }}
                         />
                         <input
                           aria-label="Search tools"
@@ -492,27 +607,35 @@ export default function ToolsDirectoryPage() {
                           onChange={(event) => setQuery(event.target.value)}
                           placeholder="Search pathway, omics, CRISPR..."
                           style={{
-                            width: '100%',
-                            minHeight: '44px',
-                            borderRadius: 'var(--nb-radius-md)',
+                            width: "100%",
+                            minHeight: "44px",
+                            borderRadius: "var(--nb-radius-md)",
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_SOFT,
                             color: VALUE,
-                            padding: '0 14px 0 40px',
+                            padding: "0 14px 0 40px",
                             fontFamily: THEME.SANS,
-                            fontSize: 'var(--nb-fs-sm)',
+                            fontSize: "var(--nb-fs-sm)",
                           }}
                         />
                       </div>
                     </label>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                        <p
+                          style={{
+                            margin: "0 0 8px",
+                            fontFamily: THEME.MONO,
+                            fontSize: "var(--nb-fs-xs)",
+                            color: LABEL,
+                            textTransform: "uppercase",
+                          }}
+                        >
                           Direction
                         </p>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {(['All', ...TOOL_DIRECTIONS] as const).map((item) => {
+                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                          {(["All", ...TOOL_DIRECTIONS] as const).map((item) => {
                             const active = item === direction;
                             return (
                               <button
@@ -521,16 +644,16 @@ export default function ToolsDirectoryPage() {
                                 onClick={() => setDirection(item)}
                                 aria-pressed={active}
                                 style={{
-                                  minHeight: '34px',
-                                  padding: '0 12px',
-                                  borderRadius: '999px',
+                                  minHeight: "34px",
+                                  padding: "0 12px",
+                                  borderRadius: "999px",
                                   border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
                                   background: active ? `${getDirectionAccent(item)}2a` : SURFACE_TINT,
                                   color: active ? VALUE : LABEL,
-                                  cursor: 'pointer',
+                                  cursor: "pointer",
                                   fontFamily: THEME.SANS,
-                                  fontSize: 'var(--nb-fs-sm)',
-                                  textAlign: 'left',
+                                  fontSize: "var(--nb-fs-sm)",
+                                  textAlign: "left",
                                 }}
                               >
                                 {item}
@@ -541,11 +664,19 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                        <p
+                          style={{
+                            margin: "0 0 8px",
+                            fontFamily: THEME.MONO,
+                            fontSize: "var(--nb-fs-xs)",
+                            color: LABEL,
+                            textTransform: "uppercase",
+                          }}
+                        >
                           Shell type
                         </p>
-                        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr 1fr' }}>
-                          {(['All', 'ide', 'bento'] as const).map((item) => {
+                        <div style={{ display: "grid", gap: "8px", gridTemplateColumns: "1fr 1fr 1fr" }}>
+                          {(["All", "ide", "bento"] as const).map((item) => {
                             const active = item === shellFilter;
                             return (
                               <button
@@ -554,16 +685,16 @@ export default function ToolsDirectoryPage() {
                                 onClick={() => setShellFilter(item)}
                                 aria-pressed={active}
                                 style={{
-                                  minHeight: '36px',
-                                  borderRadius: 'var(--nb-radius-md)',
+                                  minHeight: "36px",
+                                  borderRadius: "var(--nb-radius-md)",
                                   border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
                                   background: active ? `${THEME.SKY}24` : SURFACE_TINT,
                                   color: active ? VALUE : LABEL,
-                                  cursor: 'pointer',
+                                  cursor: "pointer",
                                   fontFamily: THEME.MONO,
-                                  fontSize: 'var(--nb-fs-sm)',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.06em',
+                                  fontSize: "var(--nb-fs-sm)",
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.06em",
                                 }}
                               >
                                 {item}
@@ -574,25 +705,42 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <label>
-                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                        <p
+                          style={{
+                            margin: "0 0 8px",
+                            fontFamily: THEME.MONO,
+                            fontSize: "var(--nb-fs-xs)",
+                            color: LABEL,
+                            textTransform: "uppercase",
+                          }}
+                        >
                           Sort
                         </p>
-                        <div style={{ position: 'relative' }}>
-                          <SlidersHorizontal size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: LABEL }} />
+                        <div style={{ position: "relative" }}>
+                          <SlidersHorizontal
+                            size={14}
+                            style={{
+                              position: "absolute",
+                              left: "12px",
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              color: LABEL,
+                            }}
+                          />
                           <select
                             aria-label="Sort tools"
                             value={sortMode}
                             onChange={(event) => setSortMode(event.target.value as SortMode)}
                             style={{
-                              width: '100%',
-                              minHeight: '42px',
-                              borderRadius: 'var(--nb-radius-md)',
+                              width: "100%",
+                              minHeight: "42px",
+                              borderRadius: "var(--nb-radius-md)",
                               border: `1px solid ${BORDER}`,
                               background: SURFACE_SOFT,
                               color: VALUE,
-                              padding: '0 14px 0 38px',
+                              padding: "0 14px 0 38px",
                               fontFamily: THEME.SANS,
-                              fontSize: 'var(--nb-fs-sm)',
+                              fontSize: "var(--nb-fs-sm)",
                             }}
                           >
                             <option value="workflow">Workflow fit</option>
@@ -606,49 +754,91 @@ export default function ToolsDirectoryPage() {
 
                   <section
                     style={{
-                      borderRadius: 'var(--nb-radius-xl)',
+                      borderRadius: "var(--nb-radius-xl)",
                       border: `1px solid ${BORDER}`,
                       background: SURFACE,
-                      padding: '16px',
+                      padding: "16px",
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
+                    <p
+                      style={{
+                        margin: "0 0 12px",
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: LABEL,
+                      }}
+                    >
                       Active state
                     </p>
-                    <div style={{ display: 'grid', gap: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Display mode</span>
-                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{displayMode}</span>
+                    <div style={{ display: "grid", gap: "10px" }}>
+                      <div
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}
+                      >
+                        <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: LABEL }}>
+                          Display mode
+                        </span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-sm)", color: VALUE }}>
+                          {displayMode}
+                        </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Favorites</span>
-                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{favoriteIds.length}</span>
+                      <div
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}
+                      >
+                        <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: LABEL }}>
+                          Favorites
+                        </span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-sm)", color: VALUE }}>
+                          {favoriteIds.length}
+                        </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Compare tray</span>
-                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{compareIds.length}/2</span>
+                      <div
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}
+                      >
+                        <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: LABEL }}>
+                          Compare tray
+                        </span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-sm)", color: VALUE }}>
+                          {compareIds.length}/2
+                        </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Current page</span>
-                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{safePage}/{totalPages}</span>
+                      <div
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}
+                      >
+                        <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: LABEL }}>
+                          Current page
+                        </span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-sm)", color: VALUE }}>
+                          {safePage}/{totalPages}
+                        </span>
                       </div>
                     </div>
                   </section>
 
                   <section
                     style={{
-                      borderRadius: 'var(--nb-radius-xl)',
+                      borderRadius: "var(--nb-radius-xl)",
                       border: `1px solid ${BORDER}`,
                       background: SURFACE,
-                      padding: '16px',
+                      padding: "16px",
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 10px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
+                    <p
+                      style={{
+                        margin: "0 0 10px",
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: LABEL,
+                      }}
+                    >
                       Research directions
                     </p>
-                    <div style={{ display: 'grid', gap: '8px' }}>
+                    <div style={{ display: "grid", gap: "8px" }}>
                       {TOOL_DIRECTIONS.map((item) => {
                         const active = direction === item;
                         return (
@@ -657,17 +847,33 @@ export default function ToolsDirectoryPage() {
                             type="button"
                             onClick={() => setDirection(item)}
                             style={{
-                              textAlign: 'left',
-                              padding: '10px 12px',
-                              borderRadius: 'var(--nb-radius-md)',
+                              textAlign: "left",
+                              padding: "10px 12px",
+                              borderRadius: "var(--nb-radius-md)",
                               border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
                               background: active ? `${getDirectionAccent(item)}28` : SURFACE_TINT,
                               color: active ? VALUE : LABEL,
-                              cursor: 'pointer',
+                              cursor: "pointer",
                             }}
                           >
-                            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, marginBottom: '4px' }}>{item}</div>
-                            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
+                            <div
+                              style={{
+                                fontFamily: THEME.SANS,
+                                fontSize: "var(--nb-fs-sm)",
+                                fontWeight: 700,
+                                marginBottom: "4px",
+                              }}
+                            >
+                              {item}
+                            </div>
+                            <div
+                              style={{
+                                fontFamily: THEME.SANS,
+                                fontSize: "var(--nb-fs-sm)",
+                                lineHeight: 1.5,
+                                color: LABEL,
+                              }}
+                            >
                               {DIRECTION_NOTES[item]}
                             </div>
                           </button>
@@ -680,27 +886,43 @@ export default function ToolsDirectoryPage() {
                 <section
                   style={{
                     minWidth: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
                   }}
                 >
-                  {displayMode === 'research' && compareIds.length > 0 && (
+                  {displayMode === "research" && compareIds.length > 0 && (
                     <div
                       style={{
-                        borderRadius: 'var(--nb-radius-xl)',
+                        borderRadius: "var(--nb-radius-xl)",
                         border: `1px solid ${BORDER}`,
                         background: SURFACE,
-                        padding: '14px 16px',
+                        padding: "14px 16px",
                         boxShadow: SHADOW,
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "12px",
+                          flexWrap: "wrap",
+                        }}
+                      >
                         <div>
-                          <p style={{ margin: '0 0 4px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                          <p
+                            style={{
+                              margin: "0 0 4px",
+                              fontFamily: THEME.MONO,
+                              fontSize: "var(--nb-fs-xs)",
+                              textTransform: "uppercase",
+                              color: LABEL,
+                            }}
+                          >
                             Compare tray
                           </p>
-                          <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>
+                          <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: LABEL }}>
                             Pin up to two tools to compare category, outputs, and shell model side by side.
                           </p>
                         </div>
@@ -708,64 +930,104 @@ export default function ToolsDirectoryPage() {
                           type="button"
                           onClick={() => setCompareIds([])}
                           style={{
-                            minHeight: '36px',
-                            padding: '0 12px',
-                            borderRadius: 'var(--nb-radius-md)',
+                            minHeight: "36px",
+                            padding: "0 12px",
+                            borderRadius: "var(--nb-radius-md)",
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_TINT,
                             color: BTN_TEXT,
-                            cursor: 'pointer',
+                            cursor: "pointer",
                             fontFamily: THEME.SANS,
-                            fontSize: 'var(--nb-fs-sm)',
+                            fontSize: "var(--nb-fs-sm)",
                           }}
                         >
                           Clear compare
                         </button>
                       </div>
-                      <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginTop: '14px' }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gap: "12px",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                          marginTop: "14px",
+                        }}
+                      >
                         {comparedTools.map((tool) => (
                           <div
                             key={tool.id}
                             style={{
-                              borderRadius: 'var(--nb-radius-lg)',
+                              borderRadius: "var(--nb-radius-lg)",
                               border: `1px solid ${BORDER}`,
                               background: SURFACE_SOFT,
-                              padding: '14px',
+                              padding: "14px",
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-                              <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', fontWeight: 600 }}>{tool.name}</p>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: "8px",
+                                marginBottom: "10px",
+                              }}
+                            >
+                              <p
+                                style={{
+                                  margin: 0,
+                                  fontFamily: THEME.SANS,
+                                  fontSize: "var(--nb-fs-md)",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {tool.name}
+                              </p>
                               <button
                                 type="button"
                                 onClick={() => toggleCompare(tool.id)}
                                 aria-label={`Remove ${tool.name} from compare`}
                                 style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  borderRadius: '999px',
+                                  width: "28px",
+                                  height: "28px",
+                                  borderRadius: "999px",
                                   border: `1px solid ${BORDER}`,
                                   background: SURFACE_TINT,
                                   color: VALUE,
-                                  cursor: 'pointer',
-                                  display: 'grid',
-                                  placeItems: 'center',
+                                  cursor: "pointer",
+                                  display: "grid",
+                                  placeItems: "center",
                                 }}
                               >
                                 <X size={14} />
                               </button>
                             </div>
-                            <dl style={{ margin: 0, display: 'grid', gap: '10px' }}>
+                            <dl style={{ margin: 0, display: "grid", gap: "10px" }}>
                               {[
-                                ['Direction', tool.direction],
-                                ['Shell', tool.shell.toUpperCase()],
-                                ['3D', tool.threeDPotential.toUpperCase()],
-                                ['Best for', tool.focus],
+                                ["Direction", tool.direction],
+                                ["Shell", tool.shell.toUpperCase()],
+                                ["3D", tool.threeDPotential.toUpperCase()],
+                                ["Best for", tool.focus],
                               ].map(([label, value]) => (
                                 <div key={label}>
-                                  <dt style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', marginBottom: '4px' }}>
+                                  <dt
+                                    style={{
+                                      fontFamily: THEME.MONO,
+                                      fontSize: "var(--nb-fs-xs)",
+                                      color: LABEL,
+                                      textTransform: "uppercase",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
                                     {label}
                                   </dt>
-                                  <dd style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.55 }}>
+                                  <dd
+                                    style={{
+                                      margin: 0,
+                                      fontFamily: THEME.SANS,
+                                      fontSize: "var(--nb-fs-sm)",
+                                      color: VALUE,
+                                      lineHeight: 1.55,
+                                    }}
+                                  >
                                     {value}
                                   </dd>
                                 </div>
@@ -779,51 +1041,60 @@ export default function ToolsDirectoryPage() {
 
                   <div
                     style={{
-                      borderRadius: 'var(--nb-radius-xl)',
+                      borderRadius: "var(--nb-radius-xl)",
                       border: `1px solid ${BORDER}`,
                       background: SURFACE,
-                      overflow: 'hidden',
+                      overflow: "hidden",
                       boxShadow: SHADOW,
                     }}
                   >
                     <div
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                        flexWrap: 'wrap',
-                        padding: '16px',
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                        padding: "16px",
                         borderBottom: `1px solid ${BORDER}`,
                       }}
                     >
                       <div>
-                        <p style={{ margin: '0 0 4px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                        <p
+                          style={{
+                            margin: "0 0 4px",
+                            fontFamily: THEME.MONO,
+                            fontSize: "var(--nb-fs-xs)",
+                            textTransform: "uppercase",
+                            color: LABEL,
+                          }}
+                        >
                           Matching tools
                         </p>
-                        <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', color: LABEL }}>
-                          {filteredTools.length} tool{filteredTools.length === 1 ? '' : 's'} match the current query and filter state.
+                        <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: "var(--nb-fs-md)", color: LABEL }}>
+                          {filteredTools.length} tool{filteredTools.length === 1 ? "" : "s"} match the current query and
+                          filter state.
                         </p>
                       </div>
-                      {(query || direction !== 'All' || shellFilter !== 'All') && (
+                      {(query || direction !== "All" || shellFilter !== "All") && (
                         <button
                           type="button"
                           onClick={() => {
-                            setQuery('');
-                            setDirection('All');
-                            setShellFilter('All');
-                            setSortMode('workflow');
+                            setQuery("");
+                            setDirection("All");
+                            setShellFilter("All");
+                            setSortMode("workflow");
                           }}
                           style={{
-                            minHeight: '36px',
-                            padding: '0 12px',
-                            borderRadius: 'var(--nb-radius-md)',
+                            minHeight: "36px",
+                            padding: "0 12px",
+                            borderRadius: "var(--nb-radius-md)",
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_TINT,
                             color: BTN_TEXT,
-                            cursor: 'pointer',
+                            cursor: "pointer",
                             fontFamily: THEME.SANS,
-                            fontSize: 'var(--nb-fs-sm)',
+                            fontSize: "var(--nb-fs-sm)",
                           }}
                         >
                           Reset filters
@@ -832,14 +1103,22 @@ export default function ToolsDirectoryPage() {
                     </div>
 
                     {pagedTools.length === 0 ? (
-                      <div style={{ minHeight: '320px' }}>
+                      <div style={{ minHeight: "320px" }}>
                         <EmptyState
                           title="No tool matches the current filters"
                           message="Try removing a category or shell filter, or search with a broader scientific term."
                         />
                       </div>
                     ) : (
-                      <div className="nb-directory-cards" style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', padding: '16px' }}>
+                      <div
+                        className="nb-directory-cards"
+                        style={{
+                          display: "grid",
+                          gap: "12px",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                          padding: "16px",
+                        }}
+                      >
                         {pagedTools.map((tool) => {
                           const Icon = tool.icon;
                           const isSelected = tool.id === selectedToolId;
@@ -850,62 +1129,96 @@ export default function ToolsDirectoryPage() {
                             <article
                               key={tool.id}
                               style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '14px',
-                                minHeight: '100%',
-                                borderRadius: 'var(--nb-radius-lg)',
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "14px",
+                                minHeight: "100%",
+                                borderRadius: "var(--nb-radius-lg)",
                                 border: `1px solid ${isSelected ? BORDER_STRONG : BORDER}`,
                                 background: isSelected ? `${getDirectionAccent(tool.direction)}22` : SURFACE_SOFT,
-                                padding: '16px',
-                                boxShadow: isSelected ? SHADOW : 'none',
+                                padding: "16px",
+                                boxShadow: isSelected ? SHADOW : "none",
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                                <div style={{ display: 'flex', gap: '12px', minWidth: 0 }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "flex-start",
+                                  justifyContent: "space-between",
+                                  gap: "12px",
+                                }}
+                              >
+                                <div style={{ display: "flex", gap: "12px", minWidth: 0 }}>
                                   <div
                                     style={{
-                                      width: '42px',
-                                      height: '42px',
-                                      borderRadius: 'var(--nb-radius-md)',
+                                      width: "42px",
+                                      height: "42px",
+                                      borderRadius: "var(--nb-radius-md)",
                                       border: `1px solid ${BORDER}`,
                                       background: SURFACE_TINT,
-                                      display: 'grid',
-                                      placeItems: 'center',
+                                      display: "grid",
+                                      placeItems: "center",
                                       flexShrink: 0,
                                     }}
                                   >
                                     <Icon size={18} style={{ color: isSelected ? VALUE : LABEL }} />
                                   </div>
                                   <div style={{ minWidth: 0 }}>
-                                    <p style={{ margin: '0 0 4px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                                    <p
+                                      style={{
+                                        margin: "0 0 4px",
+                                        fontFamily: THEME.MONO,
+                                        fontSize: "var(--nb-fs-xs)",
+                                        textTransform: "uppercase",
+                                        color: LABEL,
+                                      }}
+                                    >
                                       {tool.shortLabel} · {tool.direction}
                                     </p>
-                                    <h2 style={{ margin: '0 0 6px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.25, letterSpacing: '-0.02em', color: VALUE }}>
+                                    <h2
+                                      style={{
+                                        margin: "0 0 6px",
+                                        fontFamily: THEME.SANS,
+                                        fontSize: "var(--nb-fs-md)",
+                                        lineHeight: 1.25,
+                                        letterSpacing: "-0.02em",
+                                        color: VALUE,
+                                      }}
+                                    >
                                       {tool.name}
                                     </h2>
-                                    <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: LABEL }}>
+                                    <p
+                                      style={{
+                                        margin: 0,
+                                        fontFamily: THEME.SANS,
+                                        fontSize: "var(--nb-fs-sm)",
+                                        lineHeight: 1.65,
+                                        color: LABEL,
+                                      }}
+                                    >
                                       {tool.summary}
                                     </p>
                                   </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
                                   <button
                                     type="button"
                                     onClick={() => toggleFavorite(tool.id)}
                                     aria-pressed={isFavorite}
-                                    aria-label={isFavorite ? `Remove ${tool.name} from favorites` : `Favorite ${tool.name}`}
+                                    aria-label={
+                                      isFavorite ? `Remove ${tool.name} from favorites` : `Favorite ${tool.name}`
+                                    }
                                     style={{
-                                      width: '34px',
-                                      height: '34px',
-                                      borderRadius: '999px',
+                                      width: "34px",
+                                      height: "34px",
+                                      borderRadius: "999px",
                                       border: `1px solid ${BORDER}`,
                                       background: isFavorite ? `${THEME.CORAL}24` : SURFACE_TINT,
                                       color: VALUE,
-                                      cursor: 'pointer',
-                                      display: 'grid',
-                                      placeItems: 'center',
+                                      cursor: "pointer",
+                                      display: "grid",
+                                      placeItems: "center",
                                     }}
                                   >
                                     {isFavorite ? <Star size={16} /> : <StarOff size={16} />}
@@ -914,17 +1227,19 @@ export default function ToolsDirectoryPage() {
                                     type="button"
                                     onClick={() => toggleCompare(tool.id)}
                                     aria-pressed={isCompared}
-                                    aria-label={isCompared ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`}
+                                    aria-label={
+                                      isCompared ? `Remove ${tool.name} from compare` : `Add ${tool.name} to compare`
+                                    }
                                     style={{
-                                      width: '34px',
-                                      height: '34px',
-                                      borderRadius: '999px',
+                                      width: "34px",
+                                      height: "34px",
+                                      borderRadius: "999px",
                                       border: `1px solid ${BORDER}`,
                                       background: isCompared ? `${THEME.MINT}26` : SURFACE_TINT,
                                       color: VALUE,
-                                      cursor: 'pointer',
-                                      display: 'grid',
-                                      placeItems: 'center',
+                                      cursor: "pointer",
+                                      display: "grid",
+                                      placeItems: "center",
                                     }}
                                   >
                                     <Scale size={16} />
@@ -932,21 +1247,21 @@ export default function ToolsDirectoryPage() {
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                                 {tool.tags.slice(0, 4).map((tag) => (
                                   <span
                                     key={tag}
                                     style={{
-                                      minHeight: '28px',
-                                      padding: '0 10px',
-                                      borderRadius: '999px',
+                                      minHeight: "28px",
+                                      padding: "0 10px",
+                                      borderRadius: "999px",
                                       border: `1px solid ${BORDER}`,
                                       background: SURFACE_TINT,
                                       color: LABEL,
                                       fontFamily: THEME.MONO,
-                                      fontSize: 'var(--nb-fs-xs)',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
+                                      fontSize: "var(--nb-fs-xs)",
+                                      display: "inline-flex",
+                                      alignItems: "center",
                                     }}
                                   >
                                     {tag}
@@ -954,58 +1269,72 @@ export default function ToolsDirectoryPage() {
                                 ))}
                                 <span
                                   style={{
-                                    minHeight: '28px',
-                                    padding: '0 10px',
-                                    borderRadius: '999px',
+                                    minHeight: "28px",
+                                    padding: "0 10px",
+                                    borderRadius: "999px",
                                     border: `1px solid ${BORDER}`,
-                                    background: tool.threeDPotential === 'strong' ? `${THEME.MINT}28` : tool.threeDPotential === 'supporting' ? `${THEME.LILAC}28` : SURFACE_TINT,
+                                    background:
+                                      tool.threeDPotential === "strong"
+                                        ? `${THEME.MINT}28`
+                                        : tool.threeDPotential === "supporting"
+                                          ? `${THEME.LILAC}28`
+                                          : SURFACE_TINT,
                                     color: VALUE,
                                     fontFamily: THEME.MONO,
-                                    fontSize: 'var(--nb-fs-xs)',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
+                                    fontSize: "var(--nb-fs-xs)",
+                                    display: "inline-flex",
+                                    alignItems: "center",
                                   }}
                                 >
                                   3D:{tool.threeDPotential}
                                 </span>
                               </div>
 
-                              <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                              <div
+                                style={{
+                                  marginTop: "auto",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  gap: "10px",
+                                  flexWrap: "wrap",
+                                }}
+                              >
                                 <button
                                   type="button"
                                   onClick={() => setSelectedToolId(tool.id)}
                                   aria-pressed={isSelected}
                                   style={{
-                                    minHeight: '38px',
-                                    padding: '0 14px',
-                                    borderRadius: 'var(--nb-radius-md)',
+                                    minHeight: "38px",
+                                    padding: "0 14px",
+                                    borderRadius: "var(--nb-radius-md)",
                                     border: `1px solid ${isSelected ? BORDER_STRONG : BORDER}`,
                                     background: isSelected ? `${getDirectionAccent(tool.direction)}28` : SURFACE_TINT,
                                     color: VALUE,
-                                    cursor: 'pointer',
+                                    cursor: "pointer",
                                     fontFamily: THEME.SANS,
-                                    fontSize: 'var(--nb-fs-sm)',
+                                    fontSize: "var(--nb-fs-sm)",
                                     fontWeight: 600,
                                   }}
                                 >
-                                  {isSelected ? 'Inspecting' : 'Inspect'}
+                                  {isSelected ? "Inspecting" : "Inspect"}
                                 </button>
 
                                 <Link
                                   href={tool.href}
                                   style={{
-                                    minHeight: '38px',
-                                    padding: '0 14px',
-                                    borderRadius: 'var(--nb-radius-md)',
+                                    minHeight: "38px",
+                                    padding: "0 14px",
+                                    borderRadius: "var(--nb-radius-md)",
                                     border: `1px solid ${BORDER_STRONG}`,
                                     background: `${getDirectionAccent(tool.direction)}36`,
                                     color: VALUE,
-                                    textDecoration: 'none',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
+                                    textDecoration: "none",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "8px",
                                     fontFamily: THEME.SANS,
-                                    fontSize: 'var(--nb-fs-sm)',
+                                    fontSize: "var(--nb-fs-sm)",
                                     fontWeight: 700,
                                   }}
                                 >
@@ -1032,169 +1361,348 @@ export default function ToolsDirectoryPage() {
 
                 <aside
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
-                    alignSelf: 'start',
-                    position: 'sticky',
-                    top: '84px',
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    alignSelf: "start",
+                    position: "sticky",
+                    top: "84px",
                   }}
                   className="nb-directory-detail"
                 >
                   <section
                     style={{
-                      borderRadius: 'var(--nb-radius-xl)',
+                      borderRadius: "var(--nb-radius-xl)",
                       border: `1px solid ${BORDER}`,
                       background: SURFACE,
-                      padding: '18px',
+                      padding: "18px",
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                    <p
+                      style={{
+                        margin: "0 0 12px",
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        textTransform: "uppercase",
+                        color: LABEL,
+                      }}
+                    >
                       Selected tool
                     </p>
                     {selectedTool ? (
                       <>
-                          <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            fontFamily: THEME.MONO,
+                            fontSize: "var(--nb-fs-xs)",
+                            color: LABEL,
+                          }}
+                        >
                           {selectedTool.shortLabel} · {selectedTool.direction}
-                          </p>
-                        <h2 style={{ margin: '0 0 10px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-lg)', lineHeight: 1.15, letterSpacing: '-0.03em', color: VALUE }}>
+                        </p>
+                        <h2
+                          style={{
+                            margin: "0 0 10px",
+                            fontFamily: THEME.SANS,
+                            fontSize: "var(--nb-fs-lg)",
+                            lineHeight: 1.15,
+                            letterSpacing: "-0.03em",
+                            color: VALUE,
+                          }}
+                        >
                           {selectedTool.name}
                         </h2>
-                        <p style={{ margin: '0 0 16px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.7, color: LABEL }}>
+                        <p
+                          style={{
+                            margin: "0 0 16px",
+                            fontFamily: THEME.SANS,
+                            fontSize: "var(--nb-fs-md)",
+                            lineHeight: 1.7,
+                            color: LABEL,
+                          }}
+                        >
                           {selectedTool.summary}
                         </p>
 
-                        <div style={{ display: 'grid', gap: '12px' }}>
-                          <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
-                              {displayMode === 'demo' ? 'Story fit' : 'Best for'}
+                        <div style={{ display: "grid", gap: "12px" }}>
+                          <div
+                            style={{
+                              borderRadius: "var(--nb-radius-lg)",
+                              border: `1px solid ${BORDER}`,
+                              background: SURFACE_SOFT,
+                              padding: "14px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                margin: "0 0 6px",
+                                fontFamily: THEME.MONO,
+                                fontSize: "var(--nb-fs-xs)",
+                                color: LABEL,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              {displayMode === "demo" ? "Story fit" : "Best for"}
                             </p>
-                            <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: VALUE }}>
-                              {displayMode === 'demo'
+                            <p
+                              style={{
+                                margin: 0,
+                                fontFamily: THEME.SANS,
+                                fontSize: "var(--nb-fs-sm)",
+                                lineHeight: 1.65,
+                                color: VALUE,
+                              }}
+                            >
+                              {displayMode === "demo"
                                 ? DIRECTION_CLUSTER_RECIPES[selectedTool.direction].demoLabel
                                 : selectedTool.focus}
                             </p>
                           </div>
 
-                          <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
-                              {displayMode === 'demo' ? 'Direction cluster' : 'Direction fit'}
+                          <div
+                            style={{
+                              borderRadius: "var(--nb-radius-lg)",
+                              border: `1px solid ${BORDER}`,
+                              background: SURFACE_SOFT,
+                              padding: "14px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                margin: "0 0 6px",
+                                fontFamily: THEME.MONO,
+                                fontSize: "var(--nb-fs-xs)",
+                                color: LABEL,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              {displayMode === "demo" ? "Direction cluster" : "Direction fit"}
                             </p>
-                            <p style={{ margin: '0 0 8px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: VALUE }}>
-                              {selectedTool.direction} · {selectedTool.mode} mode · {selectedTool.shell.toUpperCase()} shell
+                            <p
+                              style={{
+                                margin: "0 0 8px",
+                                fontFamily: THEME.SANS,
+                                fontSize: "var(--nb-fs-sm)",
+                                lineHeight: 1.65,
+                                color: VALUE,
+                              }}
+                            >
+                              {selectedTool.direction} · {selectedTool.mode} mode · {selectedTool.shell.toUpperCase()}{" "}
+                              shell
                             </p>
-                            <p style={{ margin: 0, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: selectedTool.threeDPotential === 'strong' ? VALUE : LABEL }}>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontFamily: THEME.MONO,
+                                fontSize: "var(--nb-fs-xs)",
+                                color: selectedTool.threeDPotential === "strong" ? VALUE : LABEL,
+                              }}
+                            >
                               3D potential: {selectedTool.threeDPotential}
                             </p>
                           </div>
 
-                          <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
-                              {displayMode === 'demo' ? 'Guided route' : 'Workflow map'}
+                          <div
+                            style={{
+                              borderRadius: "var(--nb-radius-lg)",
+                              border: `1px solid ${BORDER}`,
+                              background: SURFACE_SOFT,
+                              padding: "14px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                margin: "0 0 6px",
+                                fontFamily: THEME.MONO,
+                                fontSize: "var(--nb-fs-xs)",
+                                color: LABEL,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              {displayMode === "demo" ? "Guided route" : "Workflow map"}
                             </p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
                               {[
-                                { label: 'Research Intake', active: selectedTool.direction === 'Research Intake' },
+                                { label: "Research Intake", active: selectedTool.direction === "Research Intake" },
                                 { label: selectedTool.direction, active: true },
                                 { label: selectedTool.shortLabel, active: true },
-                                { label: 'Validation', active: selectedTool.direction === 'Validation & DBTL' },
+                                { label: "Validation", active: selectedTool.direction === "Validation & DBTL" },
                               ].map((step, index) => (
-                                <div key={`${step.label}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{
-                                    minHeight: '28px',
-                                    padding: '0 10px',
-                                    borderRadius: '999px',
-                                    border: `1px solid ${BORDER}`,
-                                    background: step.active ? `${getDirectionAccent(selectedTool.direction)}26` : SURFACE_TINT,
-                                    color: step.active ? VALUE : LABEL,
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    fontFamily: THEME.MONO,
-                                    fontSize: 'var(--nb-fs-xs)',
-                                  }}>
+                                <div
+                                  key={`${step.label}-${index}`}
+                                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                                >
+                                  <span
+                                    style={{
+                                      minHeight: "28px",
+                                      padding: "0 10px",
+                                      borderRadius: "999px",
+                                      border: `1px solid ${BORDER}`,
+                                      background: step.active
+                                        ? `${getDirectionAccent(selectedTool.direction)}26`
+                                        : SURFACE_TINT,
+                                      color: step.active ? VALUE : LABEL,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      fontFamily: THEME.MONO,
+                                      fontSize: "var(--nb-fs-xs)",
+                                    }}
+                                  >
                                     {step.label}
                                   </span>
-                                  {index < 3 && <span style={{ color: LABEL, fontSize: 'var(--nb-fs-xs)' }}>→</span>}
+                                  {index < 3 && <span style={{ color: LABEL, fontSize: "var(--nb-fs-xs)" }}>→</span>}
                                 </div>
                               ))}
                             </div>
                           </div>
 
-                          <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
-                              {displayMode === 'demo' ? 'What this shows best' : 'Outputs you can expect'}
+                          <div
+                            style={{
+                              borderRadius: "var(--nb-radius-lg)",
+                              border: `1px solid ${BORDER}`,
+                              background: SURFACE_SOFT,
+                              padding: "14px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                margin: "0 0 8px",
+                                fontFamily: THEME.MONO,
+                                fontSize: "var(--nb-fs-xs)",
+                                color: LABEL,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              {displayMode === "demo" ? "What this shows best" : "Outputs you can expect"}
                             </p>
-                            <ul style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '8px' }}>
-                              {(displayMode === 'demo' ? selectedTool.outputs.slice(0, 2) : selectedTool.outputs).map((output) => (
-                                <li key={output} style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.55, color: VALUE }}>
-                                  {output}
-                                </li>
-                              ))}
+                            <ul style={{ margin: 0, paddingLeft: "18px", display: "grid", gap: "8px" }}>
+                              {(displayMode === "demo" ? selectedTool.outputs.slice(0, 2) : selectedTool.outputs).map(
+                                (output) => (
+                                  <li
+                                    key={output}
+                                    style={{
+                                      fontFamily: THEME.SANS,
+                                      fontSize: "var(--nb-fs-sm)",
+                                      lineHeight: 1.55,
+                                      color: VALUE,
+                                    }}
+                                  >
+                                    {output}
+                                  </li>
+                                ),
+                              )}
                             </ul>
                           </div>
 
-                          {displayMode === 'research' && selectedTool.relatedRoutes && selectedTool.relatedRoutes.length > 0 && (
-                            <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                              <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
-                                Related routes
-                              </p>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {selectedTool.relatedRoutes.map((route) => (
-                                  <Link
-                                    key={route}
-                                    href={route}
-                                    style={{
-                                      minHeight: '32px',
-                                      padding: '0 10px',
-                                      borderRadius: '999px',
-                                      border: `1px solid ${BORDER}`,
-                                      background: SURFACE_TINT,
-                                      color: VALUE,
-                                      textDecoration: 'none',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      fontFamily: THEME.MONO,
-                                      fontSize: 'var(--nb-fs-xs)',
-                                    }}
-                                  >
-                                    {route.replace('/tools/', '/')}
-                                  </Link>
-                                ))}
+                          {displayMode === "research" &&
+                            selectedTool.relatedRoutes &&
+                            selectedTool.relatedRoutes.length > 0 && (
+                              <div
+                                style={{
+                                  borderRadius: "var(--nb-radius-lg)",
+                                  border: `1px solid ${BORDER}`,
+                                  background: SURFACE_SOFT,
+                                  padding: "14px",
+                                }}
+                              >
+                                <p
+                                  style={{
+                                    margin: "0 0 8px",
+                                    fontFamily: THEME.MONO,
+                                    fontSize: "var(--nb-fs-xs)",
+                                    color: LABEL,
+                                    textTransform: "uppercase",
+                                  }}
+                                >
+                                  Related routes
+                                </p>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                  {selectedTool.relatedRoutes.map((route) => (
+                                    <Link
+                                      key={route}
+                                      href={route}
+                                      style={{
+                                        minHeight: "32px",
+                                        padding: "0 10px",
+                                        borderRadius: "999px",
+                                        border: `1px solid ${BORDER}`,
+                                        background: SURFACE_TINT,
+                                        color: VALUE,
+                                        textDecoration: "none",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        fontFamily: THEME.MONO,
+                                        fontSize: "var(--nb-fs-xs)",
+                                      }}
+                                    >
+                                      {route.replace("/tools/", "/")}
+                                    </Link>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
                           {relatedTools.length > 0 && (
-                            <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                              <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
-                                {displayMode === 'demo' ? 'Continue with' : 'Adjacent tools'}
+                            <div
+                              style={{
+                                borderRadius: "var(--nb-radius-lg)",
+                                border: `1px solid ${BORDER}`,
+                                background: SURFACE_SOFT,
+                                padding: "14px",
+                              }}
+                            >
+                              <p
+                                style={{
+                                  margin: "0 0 8px",
+                                  fontFamily: THEME.MONO,
+                                  fontSize: "var(--nb-fs-xs)",
+                                  color: LABEL,
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                {displayMode === "demo" ? "Continue with" : "Adjacent tools"}
                               </p>
-                              <div style={{ display: 'grid', gap: '8px' }}>
+                              <div style={{ display: "grid", gap: "8px" }}>
                                 {visibleRelatedTools.map((tool) => (
                                   <Link
                                     key={tool.id}
                                     href={tool.href}
                                     style={{
-                                      borderRadius: 'var(--nb-radius-md)',
+                                      borderRadius: "var(--nb-radius-md)",
                                       border: `1px solid ${BORDER}`,
                                       background: SURFACE_TINT,
-                                      padding: '10px 12px',
-                                      textDecoration: 'none',
+                                      padding: "10px 12px",
+                                      textDecoration: "none",
                                       color: VALUE,
                                     }}
                                   >
-                                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, marginBottom: '3px' }}>
+                                    <div
+                                      style={{
+                                        fontFamily: THEME.SANS,
+                                        fontSize: "var(--nb-fs-sm)",
+                                        fontWeight: 700,
+                                        marginBottom: "3px",
+                                      }}
+                                    >
                                       {tool.shortLabel} · {tool.name}
                                     </div>
-                                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
+                                    <div
+                                      style={{
+                                        fontFamily: THEME.SANS,
+                                        fontSize: "var(--nb-fs-sm)",
+                                        lineHeight: 1.5,
+                                        color: LABEL,
+                                      }}
+                                    >
                                       {tool.focus}
                                     </div>
                                   </Link>
                                 ))}
                               </div>
                               {relatedTools.length > relatedPageSize && (
-                                <div style={{ marginTop: '10px' }}>
+                                <div style={{ marginTop: "10px" }}>
                                   <Pagination
                                     totalItems={relatedTools.length}
                                     currentPage={safeRelatedPage}
@@ -1210,18 +1718,18 @@ export default function ToolsDirectoryPage() {
                           <Link
                             href={selectedTool.href}
                             style={{
-                              minHeight: '42px',
-                              borderRadius: 'var(--nb-radius-md)',
+                              minHeight: "42px",
+                              borderRadius: "var(--nb-radius-md)",
                               border: `1px solid ${BORDER_STRONG}`,
                               background: `${getDirectionAccent(selectedTool.direction)}36`,
                               color: VALUE,
-                              textDecoration: 'none',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '8px',
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
                               fontFamily: THEME.SANS,
-                              fontSize: 'var(--nb-fs-sm)',
+                              fontSize: "var(--nb-fs-sm)",
                               fontWeight: 700,
                             }}
                           >
@@ -1230,31 +1738,50 @@ export default function ToolsDirectoryPage() {
                         </div>
                       </>
                     ) : (
-                      <EmptyState title="Select a tool" message="Choose a tool card to inspect workflow fit and outputs." />
+                      <EmptyState
+                        title="Select a tool"
+                        message="Choose a tool card to inspect workflow fit and outputs."
+                      />
                     )}
                   </section>
 
                   <section
                     style={{
-                      borderRadius: 'var(--nb-radius-xl)',
+                      borderRadius: "var(--nb-radius-xl)",
                       border: `1px solid ${BORDER}`,
                       background: SURFACE,
-                      padding: '18px',
+                      padding: "18px",
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 10px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                    <p
+                      style={{
+                        margin: "0 0 10px",
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        textTransform: "uppercase",
+                        color: LABEL,
+                      }}
+                    >
                       Why this structure
                     </p>
-                    <div style={{ display: 'grid', gap: '10px' }}>
+                    <div style={{ display: "grid", gap: "10px" }}>
                       {[
-                        'Left column: search, category, shell, and state controls.',
-                        'Center: cards and pagination stay focused on discovery and entry.',
-                        'Right column: selected-tool detail or compare context prevents context loss.',
+                        "Left column: search, category, shell, and state controls.",
+                        "Center: cards and pagination stay focused on discovery and entry.",
+                        "Right column: selected-tool detail or compare context prevents context loss.",
                       ].map((line) => (
-                        <div key={line} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                          <CheckCircle2 size={15} style={{ color: VALUE, marginTop: '2px', flexShrink: 0 }} />
-                          <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.6, color: LABEL }}>
+                        <div key={line} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                          <CheckCircle2 size={15} style={{ color: VALUE, marginTop: "2px", flexShrink: 0 }} />
+                          <p
+                            style={{
+                              margin: 0,
+                              fontFamily: THEME.SANS,
+                              fontSize: "var(--nb-fs-sm)",
+                              lineHeight: 1.6,
+                              color: LABEL,
+                            }}
+                          >
                             {line}
                           </p>
                         </div>

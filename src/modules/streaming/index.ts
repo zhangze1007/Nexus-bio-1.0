@@ -16,54 +16,54 @@
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
-export { StreamingServer } from './server';
-export { StreamingPipeline, BufferQueue, composeStages } from './pipeline';
 export {
-  SlidingWindow,
-  checkThreshold,
-  detectZScoreAnomaly,
-  detectRobustZScoreAnomaly,
   AnomalyDetector,
-} from './anomaly';
-export {
-  validateDashboardState,
-  validateDashboardEvent,
-  validateMetricCurve,
-  validateDashboardAlert,
-  validateModelOutput,
-} from './schemas';
+  checkThreshold,
+  detectRobustZScoreAnomaly,
+  detectZScoreAnomaly,
+  SlidingWindow,
+} from "./anomaly";
+export { BufferQueue, composeStages, StreamingPipeline } from "./pipeline";
 export type {
-  StreamingMessage,
-  StreamingOptions,
-  MessageType,
-  ClientInfo,
-  PipelineStage,
-  PipelineOptions,
-  AnomalyEvent,
-  ThresholdRule,
-  Severity,
-  StreamingStackOptions,
-  StreamingStack,
-} from './types';
-export type {
-  DashboardState,
-  DashboardEvent,
-  DashboardEvents,
-  MetricPoint,
-  MetricCurve,
-  DashboardMetrics,
   DashboardAlert,
   DashboardAlerts,
-  ModelOutput,
+  DashboardEvent,
+  DashboardEvents,
+  DashboardMetrics,
   DashboardModelOutputs,
-} from './schemas';
+  DashboardState,
+  MetricCurve,
+  MetricPoint,
+  ModelOutput,
+} from "./schemas";
+export {
+  validateDashboardAlert,
+  validateDashboardEvent,
+  validateDashboardState,
+  validateMetricCurve,
+  validateModelOutput,
+} from "./schemas";
+export { StreamingServer } from "./server";
+export type {
+  AnomalyEvent,
+  ClientInfo,
+  MessageType,
+  PipelineOptions,
+  PipelineStage,
+  Severity,
+  StreamingMessage,
+  StreamingOptions,
+  StreamingStack,
+  StreamingStackOptions,
+  ThresholdRule,
+} from "./types";
 
 // ── Imports for factory functions ────────────────────────────────────────────
 
-import { StreamingServer } from './server';
-import { StreamingPipeline } from './pipeline';
-import { AnomalyDetector } from './anomaly';
-import type { StreamingStackOptions, StreamingStack } from './types';
+import { AnomalyDetector } from "./anomaly";
+import { StreamingPipeline } from "./pipeline";
+import { StreamingServer } from "./server";
+import type { StreamingStack, StreamingStackOptions } from "./types";
 
 // ── Factory Functions ────────────────────────────────────────────────────────
 
@@ -108,10 +108,10 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
     const result = await originalProcess(data);
 
     // Check for anomalies if data has metric and value
-    if (data && typeof data.metric === 'string' && typeof data.value === 'number') {
+    if (data && typeof data.metric === "string" && typeof data.value === "number") {
       const anomalies = detector.check({ metric: data.metric, value: data.value });
       for (const anomaly of anomalies) {
-        server.publish('anomalies', anomaly);
+        server.publish("anomalies", anomaly);
       }
     }
 
@@ -122,10 +122,10 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
   const originalProcessNext = pipeline.processNext.bind(pipeline);
   pipeline.processNext = async () => {
     const result = await originalProcessNext();
-    if (result !== undefined && result && typeof result.metric === 'string' && typeof result.value === 'number') {
+    if (result !== undefined && result && typeof result.metric === "string" && typeof result.value === "number") {
       const anomalies = detector.check({ metric: result.metric, value: result.value });
       for (const anomaly of anomalies) {
-        server.publish('anomalies', anomaly);
+        server.publish("anomalies", anomaly);
       }
     }
     return result;
@@ -162,17 +162,17 @@ export function createDefaultStreamingStack(): StreamingStack {
 
   // Add default pipeline stages
   stack.pipeline.addStage({
-    name: 'validate',
+    name: "validate",
     process: async (data) => {
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid data: must be an object');
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid data: must be an object");
       }
       return data;
     },
   });
 
   stack.pipeline.addStage({
-    name: 'timestamp',
+    name: "timestamp",
     process: async (data) => ({
       ...data,
       timestamp: data.timestamp || Date.now(),
@@ -181,17 +181,17 @@ export function createDefaultStreamingStack(): StreamingStack {
 
   // Add default anomaly rules
   stack.detector.addRule({
-    metric: 'cpu',
+    metric: "cpu",
     max: 90,
-    severity: 'high',
-    message: 'CPU usage exceeded 90%',
+    severity: "high",
+    message: "CPU usage exceeded 90%",
   });
 
   stack.detector.addRule({
-    metric: 'memory',
+    metric: "memory",
     max: 85,
-    severity: 'medium',
-    message: 'Memory usage exceeded 85%',
+    severity: "medium",
+    message: "Memory usage exceeded 85%",
   });
 
   return stack;

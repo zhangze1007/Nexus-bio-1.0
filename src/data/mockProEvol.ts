@@ -1,5 +1,5 @@
-import type { FitnessPoint } from '../types';
-import { SeededRNG } from '../utils/seededRng';
+import type { FitnessPoint } from "../types";
+import { SeededRNG } from "../utils/seededRng";
 
 // Pre-computed 20x20 fitness landscape grid for a model enzyme (ADS variant)
 // Values 0-1, peak around (12,14) — mimics empirical directed evolution data
@@ -14,12 +14,11 @@ export function generateLandscape(): number[][] {
     const row: number[] = [];
     for (let x = 0; x < 20; x++) {
       // Multi-peak landscape
-      const v = (
+      const v =
         gaussian(x, y, 12, 14, 3, 3, 1.0) +
-        gaussian(x, y, 4,  6,  2, 2, 0.6) +
-        gaussian(x, y, 17, 3,  2, 3, 0.4) +
-        (Math.sin(x * 0.8) * Math.cos(y * 0.6) * 0.08)
-      );
+        gaussian(x, y, 4, 6, 2, 2, 0.6) +
+        gaussian(x, y, 17, 3, 2, 3, 0.4) +
+        Math.sin(x * 0.8) * Math.cos(y * 0.6) * 0.08;
       row.push(Math.min(1, Math.max(0, v)));
     }
     grid.push(row);
@@ -30,20 +29,18 @@ export function generateLandscape(): number[][] {
 export const FITNESS_LANDSCAPE = generateLandscape();
 
 // Seeded Monte Carlo evolution trajectory (50 steps)
-export function generateEvolutionTrajectory(
-  mutationRate: number,
-  rounds: number,
-): FitnessPoint[] {
+export function generateEvolutionTrajectory(mutationRate: number, rounds: number): FitnessPoint[] {
   const trajectory: FitnessPoint[] = [];
-  let x = 2, y = 2;
+  let x = 2,
+    y = 2;
   let fitness = FITNESS_LANDSCAPE[y]?.[x] ?? 0;
-  const AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY';
+  const AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY";
   const rng = new SeededRNG(42);
 
-  const initialSeq = 'MSDKIVVVGSGPAGLTAAKYLLEKAGIEVSLIEREFLGGVCHTPYWDSIQLAELFGKMPVIPR';
+  const initialSeq = "MSDKIVVVGSGPAGLTAAKYLLEKAGIEVSLIEREFLGGVCHTPYWDSIQLAELFGKMPVIPR";
   let seq = initialSeq;
 
-  trajectory.push({ mutationCount: 0, fitness, sequence: seq.slice(0, 20) + '...' });
+  trajectory.push({ mutationCount: 0, fitness, sequence: seq.slice(0, 20) + "..." });
 
   for (let i = 0; i < rounds; i++) {
     const dx = Math.floor(rng.next() * 3 - 1);
@@ -54,13 +51,15 @@ export function generateEvolutionTrajectory(
 
     // Accept by Metropolis criterion
     if (newFitness >= fitness || rng.next() < Math.exp((newFitness - fitness) / 0.05)) {
-      x = nx; y = ny; fitness = newFitness;
+      x = nx;
+      y = ny;
+      fitness = newFitness;
       const pos = Math.floor(rng.next() * seq.length);
       seq = seq.slice(0, pos) + AMINO_ACIDS[Math.floor(rng.next() * 20)] + seq.slice(pos + 1);
     }
 
     if ((i + 1) % Math.max(1, Math.floor(rounds / 20)) === 0) {
-      trajectory.push({ mutationCount: i + 1, fitness, sequence: seq.slice(0, 20) + '...' });
+      trajectory.push({ mutationCount: i + 1, fitness, sequence: seq.slice(0, 20) + "..." });
     }
   }
   return trajectory;
@@ -68,4 +67,4 @@ export function generateEvolutionTrajectory(
 
 // Starting sequence (truncated ADS enzyme)
 export const STARTING_SEQUENCE =
-  'MSDKIVVVGSGPAGLTAAKYLLEKAGIEVSLIEREFLGGVCHTPYWDSIQLAELFGKMPVIPRNTPEELEKVLAQHQFPQFLEKYGIKVSEYNHFHPMRHEYGHRPEDLAKRFSDFAIQAGVDPFHASPFAQRLCEQAGVEQIILAQG';
+  "MSDKIVVVGSGPAGLTAAKYLLEKAGIEVSLIEREFLGGVCHTPYWDSIQLAELFGKMPVIPRNTPEELEKVLAQHQFPQFLEKYGIKVSEYNHFHPMRHEYGHRPEDLAKRFSDFAIQAGVDPFHASPFAQRLCEQAGVEQIILAQG";

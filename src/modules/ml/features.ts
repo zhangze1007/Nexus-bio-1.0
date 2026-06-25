@@ -12,7 +12,7 @@
  * Reference: Kawashima et al. (2008) Nucleic Acids Res 36:D202 (AAindex)
  */
 
-import type { Dataset, TrainingSample } from './types';
+import type { Dataset, TrainingSample } from "./types";
 
 // ── Amino Acid Properties ──────────────────────────────────────────────────
 
@@ -20,30 +20,33 @@ import type { Dataset, TrainingSample } from './types';
  * Physicochemical properties from AAindex database.
  * Reference: Kawashima et al. (2008) Nucleic Acids Res 36:D202
  */
-const AA_PROPERTIES: Record<string, {
-  hydrophobicity: number;
-  charge: number;
-  polarity: number;
-  molecularWeight: number;
-  pI: number;
-}> = {
-  A: { hydrophobicity: 0.62, charge: 0, polarity: 0, molecularWeight: 89.09, pI: 6.00 },
-  R: { hydrophobicity: -2.53, charge: 1, polarity: 1, molecularWeight: 174.20, pI: 10.76 },
+const AA_PROPERTIES: Record<
+  string,
+  {
+    hydrophobicity: number;
+    charge: number;
+    polarity: number;
+    molecularWeight: number;
+    pI: number;
+  }
+> = {
+  A: { hydrophobicity: 0.62, charge: 0, polarity: 0, molecularWeight: 89.09, pI: 6.0 },
+  R: { hydrophobicity: -2.53, charge: 1, polarity: 1, molecularWeight: 174.2, pI: 10.76 },
   N: { hydrophobicity: -0.78, charge: 0, polarity: 1, molecularWeight: 132.12, pI: 5.41 },
-  D: { hydrophobicity: -0.90, charge: -1, polarity: 1, molecularWeight: 133.10, pI: 2.77 },
+  D: { hydrophobicity: -0.9, charge: -1, polarity: 1, molecularWeight: 133.1, pI: 2.77 },
   C: { hydrophobicity: 0.29, charge: 0, polarity: 0, molecularWeight: 121.16, pI: 5.07 },
   Q: { hydrophobicity: -0.85, charge: 0, polarity: 1, molecularWeight: 146.15, pI: 5.65 },
   E: { hydrophobicity: -0.74, charge: -1, polarity: 1, molecularWeight: 147.13, pI: 3.22 },
   G: { hydrophobicity: 0.48, charge: 0, polarity: 0, molecularWeight: 75.03, pI: 5.97 },
-  H: { hydrophobicity: -0.40, charge: 0.5, polarity: 1, molecularWeight: 155.16, pI: 7.59 },
+  H: { hydrophobicity: -0.4, charge: 0.5, polarity: 1, molecularWeight: 155.16, pI: 7.59 },
   I: { hydrophobicity: 1.38, charge: 0, polarity: 0, molecularWeight: 131.17, pI: 6.02 },
   L: { hydrophobicity: 1.06, charge: 0, polarity: 0, molecularWeight: 131.17, pI: 5.98 },
-  K: { hydrophobicity: -1.50, charge: 1, polarity: 1, molecularWeight: 146.19, pI: 9.74 },
+  K: { hydrophobicity: -1.5, charge: 1, polarity: 1, molecularWeight: 146.19, pI: 9.74 },
   M: { hydrophobicity: 0.64, charge: 0, polarity: 0, molecularWeight: 149.21, pI: 5.74 },
   F: { hydrophobicity: 1.19, charge: 0, polarity: 0, molecularWeight: 165.19, pI: 5.48 },
-  P: { hydrophobicity: 0.12, charge: 0, polarity: 0, molecularWeight: 115.13, pI: 6.30 },
+  P: { hydrophobicity: 0.12, charge: 0, polarity: 0, molecularWeight: 115.13, pI: 6.3 },
   S: { hydrophobicity: -0.18, charge: 0, polarity: 1, molecularWeight: 105.09, pI: 5.68 },
-  T: { hydrophobicity: -0.05, charge: 0, polarity: 1, molecularWeight: 119.12, pI: 5.60 },
+  T: { hydrophobicity: -0.05, charge: 0, polarity: 1, molecularWeight: 119.12, pI: 5.6 },
   W: { hydrophobicity: 0.81, charge: 0, polarity: 0, molecularWeight: 204.23, pI: 5.89 },
   Y: { hydrophobicity: 0.26, charge: 0, polarity: 1, molecularWeight: 181.19, pI: 5.66 },
   V: { hydrophobicity: 1.08, charge: 0, polarity: 0, molecularWeight: 117.15, pI: 5.96 },
@@ -72,43 +75,43 @@ export function extractFeatures(sequence: string): number[] {
   for (const aa of aminoAcids) {
     aaComposition[aa] = (seq.split(aa).length - 1) / length;
   }
-  const aaFeatures = aminoAcids.map(aa => aaComposition[aa] || 0);
+  const aaFeatures = aminoAcids.map((aa) => aaComposition[aa] || 0);
 
   // 2. Dipeptide frequency (20 features — top dipeptides)
   const dipeptides = generateDipeptides();
   const dipepFreq: Record<string, number> = {};
   for (const dp of dipeptides) {
-    const count = (seq.match(new RegExp(dp, 'g')) || []).length;
+    const count = (seq.match(new RegExp(dp, "g")) || []).length;
     dipepFreq[dp] = count / Math.max(1, length - 1);
   }
-  const dipepFeatures = dipeptides.map(dp => dipepFreq[dp] || 0);
+  const dipepFeatures = dipeptides.map((dp) => dipepFreq[dp] || 0);
 
   // 3. Physicochemical properties (10 features)
-  const hydrophobicities = seq.split('').map(aa => AA_PROPERTIES[aa]?.hydrophobicity ?? 0);
-  const charges = seq.split('').map(aa => AA_PROPERTIES[aa]?.charge ?? 0);
-  const polarities = seq.split('').map(aa => AA_PROPERTIES[aa]?.polarity ?? 0);
-  const molecularWeights = seq.split('').map(aa => AA_PROPERTIES[aa]?.molecularWeight ?? 110);
+  const hydrophobicities = seq.split("").map((aa) => AA_PROPERTIES[aa]?.hydrophobicity ?? 0);
+  const charges = seq.split("").map((aa) => AA_PROPERTIES[aa]?.charge ?? 0);
+  const polarities = seq.split("").map((aa) => AA_PROPERTIES[aa]?.polarity ?? 0);
+  const molecularWeights = seq.split("").map((aa) => AA_PROPERTIES[aa]?.molecularWeight ?? 110);
 
   const physioFeatures = [
-    mean(hydrophobicities),                    // mean hydrophobicity
-    std(hydrophobicities),                     // hydrophobicity std
-    mean(charges),                             // mean charge
-    charges.filter(c => c > 0).length / length, // positive charge fraction
-    mean(polarities),                          // mean polarity
-    polarities.filter(p => p > 0).length / length, // polar fraction
-    mean(molecularWeights),                    // mean MW
-    seq.split('').filter(aa => AA_PROPERTIES[aa]?.hydrophobicity > 0.5).length / length, // hydrophobic fraction
-    seq.split('').filter(aa => AA_PROPERTIES[aa]?.charge !== 0).length / length, // charged fraction
-    seq.split('').filter(aa => 'DEKRH'.includes(aa)).length / length, // ionizable fraction
+    mean(hydrophobicities), // mean hydrophobicity
+    std(hydrophobicities), // hydrophobicity std
+    mean(charges), // mean charge
+    charges.filter((c) => c > 0).length / length, // positive charge fraction
+    mean(polarities), // mean polarity
+    polarities.filter((p) => p > 0).length / length, // polar fraction
+    mean(molecularWeights), // mean MW
+    seq.split("").filter((aa) => AA_PROPERTIES[aa]?.hydrophobicity > 0.5).length / length, // hydrophobic fraction
+    seq.split("").filter((aa) => AA_PROPERTIES[aa]?.charge !== 0).length / length, // charged fraction
+    seq.split("").filter((aa) => "DEKRH".includes(aa)).length / length, // ionizable fraction
   ];
 
   // 4. Sequence properties (5 features)
   const seqFeatures = [
-    length / 1000,                                    // normalized length
+    length / 1000, // normalized length
     molecularWeights.reduce((s, w) => s + w, 0) / 1000, // total MW
-    mean(seq.split('').map(aa => AA_PROPERTIES[aa]?.pI ?? 7)), // mean pI
-    (seq.match(/P/g) || []).length / length,           // proline fraction (flexibility)
-    (seq.match(/G/g) || []).length / length,           // glycine fraction (flexibility)
+    mean(seq.split("").map((aa) => AA_PROPERTIES[aa]?.pI ?? 7)), // mean pI
+    (seq.match(/P/g) || []).length / length, // proline fraction (flexibility)
+    (seq.match(/G/g) || []).length / length, // glycine fraction (flexibility)
   ];
 
   return [...aaFeatures, ...dipepFeatures, ...physioFeatures, ...seqFeatures];
@@ -118,24 +121,51 @@ export function extractFeatures(sequence: string): number[] {
  * Get feature names for interpretability.
  */
 export function getFeatureNames(): string[] {
-  const aminoAcidFeatures = aminoAcids.map(aa => `aa_${aa}`);
-  const dipepFeatures = generateDipeptides().map(dp => `dp_${dp}`);
+  const aminoAcidFeatures = aminoAcids.map((aa) => `aa_${aa}`);
+  const dipepFeatures = generateDipeptides().map((dp) => `dp_${dp}`);
   const physioFeatures = [
-    'hydrophobicity_mean', 'hydrophobicity_std', 'charge_mean', 'positive_fraction',
-    'polarity_mean', 'polar_fraction', 'mw_mean', 'hydrophobic_fraction',
-    'charged_fraction', 'ionizable_fraction',
+    "hydrophobicity_mean",
+    "hydrophobicity_std",
+    "charge_mean",
+    "positive_fraction",
+    "polarity_mean",
+    "polar_fraction",
+    "mw_mean",
+    "hydrophobic_fraction",
+    "charged_fraction",
+    "ionizable_fraction",
   ];
-  const seqFeatures = ['length_norm', 'total_mw', 'mean_pi', 'proline_fraction', 'glycine_fraction'];
+  const seqFeatures = ["length_norm", "total_mw", "mean_pi", "proline_fraction", "glycine_fraction"];
 
   return [...aminoAcidFeatures, ...dipepFeatures, ...physioFeatures, ...seqFeatures];
 }
 
-const aminoAcids = 'ACDEFGHIKLMNPQRSTVWY'.split('');
+const aminoAcids = "ACDEFGHIKLMNPQRSTVWY".split("");
 
 function generateDipeptides(): string[] {
   // Top 20 most common dipeptides by frequency in UniProt
-  return ['AA', 'GG', 'LL', 'LA', 'AL', 'VL', 'LV', 'LS', 'SL', 'GS',
-    'SA', 'AS', 'AG', 'GA', 'GL', 'LG', 'AV', 'VA', 'SS', 'LE'];
+  return [
+    "AA",
+    "GG",
+    "LL",
+    "LA",
+    "AL",
+    "VL",
+    "LV",
+    "LS",
+    "SL",
+    "GS",
+    "SA",
+    "AS",
+    "AG",
+    "GA",
+    "GL",
+    "LG",
+    "AV",
+    "VA",
+    "SS",
+    "LE",
+  ];
 }
 
 function mean(arr: number[]): number {
@@ -154,23 +184,26 @@ export function buildDataset(
   samples: Array<{ sequence: string; activity: number; metadata?: Record<string, unknown> }>,
 ): Dataset {
   const featureNames = getFeatureNames();
-  const trainingSamples: TrainingSample[] = samples.map(s => ({
+  const trainingSamples: TrainingSample[] = samples.map((s) => ({
     features: extractFeatures(s.sequence),
     label: s.activity,
-    metadata: s.metadata as TrainingSample['metadata'],
+    metadata: s.metadata as TrainingSample["metadata"],
   }));
 
   return {
     featureNames,
     samples: trainingSamples,
-    taskType: 'regression',
+    taskType: "regression",
   };
 }
 
 /**
  * Split dataset into train/test sets.
  */
-export function trainTestSplit(dataset: Dataset, testFraction: number = 0.2): {
+export function trainTestSplit(
+  dataset: Dataset,
+  testFraction: number = 0.2,
+): {
   train: Dataset;
   test: Dataset;
 } {

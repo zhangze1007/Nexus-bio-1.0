@@ -25,13 +25,13 @@
 
 import {
   buildParameterDistributions,
-  sampleBatch,
   type CellFreeNominalParams,
   DEFAULT_CELL_FREE_NOMINAL,
   type SingleCellData,
-} from './parameterDistributions';
-import { computeRobustness, type MonteCarloTrial, type RobustnessReport } from './robustnessScore';
-import { computeSensitivity, type SensitivityReport } from './sensitivityAnalysis';
+  sampleBatch,
+} from "./parameterDistributions";
+import { computeRobustness, type MonteCarloTrial, type RobustnessReport } from "./robustnessScore";
+import { computeSensitivity, type SensitivityReport } from "./sensitivityAnalysis";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export interface RobustnessPredictorResult {
  */
 function cellFreeODE(
   params: Record<string, number>,
-  duration = 300,  // minutes
+  duration = 300, // minutes
   dt = 0.5,
 ): { trajectory: Array<{ time: number; proteinConc: number }>; yield: number; peakConc: number } {
   const k_tx = params.k_tx ?? 5.0;
@@ -89,7 +89,7 @@ function cellFreeODE(
 
   let mRNA = 0;
   let protein = 0;
-  let ATP = 1000;  // initial ATP pool
+  let ATP = 1000; // initial ATP pool
 
   const trajectory: Array<{ time: number; proteinConc: number }> = [];
   const steps = Math.floor(duration / dt);
@@ -101,27 +101,23 @@ function cellFreeODE(
     if (step < steps) {
       // RK4
       const deriv = (m: number, p: number, a: number) => {
-        const energy = Math.max(0, a) / 1000;  // normalized energy
-        const translation = k_tl * m * AA / (K_tl + m) * energy;
-        return [
-          k_tx * DNA * Rnap - d_mRNA * m,
-          translation - d_protein * p,
-          -energy_decay * a - translation * 0.01,
-        ];
+        const energy = Math.max(0, a) / 1000; // normalized energy
+        const translation = ((k_tl * m * AA) / (K_tl + m)) * energy;
+        return [k_tx * DNA * Rnap - d_mRNA * m, translation - d_protein * p, -energy_decay * a - translation * 0.01];
       };
 
       const [k1m, k1p, k1a] = deriv(mRNA, protein, ATP);
-      const [k2m, k2p, k2a] = deriv(mRNA + dt/2*k1m, protein + dt/2*k1p, ATP + dt/2*k1a);
-      const [k3m, k3p, k3a] = deriv(mRNA + dt/2*k2m, protein + dt/2*k2p, ATP + dt/2*k2a);
-      const [k4m, k4p, k4a] = deriv(mRNA + dt*k3m, protein + dt*k3p, ATP + dt*k3a);
+      const [k2m, k2p, k2a] = deriv(mRNA + (dt / 2) * k1m, protein + (dt / 2) * k1p, ATP + (dt / 2) * k1a);
+      const [k3m, k3p, k3a] = deriv(mRNA + (dt / 2) * k2m, protein + (dt / 2) * k2p, ATP + (dt / 2) * k2a);
+      const [k4m, k4p, k4a] = deriv(mRNA + dt * k3m, protein + dt * k3p, ATP + dt * k3a);
 
-      mRNA = Math.max(0, mRNA + (dt/6) * (k1m + 2*k2m + 2*k3m + k4m));
-      protein = Math.max(0, protein + (dt/6) * (k1p + 2*k2p + 2*k3p + k4p));
-      ATP = Math.max(0, ATP + (dt/6) * (k1a + 2*k2a + 2*k3a + k4a));
+      mRNA = Math.max(0, mRNA + (dt / 6) * (k1m + 2 * k2m + 2 * k3m + k4m));
+      protein = Math.max(0, protein + (dt / 6) * (k1p + 2 * k2p + 2 * k3p + k4p));
+      ATP = Math.max(0, ATP + (dt / 6) * (k1a + 2 * k2a + 2 * k3a + k4a));
     }
   }
 
-  const peakConc = Math.max(...trajectory.map(t => t.proteinConc));
+  const peakConc = Math.max(...trajectory.map((t) => t.proteinConc));
   return { trajectory, yield: trajectory[trajectory.length - 1].proteinConc, peakConc };
 }
 
@@ -130,9 +126,7 @@ function cellFreeODE(
 /**
  * Run ideal simulation with nominal parameters, no noise.
  */
-function runIdealSimulation(
-  nominalParams: CellFreeNominalParams = DEFAULT_CELL_FREE_NOMINAL,
-): IdealSimulation {
+function runIdealSimulation(nominalParams: CellFreeNominalParams = DEFAULT_CELL_FREE_NOMINAL): IdealSimulation {
   const params = { ...nominalParams } as unknown as Record<string, number>;
   const result = cellFreeODE(params);
 
@@ -191,9 +185,9 @@ function runMonteCarlo(
     };
   });
 
-  const converged = trials.filter(t => t.converged);
-  const yields = converged.map(t => t.yield);
-  const timings = converged.map(t => t.timeToHalfMax);
+  const converged = trials.filter((t) => t.converged);
+  const yields = converged.map((t) => t.yield);
+  const timings = converged.map((t) => t.timeToHalfMax);
 
   return {
     trials,
@@ -222,17 +216,14 @@ function runOptimizer(
 ): { robustness: RobustnessReport; sensitivity: SensitivityReport } {
   // Sensitivity analysis: perturb each parameter by ±5%
   const nominal = { ...nominalParams } as unknown as Record<string, number>;
-  const sensitivity = computeSensitivity(
-    (params) => {
-      const result = cellFreeODE(params);
-      return result.yield;
-    },
-    nominal,
-  );
+  const sensitivity = computeSensitivity((params) => {
+    const result = cellFreeODE(params);
+    return result.yield;
+  }, nominal);
 
   // Extract energy and resource sensitivities for robustness score
-  const energySens = sensitivity.results.find(r => r.parameter === 'energy_decay')?.sensitivity ?? 0;
-  const resourceSens = sensitivity.results.find(r => r.parameter === 'Rnap_activity')?.sensitivity ?? 0;
+  const energySens = sensitivity.results.find((r) => r.parameter === "energy_decay")?.sensitivity ?? 0;
+  const resourceSens = sensitivity.results.find((r) => r.parameter === "Rnap_activity")?.sensitivity ?? 0;
 
   // Robustness score with real sensitivity values
   const robustness = computeRobustness(mcResults.trials, energySens, resourceSens);
@@ -258,17 +249,20 @@ export function runRobustnessPredictor(
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
   // Agent A: Ideal simulation
-  solverCalls.push({ solver: 'cellFreeODE::ideal', description: 'RK4 ODE with nominal parameters' });
+  solverCalls.push({ solver: "cellFreeODE::ideal", description: "RK4 ODE with nominal parameters" });
   const ideal = runIdealSimulation(nominalParams);
 
   // Agent B: Monte Carlo
-  solverCalls.push({ solver: 'parameterDistributions::build', description: `Distributions from ${singleCellData.length} genes` });
-  solverCalls.push({ solver: 'cellFreeODE::monteCarlo', description: `${nTrials} perturbed ODE simulations` });
+  solverCalls.push({
+    solver: "parameterDistributions::build",
+    description: `Distributions from ${singleCellData.length} genes`,
+  });
+  solverCalls.push({ solver: "cellFreeODE::monteCarlo", description: `${nTrials} perturbed ODE simulations` });
   const monteCarlo = runMonteCarlo(singleCellData, nominalParams, nTrials);
 
   // Agent C: Robustness + Sensitivity
-  solverCalls.push({ solver: 'robustnessScore::compute', description: 'Composite robustness scoring' });
-  solverCalls.push({ solver: 'sensitivityAnalysis::compute', description: 'Finite-difference parameter sensitivity' });
+  solverCalls.push({ solver: "robustnessScore::compute", description: "Composite robustness scoring" });
+  solverCalls.push({ solver: "sensitivityAnalysis::compute", description: "Finite-difference parameter sensitivity" });
   const { robustness, sensitivity } = runOptimizer(monteCarlo, nominalParams);
 
   return { ideal, monteCarlo, robustness, sensitivity, allSolverCalls: solverCalls };
@@ -276,10 +270,15 @@ export function runRobustnessPredictor(
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function mean(v: number[]): number { return v.length > 0 ? v.reduce((s, x) => s + x, 0) / v.length : 0; }
+function mean(v: number[]): number {
+  return v.length > 0 ? v.reduce((s, x) => s + x, 0) / v.length : 0;
+}
 function std(v: number[]): number {
   if (v.length < 2) return 0;
   const m = mean(v);
   return Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / (v.length - 1));
 }
-function cv(v: number[]): number { const m = mean(v); return Math.abs(m) > 1e-15 ? std(v) / Math.abs(m) : 0; }
+function cv(v: number[]): number {
+  const m = mean(v);
+  return Math.abs(m) > 1e-15 ? std(v) / Math.abs(m) : 0;
+}

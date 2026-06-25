@@ -14,27 +14,21 @@
  *   REFERENCE: Krissinel & Henrick (2007) J Mol Biol 372:774 (interface detection)
  */
 
-import type {
-  ProteinChain,
-  HeteroChain,
-  HeteroComplex,
-  InterfacePrediction,
-  ChainType,
-} from './types';
+import type { ChainType, HeteroChain, HeteroComplex, InterfacePrediction, ProteinChain } from "./types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 /** Standard amino acids (1-letter codes) in alphabetical order */
-const STANDARD_AA = 'ACDEFGHIKLMNPQRSTVWY';
+const STANDARD_AA = "ACDEFGHIKLMNPQRSTVWY";
 
 /** Hydrophobic amino acids */
-const HYDROPHOBIC_AA = new Set(['A', 'V', 'L', 'I', 'F', 'W', 'M', 'P']);
+const HYDROPHOBIC_AA = new Set(["A", "V", "L", "I", "F", "W", "M", "P"]);
 
 /** Charged amino acids at physiological pH */
-const CHARGED_AA = new Set(['D', 'E', 'K', 'R', 'H']);
+const CHARGED_AA = new Set(["D", "E", "K", "R", "H"]);
 
 /** Polar amino acids */
-const POLAR_AA = new Set(['S', 'T', 'N', 'Q', 'Y', 'C']);
+const POLAR_AA = new Set(["S", "T", "N", "Q", "Y", "C"]);
 
 /** Similarity threshold for predicting an interface */
 const SIMILARITY_THRESHOLD = 0.5;
@@ -117,10 +111,10 @@ function extractDnaFeatures(sequence: string): number[] {
   let c = 0;
 
   for (const nt of seq) {
-    if (nt === 'A') a++;
-    else if (nt === 'T') t++;
-    else if (nt === 'G') g++;
-    else if (nt === 'C') c++;
+    if (nt === "A") a++;
+    else if (nt === "T") t++;
+    else if (nt === "G") g++;
+    else if (nt === "C") c++;
   }
 
   features[0] = a / sequence.length;
@@ -159,10 +153,10 @@ function extractRnaFeatures(sequence: string): number[] {
   let c = 0;
 
   for (const nt of seq) {
-    if (nt === 'A') a++;
-    else if (nt === 'U') u++;
-    else if (nt === 'G') g++;
-    else if (nt === 'C') c++;
+    if (nt === "A") a++;
+    else if (nt === "U") u++;
+    else if (nt === "G") g++;
+    else if (nt === "C") c++;
   }
 
   features[0] = a / sequence.length;
@@ -184,19 +178,16 @@ function extractRnaFeatures(sequence: string): number[] {
  * @param typeB - Type of second chain
  * @returns Classified pair type string
  */
-function classifyPairType(
-  typeA: ChainType,
-  typeB: ChainType,
-): HeteroComplex['chainPairs'][0]['pairType'] {
+function classifyPairType(typeA: ChainType, typeB: ChainType): HeteroComplex["chainPairs"][0]["pairType"] {
   // Sort types alphabetically for consistent classification
   const sorted = [typeA, typeB].sort();
 
-  if (sorted[0] === 'protein' && sorted[1] === 'protein') return 'protein-protein';
-  if (sorted[0] === 'dna' && sorted[1] === 'protein') return 'protein-dna';
-  if (sorted[0] === 'protein' && sorted[1] === 'rna') return 'protein-rna';
-  if (sorted[0] === 'dna' && sorted[1] === 'dna') return 'dna-dna';
-  if (sorted[0] === 'rna' && sorted[1] === 'rna') return 'rna-rna';
-  if (sorted[0] === 'dna' && sorted[1] === 'rna') return 'dna-rna';
+  if (sorted[0] === "protein" && sorted[1] === "protein") return "protein-protein";
+  if (sorted[0] === "dna" && sorted[1] === "protein") return "protein-dna";
+  if (sorted[0] === "protein" && sorted[1] === "rna") return "protein-rna";
+  if (sorted[0] === "dna" && sorted[1] === "dna") return "dna-dna";
+  if (sorted[0] === "rna" && sorted[1] === "rna") return "rna-rna";
+  if (sorted[0] === "dna" && sorted[1] === "rna") return "dna-rna";
 
   // Unsupported pair type
   throw new Error(`Unsupported chain type pair: ${typeA} + ${typeB}`);
@@ -292,11 +283,11 @@ function estimateContactProbability(chainA: HeteroChain, chainB: HeteroChain): n
  */
 export function extractChainFeatures(chain: ProteinChain): number[] {
   switch (chain.type) {
-    case 'protein':
+    case "protein":
       return extractProteinFeatures(chain.sequence);
-    case 'dna':
+    case "dna":
       return extractDnaFeatures(chain.sequence);
-    case 'rna':
+    case "rna":
       return extractRnaFeatures(chain.sequence);
     default:
       return [];
@@ -323,24 +314,21 @@ export function extractChainFeatures(chain: ProteinChain): number[] {
  * ```
  */
 export function encodeHeteroComplex(chains: ProteinChain[]): HeteroComplex {
-  const heteroChains: HeteroChain[] = chains.map(chain => ({
+  const heteroChains: HeteroChain[] = chains.map((chain) => ({
     id: chain.id,
     sequence: chain.sequence,
     type: chain.type as ChainType,
     features: extractChainFeatures(chain),
   }));
 
-  const chainPairs: HeteroComplex['chainPairs'] = [];
+  const chainPairs: HeteroComplex["chainPairs"] = [];
 
   for (let i = 0; i < chains.length; i++) {
     for (let j = i + 1; j < chains.length; j++) {
       chainPairs.push({
         chainA: chains[i].id,
         chainB: chains[j].id,
-        pairType: classifyPairType(
-          chains[i].type as ChainType,
-          chains[j].type as ChainType,
-        ),
+        pairType: classifyPairType(chains[i].type as ChainType, chains[j].type as ChainType),
       });
     }
   }
@@ -369,11 +357,11 @@ export function predictHeteroInterface(complex: HeteroComplex): InterfacePredict
     return { chainPairs: [], overallConfidence: 0 };
   }
 
-  const chainPairs: InterfacePrediction['chainPairs'] = [];
+  const chainPairs: InterfacePrediction["chainPairs"] = [];
 
   for (const pair of complex.chainPairs) {
-    const chainA = complex.chains.find(c => c.id === pair.chainA);
-    const chainB = complex.chains.find(c => c.id === pair.chainB);
+    const chainA = complex.chains.find((c) => c.id === pair.chainA);
+    const chainB = complex.chains.find((c) => c.id === pair.chainB);
 
     if (!chainA || !chainB) continue;
 
@@ -394,9 +382,7 @@ export function predictHeteroInterface(complex: HeteroComplex): InterfacePredict
 
   // Overall confidence is the mean of all pair similarities
   const totalSimilarity = chainPairs.reduce((sum, p) => sum + p.similarity, 0);
-  const overallConfidence = chainPairs.length > 0
-    ? Math.round((totalSimilarity / chainPairs.length) * 1000) / 1000
-    : 0;
+  const overallConfidence = chainPairs.length > 0 ? Math.round((totalSimilarity / chainPairs.length) * 1000) / 1000 : 0;
 
   return { chainPairs, overallConfidence };
 }

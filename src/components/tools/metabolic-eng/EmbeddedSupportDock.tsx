@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import type { RefObject } from 'react';
-import { THEME } from '../../../theme';
+import type { RefObject } from "react";
+import { THEME } from "../../../theme";
 export interface SupportCard {
   eyebrow: string;
   value: string;
@@ -24,24 +24,25 @@ export default function EmbeddedSupportDock({
             key={card.eyebrow}
             className="nb-pathd-support-dock__card"
             style={{
-              borderRadius: 'var(--nb-radius-lg)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(247,250,253,0.08) 16%, rgba(10,12,16,0.58) 100%)',
-              boxShadow: '0 18px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.10)',
-              backdropFilter: 'blur(18px) saturate(135%)',
-              WebkitBackdropFilter: 'blur(18px) saturate(135%)',
-              padding: '12px 13px',
-              display: 'grid',
-              gap: '8px',
+              borderRadius: "var(--nb-radius-lg)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(247,250,253,0.08) 16%, rgba(10,12,16,0.58) 100%)",
+              boxShadow: "0 18px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.10)",
+              backdropFilter: "blur(18px) saturate(135%)",
+              WebkitBackdropFilter: "blur(18px) saturate(135%)",
+              padding: "12px 13px",
+              display: "grid",
+              gap: "8px",
             }}
           >
-            <div style={{ display: 'grid', gap: '4px' }}>
+            <div style={{ display: "grid", gap: "4px" }}>
               <div
                 style={{
                   fontFamily: THEME.MONO,
-                  fontSize: 'var(--nb-fs-xs)',
-                  letterSpacing: '0.10em',
-                  textTransform: 'uppercase',
+                  fontSize: "var(--nb-fs-xs)",
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
                   color: THEME.LABEL,
                 }}
               >
@@ -50,7 +51,7 @@ export default function EmbeddedSupportDock({
               <div
                 style={{
                   fontFamily: THEME.SANS,
-                  fontSize: 'var(--nb-fs-sm)',
+                  fontSize: "var(--nb-fs-sm)",
                   fontWeight: 700,
                   color: THEME.VALUE,
                   lineHeight: 1.2,
@@ -62,30 +63,30 @@ export default function EmbeddedSupportDock({
             <div
               style={{
                 fontFamily: THEME.SANS,
-                fontSize: '10.5px',
+                fontSize: "10.5px",
                 lineHeight: 1.5,
                 color: THEME.LABEL,
               }}
             >
               {card.body}
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {card.chips.map((chip) => (
                 <span
                   key={chip}
                   style={{
-                    minHeight: '24px',
-                    padding: '0 8px',
-                    borderRadius: '999px',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'rgba(255,255,255,0.10)',
+                    minHeight: "24px",
+                    padding: "0 8px",
+                    borderRadius: "999px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.10)",
                     color: THEME.VALUE,
-                    display: 'inline-flex',
-                    alignItems: 'center',
+                    display: "inline-flex",
+                    alignItems: "center",
                     fontFamily: THEME.MONO,
-                    fontSize: 'var(--nb-fs-xs)',
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
+                    fontSize: "var(--nb-fs-xs)",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
                   }}
                 >
                   {chip}

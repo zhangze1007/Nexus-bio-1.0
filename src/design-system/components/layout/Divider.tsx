@@ -1,21 +1,21 @@
-import { tokens } from '../../tokens';
+import { tokens } from "../../tokens";
 
 interface DividerProps {
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   className?: string;
   label?: string;
 }
 
-export function Divider({ orientation = 'horizontal', className, label }: DividerProps) {
+export function Divider({ orientation = "horizontal", className, label }: DividerProps) {
   const borderColor = tokens.colors.border.default;
 
-  if (orientation === 'vertical') {
+  if (orientation === "vertical") {
     return (
       <div
         className={className}
         style={{
-          width: '1px',
-          height: '100%',
+          width: "1px",
+          height: "100%",
           backgroundColor: borderColor,
         }}
       />
@@ -27,16 +27,16 @@ export function Divider({ orientation = 'horizontal', className, label }: Divide
       <div
         className={className}
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: tokens.spacing.md,
-          width: '100%',
+          width: "100%",
         }}
       >
         <div
           style={{
             flex: 1,
-            height: '1px',
+            height: "1px",
             backgroundColor: borderColor,
           }}
         />
@@ -44,7 +44,7 @@ export function Divider({ orientation = 'horizontal', className, label }: Divide
           style={{
             fontSize: tokens.typography.fontSize.sm,
             color: tokens.colors.text.tertiary,
-            whiteSpace: 'nowrap',
+            whiteSpace: "nowrap",
           }}
         >
           {label}
@@ -52,7 +52,7 @@ export function Divider({ orientation = 'horizontal', className, label }: Divide
         <div
           style={{
             flex: 1,
-            height: '1px',
+            height: "1px",
             backgroundColor: borderColor,
           }}
         />
@@ -64,8 +64,8 @@ export function Divider({ orientation = 'horizontal', className, label }: Divide
     <div
       className={className}
       style={{
-        width: '100%',
-        height: '1px',
+        width: "100%",
+        height: "1px",
         backgroundColor: borderColor,
       }}
     />

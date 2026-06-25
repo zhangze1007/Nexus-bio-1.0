@@ -1,34 +1,31 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, BookMarked, FlaskConical, ShieldAlert, Workflow } from 'lucide-react';
-import { useWorkbenchStore } from '../../store/workbenchStore';
-import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
-import { getDependencyTrace } from '../../config/workbenchGraph';
-import { getAuthorityTier } from './workbenchTrust';
-import { tryGetToolContract } from '../../services/workflowRegistry';
+import { motion } from "framer-motion";
+import { ArrowRight, BookMarked, FlaskConical, ShieldAlert, Workflow } from "lucide-react";
+import { useMemo, useState } from "react";
+import { getDependencyTrace } from "../../config/workbenchGraph";
+import { GOLDEN_PATH_TOOL_IDS, type ToolId } from "../../domain/workflowContract";
+import { evaluateToolContract } from "../../services/workflowContractEvaluator";
+import { tryGetToolContract } from "../../services/workflowRegistry";
+import type { WorkbenchToolPayloadMap } from "../../store/workbenchPayloads";
+import { useWorkbenchStore } from "../../store/workbenchStore";
+import { THEME } from "../../theme";
+import { TOOL_BY_ID } from "../tools/shared/toolRegistry";
 import {
-  GOLDEN_PATH_TOOL_IDS,
-  type ToolId,
-} from '../../domain/workflowContract';
-import { evaluateToolContract } from '../../services/workflowContractEvaluator';
-import type { WorkbenchToolPayloadMap } from '../../store/workbenchPayloads';
-import { workflowStatusLabel } from './workflowExperience';
-import {
-  glassPanel,
-  typography,
-  iconContainer,
-  statusChip,
-  cardVariants,
-  staggerContainer,
-  chipVariants,
-  sectionHeaderRow,
-  chipRow,
-  twoColumnGrid,
   accentLeftBorder,
-} from './workbenchDesignSystem';
-import { THEME } from '../../theme';
+  cardVariants,
+  chipRow,
+  chipVariants,
+  glassPanel,
+  iconContainer,
+  sectionHeaderRow,
+  staggerContainer,
+  statusChip,
+  twoColumnGrid,
+  typography,
+} from "./workbenchDesignSystem";
+import { getAuthorityTier } from "./workbenchTrust";
+import { workflowStatusLabel } from "./workflowExperience";
 
 interface WorkbenchEvidenceTracePanelProps {
   toolId?: string | null;
@@ -37,7 +34,7 @@ interface WorkbenchEvidenceTracePanelProps {
 
 export default function WorkbenchEvidenceTracePanel({
   toolId = null,
-  title = 'Evidence to Result Trace',
+  title = "Evidence to Result Trace",
 }: WorkbenchEvidenceTracePanelProps) {
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
@@ -49,15 +46,15 @@ export default function WorkbenchEvidenceTracePanel({
 
   const gateRow = useMemo(() => {
     if (
-      workflowControl.status === 'blocked' ||
-      workflowControl.status === 'gated' ||
-      workflowControl.status === 'demoOnly'
+      workflowControl.status === "blocked" ||
+      workflowControl.status === "gated" ||
+      workflowControl.status === "demoOnly"
     ) {
       const tool = workflowControl.nextRecommendedNode ?? workflowControl.currentToolId;
       if (tool) {
         return {
           toolId: tool as ToolId,
-          missingPayload: workflowControl.status === 'blocked',
+          missingPayload: workflowControl.status === "blocked",
           missingOutputPaths: [] as string[],
           validityShort: workflowControl.validity,
           floor: null,
@@ -85,15 +82,15 @@ export default function WorkbenchEvidenceTracePanel({
         !evaluation.uncertaintyOk ||
         evaluation.isSimulated
       ) {
-        const evidenceShort =
-          contract.evidenceRequired.minItems > evidenceItems.length;
+        const evidenceShort = contract.evidenceRequired.minItems > evidenceItems.length;
         const haveKinds = new Set(evidenceItems.map((e) => e.sourceKind));
         const missingKinds = contract.evidenceRequired.kinds.filter((k) => !haveKinds.has(k));
         return {
           toolId: tool as ToolId,
           missingPayload: !evaluation.status.hasRequiredOutputs,
           missingOutputPaths: evaluation.missingOutputPaths,
-          validityShort: evaluation.status.hasRequiredOutputs && !evaluation.validityOk ? evaluation.status.validity : null,
+          validityShort:
+            evaluation.status.hasRequiredOutputs && !evaluation.validityOk ? evaluation.status.validity : null,
           floor: contract.validityBaseline.floor,
           simulated: evaluation.isSimulated,
           reason: evaluation.reason,
@@ -113,7 +110,7 @@ export default function WorkbenchEvidenceTracePanel({
   }, [analyzeArtifact?.evidenceTraceIds, evidenceItems, selectedEvidenceIds]);
 
   const executionTrace = useMemo(() => {
-    const traceToolIds = toolId ? getDependencyTrace(toolId) : analyzeArtifact?.recommendedNextTools ?? [];
+    const traceToolIds = toolId ? getDependencyTrace(toolId) : (analyzeArtifact?.recommendedNextTools ?? []);
     const orderedToolIds = traceToolIds.length
       ? traceToolIds
       : runArtifacts.slice(0, 4).map((artifact) => artifact.toolId);
@@ -132,7 +129,7 @@ export default function WorkbenchEvidenceTracePanel({
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      style={{ display: 'grid', gap: '12px' }}
+      style={{ display: "grid", gap: "12px" }}
     >
       {/* Section Header */}
       <motion.div variants={cardVariants} style={sectionHeaderRow}>
@@ -146,11 +143,7 @@ export default function WorkbenchEvidenceTracePanel({
       {gateRow && <GateRowCard gateRow={gateRow} />}
 
       {/* Decision Ledger Fields */}
-      <DecisionLedgerFieldsCard
-        workflowControl={workflowControl}
-        latestRun={latestRun}
-        evidenceTrace={evidenceTrace}
-      />
+      <DecisionLedgerFieldsCard workflowControl={workflowControl} latestRun={latestRun} evidenceTrace={evidenceTrace} />
 
       {/* Three-column layout */}
       <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={twoColumnGrid}>
@@ -188,22 +181,22 @@ function GateRowCard({
       style={{
         ...glassPanel,
         ...accentLeftBorder(THEME.APRICOT, 3),
-        borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
+        borderColor: hovered ? "rgba(255, 255, 255, 0.12)" : glassPanel.borderColor,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
         <span style={iconContainer(THEME.APRICOT, 20)}>
           <ShieldAlert size={11} color={THEME.APRICOT} />
         </span>
         <span style={typography.label}>Next step needs:</span>
-        <span style={{ ...typography.caption, color: THEME.SKY }}>
-          {gateRow.toolId.toUpperCase()}
-        </span>
+        <span style={{ ...typography.caption, color: THEME.SKY }}>{gateRow.toolId.toUpperCase()}</span>
       </div>
       <div style={typography.body}>
         {gateRow.missingPayload && `Run ${gateRow.toolId.toUpperCase()} to publish required outputs.`}
         {!gateRow.missingPayload && gateRow.validityShort && gateRow.floor && (
-          <>Upgrade {gateRow.toolId.toUpperCase()} validity from {gateRow.validityShort} to {gateRow.floor}.</>
+          <>
+            Upgrade {gateRow.toolId.toUpperCase()} validity from {gateRow.validityShort} to {gateRow.floor}.
+          </>
         )}
         {!gateRow.missingPayload && (!gateRow.validityShort || !gateRow.floor) && gateRow.simulated && (
           <>Demo/simulated output cannot satisfy closed-loop execution.</>
@@ -213,7 +206,7 @@ function GateRowCard({
       {gateRow.evidenceShort && (
         <div style={typography.caption}>
           evidence · {gateRow.haveItems}/{gateRow.minItems}
-          {gateRow.missingKinds.length > 0 && ` · missing ${gateRow.missingKinds.join(', ')}`}
+          {gateRow.missingKinds.length > 0 && ` · missing ${gateRow.missingKinds.join(", ")}`}
         </div>
       )}
     </motion.div>
@@ -238,42 +231,37 @@ function DecisionLedgerFieldsCard({
 }) {
   return (
     <motion.div variants={cardVariants} style={glassPanel}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
         <span style={iconContainer(THEME.MINT, 20)}>
           <Workflow size={11} color={THEME.MINT} />
         </span>
         <span style={typography.label}>Decision ledger fields</span>
         <span style={typography.caption}>{workflowStatusLabel(workflowControl.status)}</span>
       </div>
-      <div style={{ display: 'grid', gap: '3px' }}>
+      <div style={{ display: "grid", gap: "3px" }}>
         <LedgerFieldRow
           label="artifact"
-          value={latestRun ? `${latestRun.toolId.toUpperCase()} ${workflowStatusLabel(latestRun.status ?? (latestRun.isSimulated ? 'demoOnly' : 'ok'))}` : 'none'}
+          value={
+            latestRun
+              ? `${latestRun.toolId.toUpperCase()} ${workflowStatusLabel(latestRun.status ?? (latestRun.isSimulated ? "demoOnly" : "ok"))}`
+              : "none"
+          }
         />
         <LedgerFieldRow
           label="evidence used"
-          value={evidenceTrace.length ? evidenceTrace.map((item) => item.title).join(' / ') : 'none selected'}
+          value={evidenceTrace.length ? evidenceTrace.map((item) => item.title).join(" / ") : "none selected"}
         />
         <LedgerFieldRow
           label="confidence"
-          value={workflowControl.confidence === null ? 'unknown' : workflowControl.confidence.toFixed(2)}
+          value={workflowControl.confidence === null ? "unknown" : workflowControl.confidence.toFixed(2)}
         />
         <LedgerFieldRow
           label="uncertainty"
-          value={workflowControl.uncertainty === null ? 'unknown' : workflowControl.uncertainty.toFixed(2)}
+          value={workflowControl.uncertainty === null ? "unknown" : workflowControl.uncertainty.toFixed(2)}
         />
-        <LedgerFieldRow
-          label="human gate"
-          value={workflowControl.humanGateRequired ? 'required' : 'not required'}
-        />
-        <LedgerFieldRow
-          label="next recommended"
-          value={workflowControl.nextRecommendedNode?.toUpperCase() ?? 'none'}
-        />
-        <LedgerFieldRow
-          label="demo/simulated"
-          value={workflowControl.isDemoOnly ? 'yes' : 'no'}
-        />
+        <LedgerFieldRow label="human gate" value={workflowControl.humanGateRequired ? "required" : "not required"} />
+        <LedgerFieldRow label="next recommended" value={workflowControl.nextRecommendedNode?.toUpperCase() ?? "none"} />
+        <LedgerFieldRow label="demo/simulated" value={workflowControl.isDemoOnly ? "yes" : "no"} />
       </div>
     </motion.div>
   );
@@ -281,22 +269,14 @@ function DecisionLedgerFieldsCard({
 
 function LedgerFieldRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-      <span style={{ ...typography.caption, minWidth: '100px', flexShrink: 0, opacity: 0.7 }}>
-        {label}
-      </span>
-      <span style={{ ...typography.caption, color: THEME.VALUE }}>
-        {value}
-      </span>
+    <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+      <span style={{ ...typography.caption, minWidth: "100px", flexShrink: 0, opacity: 0.7 }}>{label}</span>
+      <span style={{ ...typography.caption, color: THEME.VALUE }}>{value}</span>
     </div>
   );
 }
 
-function EvidenceBundleCard({
-  evidenceTrace,
-}: {
-  evidenceTrace: { title: string }[];
-}) {
+function EvidenceBundleCard({ evidenceTrace }: { evidenceTrace: { title: string }[] }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -306,10 +286,10 @@ function EvidenceBundleCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...glassPanel,
-        borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
+        borderColor: hovered ? "rgba(255, 255, 255, 0.12)" : glassPanel.borderColor,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span style={iconContainer(THEME.SKY, 20)}>
           <BookMarked size={11} color={THEME.SKY} />
         </span>
@@ -317,8 +297,8 @@ function EvidenceBundleCard({
       </div>
       <div style={typography.body}>
         {evidenceTrace.length
-          ? evidenceTrace.map((item) => item.title).join(' · ')
-          : 'No evidence bundle has been attached yet.'}
+          ? evidenceTrace.map((item) => item.title).join(" · ")
+          : "No evidence bundle has been attached yet."}
       </div>
     </motion.div>
   );
@@ -342,22 +322,20 @@ function AnalyzeArtifactCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...glassPanel,
-        borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
+        borderColor: hovered ? "rgba(255, 255, 255, 0.12)" : glassPanel.borderColor,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span style={iconContainer(THEME.LILAC, 20)}>
           <FlaskConical size={11} color={THEME.LILAC} />
         </span>
         <span style={typography.label}>Analyze Artifact</span>
       </div>
-      <div style={{ ...typography.cardTitle }}>
-        {artifact?.targetProduct ?? 'Pending'}
-      </div>
+      <div style={{ ...typography.cardTitle }}>{artifact?.targetProduct ?? "Pending"}</div>
       <div style={typography.body}>
         {artifact
-          ? `${artifact.bottleneckAssumptions[0]?.label ?? 'No leading bottleneck'} · ${artifact.pathwayCandidates.length || 1} route(s)`
-          : 'Run Analyze to create a structured handoff object.'}
+          ? `${artifact.bottleneckAssumptions[0]?.label ?? "No leading bottleneck"} · ${artifact.pathwayCandidates.length || 1} route(s)`
+          : "Run Analyze to create a structured handoff object."}
       </div>
     </motion.div>
   );
@@ -381,50 +359,44 @@ function ExecutionTraceCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...glassPanel,
-        borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
+        borderColor: hovered ? "rgba(255, 255, 255, 0.12)" : glassPanel.borderColor,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span style={iconContainer(THEME.APRICOT, 20)}>
           <Workflow size={11} color={THEME.APRICOT} />
         </span>
         <span style={typography.label}>Execution Trace</span>
       </div>
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        style={chipRow}
-      >
-        {trace.length ? trace.map((entry, index) => (
-          <span key={`${entry.toolId}-${index}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <motion.span
-              variants={chipVariants}
-              style={{
-                ...statusChip.base,
-                border: `1px solid ${entry.run ? THEME.CHIP_BORDER : 'rgba(255, 255, 255, 0.08)'}`,
-                background: entry.run ? THEME.CHIP_COOL : THEME.CHIP_NEUTRAL,
-                color: THEME.VALUE,
-              }}
-            >
-              {entry.tool?.shortLabel ?? entry.toolId.toUpperCase()}
-            </motion.span>
-            {entry.run && (
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={chipRow}>
+        {trace.length ? (
+          trace.map((entry, index) => (
+            <span key={`${entry.toolId}-${index}`} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
               <motion.span
                 variants={chipVariants}
-                style={statusChip.neutral}
+                style={{
+                  ...statusChip.base,
+                  border: `1px solid ${entry.run ? THEME.CHIP_BORDER : "rgba(255, 255, 255, 0.08)"}`,
+                  background: entry.run ? THEME.CHIP_COOL : THEME.CHIP_NEUTRAL,
+                  color: THEME.VALUE,
+                }}
               >
-                {getAuthorityTier(entry.run as Parameters<typeof getAuthorityTier>[0])}
+                {entry.tool?.shortLabel ?? entry.toolId.toUpperCase()}
               </motion.span>
-            )}
-            {index < trace.length - 1 && <ArrowRight size={12} color={THEME.APRICOT} />}
-          </span>
-        )) : (
+              {entry.run && (
+                <motion.span variants={chipVariants} style={statusChip.neutral}>
+                  {getAuthorityTier(entry.run as Parameters<typeof getAuthorityTier>[0])}
+                </motion.span>
+              )}
+              {index < trace.length - 1 && <ArrowRight size={12} color={THEME.APRICOT} />}
+            </span>
+          ))
+        ) : (
           <div style={typography.body}>No execution trace has been formed yet.</div>
         )}
       </motion.div>
       <div style={typography.body}>
-        {trace.find((entry) => entry.run)?.run?.summary ?? 'Execute a tool to create a result trace.'}
+        {trace.find((entry) => entry.run)?.run?.summary ?? "Execute a tool to create a result trace."}
       </div>
     </motion.div>
   );

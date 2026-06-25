@@ -1,10 +1,10 @@
-'use client';
-import { useState, useMemo, useEffect } from 'react';
-import { useWorkbenchStore } from '../../../store/workbenchStore';
-import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore } from '../../../data/mockGenMIM';
-import { designgRNAs } from '../../../server/grnaDesigner';
-import type { CRISPRiTarget } from '../../../types';
-import { REACTION_TO_GENES, generatePseudoSequence } from './sharedComponents';
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import { CRISPRI_TARGETS, computeOffTargetScore, greedyKnockdownSchedule } from "../../../data/mockGenMIM";
+import { designgRNAs } from "../../../server/grnaDesigner";
+import { useWorkbenchStore } from "../../../store/workbenchStore";
+import type { CRISPRiTarget } from "../../../types";
+import { generatePseudoSequence, REACTION_TO_GENES } from "./sharedComponents";
 
 export function useGenMIMState() {
   // Workbench store selectors
@@ -20,22 +20,26 @@ export function useGenMIMState() {
   const [protectEssential, setProtectEssential] = useState(true);
 
   // Custom gene targets upload
-  const [customTargets, setCustomTargets] = useState<Array<{ geneId: string; geneName: string; essentiality: number; flux: number }> | null>(null);
+  const [customTargets, setCustomTargets] = useState<Array<{
+    geneId: string;
+    geneName: string;
+    essentiality: number;
+    flux: number;
+  }> | null>(null);
   const [customTargetHeaders, setCustomTargetHeaders] = useState<string[]>([]);
   const [customTargetRows, setCustomTargetRows] = useState<Record<string, string>[]>([]);
   const [customTargetError, setCustomTargetError] = useState<string | null>(null);
 
   const recommendedEfficiency = useMemo(() => {
-    const value = 0.72
-      + (fbaPayload?.result.feasible ? 0.08 : 0)
-      + (dynconPayload?.result.stable ? 0.04 : -0.03);
+    const value = 0.72 + (fbaPayload?.result.feasible ? 0.08 : 0) + (dynconPayload?.result.stable ? 0.04 : -0.03);
     return Math.min(1, Math.max(0.5, Math.round(value * 100) / 100));
   }, [dynconPayload?.result.stable, fbaPayload?.result.feasible]);
 
   const recommendedTargets = useMemo(() => {
-    const count = 3
-      + (analyzeArtifact?.bottleneckAssumptions.length ?? 0)
-      + ((fbaPayload?.result.carbonEfficiency ?? 0) > 60 ? 1 : 0);
+    const count =
+      3 +
+      (analyzeArtifact?.bottleneckAssumptions.length ?? 0) +
+      ((fbaPayload?.result.carbonEfficiency ?? 0) > 60 ? 1 : 0);
     return Math.min(15, Math.max(1, count));
   }, [analyzeArtifact?.bottleneckAssumptions.length, fbaPayload?.result.carbonEfficiency]);
 
@@ -52,8 +56,8 @@ export function useGenMIMState() {
     // Build base targets: merge custom + default
     let baseTargets: CRISPRiTarget[] = [...CRISPRI_TARGETS];
     if (customTargets && customTargets.length > 0) {
-      const defaultGeneIds = new Set(CRISPRI_TARGETS.map(t => t.gene));
-      const customAsTargets: CRISPRiTarget[] = customTargets.map(ct => ({
+      const defaultGeneIds = new Set(CRISPRI_TARGETS.map((t) => t.gene));
+      const customAsTargets: CRISPRiTarget[] = customTargets.map((ct) => ({
         gene: ct.geneId,
         position: 0,
         essential: ct.essentiality > 0.5,
@@ -62,7 +66,7 @@ export function useGenMIMState() {
         growth_impact: -0.05,
       }));
       // Add custom targets that don't already exist in defaults
-      const newCustom = customAsTargets.filter(t => !defaultGeneIds.has(t.gene));
+      const newCustom = customAsTargets.filter((t) => !defaultGeneIds.has(t.gene));
       baseTargets = [...CRISPRI_TARGETS, ...newCustom];
     }
 
@@ -89,15 +93,21 @@ export function useGenMIMState() {
 
   const { data: schedule, error: simError } = useMemo(() => {
     try {
-      return { data: greedyKnockdownSchedule(fluxBoostedTargets, maxTargets, efficiency, protectEssential), error: null as string | null };
+      return {
+        data: greedyKnockdownSchedule(fluxBoostedTargets, maxTargets, efficiency, protectEssential),
+        error: null as string | null,
+      };
     } catch (e) {
-      return { data: [] as ReturnType<typeof greedyKnockdownSchedule>, error: e instanceof Error ? e.message : 'Knockdown scheduling failed' };
+      return {
+        data: [] as ReturnType<typeof greedyKnockdownSchedule>,
+        error: e instanceof Error ? e.message : "Knockdown scheduling failed",
+      };
     }
   }, [fluxBoostedTargets, efficiency, maxTargets, protectEssential]);
 
   const growthImpact = schedule.reduce((a, t) => a + (t.growth_impact ?? 0), 0);
-  const avgEfficiency = schedule.length > 0
-    ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
+  const avgEfficiency =
+    schedule.length > 0 ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
 
   // sgRNA sequences computed from gene coding sequences using designgRNAs()
   // Uses Rule Set 2 (Doench 2016) on-target scoring + CFD off-target scoring.
@@ -106,17 +116,22 @@ export function useGenMIMState() {
   const sgRNASequences: Record<string, string> = useMemo(() => {
     const map: Record<string, string> = {};
     for (const t of schedule) {
-      const seed = t.gene.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+      const seed = t.gene.split("").reduce((s, c) => s + c.charCodeAt(0), 0);
       const pseudoSeq = generatePseudoSequence(seed, 60);
-      const result = designgRNAs(pseudoSeq, 'SpCas9', 1, t.gene);
-      map[t.gene] = result.candidates[0]?.spacer ?? t.gene.toUpperCase().padEnd(20, 'A').slice(0, 20);
+      const result = designgRNAs(pseudoSeq, "SpCas9", 1, t.gene);
+      map[t.gene] = result.candidates[0]?.spacer ?? t.gene.toUpperCase().padEnd(20, "A").slice(0, 20);
     }
     return map;
   }, [schedule]);
 
-  const offTargetRisk = schedule.length > 0
-    ? Math.round(schedule.reduce((sum, t) => sum + computeOffTargetScore(sgRNASequences[t.gene] ?? ''), 0) / schedule.length * 100) / 100
-    : 0;
+  const offTargetRisk =
+    schedule.length > 0
+      ? Math.round(
+          (schedule.reduce((sum, t) => sum + computeOffTargetScore(sgRNASequences[t.gene] ?? ""), 0) /
+            schedule.length) *
+            100,
+        ) / 100
+      : 0;
 
   return {
     // Store selectors

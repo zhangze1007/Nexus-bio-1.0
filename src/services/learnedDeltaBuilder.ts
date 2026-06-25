@@ -1,10 +1,5 @@
-import type { DBTLLearnedMetrics } from '../types/dbtlFeedback';
-import type {
-  BoundDelta,
-  LearnedDeltaClassification,
-  LearnedDeltaPack,
-  NumericDelta,
-} from '../types/learnedDelta';
+import type { DBTLLearnedMetrics } from "../types/dbtlFeedback";
+import type { BoundDelta, LearnedDeltaClassification, LearnedDeltaPack, NumericDelta } from "../types/learnedDelta";
 
 export interface BuildLearnedDeltaPackInput {
   deltaPackId: string;
@@ -23,11 +18,9 @@ export interface BuildLearnedDeltaPackInput {
   notes?: string;
 }
 
-export function buildLearnedDeltaPack(
-  input: BuildLearnedDeltaPackInput,
-): LearnedDeltaPack {
+export function buildLearnedDeltaPack(input: BuildLearnedDeltaPackInput): LearnedDeltaPack {
   return {
-    schemaVersion: 'learned-delta-pack-v1',
+    schemaVersion: "learned-delta-pack-v1",
     deltaPackId: input.deltaPackId,
     iteration: input.iteration,
     sourceDbtlRunId: input.sourceDbtlRunId,
@@ -38,8 +31,8 @@ export function buildLearnedDeltaPack(
     changedPriors: input.changedPriors ? { ...input.changedPriors } : {},
     changedWeights: input.changedWeights ? { ...input.changedWeights } : {},
     learnedMetrics: { ...input.learnedMetrics },
-    classification: input.classification ?? 'conservative',
-    humanGateStatus: 'pending',
+    classification: input.classification ?? "conservative",
+    humanGateStatus: "pending",
     createdAt: input.createdAt,
     ...(input.createdBy ? { createdBy: input.createdBy } : {}),
     ...(input.notes ? { notes: input.notes } : {}),

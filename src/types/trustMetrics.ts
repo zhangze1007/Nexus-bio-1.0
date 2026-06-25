@@ -1,14 +1,14 @@
-import type { ClaimSurface, GateStatus, ValidityTier } from '../protocol/nexusTrustRuntime';
+import type { ClaimSurface, GateStatus, ValidityTier } from "../protocol/nexusTrustRuntime";
 
-export type TrustMetricStatus = 'ok' | 'blocked' | 'gated' | 'demoOnly';
+export type TrustMetricStatus = "ok" | "blocked" | "gated" | "demoOnly";
 
-export type TrustMetricRunLabel = 'local-dev' | string;
+export type TrustMetricRunLabel = "local-dev" | string;
 
-export type TrustBenchmarkEvidenceState = 'present' | 'missing' | 'not-required';
+export type TrustBenchmarkEvidenceState = "present" | "missing" | "not-required";
 
-export type TrustBenchmarkUncertaintyState = 'bounded' | 'unresolved' | 'not-applicable';
+export type TrustBenchmarkUncertaintyState = "bounded" | "unresolved" | "not-applicable";
 
-export type TrustBenchmarkHumanGateStatus = 'not-required' | 'pending' | 'approved' | 'rejected';
+export type TrustBenchmarkHumanGateStatus = "not-required" | "pending" | "approved" | "rejected";
 
 export interface TrustMetricCounts {
   totalCases: number;
@@ -60,10 +60,10 @@ export interface TrustMetricMissingProvenanceSummary {
 }
 
 export interface TrustFalsificationMetrics {
-  schemaVersion: 'trust-metrics-v1';
+  schemaVersion: "trust-metrics-v1";
   generatedAt: string;
   runLabel: TrustMetricRunLabel;
-  reportScope: 'local-trust-runtime-benchmark';
+  reportScope: "local-trust-runtime-benchmark";
   corpusVersion?: string;
   totalCases: number;
   statusCounts: TrustMetricCounts;

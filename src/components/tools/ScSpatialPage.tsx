@@ -1,56 +1,55 @@
-'use client';
+"use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { HelpCircle, RefreshCcw } from 'lucide-react';
-import ExportButton from '../ide/shared/ExportButton';
-import ScSpatialControlRail, { type ScSpatialAnalysisParams } from './scspatial/ScSpatialControlRail';
-import ScSpatialHelpDialog from './scspatial/ScSpatialHelpDialog';
-import ScSpatialViewport from './scspatial/ScSpatialViewport';
-import styles from './scspatial/ScSpatialWorkbench.module.css';
-import { SCSPATIAL_VIEW_LABELS } from './scspatial/scSpatialPalette';
-import { ingestScSpatialDemo, ingestScSpatialFile, queryScSpatial } from '../../services/ScSpatialAuthorityClient';
-import { useScSpatialStore } from '../../store/scSpatialStore';
-import { useWorkbenchStore } from '../../store/workbenchStore';
-import SimErrorBanner from '../ide/shared/SimErrorBanner';
-import ToolShell from './shared/ToolShell';
-import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
-import ToolTabPanel from './shared/ToolTabPanel';
-import InlineMetricOverlay from './shared/InlineMetricOverlay';
-import DataSourceBadge from '../ide/shared/DataSourceBadge';
-import { THEME } from '../../theme';
-import { PAPER_THEME } from '../charts/chartTheme';
-import { analyzeCommunicationExpanded, computeSpatialWeights } from '../../server/cellChat';
-import type { ExpandedCommunicationResult } from '../../server/cellChat';
-import { colorForCluster } from './scspatial/scSpatialPalette';
+import { HelpCircle, RefreshCcw } from "lucide-react";
+import React, { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ExpandedCommunicationResult } from "../../server/cellChat";
+import { analyzeCommunicationExpanded, computeSpatialWeights } from "../../server/cellChat";
+import { ingestScSpatialDemo, ingestScSpatialFile, queryScSpatial } from "../../services/ScSpatialAuthorityClient";
+import { useScSpatialStore } from "../../store/scSpatialStore";
+import { useWorkbenchStore } from "../../store/workbenchStore";
+import { THEME } from "../../theme";
+import { PAPER_THEME } from "../charts/chartTheme";
+import DataSourceBadge from "../ide/shared/DataSourceBadge";
+import ExportButton from "../ide/shared/ExportButton";
+import SimErrorBanner from "../ide/shared/SimErrorBanner";
+import ScSpatialControlRail, { type ScSpatialAnalysisParams } from "./scspatial/ScSpatialControlRail";
+import ScSpatialHelpDialog from "./scspatial/ScSpatialHelpDialog";
+import ScSpatialViewport from "./scspatial/ScSpatialViewport";
+import styles from "./scspatial/ScSpatialWorkbench.module.css";
+import { colorForCluster, SCSPATIAL_VIEW_LABELS } from "./scspatial/scSpatialPalette";
+import InlineMetricOverlay from "./shared/InlineMetricOverlay";
+import ToolShell from "./shared/ToolShell";
+import ToolTabBar, { type ToolTab } from "./shared/ToolTabBar";
+import ToolTabPanel from "./shared/ToolTabPanel";
 
 const SCSPATIAL_TABS: ToolTab[] = [
-  { id: 'spatial-2d', label: 'Hex Grid', accent: THEME.SKY },
-  { id: 'umap', label: 'Projection', accent: THEME.LILAC },
-  { id: 'trajectory', label: 'Clusters', accent: THEME.APRICOT },
-  { id: 'table', label: 'Gene Expression', accent: THEME.MINT },
-  { id: 'communication', label: 'Communication', accent: THEME.CORAL },
+  { id: "spatial-2d", label: "Hex Grid", accent: THEME.SKY },
+  { id: "umap", label: "Projection", accent: THEME.LILAC },
+  { id: "trajectory", label: "Clusters", accent: THEME.APRICOT },
+  { id: "table", label: "Gene Expression", accent: THEME.MINT },
+  { id: "communication", label: "Communication", accent: THEME.CORAL },
 ];
 
-function readyClass(validity: 'real' | 'partial' | 'demo' | null, loadState: string) {
-  if (loadState === 'uploading' || loadState === 'querying') return styles.readyIdle;
-  if (validity === 'real') return styles.readyReal;
-  if (validity === 'partial') return styles.readyPartial;
-  if (validity === 'demo') return styles.readyDemo;
+function readyClass(validity: "real" | "partial" | "demo" | null, loadState: string) {
+  if (loadState === "uploading" || loadState === "querying") return styles.readyIdle;
+  if (validity === "real") return styles.readyReal;
+  if (validity === "partial") return styles.readyPartial;
+  if (validity === "demo") return styles.readyDemo;
   return styles.readyIdle;
 }
 
-function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: string) {
-  if (loadState === 'uploading') return 'Loading…';
-  if (loadState === 'querying') return 'Computing…';
-  if (loadState === 'error') return 'Error';
-  if (validity === 'real') return 'Ready';
-  if (validity === 'partial') return 'Partial';
-  if (validity === 'demo') return 'Demo';
-  return 'Idle';
+function readyLabel(validity: "real" | "partial" | "demo" | null, loadState: string) {
+  if (loadState === "uploading") return "Loading…";
+  if (loadState === "querying") return "Computing…";
+  if (loadState === "error") return "Error";
+  if (validity === "real") return "Ready";
+  if (validity === "partial") return "Partial";
+  if (validity === "demo") return "Demo";
+  return "Idle";
 }
 
 export default React.memo(function ScSpatialPage() {
-  const [activeTab, setActiveTab] = useState('spatial-2d');
+  const [activeTab, setActiveTab] = useState("spatial-2d");
   const [commResult, setCommResult] = useState<ExpandedCommunicationResult | null>(null);
   const [precomputedLigrec, setPrecomputedLigrec] = useState<Record<string, unknown> | null>(null);
   const [scspatialError, setScspatialError] = useState<string | null>(null);
@@ -103,12 +102,15 @@ export default React.memo(function ScSpatialPage() {
     nPcs: 30,
     nTopGenes: 2000,
     moranPerms: 1000,
-    coordType: 'auto',
+    coordType: "auto",
   });
 
-  const handleAnalysisParamChange = useCallback(<K extends keyof ScSpatialAnalysisParams>(key: K, value: ScSpatialAnalysisParams[K]) => {
-    setAnalysisParams((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const handleAnalysisParamChange = useCallback(
+    <K extends keyof ScSpatialAnalysisParams>(key: K, value: ScSpatialAnalysisParams[K]) => {
+      setAnalysisParams((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
   const loadDemo = useCallback(async () => {
     beginUpload();
@@ -123,34 +125,40 @@ export default React.memo(function ScSpatialPage() {
       });
       hydrateFromQuery(response.initialQuery);
     } catch (uploadError) {
-      fail(uploadError instanceof Error ? uploadError.message : 'Bundled demo could not be loaded');
+      fail(uploadError instanceof Error ? uploadError.message : "Bundled demo could not be loaded");
     }
   }, [analysisParams, beginUpload, fail, hydrateFromQuery]);
 
-  const uploadFile = useCallback(async (file: File) => {
-    beginUpload();
-    try {
-      const response = await ingestScSpatialFile(file, {
-        maxCells: 5000,
-        leidenResolution: analysisParams.leidenResolution,
-        nNeighbors: analysisParams.nNeighbors,
-        nPcs: analysisParams.nPcs,
-        nTopGenes: analysisParams.nTopGenes,
-        moranPerms: analysisParams.moranPerms,
-        coordType: analysisParams.coordType,
-      });
-      hydrateFromQuery(response.initialQuery);
-    } catch (uploadError) {
-      fail(uploadError instanceof Error ? uploadError.message : 'SCSPATIAL upload failed');
-    }
-  }, [analysisParams, beginUpload, fail, hydrateFromQuery]);
+  const uploadFile = useCallback(
+    async (file: File) => {
+      beginUpload();
+      try {
+        const response = await ingestScSpatialFile(file, {
+          maxCells: 5000,
+          leidenResolution: analysisParams.leidenResolution,
+          nNeighbors: analysisParams.nNeighbors,
+          nPcs: analysisParams.nPcs,
+          nTopGenes: analysisParams.nTopGenes,
+          moranPerms: analysisParams.moranPerms,
+          coordType: analysisParams.coordType,
+        });
+        hydrateFromQuery(response.initialQuery);
+      } catch (uploadError) {
+        fail(uploadError instanceof Error ? uploadError.message : "SCSPATIAL upload failed");
+      }
+    },
+    [analysisParams, beginUpload, fail, hydrateFromQuery],
+  );
 
-  const onFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    await uploadFile(file);
-    event.target.value = '';
-  }, [uploadFile]);
+  const onFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      await uploadFile(file);
+      event.target.value = "";
+    },
+    [uploadFile],
+  );
 
   const handleAnalyzeCommunication = useCallback(() => {
     if (!query) return;
@@ -159,7 +167,9 @@ export default React.memo(function ScSpatialPage() {
     if (clusterNames.length === 0) return;
 
     // If Python backend provided pre-computed ligrec results, use them directly
-    const analysis = (query as unknown as Record<string, unknown>).analysis as { ligrec?: Record<string, unknown> } | undefined;
+    const analysis = (query as unknown as Record<string, unknown>).analysis as
+      | { ligrec?: Record<string, unknown> }
+      | undefined;
     if (analysis?.ligrec) {
       setPrecomputedLigrec(analysis.ligrec);
       setCommResult(null); // Clear any previous client-side result
@@ -219,25 +229,27 @@ export default React.memo(function ScSpatialPage() {
       for (const pt of query.centerView.points) {
         const label = pt.clusterId.toString();
         let arr = positionsByCluster.get(label);
-        if (!arr) { arr = []; positionsByCluster.set(label, arr); }
+        if (!arr) {
+          arr = [];
+          positionsByCluster.set(label, arr);
+        }
         arr.push({ x: pt.x, y: pt.y });
       }
-      const spatialWeightMatrix = positionsByCluster.size > 0
-        ? computeSpatialWeights(positionsByCluster, clusterNames)
-        : undefined;
+      const spatialWeightMatrix =
+        positionsByCluster.size > 0 ? computeSpatialWeights(positionsByCluster, clusterNames) : undefined;
 
       const result = analyzeCommunicationExpanded({
         expressionMatrix: geneClusterExpr,
         clusters: clusterNames,
         cellCounts,
-        nPermutations: 200,   // reduced from 1000 for client-side performance
-        useExpandedDB: true,   // 2780 L-R pairs
+        nPermutations: 200, // reduced from 1000 for client-side performance
+        useExpandedDB: true, // 2780 L-R pairs
         spatialWeightMatrix,
       });
 
       setCommResult(result);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Communication analysis failed';
+      const msg = err instanceof Error ? err.message : "Communication analysis failed";
       setScspatialError(msg);
     }
   }, [query]);
@@ -245,10 +257,10 @@ export default React.memo(function ScSpatialPage() {
   // Sync tab → viewMode in store
   useEffect(() => {
     const tabToView: Record<string, typeof viewMode> = {
-      'spatial-2d': 'spatial-2d',
-      'umap': 'umap',
-      'trajectory': 'trajectory',
-      'table': 'table',
+      "spatial-2d": "spatial-2d",
+      umap: "umap",
+      trajectory: "trajectory",
+      table: "table",
       // 'communication' intentionally omitted — analysis is client-side,
       // no need to trigger a server re-query when switching to this tab.
     };
@@ -262,20 +274,23 @@ export default React.memo(function ScSpatialPage() {
     if (!artifactId) return;
     const controller = new AbortController();
     beginQuery();
-    queryScSpatial({
-      artifactId,
-      selectedGene,
-      selectedCluster,
-      selectedCellId,
-      viewMode,
-      developerMode,
-    }, controller.signal)
+    queryScSpatial(
+      {
+        artifactId,
+        selectedGene,
+        selectedCluster,
+        selectedCellId,
+        viewMode,
+        developerMode,
+      },
+      controller.signal,
+    )
       .then((response) => {
         hydrateFromQuery(response);
       })
       .catch((queryError) => {
         if (controller.signal.aborted) return;
-        fail(queryError instanceof Error ? queryError.message : 'SCSPATIAL query failed');
+        fail(queryError instanceof Error ? queryError.message : "SCSPATIAL query failed");
       });
 
     return () => controller.abort();
@@ -293,25 +308,25 @@ export default React.memo(function ScSpatialPage() {
 
   useEffect(() => {
     if (!query || !datasetMeta || !validity) return;
-    setToolPayload('scspatial', {
+    setToolPayload("scspatial", {
       validity,
-      toolId: 'scspatial',
+      toolId: "scspatial",
       artifactId: query.artifactId,
       source: query.rightPanel.provenance.source,
-      targetProduct: analyzeArtifact?.targetProduct ?? project?.targetProduct ?? 'Spatial transcriptomics program',
+      targetProduct: analyzeArtifact?.targetProduct ?? project?.targetProduct ?? "Spatial transcriptomics program",
       sourceArtifactId: analyzeArtifact?.id,
       datasetMeta,
       selectedCluster: query.selection.selectedCluster,
       selectedCellId: query.selection.selectedCellId,
       highlightGene: query.selection.selectedGene,
       activeView: query.selection.viewMode,
-      exportableArtifacts: ['cluster-annotations-csv', 'hotspots-csv', 'viewport-png'],
+      exportableArtifacts: ["cluster-annotations-csv", "hotspots-csv", "viewport-png"],
       result: {
         totalCells: datasetMeta.cellCount,
         passedCells: query.exportData.clusterAnnotations.length,
         topSpatialGene: query.rightPanel.hotspots[0]?.geneSymbol ?? query.selection.selectedGene,
         topMoranI: query.rightPanel.hotspots[0]?.moranI ?? 0,
-        highestYieldCluster: query.rightPanel.clusterSummaries[0]?.clusterLabel ?? 'Not available',
+        highestYieldCluster: query.rightPanel.clusterSummaries[0]?.clusterLabel ?? "Not available",
         hotspotCount: query.rightPanel.hotspots.length,
         // Spatial cluster assignments inform factor decomposition in downstream tools (MultiO)
         clusterSummaries: query.rightPanel.clusterSummaries.map((cs) => ({
@@ -337,18 +352,18 @@ export default React.memo(function ScSpatialPage() {
 
   const selectionSummary = useMemo(() => {
     if (!query) {
-      return 'No normalized artifact is loaded.';
+      return "No normalized artifact is loaded.";
     }
-    const cluster = query.selection.selectedCluster ?? 'all clusters';
-    const cell = query.selection.selectedCellId ?? 'no cell selected';
+    const cluster = query.selection.selectedCluster ?? "all clusters";
+    const cell = query.selection.selectedCellId ?? "no cell selected";
     const view = SCSPATIAL_VIEW_LABELS[query.selection.viewMode];
-    return `Current SCSPATIAL selection: ${view}, gene ${query.selection.selectedGene || 'not selected'}, cluster ${cluster}, cell ${cell}.`;
+    return `Current SCSPATIAL selection: ${view}, gene ${query.selection.selectedGene || "not selected"}, cluster ${cluster}, cell ${cell}.`;
   }, [query]);
 
   const artifactChipLabel = useMemo(() => {
     if (datasetMeta?.artifactId) return datasetMeta.artifactId;
     if (artifactId) return artifactId;
-    return 'NONE';
+    return "NONE";
   }, [datasetMeta, artifactId]);
 
   return (
@@ -359,10 +374,13 @@ export default React.memo(function ScSpatialPage() {
       tabs={SCSPATIAL_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      advancedTabIds={['trajectory', 'table']}
+      advancedTabIds={["trajectory", "table"]}
       footer={
         <>
-          <DataSourceBadge source={validity === 'real' ? 'live' : 'mock'} label={validity === 'real' ? 'Live Data' : validity === 'partial' ? 'Partial Data' : 'Demo Data'} />
+          <DataSourceBadge
+            source={validity === "real" ? "live" : "mock"}
+            label={validity === "real" ? "Live Data" : validity === "partial" ? "Partial Data" : "Demo Data"}
+          />
           <ExportButton
             label="Export Cluster CSV"
             data={query?.exportData.clusterAnnotations ?? []}
@@ -392,38 +410,50 @@ export default React.memo(function ScSpatialPage() {
       <p className={styles.srOnly} aria-live="polite">
         {selectionSummary}
       </p>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".h5ad,.zip"
-        hidden
-        onChange={onFileChange}
-      />
+      <input ref={fileInputRef} type="file" accept=".h5ad,.zip" hidden onChange={onFileChange} />
 
-      {error ? <div className={styles.errorBanner} role="alert">{error}</div> : null}
+      {error ? (
+        <div className={styles.errorBanner} role="alert">
+          {error}
+        </div>
+      ) : null}
       {scspatialError && (
-        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={scspatialError} onRetry={() => setScspatialError(null)} /></div>
+        <div style={{ padding: "0 0 8px" }}>
+          <SimErrorBanner message={scspatialError} onRetry={() => setScspatialError(null)} />
+        </div>
       )}
 
       <ToolTabPanel tabId={activeTab} activeId={activeTab}>
-        {activeTab === 'communication' ? (
-          <div style={{
-            flex: 1, overflow: 'auto', padding: '20px',
-            background: '#f3f6f8', color: '#111827',
-            fontFamily: THEME.SANS,
-          }}>
+        {activeTab === "communication" ? (
+          <div
+            style={{
+              flex: 1,
+              overflow: "auto",
+              padding: "20px",
+              background: "#f3f6f8",
+              color: "#111827",
+              fontFamily: THEME.SANS,
+            }}
+          >
             {/* ── Header ───────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <h3 style={{
-                margin: 0, fontFamily: THEME.MONO, fontSize: 11, fontWeight: 700,
-                letterSpacing: '0.1em', textTransform: 'uppercase', color: '#111827',
-              }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <h3
+                style={{
+                  margin: 0,
+                  fontFamily: THEME.MONO,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "#111827",
+                }}
+              >
                 Cell-Cell Communication
               </h3>
               <button
                 type="button"
                 className={styles.button}
-                style={{ width: 'auto', padding: '0 14px' }}
+                style={{ width: "auto", padding: "0 14px" }}
                 onClick={handleAnalyzeCommunication}
                 disabled={!query}
               >
@@ -432,11 +462,17 @@ export default React.memo(function ScSpatialPage() {
             </div>
 
             {!query ? (
-              <div style={{
-                padding: 32, textAlign: 'center', color: '#6b7280',
-                fontFamily: THEME.SANS, fontSize: 13,
-              }}>
-                Load a dataset first (use the Hex Grid tab to upload or load demo data), then return here to analyze cell-cell communication.
+              <div
+                style={{
+                  padding: 32,
+                  textAlign: "center",
+                  color: "#6b7280",
+                  fontFamily: THEME.SANS,
+                  fontSize: 13,
+                }}
+              >
+                Load a dataset first (use the Hex Grid tab to upload or load demo data), then return here to analyze
+                cell-cell communication.
               </div>
             ) : precomputedLigrec ? (
               <>
@@ -450,32 +486,63 @@ export default React.memo(function ScSpatialPage() {
                   <div className={styles.metricCard}>
                     <span className={styles.metricLabel}>Data Source</span>
                     <span className={styles.metricValue}>Pre-computed</span>
-                    <span className={styles.metricDetail}>Results computed during ingest by scanpy/squidpy pipeline</span>
+                    <span className={styles.metricDetail}>
+                      Results computed during ingest by scanpy/squidpy pipeline
+                    </span>
                   </div>
                 </div>
-                <div style={{
-                  padding: 20, border: '2px solid #d1d5db', borderRadius: 4,
-                  background: '#ffffff',
-                }}>
-                  <h4 style={{ margin: '0 0 12px', fontFamily: THEME.MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#374151' }}>
+                <div
+                  style={{
+                    padding: 20,
+                    border: "2px solid #d1d5db",
+                    borderRadius: 4,
+                    background: "#ffffff",
+                  }}
+                >
+                  <h4
+                    style={{
+                      margin: "0 0 12px",
+                      fontFamily: THEME.MONO,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      color: "#374151",
+                    }}
+                  >
                     Ligand-Receptor Results (squidpy)
                   </h4>
-                  <pre style={{
-                    fontFamily: THEME.MONO, fontSize: 11, color: '#374151',
-                    background: '#f6f7f9', padding: 12, borderRadius: 4,
-                    border: '1px solid #e5e7eb', overflow: 'auto', maxHeight: 400,
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                  }}>
+                  <pre
+                    style={{
+                      fontFamily: THEME.MONO,
+                      fontSize: 11,
+                      color: "#374151",
+                      background: "#f6f7f9",
+                      padding: 12,
+                      borderRadius: 4,
+                      border: "1px solid #e5e7eb",
+                      overflow: "auto",
+                      maxHeight: 400,
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
                     {JSON.stringify(precomputedLigrec, null, 2)}
                   </pre>
                 </div>
               </>
             ) : !commResult ? (
-              <div style={{
-                padding: 32, textAlign: 'center', color: '#6b7280',
-                fontFamily: THEME.SANS, fontSize: 13,
-              }}>
-                Click "Analyze Communication" to infer ligand-receptor interactions between {availableClusters.length} clusters across 2780+ L-R pairs, using multi-gene expression and spatial distance weighting.
+              <div
+                style={{
+                  padding: 32,
+                  textAlign: "center",
+                  color: "#6b7280",
+                  fontFamily: THEME.SANS,
+                  fontSize: 13,
+                }}
+              >
+                Click "Analyze Communication" to infer ligand-receptor interactions between {availableClusters.length}{" "}
+                clusters across 2780+ L-R pairs, using multi-gene expression and spatial distance weighting.
               </div>
             ) : (
               <>
@@ -491,12 +558,12 @@ export default React.memo(function ScSpatialPage() {
                     <span className={styles.metricValue}>
                       {commResult.topInteractions[0]
                         ? `${commResult.topInteractions[0].ligand} -> ${commResult.topInteractions[0].receptor}`
-                        : '—'}
+                        : "—"}
                     </span>
                     <span className={styles.metricDetail}>
                       {commResult.topInteractions[0]
                         ? `P = ${commResult.topInteractions[0].probability.toFixed(3)}, ${commResult.topInteractions[0].pathway}`
-                        : ''}
+                        : ""}
                     </span>
                   </div>
                   <div className={styles.metricCard}>
@@ -506,28 +573,32 @@ export default React.memo(function ScSpatialPage() {
                   </div>
                   <div className={styles.metricCard}>
                     <span className={styles.metricLabel}>Top Pathway</span>
-                    <span className={styles.metricValue}>
-                      {commResult.pathwayDetails[0]?.pathway ?? '—'}
-                    </span>
+                    <span className={styles.metricValue}>{commResult.pathwayDetails[0]?.pathway ?? "—"}</span>
                     <span className={styles.metricDetail}>
                       {commResult.pathwayDetails[0]
                         ? `strength ${commResult.pathwayDetails[0].totalStrength.toFixed(2)}, ${commResult.pathwayDetails[0].interactionCount} interactions`
-                        : ''}
+                        : ""}
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                   {/* ── Network Visualization ──────────────────── */}
-                  <div style={{
-                    gridColumn: '1 / -1', border: '2px solid #d1d5db',
-                    borderRadius: 4, background: '#ffffff',
-                    padding: 12,
-                  }}>
+                  <div
+                    style={{
+                      gridColumn: "1 / -1",
+                      border: "2px solid #d1d5db",
+                      borderRadius: 4,
+                      background: "#ffffff",
+                      padding: 12,
+                    }}
+                  >
                     <h4 className={styles.sectionTitle}>Communication Network</h4>
                     {(() => {
                       const n = availableClusters.length;
-                      const cx = 280, cy = 160, r = 110;
+                      const cx = 280,
+                        cy = 160,
+                        r = 110;
                       const nodePos = availableClusters.map((_, i) => {
                         const angle = (2 * Math.PI * i) / n - Math.PI / 2;
                         return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
@@ -535,24 +606,38 @@ export default React.memo(function ScSpatialPage() {
 
                       // Use network edges from result (includes interactionType)
                       const netEdges = commResult.network.edges;
-                      const maxEdge = Math.max(...netEdges.map(e => e.weight), 1);
+                      const maxEdge = Math.max(...netEdges.map((e) => e.weight), 1);
 
                       // Cell count range for node sizing
-                      const cellCountsArr = availableClusters.map(c => {
-                        const node = commResult.network.nodes.find(nd => nd.id === c);
+                      const cellCountsArr = availableClusters.map((c) => {
+                        const node = commResult.network.nodes.find((nd) => nd.id === c);
                         return node?.nCells ?? 0;
                       });
                       const maxCells = Math.max(...cellCountsArr, 1);
 
                       return (
-                        <svg width="100%" viewBox="0 0 560 320" style={{ display: 'block' }}>
+                        <svg width="100%" viewBox="0 0 560 320" style={{ display: "block" }}>
                           <defs>
-                            <marker id="comm-arrow-signal" viewBox="0 0 10 6" refX="9" refY="3"
-                              markerWidth="8" markerHeight="5" orient="auto-start-reverse">
+                            <marker
+                              id="comm-arrow-signal"
+                              viewBox="0 0 10 6"
+                              refX="9"
+                              refY="3"
+                              markerWidth="8"
+                              markerHeight="5"
+                              orient="auto-start-reverse"
+                            >
                               <path d="M0,0 L10,3 L0,6Z" fill="#60a5fa" />
                             </marker>
-                            <marker id="comm-arrow-inhibit" viewBox="0 0 10 6" refX="9" refY="3"
-                              markerWidth="8" markerHeight="5" orient="auto-start-reverse">
+                            <marker
+                              id="comm-arrow-inhibit"
+                              viewBox="0 0 10 6"
+                              refX="9"
+                              refY="3"
+                              markerWidth="8"
+                              markerHeight="5"
+                              orient="auto-start-reverse"
+                            >
                               <path d="M0,0 L10,3 L0,6Z" fill="#f87171" />
                             </marker>
                           </defs>
@@ -569,9 +654,9 @@ export default React.memo(function ScSpatialPage() {
                             const my = (p1.y + p2.y) / 2 - (p2.x - p1.x) * 0.1;
                             const strokeW = 0.8 + strength * 5;
                             const opacity = 0.2 + strength * 0.7;
-                            const isInhibition = edge.interactionType === 'inhibition';
-                            const strokeColor = isInhibition ? '#f87171' : '#60a5fa';
-                            const markerId = isInhibition ? 'comm-arrow-inhibit' : 'comm-arrow-signal';
+                            const isInhibition = edge.interactionType === "inhibition";
+                            const strokeColor = isInhibition ? "#f87171" : "#60a5fa";
+                            const markerId = isInhibition ? "comm-arrow-inhibit" : "comm-arrow-signal";
                             return (
                               <path
                                 key={`${edge.source}->${edge.target}`}
@@ -590,18 +675,30 @@ export default React.memo(function ScSpatialPage() {
                             const c = commResult.centrality[cluster];
                             const cellFrac = cellCountsArr[i] / maxCells;
                             const nodeR = 12 + cellFrac * 16 + (c ? c.totalStrength * 0.15 : 0);
-                            const roleColor = c?.dominantRole === 'sender'
-                              ? '#3b82f6'
-                              : c?.dominantRole === 'receiver'
-                                ? '#ef4444'
-                                : '#a855f7';
+                            const roleColor =
+                              c?.dominantRole === "sender"
+                                ? "#3b82f6"
+                                : c?.dominantRole === "receiver"
+                                  ? "#ef4444"
+                                  : "#a855f7";
                             return (
                               <g key={cluster}>
-                                <circle cx={pos.x} cy={pos.y} r={nodeR}
-                                  fill={colorForCluster(i)} stroke={roleColor} strokeWidth={2} />
-                                <text x={pos.x} y={pos.y + 1} textAnchor="middle" dominantBaseline="middle"
-                                  style={{ fontSize: 9, fontFamily: THEME.MONO, fontWeight: 600, fill: '#111827' }}>
-                                  {cluster.length > 8 ? cluster.slice(0, 7) + '...' : cluster}
+                                <circle
+                                  cx={pos.x}
+                                  cy={pos.y}
+                                  r={nodeR}
+                                  fill={colorForCluster(i)}
+                                  stroke={roleColor}
+                                  strokeWidth={2}
+                                />
+                                <text
+                                  x={pos.x}
+                                  y={pos.y + 1}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  style={{ fontSize: 9, fontFamily: THEME.MONO, fontWeight: 600, fill: "#111827" }}
+                                >
+                                  {cluster.length > 8 ? cluster.slice(0, 7) + "..." : cluster}
                                 </text>
                               </g>
                             );
@@ -610,15 +707,25 @@ export default React.memo(function ScSpatialPage() {
                           <g transform="translate(420, 10)" style={{ fontSize: 9, fontFamily: THEME.MONO }}>
                             <rect x={0} y={0} width={130} height={90} rx={4} fill="#fafafa" stroke="#e5e7eb" />
                             <circle cx={12} cy={16} r={5} fill="#BFDCCD" stroke="#3b82f6" strokeWidth={1.5} />
-                            <text x={22} y={19} fill="#4b5563">Sender</text>
+                            <text x={22} y={19} fill="#4b5563">
+                              Sender
+                            </text>
                             <circle cx={12} cy={34} r={5} fill="#BFDCCD" stroke="#ef4444" strokeWidth={1.5} />
-                            <text x={22} y={37} fill="#4b5563">Receiver</text>
+                            <text x={22} y={37} fill="#4b5563">
+                              Receiver
+                            </text>
                             <circle cx={12} cy={52} r={5} fill="#BFDCCD" stroke="#a855f7" strokeWidth={1.5} />
-                            <text x={22} y={55} fill="#4b5563">Mediator</text>
+                            <text x={22} y={55} fill="#4b5563">
+                              Mediator
+                            </text>
                             <line x1={6} y1={70} x2={18} y2={70} stroke="#60a5fa" strokeWidth={2} />
-                            <text x={22} y={73} fill="#4b5563">Signaling</text>
+                            <text x={22} y={73} fill="#4b5563">
+                              Signaling
+                            </text>
                             <line x1={6} y1={84} x2={18} y2={84} stroke="#f87171" strokeWidth={2} />
-                            <text x={22} y={87} fill="#4b5563">Inhibition</text>
+                            <text x={22} y={87} fill="#4b5563">
+                              Inhibition
+                            </text>
                           </g>
                         </svg>
                       );
@@ -626,57 +733,80 @@ export default React.memo(function ScSpatialPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                   {/* ── Centrality Summary ─────────────────────── */}
-                  <div style={{
-                    border: '2px solid #d1d5db', borderRadius: 4,
-                    background: '#ffffff', padding: 12,
-                  }}>
+                  <div
+                    style={{
+                      border: "2px solid #d1d5db",
+                      borderRadius: 4,
+                      background: "#ffffff",
+                      padding: 12,
+                    }}
+                  >
                     <h4 className={styles.sectionTitle}>Cluster Centrality</h4>
                     <table className={styles.sciTable}>
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Cluster</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px' }}>Outgoing</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px' }}>Incoming</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px' }}>Total</th>
-                          <th style={{ textAlign: 'center', padding: '4px 8px' }}>Role</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Cluster</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Outgoing</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Incoming</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Total</th>
+                          <th style={{ textAlign: "center", padding: "4px 8px" }}>Role</th>
                         </tr>
                       </thead>
                       <tbody>
                         {availableClusters.map((cluster, i) => {
                           const c = commResult.centrality[cluster];
                           if (!c) return null;
-                          const roleBadge = c.dominantRole === 'sender'
-                            ? { bg: '#dbeafe', color: '#1d4ed8' }
-                            : c.dominantRole === 'receiver'
-                              ? { bg: '#fee2e2', color: '#dc2626' }
-                              : { bg: '#f3e8ff', color: '#7c3aed' };
+                          const roleBadge =
+                            c.dominantRole === "sender"
+                              ? { bg: "#dbeafe", color: "#1d4ed8" }
+                              : c.dominantRole === "receiver"
+                                ? { bg: "#fee2e2", color: "#dc2626" }
+                                : { bg: "#f3e8ff", color: "#7c3aed" };
                           return (
                             <tr key={cluster}>
-                              <td style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{
-                                  width: 10, height: 10, borderRadius: 2,
-                                  background: colorForCluster(i), display: 'inline-block',
-                                  border: '1px solid #d1d5db',
-                                }} />
+                              <td style={{ padding: "4px 8px", display: "flex", alignItems: "center", gap: 6 }}>
+                                <span
+                                  style={{
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: 2,
+                                    background: colorForCluster(i),
+                                    display: "inline-block",
+                                    border: "1px solid #d1d5db",
+                                  }}
+                                />
                                 {cluster}
                               </td>
-                              <td style={{ textAlign: 'right', padding: '4px 8px', fontFamily: THEME.MONO, fontSize: 10 }}>
+                              <td
+                                style={{ textAlign: "right", padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10 }}
+                              >
                                 {c.outgoingStrength.toFixed(3)}
                               </td>
-                              <td style={{ textAlign: 'right', padding: '4px 8px', fontFamily: THEME.MONO, fontSize: 10 }}>
+                              <td
+                                style={{ textAlign: "right", padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10 }}
+                              >
                                 {c.incomingStrength.toFixed(3)}
                               </td>
-                              <td style={{ textAlign: 'right', padding: '4px 8px', fontFamily: THEME.MONO, fontSize: 10 }}>
+                              <td
+                                style={{ textAlign: "right", padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10 }}
+                              >
                                 {c.totalStrength.toFixed(3)}
                               </td>
-                              <td style={{ textAlign: 'center', padding: '4px 8px' }}>
-                                <span style={{
-                                  display: 'inline-block', padding: '1px 8px', borderRadius: 10,
-                                  fontSize: 9, fontWeight: 600, fontFamily: THEME.MONO,
-                                  background: roleBadge.bg, color: roleBadge.color,
-                                }}>
+                              <td style={{ textAlign: "center", padding: "4px 8px" }}>
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "1px 8px",
+                                    borderRadius: 10,
+                                    fontSize: 9,
+                                    fontWeight: 600,
+                                    fontFamily: THEME.MONO,
+                                    background: roleBadge.bg,
+                                    color: roleBadge.color,
+                                  }}
+                                >
                                   {c.dominantRole}
                                 </span>
                               </td>
@@ -688,33 +818,41 @@ export default React.memo(function ScSpatialPage() {
                   </div>
 
                   {/* ── Pathway Summary ────────────────────────── */}
-                  <div style={{
-                    border: '2px solid #d1d5db', borderRadius: 4,
-                    background: '#ffffff', padding: 12,
-                  }}>
+                  <div
+                    style={{
+                      border: "2px solid #d1d5db",
+                      borderRadius: 4,
+                      background: "#ffffff",
+                      padding: 12,
+                    }}
+                  >
                     <h4 className={styles.sectionTitle}>Pathway Summary</h4>
                     <table className={styles.sciTable}>
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Pathway</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px' }}>Strength</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px' }}>Interactions</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Top Sender</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Top Receiver</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Pathway</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Strength</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Interactions</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Top Sender</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Top Receiver</th>
                         </tr>
                       </thead>
                       <tbody>
                         {commResult.pathwayDetails.map((pw) => (
                           <tr key={pw.pathway}>
-                            <td style={{ padding: '4px 8px', fontWeight: 500 }}>{pw.pathway}</td>
-                            <td style={{ textAlign: 'right', padding: '4px 8px', fontFamily: THEME.MONO, fontSize: 10 }}>
+                            <td style={{ padding: "4px 8px", fontWeight: 500 }}>{pw.pathway}</td>
+                            <td
+                              style={{ textAlign: "right", padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10 }}
+                            >
                               {pw.totalStrength.toFixed(3)}
                             </td>
-                            <td style={{ textAlign: 'right', padding: '4px 8px', fontFamily: THEME.MONO, fontSize: 10 }}>
+                            <td
+                              style={{ textAlign: "right", padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10 }}
+                            >
                               {pw.interactionCount}
                             </td>
-                            <td style={{ padding: '4px 8px', fontSize: 10 }}>{pw.topSender}</td>
-                            <td style={{ padding: '4px 8px', fontSize: 10 }}>{pw.topReceiver}</td>
+                            <td style={{ padding: "4px 8px", fontSize: 10 }}>{pw.topSender}</td>
+                            <td style={{ padding: "4px 8px", fontSize: 10 }}>{pw.topReceiver}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -723,55 +861,75 @@ export default React.memo(function ScSpatialPage() {
                 </div>
 
                 {/* ── Top Interactions Table ────────────────────── */}
-                <div style={{
-                  border: '2px solid #d1d5db', borderRadius: 4,
-                  background: '#ffffff', padding: 12,
-                }}>
+                <div
+                  style={{
+                    border: "2px solid #d1d5db",
+                    borderRadius: 4,
+                    background: "#ffffff",
+                    padding: 12,
+                  }}
+                >
                   <h4 className={styles.sectionTitle}>Top Ligand-Receptor Interactions</h4>
-                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ overflowX: "auto" }}>
                     <table className={styles.sciTable}>
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>#</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Ligand</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Receptor</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Pathway</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Sender</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px' }}>Receiver</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px' }}>Probability</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px' }}>Significance</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>#</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Ligand</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Receptor</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Pathway</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Sender</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Receiver</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Probability</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Significance</th>
                         </tr>
                       </thead>
                       <tbody>
                         {commResult.topInteractions.map((inter, idx) => (
                           <tr key={`${inter.ligand}-${inter.receptor}-${inter.sender}-${inter.receiver}-${idx}`}>
-                            <td style={{ padding: '4px 8px', fontFamily: THEME.MONO, fontSize: 10, color: '#6b7280' }}>
+                            <td style={{ padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10, color: "#6b7280" }}>
                               {idx + 1}
                             </td>
-                            <td style={{ padding: '4px 8px', fontWeight: 500 }}>{inter.ligand}</td>
-                            <td style={{ padding: '4px 8px', fontWeight: 500 }}>{inter.receptor}</td>
-                            <td style={{ padding: '4px 8px', fontSize: 10 }}>{inter.pathway}</td>
-                            <td style={{ padding: '4px 8px', fontSize: 10 }}>{inter.sender}</td>
-                            <td style={{ padding: '4px 8px', fontSize: 10 }}>{inter.receiver}</td>
-                            <td style={{ textAlign: 'right', padding: '4px 8px', fontFamily: THEME.MONO, fontSize: 10 }}>
+                            <td style={{ padding: "4px 8px", fontWeight: 500 }}>{inter.ligand}</td>
+                            <td style={{ padding: "4px 8px", fontWeight: 500 }}>{inter.receptor}</td>
+                            <td style={{ padding: "4px 8px", fontSize: 10 }}>{inter.pathway}</td>
+                            <td style={{ padding: "4px 8px", fontSize: 10 }}>{inter.sender}</td>
+                            <td style={{ padding: "4px 8px", fontSize: 10 }}>{inter.receiver}</td>
+                            <td
+                              style={{ textAlign: "right", padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10 }}
+                            >
                               {inter.probability.toFixed(4)}
                             </td>
-                            <td style={{ textAlign: 'right', padding: '4px 8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
-                                <div style={{
-                                  width: 50, height: 5, borderRadius: 3,
-                                  background: '#e5e7eb',
-                                  overflow: 'hidden',
-                                }}>
-                                  <div style={{
-                                    width: `${Math.max(5, (1 - inter.pAdj) * 100)}%`,
-                                    height: '100%',
+                            <td style={{ textAlign: "right", padding: "4px 8px" }}>
+                              <div
+                                style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}
+                              >
+                                <div
+                                  style={{
+                                    width: 50,
+                                    height: 5,
                                     borderRadius: 3,
-                                    background: inter.significant ? '#16a34a' : inter.pAdj < 0.1 ? '#d97706' : '#dc2626',
-                                  }} />
+                                    background: "#e5e7eb",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: `${Math.max(5, (1 - inter.pAdj) * 100)}%`,
+                                      height: "100%",
+                                      borderRadius: 3,
+                                      background: inter.significant
+                                        ? "#16a34a"
+                                        : inter.pAdj < 0.1
+                                          ? "#d97706"
+                                          : "#dc2626",
+                                    }}
+                                  />
                                 </div>
-                                <span style={{ fontFamily: THEME.MONO, fontSize: 10, minWidth: 36, textAlign: 'right' }}>
-                                  {inter.significant ? '✓' : `p=${inter.pAdj.toFixed(3)}`}
+                                <span
+                                  style={{ fontFamily: THEME.MONO, fontSize: 10, minWidth: 36, textAlign: "right" }}
+                                >
+                                  {inter.significant ? "✓" : `p=${inter.pAdj.toFixed(3)}`}
                                 </span>
                               </div>
                             </td>
@@ -780,11 +938,20 @@ export default React.memo(function ScSpatialPage() {
                       </tbody>
                     </table>
                   </div>
-                  <p style={{
-                    margin: '8px 0 0', fontFamily: THEME.SANS,
-                    fontSize: 11, fontStyle: 'italic', color: '#4b5563', lineHeight: 1.5,
-                  }}>
-                    Communication probabilities inferred via CellChat-style ligand-receptor co-expression model (Jin et al., Nat Commun 2021) with spatial distance weighting. Multi-gene expression matrix used for robust L-R inference. Edge colors: blue = signaling, red = inhibition. Node size reflects cluster cell count. Significance assessed via permutation testing with Benjamini-Hochberg FDR correction.
+                  <p
+                    style={{
+                      margin: "8px 0 0",
+                      fontFamily: THEME.SANS,
+                      fontSize: 11,
+                      fontStyle: "italic",
+                      color: "#4b5563",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Communication probabilities inferred via CellChat-style ligand-receptor co-expression model (Jin et
+                    al., Nat Commun 2021) with spatial distance weighting. Multi-gene expression matrix used for robust
+                    L-R inference. Edge colors: blue = signaling, red = inhibition. Node size reflects cluster cell
+                    count. Significance assessed via permutation testing with Benjamini-Hochberg FDR correction.
                   </p>
                 </div>
               </>
@@ -795,17 +962,21 @@ export default React.memo(function ScSpatialPage() {
             <ScSpatialControlRail
               availableClusters={availableClusters}
               availableGenes={availableGenes}
-              datasetMeta={datasetMeta ? {
-                availableViews: datasetMeta.availableViews,
-                cellCount: datasetMeta.cellCount,
-                geneCount: datasetMeta.geneCount,
-                sampleCount: datasetMeta.sampleCount,
-                fileName: datasetMeta.fileName,
-                missingFields: datasetMeta.missingFields,
-                parserVersion: datasetMeta.parserVersion,
-                sampleMetadataKeys: datasetMeta.sampleMetadataKeys,
-                warnings: datasetMeta.warnings,
-              } : null}
+              datasetMeta={
+                datasetMeta
+                  ? {
+                      availableViews: datasetMeta.availableViews,
+                      cellCount: datasetMeta.cellCount,
+                      geneCount: datasetMeta.geneCount,
+                      sampleCount: datasetMeta.sampleCount,
+                      fileName: datasetMeta.fileName,
+                      missingFields: datasetMeta.missingFields,
+                      parserVersion: datasetMeta.parserVersion,
+                      sampleMetadataKeys: datasetMeta.sampleMetadataKeys,
+                      warnings: datasetMeta.warnings,
+                    }
+                  : null
+              }
               developerMode={developerMode}
               loadState={loadState}
               selectedCluster={selectedCluster}
@@ -825,10 +996,12 @@ export default React.memo(function ScSpatialPage() {
               onToggleNeighbors={toggleNeighbors}
               onSetNeighborK={setNeighborK}
               onAnalysisParamChange={handleAnalysisParamChange}
-              spatialFormat={query ? ((query as unknown as Record<string, unknown>).spatialFormat as string ?? null) : null}
+              spatialFormat={
+                query ? (((query as unknown as Record<string, unknown>).spatialFormat as string) ?? null) : null
+              }
             />
 
-            <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+            <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
               <ScSpatialViewport
                 canvasRef={canvasRef}
                 loadState={loadState}
@@ -839,36 +1012,56 @@ export default React.memo(function ScSpatialPage() {
                 showKde={showKde}
                 showNeighbors={showNeighbors}
                 neighborK={neighborK}
-                heImageData={query ? ((query as unknown as Record<string, unknown>).heImage as { data: string; scaleFactor: number; spotDiameter: number } | null ?? null) : null}
+                heImageData={
+                  query
+                    ? (((query as unknown as Record<string, unknown>).heImage as {
+                        data: string;
+                        scaleFactor: number;
+                        spotDiameter: number;
+                      } | null) ?? null)
+                    : null
+                }
               />
 
               {query && (
                 <InlineMetricOverlay
                   position="top-right"
                   metrics={[
-                    { label: 'Cells', value: `${datasetMeta?.cellCount ?? 0}`, accent: THEME.SKY },
-                    { label: 'Clusters', value: `${availableClusters.length}`, accent: THEME.LILAC },
-                    { label: 'Gene', value: selectedGene || '—', accent: THEME.MINT },
-                    { label: 'Hotspots', value: `${query.rightPanel.hotspots.length}`, accent: THEME.APRICOT },
+                    { label: "Cells", value: `${datasetMeta?.cellCount ?? 0}`, accent: THEME.SKY },
+                    { label: "Clusters", value: `${availableClusters.length}`, accent: THEME.LILAC },
+                    { label: "Gene", value: selectedGene || "—", accent: THEME.MINT },
+                    { label: "Hotspots", value: `${query.rightPanel.hotspots.length}`, accent: THEME.APRICOT },
                   ]}
                 />
               )}
             </div>
 
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 12px', flexShrink: 0,
-              borderTop: '1px solid #d1d5db', background: '#ffffff',
-            }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 12px",
+                flexShrink: 0,
+                borderTop: "1px solid #d1d5db",
+                background: "#ffffff",
+              }}
+            >
               <span className={`${styles.readyIndicator} ${readyClass(validity, loadState)}`}>
                 <span className={styles.readyDot} />
                 {readyLabel(validity, loadState)}
               </span>
-              <span style={{
-                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: '#4b5563',
-                padding: '2px 8px', borderRadius: '6px',
-                background: '#f6f7f9', border: '1px solid #d1d5db',
-              }}>
+              <span
+                style={{
+                  fontFamily: THEME.MONO,
+                  fontSize: "var(--nb-fs-xs)",
+                  color: "#4b5563",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  background: "#f6f7f9",
+                  border: "1px solid #d1d5db",
+                }}
+              >
                 {artifactChipLabel}
               </span>
               <button type="button" className={styles.headerIconButton} onClick={toggleHelp} aria-label="Toggle help">

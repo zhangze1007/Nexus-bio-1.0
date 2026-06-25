@@ -8,9 +8,9 @@
  * @module streaming/server
  */
 
-import { WebSocketServer, WebSocket } from 'ws';
-import { randomUUID } from 'crypto';
-import type { StreamingMessage, StreamingOptions, ClientInfo } from './types';
+import { randomUUID } from "crypto";
+import { WebSocket, WebSocketServer } from "ws";
+import type { ClientInfo, StreamingMessage, StreamingOptions } from "./types";
 
 /**
  * WebSocket-based streaming server with pub/sub messaging.
@@ -67,7 +67,7 @@ export class StreamingServer {
    */
   async start(): Promise<void> {
     if (this.wss) {
-      throw new Error('Server already started');
+      throw new Error("Server already started");
     }
 
     return new Promise<void>((resolve, reject) => {
@@ -76,12 +76,12 @@ export class StreamingServer {
         resolve();
       });
 
-      this.wss.on('error', (err) => {
+      this.wss.on("error", (err) => {
         this.wss = null;
         reject(err);
       });
 
-      this.wss.on('connection', (ws: WebSocket) => {
+      this.wss.on("connection", (ws: WebSocket) => {
         this.handleConnection(ws);
       });
     });
@@ -97,7 +97,7 @@ export class StreamingServer {
    */
   async stop(): Promise<void> {
     if (!this.wss) {
-      throw new Error('Server not started');
+      throw new Error("Server not started");
     }
 
     this.stopping = true;
@@ -192,7 +192,7 @@ export class StreamingServer {
     if (!subscribers || subscribers.size === 0) return;
 
     const message: StreamingMessage = {
-      type: 'publish',
+      type: "publish",
       topic,
       data,
       timestamp: Date.now(),
@@ -255,20 +255,20 @@ export class StreamingServer {
 
     // Send welcome message with assigned clientId
     this.sendTo(ws, {
-      type: 'heartbeat',
+      type: "heartbeat",
       clientId,
       timestamp: now,
     });
 
-    ws.on('message', (raw: Buffer | string) => {
+    ws.on("message", (raw: Buffer | string) => {
       this.handleMessage(ws, currentId, raw.toString());
     });
 
-    ws.on('close', () => {
+    ws.on("close", () => {
       this.handleDisconnect(ws, currentId.value);
     });
 
-    ws.on('error', () => {
+    ws.on("error", () => {
       this.handleDisconnect(ws, currentId.value);
     });
   }
@@ -283,8 +283,8 @@ export class StreamingServer {
       message = JSON.parse(raw);
     } catch {
       this.sendTo(ws, {
-        type: 'error',
-        data: 'Invalid JSON',
+        type: "error",
+        data: "Invalid JSON",
         timestamp: Date.now(),
       });
       return;
@@ -297,7 +297,7 @@ export class StreamingServer {
     }
 
     switch (message.type) {
-      case 'subscribe': {
+      case "subscribe": {
         // Support custom clientId via message
         if (message.clientId && message.clientId !== currentId.value) {
           this.migrateClientId(ws, currentId.value, message.clientId);
@@ -309,14 +309,14 @@ export class StreamingServer {
         break;
       }
 
-      case 'unsubscribe': {
+      case "unsubscribe": {
         if (message.topic) {
           this.unsubscribe(currentId.value, [message.topic]);
         }
         break;
       }
 
-      case 'heartbeat': {
+      case "heartbeat": {
         // Client responding to server heartbeat — already updated lastHeartbeat above
         break;
       }
@@ -431,7 +431,7 @@ export class StreamingServer {
         const ws = this.connections.get(clientId);
         if (ws) {
           this.sendTo(ws, {
-            type: 'heartbeat',
+            type: "heartbeat",
             clientId,
             timestamp: now,
           });

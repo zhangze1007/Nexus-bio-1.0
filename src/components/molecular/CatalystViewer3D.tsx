@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useRef, useState, useEffect } from 'react';
-import { load3Dmol } from '../../hooks/use3Dmol';
-import { THEME } from '../../theme';
-import type { EnzymeStructure, CatalyticResidue } from '../../services/CatalystDesignerEngine';
+import { useEffect, useRef, useState } from "react";
+import { load3Dmol } from "../../hooks/use3Dmol";
+import type { CatalyticResidue, EnzymeStructure } from "../../services/CatalystDesignerEngine";
+import { THEME } from "../../theme";
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 
@@ -16,11 +16,11 @@ const ROLE_COLORS: Record<string, number> = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  nucleophile: 'Nucleophile',
-  acid_base: 'Acid-base',
-  stabilizer: 'Stabilizer',
-  oxyanion_hole: 'Oxyanion hole',
-  substrate_binding: 'Substrate binding',
+  nucleophile: "Nucleophile",
+  acid_base: "Acid-base",
+  stabilizer: "Stabilizer",
+  oxyanion_hole: "Oxyanion hole",
+  substrate_binding: "Substrate binding",
 };
 
 /** Interpolate green ↔ red based on binding quality (0 = terrible, 1 = perfect). */
@@ -49,30 +49,47 @@ export function kdToQuality(kd: number): number {
 
 export interface ResidueClickData {
   position: number;
-  name: string;           // e.g. "Ser195"
-  residueLetter: string;  // e.g. "S"
+  name: string; // e.g. "Ser195"
+  residueLetter: string; // e.g. "S"
   isCatalytic: boolean;
   catalyticResidue?: CatalyticResidue;
   distanceToSubstrate?: number;
-  role?: string;          // catalytic role (e.g. "acid-base", "catalytic nucleophile", "oxyanion hole")
+  role?: string; // catalytic role (e.g. "acid-base", "catalytic nucleophile", "oxyanion hole")
 }
 
 export interface CatalystViewer3DProps {
   enzyme: EnzymeStructure;
-  renderMode: 'cartoon' | 'surface' | 'confidence';
+  renderMode: "cartoon" | "surface" | "confidence";
   spinEnabled?: boolean;
   onResidueClick?: (data: ResidueClickData) => void;
   selectedResidue?: number | null;
-  bindingQuality?: number;  // 0-1 from Kd, drives interaction line colors
-  pdbText?: string | null;  // uploaded PDB text — overrides AlphaFold/PDB fetch
+  bindingQuality?: number; // 0-1 from Kd, drives interaction line colors
+  pdbText?: string | null; // uploaded PDB text — overrides AlphaFold/PDB fetch
   style?: React.CSSProperties;
 }
 
 /* ── 3-letter → 1-letter lookup ────────────────────────────────── */
 const AA3TO1: Record<string, string> = {
-  ALA:'A',ARG:'R',ASN:'N',ASP:'D',CYS:'C',GLU:'E',GLN:'Q',GLY:'G',
-  HIS:'H',ILE:'I',LEU:'L',LYS:'K',MET:'M',PHE:'F',PRO:'P',SER:'S',
-  THR:'T',TRP:'W',TYR:'Y',VAL:'V',
+  ALA: "A",
+  ARG: "R",
+  ASN: "N",
+  ASP: "D",
+  CYS: "C",
+  GLU: "E",
+  GLN: "Q",
+  GLY: "G",
+  HIS: "H",
+  ILE: "I",
+  LEU: "L",
+  LYS: "K",
+  MET: "M",
+  PHE: "F",
+  PRO: "P",
+  SER: "S",
+  THR: "T",
+  TRP: "W",
+  TYR: "Y",
+  VAL: "V",
 };
 
 /* ── Component ─────────────────────────────────────────────────── */
@@ -89,15 +106,18 @@ export default function CatalystViewer3D({
 }: CatalystViewer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<$3DmolViewer | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [useAlphaFold, setUseAlphaFold] = useState(false);
   const substrateAtomsRef = useRef<Record<string, unknown>[]>([]);
 
-  const sourceLabel = pdbText && pdbText.length > 100
-    ? 'Uploaded PDB'
-    : useAlphaFold
-    ? `AlphaFold · ${enzyme.uniprotId}`
-    : enzyme.pdbId ? `PDB · ${enzyme.pdbId}` : `AlphaFold · ${enzyme.uniprotId}`;
+  const sourceLabel =
+    pdbText && pdbText.length > 100
+      ? "Uploaded PDB"
+      : useAlphaFold
+        ? `AlphaFold · ${enzyme.uniprotId}`
+        : enzyme.pdbId
+          ? `PDB · ${enzyme.pdbId}`
+          : `AlphaFold · ${enzyme.uniprotId}`;
 
   /* ── Build the full 3D scene ─────────────────────────────────── */
   useEffect(() => {
@@ -105,18 +125,23 @@ export default function CatalystViewer3D({
 
     async function init() {
       if (!containerRef.current) return;
-      setStatus('loading');
+      setStatus("loading");
       substrateAtomsRef.current = [];
 
       try {
         await load3Dmol();
         if (cancelled) return;
 
-        if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} }
-        containerRef.current.innerHTML = '';
+        if (viewerRef.current) {
+          try {
+            viewerRef.current.clear();
+          } catch {}
+        }
+        containerRef.current.innerHTML = "";
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: '0x0d0f14', antialias: true,
+          backgroundColor: "0x0d0f14",
+          antialias: true,
         });
         viewerRef.current = viewer;
 
@@ -125,16 +150,16 @@ export default function CatalystViewer3D({
         // ── Load enzyme structure ──
         if (pdbText && pdbText.length > 100) {
           // Use uploaded PDB text directly
-          viewer.addModel(pdbText, 'pdb');
+          viewer.addModel(pdbText, "pdb");
         } else if (shouldUseAF) {
           const res = await fetch(`/api/alphafold?id=${enzyme.uniprotId}`);
           if (!res.ok) throw new Error(`AlphaFold ${res.status}`);
           const pdb = await res.text();
-          if (!pdb || pdb.length < 100) throw new Error('Empty AlphaFold response');
-          viewer.addModel(pdb, 'pdb');
+          if (!pdb || pdb.length < 100) throw new Error("Empty AlphaFold response");
+          viewer.addModel(pdb, "pdb");
         } else {
           await new Promise<void>((resolve, reject) => {
-            const timer = setTimeout(() => reject(new Error('PDB download timeout')), 15000);
+            const timer = setTimeout(() => reject(new Error("PDB download timeout")), 15000);
             window.$3Dmol.download(`pdb:${enzyme.pdbId}`, viewer, {}, () => {
               clearTimeout(timer);
               resolve();
@@ -144,30 +169,33 @@ export default function CatalystViewer3D({
 
         // ── Apply base enzyme style ──
         viewer.setStyle({}, {});
-        if (renderMode === 'surface') {
+        if (renderMode === "surface") {
           // Surface mode: thin cartoon + translucent molecular surface
-          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? '#EAEAEA' : 'spectrum', thickness: 0.3 } });
+          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? "#EAEAEA" : "spectrum", thickness: 0.3 } });
           viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
             opacity: 0.7,
-            color: shouldUseAF ? '#C8E0D0' : '#FFFFFF',
+            color: shouldUseAF ? "#C8E0D0" : "#FFFFFF",
           });
-        } else if (renderMode === 'confidence') {
+        } else if (renderMode === "confidence") {
           // Confidence mode: color by B-factor (pLDDT for AlphaFold, temperature factor for PDB)
-          viewer.setStyle({}, {
-            cartoon: {
-              colorfunc: (atom: Record<string, unknown>) => {
-                const b = atom.b as number;
-                if (b >= 90) return 0x0053D6;  // Very high confidence (dark blue)
-                if (b >= 70) return 0x65CBF3;  // High confidence (cyan)
-                if (b >= 50) return 0xFFDB13;  // Medium confidence (yellow)
-                return 0xFF7D45;               // Low confidence (orange)
+          viewer.setStyle(
+            {},
+            {
+              cartoon: {
+                colorfunc: (atom: Record<string, unknown>) => {
+                  const b = atom.b as number;
+                  if (b >= 90) return 0x0053d6; // Very high confidence (dark blue)
+                  if (b >= 70) return 0x65cbf3; // High confidence (cyan)
+                  if (b >= 50) return 0xffdb13; // Medium confidence (yellow)
+                  return 0xff7d45; // Low confidence (orange)
+                },
+                thickness: 0.6,
               },
-              thickness: 0.6,
             },
-          });
+          );
         } else {
           // Cartoon mode: solid color ribbon
-          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? '#C8D8E8' : 'spectrum', thickness: 0.5 } });
+          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? "#C8D8E8" : "spectrum", thickness: 0.5 } });
         }
 
         // ── Highlight catalytic residues as sticks ──
@@ -185,12 +213,14 @@ export default function CatalystViewer3D({
           if (subRes.ok) {
             const sdf = await subRes.text();
             if (sdf && sdf.length > 50) {
-              const modelIdx = viewer.addModel(sdf, 'sdf');
+              const modelIdx = viewer.addModel(sdf, "sdf");
               // Style substrate as ball-and-stick
               viewer.setStyle(
                 { model: -1 },
-                { stick: { colorscheme: 'greenCarbon', radius: 0.14 },
-                  sphere: { colorscheme: 'greenCarbon', scale: 0.25 } },
+                {
+                  stick: { colorscheme: "greenCarbon", radius: 0.14 },
+                  sphere: { colorscheme: "greenCarbon", scale: 0.25 },
+                },
               );
               // Collect substrate atom positions for distance line drawing
               const models = viewer.getModel(-1);
@@ -213,12 +243,12 @@ export default function CatalystViewer3D({
 
         // ── Click handler ──
         viewer.setClickable({}, true, (atom: Record<string, unknown>) => {
-          if (!atom || typeof atom.resi !== 'number') return;
+          if (!atom || typeof atom.resi !== "number") return;
           const pos = atom.resi;
-          const resn = String(atom.resn ?? '');
-          const letter = AA3TO1[resn.toUpperCase()] || '?';
+          const resn = String(atom.resn ?? "");
+          const letter = AA3TO1[resn.toUpperCase()] || "?";
           const name = `${resn}${pos}`;
-          const catRes = enzyme.catalyticResidues.find(r => r.position === pos);
+          const catRes = enzyme.catalyticResidues.find((r) => r.position === pos);
           if (onResidueClick) {
             onResidueClick({
               position: pos,
@@ -227,29 +257,31 @@ export default function CatalystViewer3D({
               isCatalytic: !!catRes,
               catalyticResidue: catRes,
               distanceToSubstrate: catRes?.distanceToSubstrate,
-              role: catRes ? ROLE_LABELS[catRes.role] ?? catRes.role : undefined,
+              role: catRes ? (ROLE_LABELS[catRes.role] ?? catRes.role) : undefined,
             });
           }
         });
 
         viewer.zoomTo();
-        viewer.spin(spinEnabled ? 'y' : false, 0.5);
+        viewer.spin(spinEnabled ? "y" : false, 0.5);
         viewer.render();
-        if (!cancelled) setStatus('ready');
+        if (!cancelled) setStatus("ready");
       } catch {
-        if (!cancelled) setStatus('error');
+        if (!cancelled) setStatus("error");
       }
     }
 
     init();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enzyme.id, enzyme.pdbId, enzyme.uniprotId, renderMode, useAlphaFold, spinEnabled, pdbText]);
 
   /* ── Update highlight + interaction lines when selection or binding quality changes ── */
   useEffect(() => {
     const viewer = viewerRef.current;
-    if (!viewer || status !== 'ready') return;
+    if (!viewer || status !== "ready") return;
 
     // Remove old labels and shapes
     viewer.removeAllLabels();
@@ -258,10 +290,7 @@ export default function CatalystViewer3D({
     // Re-highlight catalytic residues (sticks)
     for (const res of enzyme.catalyticResidues) {
       const color = ROLE_COLORS[res.role] ?? 0x999999;
-      viewer.addStyle(
-        { resi: res.position, and: [{ not: { hetflag: true } }] },
-        { stick: { color, radius: 0.18 } },
-      );
+      viewer.addStyle({ resi: res.position, and: [{ not: { hetflag: true } }] }, { stick: { color, radius: 0.18 } });
     }
 
     // Highlight selected residue with glow
@@ -278,14 +307,14 @@ export default function CatalystViewer3D({
       );
 
       // Label the selected residue
-      const selAtoms = viewer.selectedAtoms({ resi: selectedResidue, atom: 'CA' });
+      const selAtoms = viewer.selectedAtoms({ resi: selectedResidue, atom: "CA" });
       if (selAtoms && selAtoms.length > 0) {
         const ca = selAtoms[0];
-        const resn = String(ca.resn ?? '');
+        const resn = String(ca.resn ?? "");
         viewer.addLabel(`${resn}${selectedResidue}`, {
           position: { x: ca.x as number, y: ca.y as number, z: (ca.z as number) + 2 },
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          fontColor: '#FFDB13',
+          backgroundColor: "rgba(0,0,0,0.7)",
+          fontColor: "#FFDB13",
           fontSize: 11,
           borderRadius: 4,
           padding: 3,
@@ -301,110 +330,172 @@ export default function CatalystViewer3D({
 
   /* ── Spin toggle without full reload ─────────────────────────── */
   useEffect(() => {
-    if (viewerRef.current && status === 'ready') {
-      viewerRef.current.spin(spinEnabled ? 'y' : false, 0.5);
+    if (viewerRef.current && status === "ready") {
+      viewerRef.current.spin(spinEnabled ? "y" : false, 0.5);
     }
   }, [spinEnabled, status]);
 
   /* ── Render ──────────────────────────────────────────────────── */
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
-      <div style={{
-        position: 'relative', width: '100%', height: '100%', minHeight: 340,
-        borderRadius: 20, overflow: 'hidden', background: '#0d0f14',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 2px 16px rgba(0,0,0,0.5)',
-      }}>
-        <div ref={containerRef} style={{ width: '100%', height: '100%', minHeight: 340 }} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, ...style }}>
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          minHeight: 340,
+          borderRadius: 20,
+          overflow: "hidden",
+          background: "#0d0f14",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 2px 16px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div ref={containerRef} style={{ width: "100%", height: "100%", minHeight: 340 }} />
 
-        {status === 'loading' && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', background: '#0d0f14', gap: 12,
-          }}>
+        {status === "loading" && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#0d0f14",
+              gap: 12,
+            }}
+          >
             <style>{`@keyframes cv3d-spin { to { transform: rotate(360deg); } }`}</style>
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%',
-              border: '2px solid rgba(0,83,214,0.3)', borderTopColor: '#0053D6',
-              animation: 'cv3d-spin 1s linear infinite',
-            }} />
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, margin: 0, fontFamily: THEME.SANS }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: "2px solid rgba(0,83,214,0.3)",
+                borderTopColor: "#0053D6",
+                animation: "cv3d-spin 1s linear infinite",
+              }}
+            />
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, margin: 0, fontFamily: THEME.SANS }}>
               Loading {enzyme.name}...
             </p>
           </div>
         )}
 
-        {status === 'error' && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', background: '#0d0f14', gap: 8,
-          }}>
-            <span style={{ color: 'rgba(240,160,160,0.7)', fontSize: 12 }}>
+        {status === "error" && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#0d0f14",
+              gap: 8,
+            }}
+          >
+            <span style={{ color: "rgba(240,160,160,0.7)", fontSize: 12 }}>
               Structure unavailable for {enzyme.name}
             </span>
           </div>
         )}
 
-        {status === 'ready' && (
+        {status === "ready" && (
           <>
-            <div style={{ position: 'absolute', top: 8, left: 10, pointerEvents: 'none' }}>
-              <span style={{
-                color: 'rgba(255,255,255,0.5)', fontSize: 9,
-                background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: 8,
-                fontFamily: THEME.SANS,
-              }}>
+            <div style={{ position: "absolute", top: 8, left: 10, pointerEvents: "none" }}>
+              <span
+                style={{
+                  color: "rgba(255,255,255,0.5)",
+                  fontSize: 9,
+                  background: "rgba(0,0,0,0.45)",
+                  padding: "2px 6px",
+                  borderRadius: 8,
+                  fontFamily: THEME.SANS,
+                }}
+              >
                 {sourceLabel}
               </span>
             </div>
             {/* Binding quality indicator bar */}
-            <div style={{
-              position: 'absolute', bottom: 8, left: 10, right: 10,
-              height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)',
-            }}>
-              <div style={{
-                height: '100%', borderRadius: 2,
-                width: `${bindingQuality * 100}%`,
-                background: bindingColorCSS(bindingQuality),
-                transition: 'width 0.4s ease, background 0.4s ease',
-              }} />
+            <div
+              style={{
+                position: "absolute",
+                bottom: 8,
+                left: 10,
+                right: 10,
+                height: 3,
+                borderRadius: 2,
+                background: "rgba(255,255,255,0.06)",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  borderRadius: 2,
+                  width: `${bindingQuality * 100}%`,
+                  background: bindingColorCSS(bindingQuality),
+                  transition: "width 0.4s ease, background 0.4s ease",
+                }}
+              />
             </div>
           </>
         )}
       </div>
 
       {enzyme.pdbId && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '5px 10px', borderRadius: 10,
-          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-        }}>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: THEME.SANS }}>
-            AlphaFold
-          </span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "5px 10px",
+            borderRadius: 10,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, fontFamily: THEME.SANS }}>AlphaFold</span>
           <button
             type="button"
             onClick={() => setUseAlphaFold(!useAlphaFold)}
             style={{
-              width: 32, height: 16, borderRadius: 8,
-              background: useAlphaFold ? '#A8C5DA' : 'rgba(255,255,255,0.1)',
-              border: 'none', cursor: 'pointer', position: 'relative',
-              transition: 'background 0.2s',
+              width: 32,
+              height: 16,
+              borderRadius: 8,
+              background: useAlphaFold ? "#A8C5DA" : "rgba(255,255,255,0.1)",
+              border: "none",
+              cursor: "pointer",
+              position: "relative",
+              transition: "background 0.2s",
             }}
           >
-            <div style={{
-              width: 10, height: 10, borderRadius: '50%', background: '#fff',
-              position: 'absolute', top: 3,
-              left: useAlphaFold ? 19 : 3,
-              transition: 'left 0.2s',
-            }} />
+            <div
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: "#fff",
+                position: "absolute",
+                top: 3,
+                left: useAlphaFold ? 19 : 3,
+                transition: "left 0.2s",
+              }}
+            />
           </button>
         </div>
       )}
 
-      <p style={{
-        color: 'rgba(255,255,255,0.08)', fontSize: 8, margin: 0, textAlign: 'center',
-        fontFamily: THEME.SANS,
-      }}>
+      <p
+        style={{
+          color: "rgba(255,255,255,0.08)",
+          fontSize: 8,
+          margin: 0,
+          textAlign: "center",
+          fontFamily: THEME.SANS,
+        }}
+      >
         Click residue to inspect · drag to rotate · {sourceLabel}
       </p>
     </div>
@@ -425,7 +516,7 @@ function drawInteractionLines(
 
   for (const res of enzyme.catalyticResidues) {
     // Get alpha-carbon of this residue
-    const caAtoms = viewer.selectedAtoms({ resi: res.position, atom: 'CA' });
+    const caAtoms = viewer.selectedAtoms({ resi: res.position, atom: "CA" });
     if (!caAtoms || caAtoms.length === 0) continue;
     const ca = caAtoms[0];
 
@@ -437,8 +528,15 @@ function drawInteractionLines(
       // Find closest het atom
       let minDist = Infinity;
       for (const ha of hetAtoms) {
-        const d = Math.sqrt(((ca.x as number) - (ha.x as number)) ** 2 + ((ca.y as number) - (ha.y as number)) ** 2 + ((ca.z as number) - (ha.z as number)) ** 2);
-        if (d < minDist) { minDist = d; targetAtom = ha; }
+        const d = Math.sqrt(
+          ((ca.x as number) - (ha.x as number)) ** 2 +
+            ((ca.y as number) - (ha.y as number)) ** 2 +
+            ((ca.z as number) - (ha.z as number)) ** 2,
+        );
+        if (d < minDist) {
+          minDist = d;
+          targetAtom = ha;
+        }
       }
     }
 
@@ -446,8 +544,8 @@ function drawInteractionLines(
 
     const dist = Math.sqrt(
       ((ca.x as number) - (targetAtom.x as number)) ** 2 +
-      ((ca.y as number) - (targetAtom.y as number)) ** 2 +
-      ((ca.z as number) - (targetAtom.z as number)) ** 2,
+        ((ca.y as number) - (targetAtom.y as number)) ** 2 +
+        ((ca.z as number) - (targetAtom.z as number)) ** 2,
     );
 
     // Only draw if < 15 Å (reasonable interaction range)
@@ -476,8 +574,8 @@ function drawInteractionLines(
     const mz = ((ca.z as number) + (targetAtom.z as number)) / 2;
     viewer.addLabel(`${dist.toFixed(1)} Å`, {
       position: { x: mx, y: my, z: mz },
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      fontColor: isSelected ? '#FFDB13' : bindingColorCSS(quality),
+      backgroundColor: "rgba(0,0,0,0.6)",
+      fontColor: isSelected ? "#FFDB13" : bindingColorCSS(quality),
       fontSize: isSelected ? 10 : 8,
       borderRadius: 3,
       padding: 2,

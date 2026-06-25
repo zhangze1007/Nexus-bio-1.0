@@ -1,7 +1,7 @@
-export { fetchWithFallback, type FallbackResult, type FallbackOptions } from './fetchWithFallback';
-export { searchKEGGPathway, getKEGGCompound, type KEGGPathwayResult, type KEGGCompoundResult } from './keggClient';
-export { listBiGGModels, getBiGGModel, type BiGGModel } from './biggClient';
-export { getBRENDAKinetics, type BRENDAKinetics } from './brendaClient';
-export { searchUniProt, type UniProtEntry } from './uniprotClient';
-export { searchPubChemCompound, type PubChemCompound } from './pubchemClient';
-export { runDocking, type DockingResult } from './dockingClient';
+export { type BiGGModel, getBiGGModel, listBiGGModels } from "./biggClient";
+export { type BRENDAKinetics, getBRENDAKinetics } from "./brendaClient";
+export { type DockingResult, runDocking } from "./dockingClient";
+export { type FallbackOptions, type FallbackResult, fetchWithFallback } from "./fetchWithFallback";
+export { getKEGGCompound, type KEGGCompoundResult, type KEGGPathwayResult, searchKEGGPathway } from "./keggClient";
+export { type PubChemCompound, searchPubChemCompound } from "./pubchemClient";
+export { searchUniProt, type UniProtEntry } from "./uniprotClient";

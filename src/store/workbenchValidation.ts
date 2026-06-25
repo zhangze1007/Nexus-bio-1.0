@@ -1,60 +1,56 @@
-import { isValidEdge, isValidNode } from '../types';
+import type { WorkflowArtifact, WorkflowArtifactEdge, WorkflowArtifactNode } from "../domain/workflowArtifact";
 import {
-  CLAIM_SURFACES as TRUST_CLAIM_SURFACES,
-  GATE_STATUSES as TRUST_GATE_STATUSES,
   type ClaimSurface,
   type GateDecision,
   type GateStatus,
-} from '../protocol/nexusTrustRuntime';
+  CLAIM_SURFACES as TRUST_CLAIM_SURFACES,
+  GATE_STATUSES as TRUST_GATE_STATUSES,
+} from "../protocol/nexusTrustRuntime";
+import { isValidEdge, isValidNode } from "../types";
+import type { WorkbenchToolPayloadMap } from "./workbenchPayloads";
 import type {
-  WorkflowArtifact,
-  WorkflowArtifactEdge,
-  WorkflowArtifactNode,
-} from '../domain/workflowArtifact';
-import type {
-  WorkbenchBackendMeta,
-  WorkbenchCollaborator,
-  WorkbenchExperimentRecord,
-  WorkbenchHistoryEntry,
   BottleneckAssumption,
   EnzymeCandidateSummary,
   NextStepRecommendation,
   PathwayCandidateSummary,
   StageCheckpoint,
   WorkbenchAnalyzeArtifact,
+  WorkbenchBackendMeta,
   WorkbenchCanonicalState,
+  WorkbenchCollaborator,
   WorkbenchEvidenceItem,
+  WorkbenchExperimentRecord,
+  WorkbenchHistoryEntry,
   WorkbenchProjectBrief,
   WorkbenchRunArtifact,
   WorkbenchRunEvidenceSnapshot,
   WorkbenchSyncAuditEntry,
   WorkbenchToolRun,
   WorkbenchWorkflowControlSnapshot,
-} from './workbenchTypes';
-import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
+} from "./workbenchTypes";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function asString(value: unknown, fallback = '') {
-  return typeof value === 'string' ? value : fallback;
+function asString(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
 }
 
 function asNumber(value: unknown, fallback = 0) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function asStringArray(value: unknown) {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function isClaimSurface(value: unknown): value is ClaimSurface {
-  return typeof value === 'string' && TRUST_CLAIM_SURFACES.includes(value as ClaimSurface);
+  return typeof value === "string" && TRUST_CLAIM_SURFACES.includes(value as ClaimSurface);
 }
 
 function isGateStatus(value: unknown): value is GateStatus {
-  return typeof value === 'string' && TRUST_GATE_STATUSES.includes(value as GateStatus);
+  return typeof value === "string" && TRUST_GATE_STATUSES.includes(value as GateStatus);
 }
 
 function sanitizeClaimSurfaces(value: unknown): ClaimSurface[] {
@@ -65,7 +61,7 @@ function sanitizeGateDecision(value: unknown): GateDecision | null {
   if (
     !isRecord(value) ||
     !isGateStatus(value.status) ||
-    typeof value.reason !== 'string' ||
+    typeof value.reason !== "string" ||
     !Array.isArray(value.allowedSurfaces) ||
     !Array.isArray(value.blockedSurfaces)
   ) {
@@ -74,11 +70,11 @@ function sanitizeGateDecision(value: unknown): GateDecision | null {
 
   return {
     status: value.status,
-    ...(typeof value.blockCode === 'string' ? { blockCode: value.blockCode } : {}),
+    ...(typeof value.blockCode === "string" ? { blockCode: value.blockCode } : {}),
     reason: value.reason,
     allowedSurfaces: sanitizeClaimSurfaces(value.allowedSurfaces),
     blockedSurfaces: sanitizeClaimSurfaces(value.blockedSurfaces),
-    ...(value.overridePath === 'human-review' || value.overridePath === 'not-allowed'
+    ...(value.overridePath === "human-review" || value.overridePath === "not-allowed"
       ? { overridePath: value.overridePath }
       : {}),
   };
@@ -97,11 +93,11 @@ function sanitizeProject(value: unknown): WorkbenchProjectBrief | null {
   if (!isRecord(value)) return null;
   return {
     id: asString(value.id),
-    title: asString(value.title, 'Synthetic Biology Program'),
+    title: asString(value.title, "Synthetic Biology Program"),
     summary: asString(value.summary),
-    targetProduct: asString(value.targetProduct, 'Target Product'),
-    sourceQuery: typeof value.sourceQuery === 'string' ? value.sourceQuery : undefined,
-    status: value.status === 'active' || value.status === 'iterating' ? value.status : 'draft',
+    targetProduct: asString(value.targetProduct, "Target Product"),
+    sourceQuery: typeof value.sourceQuery === "string" ? value.sourceQuery : undefined,
+    status: value.status === "active" || value.status === "iterating" ? value.status : "draft",
     isDemo: Boolean(value.isDemo),
     createdAt: asNumber(value.createdAt, Date.now()),
     updatedAt: asNumber(value.updatedAt, Date.now()),
@@ -109,25 +105,28 @@ function sanitizeProject(value: unknown): WorkbenchProjectBrief | null {
 }
 
 function sanitizeEvidenceItem(value: unknown): WorkbenchEvidenceItem | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string") return null;
   return {
     id: value.id,
-    sourceKind: value.sourceKind === 'analysis' || value.sourceKind === 'tool' || value.sourceKind === 'system' ? value.sourceKind : 'literature',
+    sourceKind:
+      value.sourceKind === "analysis" || value.sourceKind === "tool" || value.sourceKind === "system"
+        ? value.sourceKind
+        : "literature",
     title: asString(value.title),
     abstract: asString(value.abstract),
     authors: asStringArray(value.authors),
-    journal: typeof value.journal === 'string' ? value.journal : undefined,
-    year: typeof value.year === 'string' ? value.year : undefined,
-    doi: typeof value.doi === 'string' ? value.doi : undefined,
-    url: typeof value.url === 'string' ? value.url : undefined,
-    source: typeof value.source === 'string' ? value.source : undefined,
-    query: typeof value.query === 'string' ? value.query : undefined,
+    journal: typeof value.journal === "string" ? value.journal : undefined,
+    year: typeof value.year === "string" ? value.year : undefined,
+    doi: typeof value.doi === "string" ? value.doi : undefined,
+    url: typeof value.url === "string" ? value.url : undefined,
+    source: typeof value.source === "string" ? value.source : undefined,
+    query: typeof value.query === "string" ? value.query : undefined,
     savedAt: asNumber(value.savedAt, Date.now()),
   };
 }
 
 function sanitizePathwayCandidate(value: unknown): PathwayCandidateSummary | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string") return null;
   return {
     id: value.id,
     label: asString(value.label),
@@ -138,17 +137,17 @@ function sanitizePathwayCandidate(value: unknown): PathwayCandidateSummary | nul
 }
 
 function sanitizeBottleneck(value: unknown): BottleneckAssumption | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string") return null;
   return {
     id: value.id,
     label: asString(value.label),
     detail: asString(value.detail),
-    yieldLossPercent: typeof value.yieldLossPercent === 'number' ? value.yieldLossPercent : undefined,
+    yieldLossPercent: typeof value.yieldLossPercent === "number" ? value.yieldLossPercent : undefined,
   };
 }
 
 function sanitizeEnzymeCandidate(value: unknown): EnzymeCandidateSummary | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string") return null;
   return {
     id: value.id,
     label: asString(value.label),
@@ -157,38 +156,44 @@ function sanitizeEnzymeCandidate(value: unknown): EnzymeCandidateSummary | null 
 }
 
 function sanitizeAnalyzeArtifact(value: unknown): WorkbenchAnalyzeArtifact | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string") return null;
   const nodes = Array.isArray(value.nodes) ? value.nodes.filter(isValidNode) : [];
   const edges = Array.isArray(value.edges) ? value.edges.filter(isValidEdge) : [];
   return {
     id: value.id,
     title: asString(value.title),
     summary: asString(value.summary),
-    targetProduct: asString(value.targetProduct, 'Target Product'),
-    nodes: nodes as WorkbenchAnalyzeArtifact['nodes'],
-    edges: edges as WorkbenchAnalyzeArtifact['edges'],
-    pathwayCandidates: (Array.isArray(value.pathwayCandidates) ? value.pathwayCandidates : []).map(sanitizePathwayCandidate).filter(Boolean) as PathwayCandidateSummary[],
-    bottleneckAssumptions: (Array.isArray(value.bottleneckAssumptions) ? value.bottleneckAssumptions : []).map(sanitizeBottleneck).filter(Boolean) as BottleneckAssumption[],
-    enzymeCandidates: (Array.isArray(value.enzymeCandidates) ? value.enzymeCandidates : []).map(sanitizeEnzymeCandidate).filter(Boolean) as EnzymeCandidateSummary[],
+    targetProduct: asString(value.targetProduct, "Target Product"),
+    nodes: nodes as WorkbenchAnalyzeArtifact["nodes"],
+    edges: edges as WorkbenchAnalyzeArtifact["edges"],
+    pathwayCandidates: (Array.isArray(value.pathwayCandidates) ? value.pathwayCandidates : [])
+      .map(sanitizePathwayCandidate)
+      .filter(Boolean) as PathwayCandidateSummary[],
+    bottleneckAssumptions: (Array.isArray(value.bottleneckAssumptions) ? value.bottleneckAssumptions : [])
+      .map(sanitizeBottleneck)
+      .filter(Boolean) as BottleneckAssumption[],
+    enzymeCandidates: (Array.isArray(value.enzymeCandidates) ? value.enzymeCandidates : [])
+      .map(sanitizeEnzymeCandidate)
+      .filter(Boolean) as EnzymeCandidateSummary[],
     thermodynamicConcerns: asStringArray(value.thermodynamicConcerns),
     recommendedNextTools: asStringArray(value.recommendedNextTools),
     evidenceTraceIds: asStringArray(value.evidenceTraceIds),
-    sourceProvider: typeof value.sourceProvider === 'string' ? value.sourceProvider : undefined,
+    sourceProvider: typeof value.sourceProvider === "string" ? value.sourceProvider : undefined,
     generatedAt: asNumber(value.generatedAt, Date.now()),
   };
 }
 
 function sanitizeWorkflowArtifactNode(value: unknown): WorkflowArtifactNode | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string") return null;
   const role = value.role;
   if (
-    role !== 'metabolite'
-    && role !== 'enzyme'
-    && role !== 'gene'
-    && role !== 'cofactor'
-    && role !== 'intermediate'
-    && role !== 'impurity'
-    && role !== 'hypothesis'
+    role !== "metabolite" &&
+    role !== "enzyme" &&
+    role !== "gene" &&
+    role !== "cofactor" &&
+    role !== "intermediate" &&
+    role !== "impurity" &&
+    role !== "hypothesis"
   ) {
     return null;
   }
@@ -204,14 +209,14 @@ function sanitizeWorkflowArtifactNode(value: unknown): WorkflowArtifactNode | nu
 }
 
 function sanitizeWorkflowArtifactEdge(value: unknown): WorkflowArtifactEdge | null {
-  if (!isRecord(value) || typeof value.start !== 'string' || typeof value.end !== 'string') return null;
+  if (!isRecord(value) || typeof value.start !== "string" || typeof value.end !== "string") return null;
   const role = value.role;
   if (
-    role !== 'evidence-backed-transition'
-    && role !== 'inferred-transition'
-    && role !== 'catalysis'
-    && role !== 'regulation'
-    && role !== 'abstraction'
+    role !== "evidence-backed-transition" &&
+    role !== "inferred-transition" &&
+    role !== "catalysis" &&
+    role !== "regulation" &&
+    role !== "abstraction"
   ) {
     return null;
   }
@@ -227,9 +232,9 @@ function sanitizeWorkflowArtifactEdge(value: unknown): WorkflowArtifactEdge | nu
 }
 
 function sanitizeWorkflowArtifact(value: unknown): WorkflowArtifact | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
-  const status = value.status === 'compiled' || value.status === 'error' ? value.status : 'draft';
-  const sourcePage = value.sourcePage === 'research' || value.sourcePage === 'pathd' ? value.sourcePage : 'analyze';
+  if (!isRecord(value) || typeof value.id !== "string") return null;
+  const status = value.status === "compiled" || value.status === "error" ? value.status : "draft";
+  const sourcePage = value.sourcePage === "research" || value.sourcePage === "pathd" ? value.sourcePage : "analyze";
   const intake = isRecord(value.intake) ? value.intake : {};
   const provenance = isRecord(value.provenance) ? value.provenance : {};
   const workbench = isRecord(value.workbench) ? value.workbench : {};
@@ -251,66 +256,73 @@ function sanitizeWorkflowArtifact(value: unknown): WorkflowArtifact | null {
     status,
     sourcePage,
     intake: {
-      sourceQuery: typeof intake.sourceQuery === 'string' ? intake.sourceQuery : undefined,
-      targetMolecule: typeof intake.targetMolecule === 'string' ? intake.targetMolecule : undefined,
-      projectIntent: typeof intake.projectIntent === 'string' ? intake.projectIntent : undefined,
+      sourceQuery: typeof intake.sourceQuery === "string" ? intake.sourceQuery : undefined,
+      targetMolecule: typeof intake.targetMolecule === "string" ? intake.targetMolecule : undefined,
+      projectIntent: typeof intake.projectIntent === "string" ? intake.projectIntent : undefined,
       rawAnalyzeInput: asString(intake.rawAnalyzeInput),
     },
-    evidencePackets: (Array.isArray(value.evidencePackets) ? value.evidencePackets : []).map((packet) => {
-      if (!isRecord(packet) || typeof packet.id !== 'string') return null;
-      return {
-        id: packet.id,
-        sourceKind: packet.sourceKind === 'analysis' || packet.sourceKind === 'tool' || packet.sourceKind === 'system' ? packet.sourceKind : 'literature',
-        title: asString(packet.title),
-        abstract: asString(packet.abstract),
-        authors: asStringArray(packet.authors),
-        journal: typeof packet.journal === 'string' ? packet.journal : undefined,
-        year: typeof packet.year === 'string' ? packet.year : undefined,
-        doi: typeof packet.doi === 'string' ? packet.doi : undefined,
-        url: typeof packet.url === 'string' ? packet.url : undefined,
-        source: typeof packet.source === 'string' ? packet.source : undefined,
-        query: typeof packet.query === 'string' ? packet.query : undefined,
-      };
-    }).filter(Boolean) as WorkflowArtifact['evidencePackets'],
+    evidencePackets: (Array.isArray(value.evidencePackets) ? value.evidencePackets : [])
+      .map((packet) => {
+        if (!isRecord(packet) || typeof packet.id !== "string") return null;
+        return {
+          id: packet.id,
+          sourceKind:
+            packet.sourceKind === "analysis" || packet.sourceKind === "tool" || packet.sourceKind === "system"
+              ? packet.sourceKind
+              : "literature",
+          title: asString(packet.title),
+          abstract: asString(packet.abstract),
+          authors: asStringArray(packet.authors),
+          journal: typeof packet.journal === "string" ? packet.journal : undefined,
+          year: typeof packet.year === "string" ? packet.year : undefined,
+          doi: typeof packet.doi === "string" ? packet.doi : undefined,
+          url: typeof packet.url === "string" ? packet.url : undefined,
+          source: typeof packet.source === "string" ? packet.source : undefined,
+          query: typeof packet.query === "string" ? packet.query : undefined,
+        };
+      })
+      .filter(Boolean) as WorkflowArtifact["evidencePackets"],
     atomicPathwayGraph,
-    candidateRoutes: (Array.isArray(value.candidateRoutes) ? value.candidateRoutes : []).map((route) => {
-      if (!isRecord(route) || typeof route.id !== 'string') return null;
-      return {
-        id: route.id,
-        label: asString(route.label),
-        nodeIds: asStringArray(route.nodeIds),
-        edgeKeys: asStringArray(route.edgeKeys),
-        rank: Math.max(1, asNumber(route.rank, 1)),
-      };
-    }).filter(Boolean) as WorkflowArtifact['candidateRoutes'],
+    candidateRoutes: (Array.isArray(value.candidateRoutes) ? value.candidateRoutes : [])
+      .map((route) => {
+        if (!isRecord(route) || typeof route.id !== "string") return null;
+        return {
+          id: route.id,
+          label: asString(route.label),
+          nodeIds: asStringArray(route.nodeIds),
+          edgeKeys: asStringArray(route.edgeKeys),
+          rank: Math.max(1, asNumber(route.rank, 1)),
+        };
+      })
+      .filter(Boolean) as WorkflowArtifact["candidateRoutes"],
     provenance: {
       compiledFrom:
-        provenance.compiledFrom === 'literature-bundle'
-        || provenance.compiledFrom === 'pdf'
-        || provenance.compiledFrom === 'image'
-        || provenance.compiledFrom === 'url'
+        provenance.compiledFrom === "literature-bundle" ||
+        provenance.compiledFrom === "pdf" ||
+        provenance.compiledFrom === "image" ||
+        provenance.compiledFrom === "url"
           ? provenance.compiledFrom
-          : 'manual-text',
+          : "manual-text",
       evidencePacketIds: asStringArray(provenance.evidencePacketIds),
-      sourceProvider: typeof provenance.sourceProvider === 'string' ? provenance.sourceProvider : undefined,
+      sourceProvider: typeof provenance.sourceProvider === "string" ? provenance.sourceProvider : undefined,
     },
     workbench: {
       scientificStage:
-        workbench.scientificStage === 'simulate-optimize'
-        || workbench.scientificStage === 'engineer-host'
-        || workbench.scientificStage === 'test-learn'
+        workbench.scientificStage === "simulate-optimize" ||
+        workbench.scientificStage === "engineer-host" ||
+        workbench.scientificStage === "test-learn"
           ? workbench.scientificStage
-          : 'design',
+          : "design",
     },
     thermodynamics: isRecord(value.thermodynamics)
       ? {
-          status: 'placeholder',
+          status: "placeholder",
           concerns: asStringArray(value.thermodynamics.concerns),
         }
       : undefined,
     flux: isRecord(value.flux)
       ? {
-          status: 'placeholder',
+          status: "placeholder",
           notes: asStringArray(value.flux.notes),
         }
       : undefined,
@@ -320,11 +332,11 @@ function sanitizeWorkflowArtifact(value: unknown): WorkflowArtifact | null {
 }
 
 function sanitizeToolRun(value: unknown): WorkbenchToolRun | null {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.toolId !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.toolId !== "string") return null;
   return {
     id: value.id,
     toolId: value.toolId,
-    stageId: typeof value.stageId === 'string' ? value.stageId as WorkbenchToolRun['stageId'] : null,
+    stageId: typeof value.stageId === "string" ? (value.stageId as WorkbenchToolRun["stageId"]) : null,
     title: asString(value.title),
     summary: asString(value.summary),
     isSimulated: Boolean(value.isSimulated),
@@ -333,10 +345,10 @@ function sanitizeToolRun(value: unknown): WorkbenchToolRun | null {
 }
 
 function sanitizeCheckpoint(value: unknown): StageCheckpoint | null {
-  if (!isRecord(value) || typeof value.id !== 'string') return null;
-  const status = value.status === 'active' || value.status === 'complete' ? value.status : 'pending';
+  if (!isRecord(value) || typeof value.id !== "string") return null;
+  const status = value.status === "active" || value.status === "complete" ? value.status : "pending";
   return {
-    id: value.id as StageCheckpoint['id'],
+    id: value.id as StageCheckpoint["id"],
     status,
     summary: asString(value.summary),
     updatedAt: asNumber(value.updatedAt, Date.now()),
@@ -344,37 +356,37 @@ function sanitizeCheckpoint(value: unknown): StageCheckpoint | null {
 }
 
 function sanitizeRecommendation(value: unknown): NextStepRecommendation | null {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.toolId !== 'string') return null;
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.toolId !== "string") return null;
   return {
     id: value.id,
     toolId: value.toolId,
-    source: value.source === 'analysis' || value.source === 'tool' ? value.source : 'flow',
+    source: value.source === "analysis" || value.source === "tool" ? value.source : "flow",
     reason: asString(value.reason),
   };
 }
 
 const VALID_PAYLOAD_KEYS = new Set([
-  'pathd',
-  'fbasim',
-  'cethx',
-  'catdes',
-  'dyncon',
-  'cellfree',
-  'dbtlflow',
-  'proevol',
-  'gecair',
-  'genmim',
-  'multio',
-  'scspatial',
-  'nexai',
+  "pathd",
+  "fbasim",
+  "cethx",
+  "catdes",
+  "dyncon",
+  "cellfree",
+  "dbtlflow",
+  "proevol",
+  "gecair",
+  "genmim",
+  "multio",
+  "scspatial",
+  "nexai",
 ]);
 
 function sanitizeToolPayloads(value: unknown): WorkbenchToolPayloadMap {
   if (!isRecord(value)) return {};
   const entries = Object.entries(value).filter(([key, payload]) => {
     if (!VALID_PAYLOAD_KEYS.has(key) || !isRecord(payload)) return false;
-    if (payload.validity !== 'real' && payload.validity !== 'partial' && payload.validity !== 'demo') return false;
-    return typeof payload.toolId === 'string' && typeof payload.updatedAt === 'number';
+    if (payload.validity !== "real" && payload.validity !== "partial" && payload.validity !== "demo") return false;
+    return typeof payload.toolId === "string" && typeof payload.updatedAt === "number";
   });
   return Object.fromEntries(entries) as WorkbenchToolPayloadMap;
 }
@@ -383,11 +395,9 @@ function sanitizeEvidenceSnapshot(value: unknown): WorkbenchRunEvidenceSnapshot 
   if (!isRecord(value)) return undefined;
   const missingEvidence: Record<string, unknown> = isRecord(value.missingEvidence) ? value.missingEvidence : {};
   const status =
-    value.status === 'satisfied' ||
-    value.status === 'missing' ||
-    value.status === 'not-required'
+    value.status === "satisfied" || value.status === "missing" || value.status === "not-required"
       ? value.status
-      : 'not-required';
+      : "not-required";
   return {
     count: Math.max(0, asNumber(value.count)),
     selectedCount: Math.max(0, asNumber(value.selectedCount)),
@@ -397,18 +407,26 @@ function sanitizeEvidenceSnapshot(value: unknown): WorkbenchRunEvidenceSnapshot 
     missingEvidence: {
       minRequired: Math.max(0, asNumber(missingEvidence.minRequired)),
       have: Math.max(0, asNumber(missingEvidence.have)),
-      kinds: asStringArray(missingEvidence.kinds) as WorkbenchRunEvidenceSnapshot['missingEvidence']['kinds'],
-      missingKinds: asStringArray(missingEvidence.missingKinds) as WorkbenchRunEvidenceSnapshot['missingEvidence']['missingKinds'],
+      kinds: asStringArray(missingEvidence.kinds) as WorkbenchRunEvidenceSnapshot["missingEvidence"]["kinds"],
+      missingKinds: asStringArray(
+        missingEvidence.missingKinds,
+      ) as WorkbenchRunEvidenceSnapshot["missingEvidence"]["missingKinds"],
     },
   };
 }
 
 function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.toolId !== 'string' || !isRecord(value.payloadSnapshot)) return null;
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    typeof value.toolId !== "string" ||
+    !isRecord(value.payloadSnapshot)
+  )
+    return null;
   const execution = isRecord(value.execution)
     ? {
-        projectRef: typeof value.execution.projectRef === 'string' ? value.execution.projectRef : null,
-        analyzeRef: typeof value.execution.analyzeRef === 'string' ? value.execution.analyzeRef : null,
+        projectRef: typeof value.execution.projectRef === "string" ? value.execution.projectRef : null,
+        analyzeRef: typeof value.execution.analyzeRef === "string" ? value.execution.analyzeRef : null,
         upstreamToolIds: asStringArray(value.execution.upstreamToolIds),
         upstreamArtifactIds: asStringArray(value.execution.upstreamArtifactIds),
         dependencySignature: asString(value.execution.dependencySignature),
@@ -418,49 +436,50 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
         analyzeRef: null,
         upstreamToolIds: [],
         upstreamArtifactIds: asStringArray(value.upstreamArtifactIds),
-        dependencySignature: '',
+        dependencySignature: "",
       };
   const status =
-    value.status === 'ok' ||
-    value.status === 'simulated' ||
-    value.status === 'blocked' ||
-    value.status === 'gated' ||
-    value.status === 'demoOnly'
+    value.status === "ok" ||
+    value.status === "simulated" ||
+    value.status === "blocked" ||
+    value.status === "gated" ||
+    value.status === "demoOnly"
       ? value.status
       : undefined;
   const evidenceSnapshot = sanitizeEvidenceSnapshot(value.evidenceSnapshot);
   return {
     id: value.id,
-    toolId: value.toolId as WorkbenchRunArtifact['toolId'],
-    stageId: typeof value.stageId === 'string' ? value.stageId as WorkbenchRunArtifact['stageId'] : null,
-    targetProduct: asString(value.targetProduct, 'Target Product'),
-    sourceArtifactId: typeof value.sourceArtifactId === 'string' ? value.sourceArtifactId : undefined,
+    toolId: value.toolId as WorkbenchRunArtifact["toolId"],
+    stageId: typeof value.stageId === "string" ? (value.stageId as WorkbenchRunArtifact["stageId"]) : null,
+    targetProduct: asString(value.targetProduct, "Target Product"),
+    sourceArtifactId: typeof value.sourceArtifactId === "string" ? value.sourceArtifactId : undefined,
     upstreamArtifactIds: asStringArray(value.upstreamArtifactIds),
     execution,
     summary: asString(value.summary),
-    payloadSnapshot: value.payloadSnapshot as unknown as WorkbenchRunArtifact['payloadSnapshot'],
+    payloadSnapshot: value.payloadSnapshot as unknown as WorkbenchRunArtifact["payloadSnapshot"],
     createdAt: asNumber(value.createdAt, Date.now()),
     isSimulated: Boolean(value.isSimulated),
     ...(status ? { status } : {}),
-    ...(typeof value.statusReason === 'string' ? { statusReason: value.statusReason } : {}),
+    ...(typeof value.statusReason === "string" ? { statusReason: value.statusReason } : {}),
     ...(asStringArray(value.blockingUpstreamToolIds).length
       ? { blockingUpstreamToolIds: asStringArray(value.blockingUpstreamToolIds) }
       : {}),
     // Phase-2B.1 — historical contract evaluation fields. All optional;
     // older serialised projects pass through with these undefined.
-    ...(typeof value.confidence === 'number' || value.confidence === null
-      ? { confidence: typeof value.confidence === 'number' ? value.confidence : null }
+    ...(typeof value.confidence === "number" || value.confidence === null
+      ? { confidence: typeof value.confidence === "number" ? value.confidence : null }
       : {}),
-    ...(typeof value.uncertainty === 'number' || value.uncertainty === null
-      ? { uncertainty: typeof value.uncertainty === 'number' ? value.uncertainty : null }
+    ...(typeof value.uncertainty === "number" || value.uncertainty === null
+      ? { uncertainty: typeof value.uncertainty === "number" ? value.uncertainty : null }
       : {}),
-    ...(value.validity === 'real' || value.validity === 'partial' || value.validity === 'demo' || value.validity === null
-      ? { validity: (value.validity ?? null) as WorkbenchRunArtifact['validity'] }
+    ...(value.validity === "real" ||
+    value.validity === "partial" ||
+    value.validity === "demo" ||
+    value.validity === null
+      ? { validity: (value.validity ?? null) as WorkbenchRunArtifact["validity"] }
       : {}),
-    ...(typeof value.humanGateRequired === 'boolean'
-      ? { humanGateRequired: value.humanGateRequired }
-      : {}),
-    ...(typeof value.iteration === 'number' ? { iteration: Math.max(0, value.iteration) } : {}),
+    ...(typeof value.humanGateRequired === "boolean" ? { humanGateRequired: value.humanGateRequired } : {}),
+    ...(typeof value.iteration === "number" ? { iteration: Math.max(0, value.iteration) } : {}),
     ...(evidenceSnapshot ? { evidenceSnapshot } : {}),
   };
 }
@@ -468,10 +487,10 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
 function sanitizeWorkflowControl(value: unknown): WorkbenchWorkflowControlSnapshot {
   if (!isRecord(value)) {
     return {
-      machineState: 'idle',
-      status: 'idle',
+      machineState: "idle",
+      status: "idle",
       currentToolId: null,
-      nextRecommendedNode: 'pathd',
+      nextRecommendedNode: "pathd",
       missingEvidence: { minRequired: 0, have: 0, kinds: [] },
       confidence: null,
       uncertainty: null,
@@ -481,42 +500,48 @@ function sanitizeWorkflowControl(value: unknown): WorkbenchWorkflowControlSnapsh
       isDemoOnly: false,
       latestRunStatus: null,
       latestRunToolId: null,
-      reasonCodes: ['NO_TARGET'],
-      explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+      reasonCodes: ["NO_TARGET"],
+      explanation: "No target product set. Set a target via /research or /analyze, then run PATHD.",
       iteration: 0,
       updatedAt: Date.now(),
     };
   }
   const status =
-    value.status === 'ready' ||
-    value.status === 'blocked' ||
-    value.status === 'gated' ||
-    value.status === 'demoOnly' ||
-    value.status === 'complete'
+    value.status === "ready" ||
+    value.status === "blocked" ||
+    value.status === "gated" ||
+    value.status === "demoOnly" ||
+    value.status === "complete"
       ? value.status
-      : 'idle';
+      : "idle";
   const latestRunStatus =
-    value.latestRunStatus === 'ok' ||
-    value.latestRunStatus === 'simulated' ||
-    value.latestRunStatus === 'blocked' ||
-    value.latestRunStatus === 'gated' ||
-    value.latestRunStatus === 'demoOnly'
+    value.latestRunStatus === "ok" ||
+    value.latestRunStatus === "simulated" ||
+    value.latestRunStatus === "blocked" ||
+    value.latestRunStatus === "gated" ||
+    value.latestRunStatus === "demoOnly"
       ? value.latestRunStatus
       : null;
   return {
     machineState:
-      value.machineState === 'targetSet' ||
-      value.machineState === 'pathdReady' ||
-      value.machineState === 'fbasimReady' ||
-      value.machineState === 'catdesReady' ||
-      value.machineState === 'dynconReady' ||
-      value.machineState === 'cellfreeReady' ||
-      value.machineState === 'dbtlCommitted'
+      value.machineState === "targetSet" ||
+      value.machineState === "pathdReady" ||
+      value.machineState === "fbasimReady" ||
+      value.machineState === "catdesReady" ||
+      value.machineState === "dynconReady" ||
+      value.machineState === "cellfreeReady" ||
+      value.machineState === "dbtlCommitted"
         ? value.machineState
-        : 'idle',
+        : "idle",
     status,
-    currentToolId: typeof value.currentToolId === 'string' ? value.currentToolId as WorkbenchWorkflowControlSnapshot['currentToolId'] : null,
-    nextRecommendedNode: typeof value.nextRecommendedNode === 'string' ? value.nextRecommendedNode as WorkbenchWorkflowControlSnapshot['nextRecommendedNode'] : null,
+    currentToolId:
+      typeof value.currentToolId === "string"
+        ? (value.currentToolId as WorkbenchWorkflowControlSnapshot["currentToolId"])
+        : null,
+    nextRecommendedNode:
+      typeof value.nextRecommendedNode === "string"
+        ? (value.nextRecommendedNode as WorkbenchWorkflowControlSnapshot["nextRecommendedNode"])
+        : null,
     missingEvidence: isRecord(value.missingEvidence)
       ? {
           minRequired: Math.max(0, asNumber(value.missingEvidence.minRequired)),
@@ -524,14 +549,15 @@ function sanitizeWorkflowControl(value: unknown): WorkbenchWorkflowControlSnapsh
           kinds: asStringArray(value.missingEvidence.kinds),
         }
       : { minRequired: 0, have: 0, kinds: [] },
-    confidence: typeof value.confidence === 'number' ? value.confidence : null,
-    uncertainty: typeof value.uncertainty === 'number' ? value.uncertainty : null,
-    validity: value.validity === 'real' || value.validity === 'partial' || value.validity === 'demo' ? value.validity : null,
+    confidence: typeof value.confidence === "number" ? value.confidence : null,
+    uncertainty: typeof value.uncertainty === "number" ? value.uncertainty : null,
+    validity:
+      value.validity === "real" || value.validity === "partial" || value.validity === "demo" ? value.validity : null,
     humanGateRequired: Boolean(value.humanGateRequired),
     nextNodeIsContractOnly: Boolean(value.nextNodeIsContractOnly),
-    isDemoOnly: Boolean(value.isDemoOnly) || status === 'demoOnly',
+    isDemoOnly: Boolean(value.isDemoOnly) || status === "demoOnly",
     latestRunStatus,
-    latestRunToolId: typeof value.latestRunToolId === 'string' ? value.latestRunToolId : null,
+    latestRunToolId: typeof value.latestRunToolId === "string" ? value.latestRunToolId : null,
     reasonCodes: asStringArray(value.reasonCodes),
     explanation: asString(value.explanation),
     iteration: Math.max(0, asNumber(value.iteration)),
@@ -545,33 +571,43 @@ export function sanitizeWorkbenchState(value: unknown): WorkbenchCanonicalState 
     schemaVersion: 1,
     revision: Math.max(0, asNumber(value.revision)),
     lastMutationAt: Math.max(0, asNumber(value.lastMutationAt)),
-    activeArtifactId: typeof value.activeArtifactId === 'string' ? value.activeArtifactId : null,
+    activeArtifactId: typeof value.activeArtifactId === "string" ? value.activeArtifactId : null,
     project: sanitizeProject(value.project),
-    evidenceItems: (Array.isArray(value.evidenceItems) ? value.evidenceItems : []).map(sanitizeEvidenceItem).filter(Boolean) as WorkbenchEvidenceItem[],
+    evidenceItems: (Array.isArray(value.evidenceItems) ? value.evidenceItems : [])
+      .map(sanitizeEvidenceItem)
+      .filter(Boolean) as WorkbenchEvidenceItem[],
     selectedEvidenceIds: asStringArray(value.selectedEvidenceIds),
     draftAnalyzeInput: asString(value.draftAnalyzeInput),
     workflowArtifact: sanitizeWorkflowArtifact(value.workflowArtifact),
     analyzeArtifact: sanitizeAnalyzeArtifact(value.analyzeArtifact),
-    toolRuns: (Array.isArray(value.toolRuns) ? value.toolRuns : []).map(sanitizeToolRun).filter(Boolean) as WorkbenchToolRun[],
+    toolRuns: (Array.isArray(value.toolRuns) ? value.toolRuns : [])
+      .map(sanitizeToolRun)
+      .filter(Boolean) as WorkbenchToolRun[],
     toolPayloads: sanitizeToolPayloads(value.toolPayloads),
     payloadAdmissionDecisionsByToolId: sanitizeGateDecisionMap(value.payloadAdmissionDecisionsByToolId),
-    runArtifacts: (Array.isArray(value.runArtifacts) ? value.runArtifacts : []).map(sanitizeRunArtifact).filter(Boolean) as WorkbenchRunArtifact[],
-    checkpoints: (Array.isArray(value.checkpoints) ? value.checkpoints : []).map(sanitizeCheckpoint).filter(Boolean) as StageCheckpoint[],
-    nextRecommendations: (Array.isArray(value.nextRecommendations) ? value.nextRecommendations : []).map(sanitizeRecommendation).filter(Boolean) as NextStepRecommendation[],
+    runArtifacts: (Array.isArray(value.runArtifacts) ? value.runArtifacts : [])
+      .map(sanitizeRunArtifact)
+      .filter(Boolean) as WorkbenchRunArtifact[],
+    checkpoints: (Array.isArray(value.checkpoints) ? value.checkpoints : [])
+      .map(sanitizeCheckpoint)
+      .filter(Boolean) as StageCheckpoint[],
+    nextRecommendations: (Array.isArray(value.nextRecommendations) ? value.nextRecommendations : [])
+      .map(sanitizeRecommendation)
+      .filter(Boolean) as NextStepRecommendation[],
     workflowControl: sanitizeWorkflowControl(value.workflowControl),
   };
 }
 
 export function sanitizeWorkbenchBackendMeta(value: unknown): WorkbenchBackendMeta | null {
   if (!isRecord(value)) return null;
-  if (value.kind !== 'sqlite' || typeof value.path !== 'string') return null;
+  if (value.kind !== "sqlite" || typeof value.path !== "string") return null;
   return {
-    kind: 'sqlite',
-    driver: value.driver === 'better-sqlite3' ? value.driver : 'better-sqlite3',
-    scope: value.scope === 'project' ? value.scope : 'project',
+    kind: "sqlite",
+    driver: value.driver === "better-sqlite3" ? value.driver : "better-sqlite3",
+    scope: value.scope === "project" ? value.scope : "project",
     path: value.path,
-    projectId: asString(value.projectId, 'default-workbench'),
-    actorId: asString(value.actorId, 'system'),
+    projectId: asString(value.projectId, "default-workbench"),
+    actorId: asString(value.actorId, "system"),
     revision: Math.max(0, asNumber(value.revision)),
     updatedAt: Math.max(0, asNumber(value.updatedAt)),
     runArtifactCount: Math.max(0, asNumber(value.runArtifactCount)),
@@ -587,12 +623,12 @@ function sanitizeSyncAuditEntry(value: unknown): WorkbenchSyncAuditEntry | null 
   if (!isRecord(value)) return null;
   return {
     id: Math.max(0, asNumber(value.id)),
-    projectId: typeof value.projectId === 'string' ? value.projectId : null,
-    actorId: typeof value.actorId === 'string' ? value.actorId : null,
+    projectId: typeof value.projectId === "string" ? value.projectId : null,
+    actorId: typeof value.actorId === "string" ? value.actorId : null,
     revision: Math.max(0, asNumber(value.revision)),
     action: asString(value.action),
     status: asString(value.status),
-    detail: typeof value.detail === 'string' ? value.detail : null,
+    detail: typeof value.detail === "string" ? value.detail : null,
     createdAt: Math.max(0, asNumber(value.createdAt)),
   };
 }
@@ -605,12 +641,12 @@ function sanitizeHistoryEntry(value: unknown): WorkbenchHistoryEntry | null {
   if (!isRecord(value)) return null;
   return {
     revision: Math.max(0, asNumber(value.revision)),
-    projectId: typeof value.projectId === 'string' ? value.projectId : null,
-    actorId: typeof value.actorId === 'string' ? value.actorId : null,
-    projectTitle: asString(value.projectTitle, 'Synthetic Biology Program'),
-    targetProduct: asString(value.targetProduct, 'Target Product'),
-    analyzeTitle: typeof value.analyzeTitle === 'string' ? value.analyzeTitle : null,
-    analyzeGeneratedAt: typeof value.analyzeGeneratedAt === 'number' ? Math.max(0, value.analyzeGeneratedAt) : null,
+    projectId: typeof value.projectId === "string" ? value.projectId : null,
+    actorId: typeof value.actorId === "string" ? value.actorId : null,
+    projectTitle: asString(value.projectTitle, "Synthetic Biology Program"),
+    targetProduct: asString(value.targetProduct, "Target Product"),
+    analyzeTitle: typeof value.analyzeTitle === "string" ? value.analyzeTitle : null,
+    analyzeGeneratedAt: typeof value.analyzeGeneratedAt === "number" ? Math.max(0, value.analyzeGeneratedAt) : null,
     runArtifactCount: Math.max(0, asNumber(value.runArtifactCount)),
     mutationAt: Math.max(0, asNumber(value.mutationAt)),
     updatedAt: Math.max(0, asNumber(value.updatedAt)),
@@ -628,7 +664,7 @@ function sanitizeCollaborator(value: unknown): WorkbenchCollaborator | null {
   return {
     actorId,
     displayName: asString(value.displayName, actorId),
-    role: asString(value.role, 'researcher'),
+    role: asString(value.role, "researcher"),
     lastSeenAt: Math.max(0, asNumber(value.lastSeenAt)),
   };
 }
@@ -649,17 +685,17 @@ function sanitizeExperimentRecord(value: unknown): WorkbenchExperimentRecord | n
     actorId,
     revision: Math.max(0, asNumber(value.revision)),
     toolId: asString(value.toolId),
-    stageId: typeof value.stageId === 'string' ? value.stageId as WorkbenchExperimentRecord['stageId'] : null,
-    category: value.category === 'experiment' ? 'experiment' : 'analysis',
+    stageId: typeof value.stageId === "string" ? (value.stageId as WorkbenchExperimentRecord["stageId"]) : null,
+    category: value.category === "experiment" ? "experiment" : "analysis",
     title: asString(value.title),
     summary: asString(value.summary),
     status: asString(value.status),
     authorityTier:
-      value.authorityTier === 'experiment-backed'
-      || value.authorityTier === 'evidence-linked'
-      || value.authorityTier === 'contextual'
+      value.authorityTier === "experiment-backed" ||
+      value.authorityTier === "evidence-linked" ||
+      value.authorityTier === "contextual"
         ? value.authorityTier
-        : 'simulated',
+        : "simulated",
     metrics: asStringArray(value.metrics),
     createdAt: Math.max(0, asNumber(value.createdAt)),
     updatedAt: Math.max(0, asNumber(value.updatedAt)),
@@ -667,5 +703,7 @@ function sanitizeExperimentRecord(value: unknown): WorkbenchExperimentRecord | n
 }
 
 export function sanitizeWorkbenchExperimentRecords(value: unknown): WorkbenchExperimentRecord[] {
-  return (Array.isArray(value) ? value : []).map(sanitizeExperimentRecord).filter(Boolean) as WorkbenchExperimentRecord[];
+  return (Array.isArray(value) ? value : [])
+    .map(sanitizeExperimentRecord)
+    .filter(Boolean) as WorkbenchExperimentRecord[];
 }

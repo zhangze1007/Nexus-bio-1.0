@@ -1,19 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation } from "@tanstack/react-query";
 import {
-  ArrowUp, Upload, Camera, Globe, Image as ImageIcon,
-  X, ChevronUp, Plus, AlertCircle, CheckCircle2, Loader2,
-  FlaskConical, Zap, ChevronDown
-} from 'lucide-react';
+  AlertCircle,
+  ArrowUp,
+  Camera,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  FlaskConical,
+  Globe,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
+  Upload,
+  X,
+  Zap,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { StructuredAnalysisPayload } from "../store/workbenchStore";
+import { BIO_THEME_COLORS, THEME } from "../theme";
 import {
-  PathwayNode, PathwayEdge, isValidNode, isValidEdge, sanitizeNodeId,
-  AxonInteraction, BottleneckEnzyme, DeNovoDesignStrategy,
-  NodeType, NodeColorMapping,
-} from '../types';
-import { BIO_THEME_COLORS, THEME } from '../theme';
-import type { StructuredAnalysisPayload } from '../store/workbenchStore';
+  type AxonInteraction,
+  type BottleneckEnzyme,
+  type DeNovoDesignStrategy,
+  isValidEdge,
+  isValidNode,
+  type NodeColorMapping,
+  type NodeType,
+  type PathwayEdge,
+  type PathwayNode,
+  sanitizeNodeId,
+} from "../types";
 
 interface PaperAnalyzerProps {
   onPathwayGenerated: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
@@ -25,20 +43,22 @@ interface PaperAnalyzerProps {
 
 /** Assign a semantic color from BIO_THEME_COLORS based on nodeType and risk. */
 function getSemanticColor(nodeType: string, riskScore?: number): string {
-  if (nodeType === 'impurity' || (riskScore !== undefined && riskScore > 0.7)) return BIO_THEME_COLORS.RED;
-  if (nodeType === 'enzyme')        return BIO_THEME_COLORS.AMBER;
-  if (nodeType === 'intermediate')  return BIO_THEME_COLORS.PURPLE;
-  if (nodeType === 'cofactor')      return BIO_THEME_COLORS.PINK;
-  if (nodeType === 'gene')          return BIO_THEME_COLORS.GREEN;
-  if (nodeType === 'complex')       return BIO_THEME_COLORS.PURPLE;
+  if (nodeType === "impurity" || (riskScore !== undefined && riskScore > 0.7)) return BIO_THEME_COLORS.RED;
+  if (nodeType === "enzyme") return BIO_THEME_COLORS.AMBER;
+  if (nodeType === "intermediate") return BIO_THEME_COLORS.PURPLE;
+  if (nodeType === "cofactor") return BIO_THEME_COLORS.PINK;
+  if (nodeType === "gene") return BIO_THEME_COLORS.GREEN;
+  if (nodeType === "complex") return BIO_THEME_COLORS.PURPLE;
   return BIO_THEME_COLORS.CYAN; // metabolite / unknown / default
 }
 
-type InputMode = 'text' | 'pdf' | 'image' | 'camera' | 'web';
-type AnalysisState = 'idle' | 'analyzing' | 'success' | 'error';
+type InputMode = "text" | "pdf" | "image" | "camera" | "web";
+type AnalysisState = "idle" | "analyzing" | "success" | "error";
 
 // ── Evidence-first prompt — traceability is mandatory ──
-const buildPrompt = (content: string) => `Act as a Senior Metabolic Engineer and Lead Data Scientist. Deeply analyze the provided fermentation dataset or metabolic pathway literature. Evaluate carbon flux efficiency using strictly TRY (Titer, Rate, Yield) metrics.
+const buildPrompt = (
+  content: string,
+) => `Act as a Senior Metabolic Engineer and Lead Data Scientist. Deeply analyze the provided fermentation dataset or metabolic pathway literature. Evaluate carbon flux efficiency using strictly TRY (Titer, Rate, Yield) metrics.
 
 Conduct a rigorous risk analysis focusing on industrial bottlenecks:
 1. Cellular Fitness & Toxicity: Identify exact thresholds for product-induced toxicity (IC50) where host strain growth inhibition occurs.
@@ -141,12 +161,13 @@ ${content.slice(0, 6000)}`;
 
 // ── Multi-strategy JSON parser ──
 // Extracted to src/utils/jsonParser.ts for testability — re-exported here for backward compat
-export { extractJSON } from '../utils/jsonParser';
-import { extractJSON } from '../utils/jsonParser';
+export { extractJSON } from "../utils/jsonParser";
+
+import { extractJSON } from "../utils/jsonParser";
 
 // ── Validate and normalize parsed pathway ──
 function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: PathwayEdge[] } | null {
-  if (!parsed || typeof parsed !== 'object') return null;
+  if (!parsed || typeof parsed !== "object") return null;
   const p = parsed as Record<string, unknown>;
 
   if (!Array.isArray(p.nodes)) return null;
@@ -154,8 +175,17 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
   const validNodes = p.nodes.filter(isValidNode);
   if (validNodes.length === 0) return null;
 
-  const VALID_NODE_TYPES = ['metabolite','enzyme','gene','complex','cofactor','impurity','intermediate','unknown'];
-  const VALID_COLOR_MAPPINGS = ['Green','Yellow','Orange','Red','Purple','Blue'];
+  const VALID_NODE_TYPES = [
+    "metabolite",
+    "enzyme",
+    "gene",
+    "complex",
+    "cofactor",
+    "impurity",
+    "intermediate",
+    "unknown",
+  ];
+  const VALID_COLOR_MAPPINGS = ["Green", "Yellow", "Orange", "Red", "Purple", "Blue"];
 
   const nodes: PathwayNode[] = validNodes.map((node: Partial<PathwayNode>, i: number) => {
     const n = node as Record<string, unknown>;
@@ -167,38 +197,34 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       id: sanitizeNodeId(String(n.id)),
       label: String(n.label).slice(0, 32),
       canonicalLabel: n.canonicalLabel ? String(n.canonicalLabel) : undefined,
-      nodeType: (VALID_NODE_TYPES.includes(n.nodeType as string)
-        ? n.nodeType : 'unknown') as NodeType,
-      summary: n.summary ? String(n.summary) : 'No summary available.',
+      nodeType: (VALID_NODE_TYPES.includes(n.nodeType as string) ? n.nodeType : "unknown") as NodeType,
+      summary: n.summary ? String(n.summary) : "No summary available.",
       evidenceSnippet: n.evidenceSnippet ? String(n.evidenceSnippet) : undefined,
-      citation: n.citation ? String(n.citation) : 'Extracted from provided text',
-      confidenceScore: typeof n.confidenceScore === 'number'
-        ? Math.min(1, Math.max(0, n.confidenceScore)) : undefined,
+      citation: n.citation ? String(n.citation) : "Extracted from provided text",
+      confidenceScore: typeof n.confidenceScore === "number" ? Math.min(1, Math.max(0, n.confidenceScore)) : undefined,
       // v1.1: Risk & Compliance fields
-      risk_score: typeof n.risk_score === 'number'
-        ? Math.min(1, Math.max(0, n.risk_score)) : undefined,
-      thermodynamic_stability: typeof n.thermodynamic_stability === 'string'
-        ? n.thermodynamic_stability : undefined,
-      color_mapping: (VALID_COLOR_MAPPINGS.includes(n.color_mapping as string)
-        ? n.color_mapping : undefined) as NodeColorMapping | undefined,
-      audit_trail: typeof n.audit_trail === 'string' ? n.audit_trail : undefined,
-      toxicity_impact: typeof n.toxicity_impact === 'string' ? n.toxicity_impact : undefined,
-      separation_cost_index: typeof n.separation_cost_index === 'number'
-        ? Math.min(1, Math.max(0, n.separation_cost_index)) : undefined,
+      risk_score: typeof n.risk_score === "number" ? Math.min(1, Math.max(0, n.risk_score)) : undefined,
+      thermodynamic_stability: typeof n.thermodynamic_stability === "string" ? n.thermodynamic_stability : undefined,
+      color_mapping: (VALID_COLOR_MAPPINGS.includes(n.color_mapping as string) ? n.color_mapping : undefined) as
+        | NodeColorMapping
+        | undefined,
+      audit_trail: typeof n.audit_trail === "string" ? n.audit_trail : undefined,
+      toxicity_impact: typeof n.toxicity_impact === "string" ? n.toxicity_impact : undefined,
+      separation_cost_index:
+        typeof n.separation_cost_index === "number" ? Math.min(1, Math.max(0, n.separation_cost_index)) : undefined,
       // v1.2: Metabolic Engineering Intelligence fields
-      cofactor_balance: typeof n.cofactor_balance === 'string' ? n.cofactor_balance : undefined,
-      carbon_efficiency: typeof n.carbon_efficiency === 'number'
-        ? Math.min(100, Math.max(0, n.carbon_efficiency)) : undefined,
-      gene_recommendation: typeof n.gene_recommendation === 'string' ? n.gene_recommendation : undefined,
+      cofactor_balance: typeof n.cofactor_balance === "string" ? n.cofactor_balance : undefined,
+      carbon_efficiency:
+        typeof n.carbon_efficiency === "number" ? Math.min(100, Math.max(0, n.carbon_efficiency)) : undefined,
+      gene_recommendation: typeof n.gene_recommendation === "string" ? n.gene_recommendation : undefined,
       // v1.3: Industrial Metrics & DSP Intelligence fields
-      genetic_intervention: typeof n.genetic_intervention === 'string' ? n.genetic_intervention : undefined,
-      atom_economy: typeof n.atom_economy === 'number'
-        ? Math.min(100, Math.max(0, n.atom_economy)) : undefined,
-      dsp_bottleneck: typeof n.dsp_bottleneck === 'string' ? n.dsp_bottleneck : undefined,
-      ic50_toxicity: typeof n.ic50_toxicity === 'string' ? n.ic50_toxicity : undefined,
+      genetic_intervention: typeof n.genetic_intervention === "string" ? n.genetic_intervention : undefined,
+      atom_economy: typeof n.atom_economy === "number" ? Math.min(100, Math.max(0, n.atom_economy)) : undefined,
+      dsp_bottleneck: typeof n.dsp_bottleneck === "string" ? n.dsp_bottleneck : undefined,
+      ic50_toxicity: typeof n.ic50_toxicity === "string" ? n.ic50_toxicity : undefined,
       color: getSemanticColor(
-        VALID_NODE_TYPES.includes(n.nodeType as string) ? String(n.nodeType) : 'unknown',
-        typeof n.risk_score === 'number' ? n.risk_score : undefined,
+        VALID_NODE_TYPES.includes(n.nodeType as string) ? String(n.nodeType) : "unknown",
+        typeof n.risk_score === "number" ? n.risk_score : undefined,
       ),
       position: [
         i === 0 ? -r : parseFloat((Math.cos(angle) * r).toFixed(2)),
@@ -209,27 +235,39 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
   });
 
   // Build sanitized node ID set for edge validation
-  const sanitizedIds = new Set(nodes.map(n => n.id));
-  const validEdgeTypes = ['catalyzes','produces','consumes','activates','inhibits','converts','transports','regulates','unknown'];
+  const sanitizedIds = new Set(nodes.map((n) => n.id));
+  const validEdgeTypes = [
+    "catalyzes",
+    "produces",
+    "consumes",
+    "activates",
+    "inhibits",
+    "converts",
+    "transports",
+    "regulates",
+    "unknown",
+  ];
 
   const edges: PathwayEdge[] = (!Array.isArray(p.edges) ? [] : p.edges)
     .filter(isValidEdge)
     .map((e: PathwayEdge) => ({
       start: sanitizeNodeId(String(e.start)),
       end: sanitizeNodeId(String(e.end)),
-      relationshipType: e.relationshipType && validEdgeTypes.includes(e.relationshipType) ? e.relationshipType : 'unknown',
-      direction: (e.direction && ['forward','reverse','bidirectional'].includes(e.direction) ? e.direction : 'forward') as 'forward' | 'reverse' | 'bidirectional',
+      relationshipType:
+        e.relationshipType && validEdgeTypes.includes(e.relationshipType) ? e.relationshipType : "unknown",
+      direction: (e.direction && ["forward", "reverse", "bidirectional"].includes(e.direction)
+        ? e.direction
+        : "forward") as "forward" | "reverse" | "bidirectional",
       evidence: e.evidence ? String(e.evidence) : undefined,
-      confidenceScore: typeof e.confidenceScore === 'number'
-        ? Math.min(1, Math.max(0, e.confidenceScore)) : undefined,
+      confidenceScore: typeof e.confidenceScore === "number" ? Math.min(1, Math.max(0, e.confidenceScore)) : undefined,
       // v1.1: Thermodynamic edge fields
-      predicted_delta_G_kJ_mol: typeof e.predicted_delta_G_kJ_mol === 'number'
-        ? e.predicted_delta_G_kJ_mol : undefined,
-      spontaneity: typeof e.spontaneity === 'string' ? e.spontaneity : undefined,
-      yield_prediction: typeof e.yield_prediction === 'string' ? e.yield_prediction : undefined,
-      thickness_mapping: (e.thickness_mapping && ['Thick','Medium','Thin'].includes(e.thickness_mapping)
-        ? e.thickness_mapping : undefined) as 'Thick' | 'Medium' | 'Thin' | undefined,
-      audit_trail: typeof e.audit_trail === 'string' ? e.audit_trail : undefined,
+      predicted_delta_G_kJ_mol: typeof e.predicted_delta_G_kJ_mol === "number" ? e.predicted_delta_G_kJ_mol : undefined,
+      spontaneity: typeof e.spontaneity === "string" ? e.spontaneity : undefined,
+      yield_prediction: typeof e.yield_prediction === "string" ? e.yield_prediction : undefined,
+      thickness_mapping: (e.thickness_mapping && ["Thick", "Medium", "Thin"].includes(e.thickness_mapping)
+        ? e.thickness_mapping
+        : undefined) as "Thick" | "Medium" | "Thin" | undefined,
+      audit_trail: typeof e.audit_trail === "string" ? e.audit_trail : undefined,
     }))
     // Only filter edges where BOTH sanitized IDs exist — more permissive
     .filter((e: PathwayEdge) => sanitizedIds.has(e.start) && sanitizedIds.has(e.end));
@@ -241,78 +279,344 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
 // ── Error classifier — merged best of both versions ──
 function classifyError(message: string): string {
   const msg = message.toLowerCase();
-  if (msg.includes('429') || msg.includes('rate limit')) {
-    return 'Rate limit reached. Please wait 1–2 minutes and try again.';
+  if (msg.includes("429") || msg.includes("rate limit")) {
+    return "Rate limit reached. Please wait 1–2 minutes and try again.";
   }
-  if (msg.includes('503') || msg.includes('overloaded') || msg.includes('unavailable')) {
-    return 'AI model is temporarily overloaded. Please retry in a moment.';
+  if (msg.includes("503") || msg.includes("overloaded") || msg.includes("unavailable")) {
+    return "AI model is temporarily overloaded. Please retry in a moment.";
   }
-  if (msg.includes('timeout')) {
-    return 'Request timed out. Try pasting just the abstract or methods section — shorter text works better.';
+  if (msg.includes("timeout")) {
+    return "Request timed out. Try pasting just the abstract or methods section — shorter text works better.";
   }
-  if (msg.includes('no_valid_json') || msg.includes('malformed') || msg.includes('parse')) {
-    return 'Could not extract a valid pathway structure. Try pasting just the abstract or methods section of the paper.';
+  if (msg.includes("no_valid_json") || msg.includes("malformed") || msg.includes("parse")) {
+    return "Could not extract a valid pathway structure. Try pasting just the abstract or methods section of the paper.";
   }
-  if (msg.includes('no usable content') || msg.includes('empty')) {
-    return 'The AI returned an empty response. Please retry.';
+  if (msg.includes("no usable content") || msg.includes("empty")) {
+    return "The AI returned an empty response. Please retry.";
   }
-  if (msg.includes('no pathway nodes')) {
-    return 'No metabolic pathway found in this text. Make sure the text describes a biochemical process or reaction.';
+  if (msg.includes("no pathway nodes")) {
+    return "No metabolic pathway found in this text. Make sure the text describes a biochemical process or reaction.";
   }
-  if (msg.includes('400')) {
-    return 'Input too short or malformed. Please paste at least a full paragraph of research text.';
+  if (msg.includes("400")) {
+    return "Input too short or malformed. Please paste at least a full paragraph of research text.";
   }
-  if (msg.includes('500')) {
-    return 'Internal server error. Please try again in a moment.';
+  if (msg.includes("500")) {
+    return "Internal server error. Please try again in a moment.";
   }
-  return message || 'Something went wrong. Please try again.';
+  return message || "Something went wrong. Please try again.";
 }
 
 // ── Memoized style constants (avoids object recreation on every render) ──
-const SECTION_STYLE: React.CSSProperties = { background: '#0a0a0a' };
-const HEADER_CONTAINER_STYLE: React.CSSProperties = { textAlign: 'center', marginBottom: '32px' };
-const HEADER_LABEL_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' };
-const HEADER_TITLE_STYLE: React.CSSProperties = { color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' };
-const HEADER_SUBTITLE_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.55)', fontSize: '14px', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto' };
-const INPUT_CARD_STYLE: React.CSSProperties = { borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' };
-const TEXTAREA_STYLE: React.CSSProperties = { width: '100%', background: 'transparent', padding: '16px', color: '#ffffff', fontSize: '13px', lineHeight: 1.7, border: 'none', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
-const TOOLBAR_STYLE: React.CSSProperties = { padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.06)' };
-const TOOLBAR_LEFT_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '4px' };
-const MODE_BUTTON_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer' };
-const BACK_TEXT_BUTTON_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer' };
-const STATUS_CONTAINER_STYLE: React.CSSProperties = { marginTop: '10px', minHeight: '28px' };
-const ANALYZING_STATUS_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' };
-const IDLE_STATUS_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' };
-const ERROR_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.12)' };
-const SUCCESS_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' };
-const PATHD_LINK_STYLE: React.CSSProperties = { minHeight: '32px', padding: '0 12px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(147,203,82,0.10)', color: 'rgba(255,255,255,0.75)', display: 'inline-flex', alignItems: 'center', textDecoration: 'none', fontSize: '11px' };
-const PATHD_DISABLED_STYLE: React.CSSProperties = { minHeight: '32px', padding: '0 12px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.42)', display: 'inline-flex', alignItems: 'center', fontSize: '11px' };
-const TOOLS_LINK_STYLE: React.CSSProperties = { minHeight: '32px', padding: '0 12px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', textDecoration: 'none', fontSize: '11px' };
-const AXON_CONTAINER_STYLE: React.CSSProperties = { marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' };
-const AXON_BUBBLE_STYLE: React.CSSProperties = { borderRadius: '16px', padding: '18px 20px', background: 'linear-gradient(135deg, rgba(201,228,222,0.10) 0%, rgba(201,228,222,0.04) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(201,228,222,0.18)', boxShadow: '0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(201,228,222,0.08)' };
-const AXON_AVATAR_STYLE: React.CSSProperties = { width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg, #C9E4DE 0%, #95C8BC 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#1a2f2a' };
-const AXON_LABEL_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(201,228,222,0.6)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' };
-const AXON_QUESTION_STYLE: React.CSSProperties = { color: 'rgba(255,255,255,0.85)', fontSize: '13.5px', lineHeight: 1.7, margin: 0, fontFamily: THEME.SANS };
-const AXON_OPTION_BASE_STYLE: React.CSSProperties = { padding: '7px 14px', borderRadius: '20px', border: '1px solid rgba(201,228,222,0.22)', background: 'rgba(201,228,222,0.06)', color: 'rgba(201,228,222,0.85)', fontSize: '12px', fontFamily: THEME.SANS, cursor: 'pointer', transition: 'all 0.15s' };
-const BOTTLENECK_CARD_STYLE: React.CSSProperties = { borderRadius: '12px', padding: '16px 18px', background: 'linear-gradient(135deg, rgba(250,237,203,0.08) 0%, rgba(250,237,203,0.03) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(250,237,203,0.15)', boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(250,237,203,0.06)' };
-const BOTTLENECK_LABEL_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(250,237,203,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' };
-const DESIGN_CARD_STYLE: React.CSSProperties = { borderRadius: '12px', overflow: 'hidden', background: 'linear-gradient(135deg, rgba(201,228,222,0.06) 0%, rgba(201,228,222,0.02) 100%)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,228,222,0.12)', boxShadow: '0 2px 20px rgba(0,0,0,0.15)' };
-const DESIGN_HEADER_STYLE: React.CSSProperties = { width: '100%', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer' };
-const DESIGN_LABEL_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(201,228,222,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' };
-const DESIGN_TARGET_STYLE: React.CSSProperties = { fontSize: '11px', color: 'rgba(201,228,222,0.5)', marginBottom: '10px', marginTop: '12px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.05em' };
-const DESIGN_FIELD_LABEL_STYLE: React.CSSProperties = { fontSize: '10.5px', color: 'rgba(201,228,222,0.45)', fontFamily: THEME.MONO, fontFeatureSettings: "'tnum' 1" };
-const DESIGN_FIELD_VALUE_STYLE: React.CSSProperties = { fontSize: '12px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, margin: '2px 0 0' };
-const DISMISS_ROW_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
-const DISMISS_BUTTON_STYLE: React.CSSProperties = { padding: '5px 12px', borderRadius: '12px', fontSize: '11px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', cursor: 'pointer' };
-const FILE_PREVIEW_CONTAINER_STYLE: React.CSSProperties = { padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '12px' };
-const FILE_PREVIEW_BOX_STYLE: React.CSSProperties = { height: '48px', width: '48px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-const URL_CONTAINER_STYLE: React.CSSProperties = { padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '10px' };
-const URL_INPUT_STYLE: React.CSSProperties = { flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', fontFamily: 'inherit' };
+const SECTION_STYLE: React.CSSProperties = { background: "#0a0a0a" };
+const HEADER_CONTAINER_STYLE: React.CSSProperties = { textAlign: "center", marginBottom: "32px" };
+const HEADER_LABEL_STYLE: React.CSSProperties = {
+  color: "rgba(255,255,255,0.2)",
+  fontSize: "11px",
+  fontFamily: THEME.SANS,
+  fontFeatureSettings: "'tnum' 1",
+  textTransform: "uppercase",
+  letterSpacing: "0.1em",
+  marginBottom: "8px",
+};
+const HEADER_TITLE_STYLE: React.CSSProperties = {
+  color: "#ffffff",
+  fontSize: "clamp(24px, 4vw, 32px)",
+  fontWeight: 600,
+  letterSpacing: "-0.03em",
+  marginBottom: "8px",
+};
+const HEADER_SUBTITLE_STYLE: React.CSSProperties = {
+  color: "rgba(255,255,255,0.55)",
+  fontSize: "14px",
+  lineHeight: 1.6,
+  maxWidth: "480px",
+  margin: "0 auto",
+};
+const INPUT_CARD_STYLE: React.CSSProperties = {
+  borderRadius: "12px",
+  overflow: "hidden",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.09)",
+};
+const TEXTAREA_STYLE: React.CSSProperties = {
+  width: "100%",
+  background: "transparent",
+  padding: "16px",
+  color: "#ffffff",
+  fontSize: "13px",
+  lineHeight: 1.7,
+  border: "none",
+  outline: "2px solid rgba(175,195,214,0.5)",
+  outlineOffset: "2px",
+  resize: "none",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+};
+const TOOLBAR_STYLE: React.CSSProperties = {
+  padding: "10px 12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  borderTop: "1px solid rgba(255,255,255,0.06)",
+};
+const TOOLBAR_LEFT_STYLE: React.CSSProperties = { display: "flex", alignItems: "center", gap: "4px" };
+const MODE_BUTTON_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "5px",
+  padding: "5px 10px",
+  borderRadius: "16px",
+  background: "none",
+  border: "none",
+  color: "rgba(255,255,255,0.3)",
+  fontSize: "12px",
+  cursor: "pointer",
+};
+const BACK_TEXT_BUTTON_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "5px",
+  padding: "5px 10px",
+  borderRadius: "16px",
+  background: "rgba(255,255,255,0.05)",
+  border: "none",
+  color: "rgba(255,255,255,0.4)",
+  fontSize: "12px",
+  cursor: "pointer",
+};
+const STATUS_CONTAINER_STYLE: React.CSSProperties = { marginTop: "10px", minHeight: "28px" };
+const ANALYZING_STATUS_STYLE: React.CSSProperties = {
+  color: "rgba(255,255,255,0.3)",
+  fontSize: "12px",
+  fontFamily: THEME.SANS,
+  fontFeatureSettings: "'tnum' 1",
+  textAlign: "center",
+};
+const IDLE_STATUS_STYLE: React.CSSProperties = {
+  color: "rgba(255,255,255,0.12)",
+  fontSize: "11px",
+  fontFamily: THEME.SANS,
+  fontFeatureSettings: "'tnum' 1",
+  textAlign: "center",
+};
+const ERROR_CONTAINER_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "10px 14px",
+  borderRadius: "20px",
+  background: "rgba(255,80,80,0.06)",
+  border: "1px solid rgba(255,80,80,0.12)",
+};
+const SUCCESS_CONTAINER_STYLE: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+  padding: "12px 14px",
+  borderRadius: "20px",
+  background: "rgba(255,255,255,0.03)",
+  border: "1px solid rgba(255,255,255,0.08)",
+};
+const PATHD_LINK_STYLE: React.CSSProperties = {
+  minHeight: "32px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(147,203,82,0.10)",
+  color: "rgba(255,255,255,0.75)",
+  display: "inline-flex",
+  alignItems: "center",
+  textDecoration: "none",
+  fontSize: "11px",
+};
+const PATHD_DISABLED_STYLE: React.CSSProperties = {
+  minHeight: "32px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  color: "rgba(255,255,255,0.42)",
+  display: "inline-flex",
+  alignItems: "center",
+  fontSize: "11px",
+};
+const TOOLS_LINK_STYLE: React.CSSProperties = {
+  minHeight: "32px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  color: "rgba(255,255,255,0.55)",
+  display: "inline-flex",
+  alignItems: "center",
+  textDecoration: "none",
+  fontSize: "11px",
+};
+const AXON_CONTAINER_STYLE: React.CSSProperties = {
+  marginTop: "20px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "14px",
+};
+const AXON_BUBBLE_STYLE: React.CSSProperties = {
+  borderRadius: "16px",
+  padding: "18px 20px",
+  background: "linear-gradient(135deg, rgba(201,228,222,0.10) 0%, rgba(201,228,222,0.04) 100%)",
+  backdropFilter: "blur(24px)",
+  WebkitBackdropFilter: "blur(24px)",
+  border: "1px solid rgba(201,228,222,0.18)",
+  boxShadow: "0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(201,228,222,0.08)",
+};
+const AXON_AVATAR_STYLE: React.CSSProperties = {
+  width: "22px",
+  height: "22px",
+  borderRadius: "50%",
+  background: "linear-gradient(135deg, #C9E4DE 0%, #95C8BC 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "10px",
+  fontWeight: 700,
+  color: "#1a2f2a",
+};
+const AXON_LABEL_STYLE: React.CSSProperties = {
+  fontSize: "11px",
+  color: "rgba(201,228,222,0.6)",
+  fontFamily: THEME.MONO,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+};
+const AXON_QUESTION_STYLE: React.CSSProperties = {
+  color: "rgba(255,255,255,0.85)",
+  fontSize: "13.5px",
+  lineHeight: 1.7,
+  margin: 0,
+  fontFamily: THEME.SANS,
+};
+const AXON_OPTION_BASE_STYLE: React.CSSProperties = {
+  padding: "7px 14px",
+  borderRadius: "20px",
+  border: "1px solid rgba(201,228,222,0.22)",
+  background: "rgba(201,228,222,0.06)",
+  color: "rgba(201,228,222,0.85)",
+  fontSize: "12px",
+  fontFamily: THEME.SANS,
+  cursor: "pointer",
+  transition: "all 0.15s",
+};
+const BOTTLENECK_CARD_STYLE: React.CSSProperties = {
+  borderRadius: "12px",
+  padding: "16px 18px",
+  background: "linear-gradient(135deg, rgba(250,237,203,0.08) 0%, rgba(250,237,203,0.03) 100%)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(250,237,203,0.15)",
+  boxShadow: "0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(250,237,203,0.06)",
+};
+const BOTTLENECK_LABEL_STYLE: React.CSSProperties = {
+  fontSize: "11px",
+  color: "rgba(250,237,203,0.7)",
+  fontFamily: THEME.MONO,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+};
+const DESIGN_CARD_STYLE: React.CSSProperties = {
+  borderRadius: "12px",
+  overflow: "hidden",
+  background: "linear-gradient(135deg, rgba(201,228,222,0.06) 0%, rgba(201,228,222,0.02) 100%)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(201,228,222,0.12)",
+  boxShadow: "0 2px 20px rgba(0,0,0,0.15)",
+};
+const DESIGN_HEADER_STYLE: React.CSSProperties = {
+  width: "100%",
+  padding: "14px 18px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+};
+const DESIGN_LABEL_STYLE: React.CSSProperties = {
+  fontSize: "11px",
+  color: "rgba(201,228,222,0.7)",
+  fontFamily: THEME.MONO,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+};
+const DESIGN_TARGET_STYLE: React.CSSProperties = {
+  fontSize: "11px",
+  color: "rgba(201,228,222,0.5)",
+  marginBottom: "10px",
+  marginTop: "12px",
+  fontFamily: THEME.MONO,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+};
+const DESIGN_FIELD_LABEL_STYLE: React.CSSProperties = {
+  fontSize: "10.5px",
+  color: "rgba(201,228,222,0.45)",
+  fontFamily: THEME.MONO,
+  fontFeatureSettings: "'tnum' 1",
+};
+const DESIGN_FIELD_VALUE_STYLE: React.CSSProperties = {
+  fontSize: "12px",
+  color: "rgba(255,255,255,0.65)",
+  lineHeight: 1.6,
+  margin: "2px 0 0",
+};
+const DISMISS_ROW_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+};
+const DISMISS_BUTTON_STYLE: React.CSSProperties = {
+  padding: "5px 12px",
+  borderRadius: "12px",
+  fontSize: "11px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "rgba(255,255,255,0.55)",
+  cursor: "pointer",
+};
+const FILE_PREVIEW_CONTAINER_STYLE: React.CSSProperties = {
+  padding: "14px 16px 0",
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+};
+const FILE_PREVIEW_BOX_STYLE: React.CSSProperties = {
+  height: "48px",
+  width: "48px",
+  borderRadius: "16px",
+  border: "1px dashed rgba(255,255,255,0.15)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+const URL_CONTAINER_STYLE: React.CSSProperties = {
+  padding: "14px 16px 0",
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+};
+const URL_INPUT_STYLE: React.CSSProperties = {
+  flex: 1,
+  background: "transparent",
+  border: "none",
+  color: "#ffffff",
+  fontSize: "13px",
+  outline: "2px solid rgba(175,195,214,0.5)",
+  outlineOffset: "2px",
+  fontFamily: "inherit",
+};
 const OPTION_LABELS: Record<string, string> = {
-  enzyme_substrate_docking: 'Analyze Enzyme-Substrate Docking',
-  flux_balance_optimization: 'Optimize Flux Balance',
-  cofactor_optimization: 'Explore Cofactor Optimization',
-  dsp_analysis: 'Investigate DSP Constraints',
+  enzyme_substrate_docking: "Analyze Enzyme-Substrate Docking",
+  flux_balance_optimization: "Optimize Flux Balance",
+  cofactor_optimization: "Explore Cofactor Optimization",
+  dsp_analysis: "Investigate DSP Constraints",
 };
 
 export default function PaperAnalyzer({
@@ -322,15 +626,15 @@ export default function PaperAnalyzer({
   pathdHref,
   pathdEnabled = false,
 }: PaperAnalyzerProps) {
-  const [text, setText] = useState(initialText ?? '');
-  const [mode, setMode] = useState<InputMode>('text');
+  const [text, setText] = useState(initialText ?? "");
+  const [mode, setMode] = useState<InputMode>("text");
   const [expanded, setExpanded] = useState(false);
-  const [analysisState, setAnalysisState] = useState<AnalysisState>('idle');
+  const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [webUrl, setWebUrl] = useState('');
+  const [webUrl, setWebUrl] = useState("");
 
   // Axon progressive disclosure state
   const [axonInteraction, setAxonInteraction] = useState<AxonInteraction | null>(null);
@@ -352,9 +656,9 @@ export default function PaperAnalyzer({
       abortRef.current?.abort();
       abortRef.current = new AbortController();
 
-      const res = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
         signal: abortRef.current.signal,
       });
@@ -373,24 +677,29 @@ export default function PaperAnalyzer({
   useEffect(() => {
     if (!initialText?.trim()) return;
     setText(initialText);
-    setMode('text');
-    setAnalysisState('idle');
+    setMode("text");
+    setAnalysisState("idle");
     setErrorMsg(null);
   }, [initialText]);
 
   // Cleanup on unmount
-  useEffect(() => () => { abortRef.current?.abort(); }, []);
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+    },
+    [],
+  );
 
   const resetState = () => {
     setErrorMsg(null);
     setFileName(null);
     setImagePreview(null);
     setImageBase64(null);
-    setText('');
-    setWebUrl('');
+    setText("");
+    setWebUrl("");
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'pdf' | 'image') => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "pdf" | "image") => {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
@@ -398,9 +707,9 @@ export default function PaperAnalyzer({
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      setImageBase64(result.split(',')[1]);
-      if (type === 'image') setImagePreview(result);
-      setText(`${type === 'pdf' ? 'PDF' : 'Image'} loaded: ${file.name}`);
+      setImageBase64(result.split(",")[1]);
+      if (type === "image") setImagePreview(result);
+      setText(`${type === "pdf" ? "PDF" : "Image"} loaded: ${file.name}`);
     };
     reader.readAsDataURL(file);
   };
@@ -408,25 +717,33 @@ export default function PaperAnalyzer({
   const buildRequestBody = () => {
     const config = { temperature: 0.1, maxOutputTokens: 4096 };
 
-    if ((mode === 'image' || mode === 'camera') && imageBase64) {
+    if ((mode === "image" || mode === "camera") && imageBase64) {
       return {
-        contents: [{ parts: [
-          { text: buildPrompt('Analyze the metabolic pathway visible in this image.') },
-          { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } },
-        ]}],
+        contents: [
+          {
+            parts: [
+              { text: buildPrompt("Analyze the metabolic pathway visible in this image.") },
+              { inline_data: { mime_type: "image/jpeg", data: imageBase64 } },
+            ],
+          },
+        ],
         generationConfig: config,
       };
     }
-    if (mode === 'pdf' && imageBase64) {
+    if (mode === "pdf" && imageBase64) {
       return {
-        contents: [{ parts: [
-          { text: buildPrompt('Analyze the metabolic pathway content in this PDF.') },
-          { inline_data: { mime_type: 'application/pdf', data: imageBase64 } },
-        ]}],
+        contents: [
+          {
+            parts: [
+              { text: buildPrompt("Analyze the metabolic pathway content in this PDF.") },
+              { inline_data: { mime_type: "application/pdf", data: imageBase64 } },
+            ],
+          },
+        ],
         generationConfig: config,
       };
     }
-    if (mode === 'web' && webUrl) {
+    if (mode === "web" && webUrl) {
       return {
         contents: [{ parts: [{ text: buildPrompt(`Analyze this paper URL: ${webUrl}`) }] }],
         generationConfig: config,
@@ -440,17 +757,22 @@ export default function PaperAnalyzer({
 
   const handleAnalyze = useCallback(async () => {
     const hasContent =
-      (mode === 'text' && text.trim().length >= 10) ||
-      ((mode === 'image' || mode === 'camera' || mode === 'pdf') && imageBase64) ||
-      (mode === 'web' && webUrl.trim());
+      (mode === "text" && text.trim().length >= 10) ||
+      ((mode === "image" || mode === "camera" || mode === "pdf") && imageBase64) ||
+      (mode === "web" && webUrl.trim());
 
     if (!hasContent) {
-      setErrorMsg(mode === 'text' ? 'Please paste at least one sentence.' :
-        mode === 'web' ? 'Please enter a valid URL.' : 'Please upload a file first.');
+      setErrorMsg(
+        mode === "text"
+          ? "Please paste at least one sentence."
+          : mode === "web"
+            ? "Please enter a valid URL."
+            : "Please upload a file first.",
+      );
       return;
     }
 
-    setAnalysisState('analyzing');
+    setAnalysisState("analyzing");
     setErrorMsg(null);
 
     try {
@@ -459,7 +781,7 @@ export default function PaperAnalyzer({
       const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
       const provider = data.meta?.provider as string | undefined;
       if (provider) setAiProvider(provider);
-      if (!raw || typeof raw !== 'string') throw new Error('NO_VALID_JSON');
+      if (!raw || typeof raw !== "string") throw new Error("NO_VALID_JSON");
 
       // DEBUG — show raw in error so we can see it on tablet
       const parsed = extractJSON(raw);
@@ -471,8 +793,10 @@ export default function PaperAnalyzer({
       // Extract Axon predictive design fields
       const p = parsed as Record<string, unknown>;
       const interaction = p.axon_interaction as AxonInteraction | undefined;
-      const bottlenecks = Array.isArray(p.bottleneck_enzymes) ? p.bottleneck_enzymes as BottleneckEnzyme[] : [];
-      const strategies = Array.isArray(p.de_novo_design_strategies) ? p.de_novo_design_strategies as DeNovoDesignStrategy[] : [];
+      const bottlenecks = Array.isArray(p.bottleneck_enzymes) ? (p.bottleneck_enzymes as BottleneckEnzyme[]) : [];
+      const strategies = Array.isArray(p.de_novo_design_strategies)
+        ? (p.de_novo_design_strategies as DeNovoDesignStrategy[])
+        : [];
       const structuredPayload: StructuredAnalysisPayload = {
         nodes: pathway.nodes,
         edges: pathway.edges,
@@ -486,27 +810,26 @@ export default function PaperAnalyzer({
 
       // Progressive disclosure: if Axon has a Socratic question, show it first
       if (interaction?.question) {
-        setAxonInteraction({ ...interaction, disclosure_phase: 'socratic' });
+        setAxonInteraction({ ...interaction, disclosure_phase: "socratic" });
         setBottleneckEnzymes(bottlenecks);
         setDesignStrategies(strategies);
         setPendingPathway(pathway);
         setSelectedOption(null);
         setDesignExpanded(false);
-        setAnalysisState('success');
+        setAnalysisState("success");
       } else {
         // No interaction block — reveal immediately
         onPathwayGenerated(pathway.nodes, pathway.edges);
-        setAnalysisState('success');
+        setAnalysisState("success");
         resetState();
         setExpanded(false);
       }
-
     } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      setAnalysisState('error');
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setAnalysisState("error");
       // Show full message for debugging
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.startsWith('PARSE_FAIL:') || msg.startsWith('NORMALIZE_FAIL:')) {
+      if (msg.startsWith("PARSE_FAIL:") || msg.startsWith("NORMALIZE_FAIL:")) {
         setErrorMsg(msg); // Show raw for debugging
       } else {
         setErrorMsg(classifyError(msg));
@@ -514,18 +837,19 @@ export default function PaperAnalyzer({
     }
   }, [mode, text, imageBase64, webUrl, onPathwayGenerated, onStructuredAnalysis, buildRequestBody]);
 
-  const canAnalyze = useMemo(() =>
-    (mode === 'text' && text.trim().length >= 10) ||
-    ((mode === 'image' || mode === 'camera' || mode === 'pdf') && !!imageBase64) ||
-    (mode === 'web' && webUrl.trim().length > 0),
-    [mode, text, imageBase64, webUrl]
+  const canAnalyze = useMemo(
+    () =>
+      (mode === "text" && text.trim().length >= 10) ||
+      ((mode === "image" || mode === "camera" || mode === "pdf") && !!imageBase64) ||
+      (mode === "web" && webUrl.trim().length > 0),
+    [mode, text, imageBase64, webUrl],
   );
 
   // Axon progressive disclosure: user selects an investigation path → reveal pathway
   const handleAxonOptionSelect = (option: string) => {
     setSelectedOption(option);
     if (axonInteraction) {
-      setAxonInteraction({ ...axonInteraction, disclosure_phase: 'revealed' });
+      setAxonInteraction({ ...axonInteraction, disclosure_phase: "revealed" });
     }
     if (pendingPathway) {
       onPathwayGenerated(pendingPathway.nodes, pendingPathway.edges);
@@ -545,54 +869,96 @@ export default function PaperAnalyzer({
   };
 
   const extraModes = [
-    { id: 'pdf' as InputMode, icon: <Upload size={13} />, label: 'PDF' },
-    { id: 'image' as InputMode, icon: <ImageIcon size={13} />, label: 'Image' },
-    { id: 'camera' as InputMode, icon: <Camera size={13} />, label: 'Camera' },
-    { id: 'web' as InputMode, icon: <Globe size={13} />, label: 'URL' },
+    { id: "pdf" as InputMode, icon: <Upload size={13} />, label: "PDF" },
+    { id: "image" as InputMode, icon: <ImageIcon size={13} />, label: "Image" },
+    { id: "camera" as InputMode, icon: <Camera size={13} />, label: "Camera" },
+    { id: "web" as InputMode, icon: <Globe size={13} />, label: "URL" },
   ];
 
   return (
     <section className="px-4 py-24" id="analyzer" style={SECTION_STYLE}>
       <div className="max-w-2xl mx-auto">
-
         {/* Header */}
         <div style={HEADER_CONTAINER_STYLE}>
-          <p style={HEADER_LABEL_STYLE}>
-            Analysis
-          </p>
-          <h2 style={HEADER_TITLE_STYLE}>
-            Decode any pathway.
-          </h2>
+          <p style={HEADER_LABEL_STYLE}>Analysis</p>
+          <h2 style={HEADER_TITLE_STYLE}>Decode any pathway.</h2>
           <p style={HEADER_SUBTITLE_STYLE}>
-            Paste a paper, upload a PDF, or point your camera — AI extracts the metabolic architecture with evidence citations.
+            Paste a paper, upload a PDF, or point your camera — AI extracts the metabolic architecture with evidence
+            citations.
           </p>
         </div>
 
         {/* Input card */}
         <div style={INPUT_CARD_STYLE}>
-
           {/* File/image preview */}
-          {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
+          {(mode === "pdf" || mode === "image" || mode === "camera") && (
             <div style={FILE_PREVIEW_CONTAINER_STYLE}>
-              {imagePreview
-                ? <img src={imagePreview} alt="Preview" style={{ height: '48px', width: '48px', objectFit: 'cover', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                : <div style={FILE_PREVIEW_BOX_STYLE}>
-                    {mode === 'pdf' ? <Upload size={16} style={{ color: 'rgba(255,255,255,0.3)' }} /> : <ImageIcon size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                  </div>
-              }
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{
+                    height: "48px",
+                    width: "48px",
+                    objectFit: "cover",
+                    borderRadius: "16px",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
+                />
+              ) : (
+                <div style={FILE_PREVIEW_BOX_STYLE}>
+                  {mode === "pdf" ? (
+                    <Upload size={16} style={{ color: "rgba(255,255,255,0.3)" }} />
+                  ) : (
+                    <ImageIcon size={16} style={{ color: "rgba(255,255,255,0.3)" }} />
+                  )}
+                </div>
+              )}
               <div>
-                {fileName
-                  ? <p style={{ color: '#ffffff', fontSize: '13px', margin: '0 0 3px', fontWeight: 500 }}>{fileName}</p>
-                  : <button
-                      onClick={() => mode === 'pdf' ? fileInputRef.current?.click() : mode === 'camera' ? cameraInputRef.current?.click() : imageInputRef.current?.click()}
-                      style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', padding: 0 }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
-                      {mode === 'camera' ? 'Tap to take photo →' : `Click to upload ${mode} →`}
-                    </button>
-                }
+                {fileName ? (
+                  <p style={{ color: "#ffffff", fontSize: "13px", margin: "0 0 3px", fontWeight: 500 }}>{fileName}</p>
+                ) : (
+                  <button
+                    onClick={() =>
+                      mode === "pdf"
+                        ? fileInputRef.current?.click()
+                        : mode === "camera"
+                          ? cameraInputRef.current?.click()
+                          : imageInputRef.current?.click()
+                    }
+                    style={{
+                      color: "rgba(255,255,255,0.4)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      padding: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = "#ffffff";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)";
+                    }}
+                  >
+                    {mode === "camera" ? "Tap to take photo →" : `Click to upload ${mode} →`}
+                  </button>
+                )}
                 {fileName && (
-                  <button onClick={resetState} style={{ color: 'rgba(255,255,255,0.45)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: 0, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <button
+                    onClick={resetState}
+                    style={{
+                      color: "rgba(255,255,255,0.45)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "11px",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
                     <X size={9} /> remove
                   </button>
                 )}
@@ -601,22 +967,45 @@ export default function PaperAnalyzer({
           )}
 
           {/* URL input */}
-          {mode === 'web' && (
+          {mode === "web" && (
             <div style={URL_CONTAINER_STYLE}>
-              <Globe size={14} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-              <input type="url" value={webUrl} onChange={e => { setWebUrl(e.target.value); setErrorMsg(null); }}
+              <Globe size={14} style={{ color: "rgba(255,255,255,0.2)", flexShrink: 0 }} />
+              <input
+                type="url"
+                value={webUrl}
+                onChange={(e) => {
+                  setWebUrl(e.target.value);
+                  setErrorMsg(null);
+                }}
                 placeholder="https://pubmed.ncbi.nlm.nih.gov/... or https://doi.org/..."
-                style={URL_INPUT_STYLE} />
-              {webUrl && <button onClick={() => setWebUrl('')} style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer' }}><X size={13} /></button>}
+                style={URL_INPUT_STYLE}
+              />
+              {webUrl && (
+                <button
+                  onClick={() => setWebUrl("")}
+                  style={{ color: "rgba(255,255,255,0.2)", background: "none", border: "none", cursor: "pointer" }}
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
           )}
 
           {/* Text textarea */}
-          {mode === 'text' && (
+          {mode === "text" && (
             <textarea
               value={text}
-              onChange={e => { setText(e.target.value); setErrorMsg(null); if (analysisState === 'error') setAnalysisState('idle'); }}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAnalyze(); } }}
+              onChange={(e) => {
+                setText(e.target.value);
+                setErrorMsg(null);
+                if (analysisState === "error") setAnalysisState("idle");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAnalyze();
+                }
+              }}
               placeholder="Paste an abstract, methods section, or any research text here..."
               rows={4}
               style={TEXTAREA_STYLE}
@@ -626,39 +1015,71 @@ export default function PaperAnalyzer({
           {/* Toolbar */}
           <div style={TOOLBAR_STYLE}>
             <div style={TOOLBAR_LEFT_STYLE}>
-
-              {mode !== 'text' && (
-                <button onClick={() => { setMode('text'); resetState(); setExpanded(false); }}
+              {mode !== "text" && (
+                <button
+                  onClick={() => {
+                    setMode("text");
+                    resetState();
+                    setExpanded(false);
+                  }}
                   style={BACK_TEXT_BUTTON_STYLE}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "#ffffff";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)";
+                  }}
+                >
                   Text
                 </button>
               )}
 
               <button
                 type="button"
-                aria-label={expanded ? 'Collapse upload options' : 'Expand upload options'}
+                aria-label={expanded ? "Collapse upload options" : "Expand upload options"}
                 onClick={() => setExpanded(!expanded)}
                 style={MODE_BUTTON_STYLE}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'none'; }}>
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "#ffffff";
+                  (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.3)";
+                  (e.currentTarget as HTMLElement).style.background = "none";
+                }}
+              >
                 {expanded ? <ChevronUp size={13} /> : <Plus size={13} />}
-                {expanded ? 'Less' : 'Add file or URL'}
+                {expanded ? "Less" : "Add file or URL"}
               </button>
 
-              {expanded && extraModes.map(m => (
-                <button key={m.id}
-                  onClick={() => {
-                    setMode(m.id); resetState();
-                    if (m.id === 'pdf') setTimeout(() => fileInputRef.current?.click(), 80);
-                    if (m.id === 'image') setTimeout(() => imageInputRef.current?.click(), 80);
-                    if (m.id === 'camera') setTimeout(() => cameraInputRef.current?.click(), 80);
-                  }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: mode === m.id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: mode === m.id ? '#ffffff' : 'rgba(255,255,255,0.55)', fontSize: '12px', cursor: 'pointer' }}>
-                  {m.icon}{m.label}
-                </button>
-              ))}
+              {expanded &&
+                extraModes.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      setMode(m.id);
+                      resetState();
+                      if (m.id === "pdf") setTimeout(() => fileInputRef.current?.click(), 80);
+                      if (m.id === "image") setTimeout(() => imageInputRef.current?.click(), 80);
+                      if (m.id === "camera") setTimeout(() => cameraInputRef.current?.click(), 80);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "5px 10px",
+                      borderRadius: "16px",
+                      background: mode === m.id ? "rgba(255,255,255,0.1)" : "none",
+                      border: "none",
+                      color: mode === m.id ? "#ffffff" : "rgba(255,255,255,0.55)",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {m.icon}
+                    {m.label}
+                  </button>
+                ))}
             </div>
 
             {/* Send button */}
@@ -666,69 +1087,72 @@ export default function PaperAnalyzer({
               type="button"
               aria-label="Analyze pathway"
               onClick={handleAnalyze}
-              disabled={analysisState === 'analyzing' || !canAnalyze}
+              disabled={analysisState === "analyzing" || !canAnalyze}
               title="Analyze pathway (Enter)"
               style={{
-                width: '32px', height: '32px', borderRadius: '50%', border: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                background: analysisState === 'analyzing' ? 'rgba(255,255,255,0.06)' : canAnalyze ? '#BFDCCD' : 'rgba(255,255,255,0.07)',
-                color: analysisState === 'analyzing' || !canAnalyze ? 'rgba(255,255,255,0.2)' : '#0a0a0a',
-                transition: 'all 0.15s',
-              }}>
-              {analysisState === 'analyzing'
-                ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                : <ArrowUp size={14} strokeWidth={2.5} />
-              }
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                background:
+                  analysisState === "analyzing"
+                    ? "rgba(255,255,255,0.06)"
+                    : canAnalyze
+                      ? "#BFDCCD"
+                      : "rgba(255,255,255,0.07)",
+                color: analysisState === "analyzing" || !canAnalyze ? "rgba(255,255,255,0.2)" : "#0a0a0a",
+                transition: "all 0.15s",
+              }}
+            >
+              {analysisState === "analyzing" ? (
+                <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+              ) : (
+                <ArrowUp size={14} strokeWidth={2.5} />
+              )}
             </button>
           </div>
         </div>
 
         {/* Status messages */}
         <div style={STATUS_CONTAINER_STYLE}>
-          {analysisState === 'analyzing' && (
-            <p style={ANALYZING_STATUS_STYLE}>
-              Extracting pathway structure from literature...
-            </p>
+          {analysisState === "analyzing" && (
+            <p style={ANALYZING_STATUS_STYLE}>Extracting pathway structure from literature...</p>
           )}
-          {analysisState === 'error' && errorMsg && (
+          {analysisState === "error" && errorMsg && (
             <div style={ERROR_CONTAINER_STYLE}>
-              <AlertCircle size={13} style={{ color: 'rgba(255,120,120,0.8)', flexShrink: 0 }} />
-              <p style={{ color: 'rgba(255,140,140,0.8)', fontSize: '12px', margin: 0 }}>{errorMsg}</p>
+              <AlertCircle size={13} style={{ color: "rgba(255,120,120,0.8)", flexShrink: 0 }} />
+              <p style={{ color: "rgba(255,140,140,0.8)", fontSize: "12px", margin: 0 }}>{errorMsg}</p>
             </div>
           )}
-          {analysisState === 'success' && !axonInteraction && (
+          {analysisState === "success" && !axonInteraction && (
             <div style={SUCCESS_CONTAINER_STYLE}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
-                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
-                  Pathway extracted{aiProvider ? ` via ${aiProvider === 'groq' ? 'Groq LLaMA 3.3' : 'Gemini Flash'}` : ''}. Scroll up to explore ↑
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <CheckCircle2 size={13} style={{ color: "rgba(255,255,255,0.5)", flexShrink: 0 }} />
+                <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "12px", margin: 0 }}>
+                  Pathway extracted
+                  {aiProvider ? ` via ${aiProvider === "groq" ? "Groq LLaMA 3.3" : "Gemini Flash"}` : ""}. Scroll up to
+                  explore ↑
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 {pathdEnabled && pathdHref ? (
-                  <a
-                    href={pathdHref}
-                    style={PATHD_LINK_STYLE}
-                  >
+                  <a href={pathdHref} style={PATHD_LINK_STYLE}>
                     Open PATHD workbench
                   </a>
                 ) : (
-                  <span
-                    style={PATHD_DISABLED_STYLE}
-                  >
-                    Save compiled artifact to open PATHD
-                  </span>
+                  <span style={PATHD_DISABLED_STYLE}>Save compiled artifact to open PATHD</span>
                 )}
-                <a
-                  href="/tools"
-                  style={TOOLS_LINK_STYLE}
-                >
+                <a href="/tools" style={TOOLS_LINK_STYLE}>
                   Browse tool directions
                 </a>
               </div>
             </div>
           )}
-          {analysisState === 'idle' && (
+          {analysisState === "idle" && (
             <p style={IDLE_STATUS_STYLE}>
               Press Enter to analyze · Shift+Enter for new line · Groq primary / Gemini fallback
             </p>
@@ -738,49 +1162,44 @@ export default function PaperAnalyzer({
         {/* ── Axon Socratic Dialogue ── */}
         {axonInteraction && (
           <div style={AXON_CONTAINER_STYLE}>
-
             {/* Axon thought bubble — Glassmorphism 2.0 */}
             <div style={AXON_BUBBLE_STYLE}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
                 <div style={AXON_AVATAR_STYLE}>A</div>
-                <span style={AXON_LABEL_STYLE}>
-                  Axon · Predictive Design
-                </span>
+                <span style={AXON_LABEL_STYLE}>Axon · Predictive Design</span>
               </div>
-              <p style={AXON_QUESTION_STYLE}>
-                {axonInteraction.question}
-              </p>
+              <p style={AXON_QUESTION_STYLE}>{axonInteraction.question}</p>
 
               {/* Option buttons — Socratic phase */}
-              {axonInteraction.disclosure_phase === 'socratic' && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+              {axonInteraction.disclosure_phase === "socratic" && (
+                <div style={{ display: "flex", gap: "8px", marginTop: "14px", flexWrap: "wrap" }}>
                   {axonInteraction.options.map((opt) => (
                     <button
                       key={opt}
                       onClick={() => handleAxonOptionSelect(opt)}
                       style={AXON_OPTION_BASE_STYLE}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(201,228,222,0.15)';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,228,222,0.35)';
-                        (e.currentTarget as HTMLElement).style.color = '#C9E4DE';
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(201,228,222,0.15)";
+                        (e.currentTarget as HTMLElement).style.borderColor = "rgba(201,228,222,0.35)";
+                        (e.currentTarget as HTMLElement).style.color = "#C9E4DE";
                       }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(201,228,222,0.06)';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,228,222,0.22)';
-                        (e.currentTarget as HTMLElement).style.color = 'rgba(201,228,222,0.85)';
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(201,228,222,0.06)";
+                        (e.currentTarget as HTMLElement).style.borderColor = "rgba(201,228,222,0.22)";
+                        (e.currentTarget as HTMLElement).style.color = "rgba(201,228,222,0.85)";
                       }}
                     >
-                      {OPTION_LABELS[opt] || opt.replace(/_/g, ' ')}
+                      {OPTION_LABELS[opt] || opt.replace(/_/g, " ")}
                     </button>
                   ))}
                 </div>
               )}
 
               {/* Revealed phase indicator */}
-              {axonInteraction.disclosure_phase === 'revealed' && selectedOption && (
-                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={12} style={{ color: '#95C8BC' }} />
-                  <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.55)', fontFamily: THEME.MONO }}>
+              {axonInteraction.disclosure_phase === "revealed" && selectedOption && (
+                <div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <CheckCircle2 size={12} style={{ color: "#95C8BC" }} />
+                  <span style={{ fontSize: "11px", color: "rgba(201,228,222,0.55)", fontFamily: THEME.MONO }}>
                     Selected: {OPTION_LABELS[selectedOption] || selectedOption}
                   </span>
                 </div>
@@ -788,34 +1207,48 @@ export default function PaperAnalyzer({
             </div>
 
             {/* Bottleneck enzymes — kinetic warning cards */}
-            {axonInteraction.disclosure_phase === 'revealed' && bottleneckEnzymes.length > 0 && (
+            {axonInteraction.disclosure_phase === "revealed" && bottleneckEnzymes.length > 0 && (
               <div style={BOTTLENECK_CARD_STYLE}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                  <Zap size={13} style={{ color: '#FAEDCB' }} />
-                  <span style={BOTTLENECK_LABEL_STYLE}>
-                    Bottleneck Enzymes
-                  </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+                  <Zap size={13} style={{ color: "#FAEDCB" }} />
+                  <span style={BOTTLENECK_LABEL_STYLE}>Bottleneck Enzymes</span>
                 </div>
                 {bottleneckEnzymes.map((b, i) => (
-                  <div key={i} style={{
-                    display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 16px',
-                    padding: i > 0 ? '10px 0 0' : '0',
-                    borderTop: i > 0 ? '1px solid rgba(250,237,203,0.08)' : 'none',
-                  }}>
-                    <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12.5px' }}>{b.enzyme}</span>
-                    <span style={{
-                      color: '#FAEDCB', fontSize: '12px', textAlign: 'right',
-                      fontFamily: THEME.MONO,
-                      fontFeatureSettings: "'tnum' 1",
-                    }}>
+                  <div
+                    key={i}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: "4px 16px",
+                      padding: i > 0 ? "10px 0 0" : "0",
+                      borderTop: i > 0 ? "1px solid rgba(250,237,203,0.08)" : "none",
+                    }}
+                  >
+                    <span style={{ color: "rgba(255,255,255,0.75)", fontSize: "12.5px" }}>{b.enzyme}</span>
+                    <span
+                      style={{
+                        color: "#FAEDCB",
+                        fontSize: "12px",
+                        textAlign: "right",
+                        fontFamily: THEME.MONO,
+                        fontFeatureSettings: "'tnum' 1",
+                      }}
+                    >
                       {b.efficiency_percent}% eff
                     </span>
-                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', gridColumn: '1 / -1' }}>{b.evidence}</span>
-                    <span style={{
-                      color: 'rgba(250,237,203,0.6)', fontSize: '11px', textAlign: 'right', gridColumn: '2',
-                      fontFamily: THEME.MONO,
-                      fontFeatureSettings: "'tnum' 1",
-                    }}>
+                    <span style={{ color: "rgba(255,255,255,0.55)", fontSize: "11px", gridColumn: "1 / -1" }}>
+                      {b.evidence}
+                    </span>
+                    <span
+                      style={{
+                        color: "rgba(250,237,203,0.6)",
+                        fontSize: "11px",
+                        textAlign: "right",
+                        gridColumn: "2",
+                        fontFamily: THEME.MONO,
+                        fontFeatureSettings: "'tnum' 1",
+                      }}
+                    >
                       −{b.yield_loss_percent}% yield
                     </span>
                   </div>
@@ -824,67 +1257,68 @@ export default function PaperAnalyzer({
             )}
 
             {/* De Novo Design Strategies — collapsible */}
-            {axonInteraction.disclosure_phase === 'revealed' && designStrategies.length > 0 && (
+            {axonInteraction.disclosure_phase === "revealed" && designStrategies.length > 0 && (
               <div style={DESIGN_CARD_STYLE}>
-                <button
-                  onClick={() => setDesignExpanded(!designExpanded)}
-                  style={DESIGN_HEADER_STYLE}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <FlaskConical size={13} style={{ color: '#95C8BC' }} />
-                    <span style={DESIGN_LABEL_STYLE}>
-                      De Novo Design Strategies ({designStrategies.length})
-                    </span>
+                <button onClick={() => setDesignExpanded(!designExpanded)} style={DESIGN_HEADER_STYLE}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <FlaskConical size={13} style={{ color: "#95C8BC" }} />
+                    <span style={DESIGN_LABEL_STYLE}>De Novo Design Strategies ({designStrategies.length})</span>
                   </div>
-                  <ChevronDown size={13} style={{
-                    color: 'rgba(201,228,222,0.4)',
-                    transform: designExpanded ? 'rotate(180deg)' : 'rotate(0)',
-                    transition: 'transform 0.2s',
-                  }} />
+                  <ChevronDown
+                    size={13}
+                    style={{
+                      color: "rgba(201,228,222,0.4)",
+                      transform: designExpanded ? "rotate(180deg)" : "rotate(0)",
+                      transition: "transform 0.2s",
+                    }}
+                  />
                 </button>
 
-                {designExpanded && designStrategies.map((s, i) => (
-                  <div key={i} style={{
-                    padding: '0 18px 16px',
-                    borderTop: '1px solid rgba(201,228,222,0.06)',
-                  }}>
-                    <p style={DESIGN_TARGET_STYLE}>
-                      Target: {s.node_id.replace(/_/g, ' ')}
-                    </p>
-                    {[
-                      { label: 'Active Site', value: s.de_novo_design_strategy.active_site_remodeling },
-                      { label: 'Thermal Stability', value: s.de_novo_design_strategy.thermal_stability_enhancement },
-                      { label: 'Substrate Specificity', value: s.de_novo_design_strategy.substrate_specificity_tuning },
-                      { label: 'Predicted Impact', value: s.de_novo_design_strategy.predicted_impact },
-                    ].map(({ label, value }) => (
-                      <div key={label} style={{ marginBottom: '8px' }}>
-                        <span style={DESIGN_FIELD_LABEL_STYLE}>
-                          {label}
-                        </span>
-                        <p style={DESIGN_FIELD_VALUE_STYLE}>
-                          {value}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ))}
+                {designExpanded &&
+                  designStrategies.map((s, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: "0 18px 16px",
+                        borderTop: "1px solid rgba(201,228,222,0.06)",
+                      }}
+                    >
+                      <p style={DESIGN_TARGET_STYLE}>Target: {s.node_id.replace(/_/g, " ")}</p>
+                      {[
+                        { label: "Active Site", value: s.de_novo_design_strategy.active_site_remodeling },
+                        { label: "Thermal Stability", value: s.de_novo_design_strategy.thermal_stability_enhancement },
+                        {
+                          label: "Substrate Specificity",
+                          value: s.de_novo_design_strategy.substrate_specificity_tuning,
+                        },
+                        { label: "Predicted Impact", value: s.de_novo_design_strategy.predicted_impact },
+                      ].map(({ label, value }) => (
+                        <div key={label} style={{ marginBottom: "8px" }}>
+                          <span style={DESIGN_FIELD_LABEL_STYLE}>{label}</span>
+                          <p style={DESIGN_FIELD_VALUE_STYLE}>{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
               </div>
             )}
 
             {/* Pathway revealed confirmation + dismiss */}
-            {axonInteraction.disclosure_phase === 'revealed' && (
+            {axonInteraction.disclosure_phase === "revealed" && (
               <div style={DISMISS_ROW_STYLE}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.4)' }} />
-                  <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
-                    Pathway visualized above ↑
-                  </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <CheckCircle2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
+                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px" }}>Pathway visualized above ↑</span>
                 </div>
                 <button
                   onClick={dismissAxonDialogue}
                   style={DISMISS_BUTTON_STYLE}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
+                  }}
                 >
                   Dismiss
                 </button>
@@ -893,9 +1327,28 @@ export default function PaperAnalyzer({
           </div>
         )}
       </div>
-      <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" onChange={e => handleFileUpload(e, 'pdf')} className="hidden" />
-      <input ref={imageInputRef} type="file" accept="image/*" onChange={e => handleFileUpload(e, 'image')} className="hidden" />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={e => handleFileUpload(e, 'image')} className="hidden" />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        onChange={(e) => handleFileUpload(e, "pdf")}
+        className="hidden"
+      />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleFileUpload(e, "image")}
+        className="hidden"
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={(e) => handleFileUpload(e, "image")}
+        className="hidden"
+      />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </section>
   );

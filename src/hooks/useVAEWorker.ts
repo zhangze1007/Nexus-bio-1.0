@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useRef, useEffect, useCallback, useState } from 'react';
-import type { OmicsRow } from '../types';
-import type { VAETrainingResult } from '../services/MOIEngine';
-import type { VAEWorkerIn, VAEWorkerOut } from '../workers/vaeWorker';
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { VAETrainingResult } from "../services/MOIEngine";
+import type { OmicsRow } from "../types";
+import type { VAEWorkerIn, VAEWorkerOut } from "../workers/vaeWorker";
 
 interface UseVAEWorkerOptions {
   data: OmicsRow[];
@@ -35,26 +35,23 @@ export function useVAEWorker({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    workerRef.current = new Worker(
-      new URL('../workers/vaeWorker.ts', import.meta.url),
-      { type: 'module' },
-    );
+    workerRef.current = new Worker(new URL("../workers/vaeWorker.ts", import.meta.url), { type: "module" });
 
     const w = workerRef.current;
     w.onmessage = (e: MessageEvent<VAEWorkerOut>) => {
       const msg = e.data;
-      if (msg.type === 'RESULT') {
+      if (msg.type === "RESULT") {
         setResult(msg.result);
         setLoading(false);
         setError(null);
-      } else if (msg.type === 'ERROR') {
+      } else if (msg.type === "ERROR") {
         setError(msg.message);
         setLoading(false);
       }
     };
 
     w.onerror = (e) => {
-      setError(e.message ?? 'Worker error');
+      setError(e.message ?? "Worker error");
       setLoading(false);
     };
 
@@ -69,7 +66,7 @@ export function useVAEWorker({
     setLoading(true);
     setError(null);
     const msg: VAEWorkerIn = {
-      type: 'TRAIN',
+      type: "TRAIN",
       data,
       latentDim,
       beta,

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { FlaskConical, Layers3, Loader2, Network, Search, UploadCloud } from 'lucide-react';
-import styles from './ScSpatialWorkbench.module.css';
-import { colorForCluster } from './scSpatialPalette';
-import type { ScSpatialAvailableViews } from '../../../types/scspatial';
+import { FlaskConical, Layers3, Loader2, Network, Search, UploadCloud } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { ScSpatialAvailableViews } from "../../../types/scspatial";
+import styles from "./ScSpatialWorkbench.module.css";
+import { colorForCluster } from "./scSpatialPalette";
 
 export interface ScSpatialAnalysisParams {
   leidenResolution: number;
@@ -12,7 +12,7 @@ export interface ScSpatialAnalysisParams {
   nPcs: number;
   nTopGenes: number;
   moranPerms: number;
-  coordType: 'auto' | 'visium' | 'generic';
+  coordType: "auto" | "visium" | "generic";
 }
 
 interface ScSpatialControlRailProps {
@@ -30,7 +30,7 @@ interface ScSpatialControlRailProps {
     warnings: string[];
   } | null;
   developerMode: boolean;
-  loadState: 'idle' | 'uploading' | 'querying' | 'ready' | 'error';
+  loadState: "idle" | "uploading" | "querying" | "ready" | "error";
   selectedCluster: string | null;
   selectedGene: string;
   compareGene: string;
@@ -85,9 +85,9 @@ export default function ScSpatialControlRail({
   onSetNeighborK,
   onAnalysisParamChange,
 }: ScSpatialControlRailProps) {
-  const busy = loadState === 'uploading' || loadState === 'querying';
+  const busy = loadState === "uploading" || loadState === "querying";
 
-  const [geneQuery, setGeneQuery] = useState('');
+  const [geneQuery, setGeneQuery] = useState("");
 
   const filteredGenes = useMemo(() => {
     if (!geneQuery.trim()) return availableGenes.slice(0, 20);
@@ -110,18 +110,28 @@ export default function ScSpatialControlRail({
               Demo
             </button>
           </div>
-          {spatialFormat && spatialFormat !== 'none' && (
+          {spatialFormat && spatialFormat !== "none" && (
             <span className={styles.badge} style={{ marginTop: 4 }}>
-              {spatialFormat === 'visium' ? '10x Visium' :
-               spatialFormat === 'merfish' ? 'MERFISH' :
-               spatialFormat === 'generic' ? 'Spatial' : spatialFormat}
+              {spatialFormat === "visium"
+                ? "10x Visium"
+                : spatialFormat === "merfish"
+                  ? "MERFISH"
+                  : spatialFormat === "generic"
+                    ? "Spatial"
+                    : spatialFormat}
             </span>
           )}
           {datasetMeta ? (
             <div className={styles.inlineStats}>
-              <span><strong>{datasetMeta.cellCount.toLocaleString()}</strong>cells</span>
-              <span><strong>{datasetMeta.geneCount.toLocaleString()}</strong>genes</span>
-              <span><strong>{datasetMeta.sampleCount}</strong>samples</span>
+              <span>
+                <strong>{datasetMeta.cellCount.toLocaleString()}</strong>cells
+              </span>
+              <span>
+                <strong>{datasetMeta.geneCount.toLocaleString()}</strong>genes
+              </span>
+              <span>
+                <strong>{datasetMeta.sampleCount}</strong>samples
+              </span>
             </div>
           ) : null}
         </section>
@@ -139,9 +149,13 @@ export default function ScSpatialControlRail({
             >
               {availableGenes.length === 0 ? (
                 <option value="">— No genes loaded —</option>
-              ) : availableGenes.map((gene) => (
-                <option key={gene} value={gene}>{gene}</option>
-              ))}
+              ) : (
+                availableGenes.map((gene) => (
+                  <option key={gene} value={gene}>
+                    {gene}
+                  </option>
+                ))
+              )}
             </select>
           </div>
           <div>
@@ -154,9 +168,13 @@ export default function ScSpatialControlRail({
               disabled={availableGenes.length === 0 || busy}
             >
               <option value="">— None —</option>
-              {availableGenes.filter((g) => g !== selectedGene).map((gene) => (
-                <option key={gene} value={gene}>{gene}</option>
-              ))}
+              {availableGenes
+                .filter((g) => g !== selectedGene)
+                .map((gene) => (
+                  <option key={gene} value={gene}>
+                    {gene}
+                  </option>
+                ))}
             </select>
           </div>
         </section>
@@ -179,28 +197,33 @@ export default function ScSpatialControlRail({
             <div className={styles.list}>
               {filteredGenes.length === 0 ? (
                 <div className={styles.metricDetail}>No matches.</div>
-              ) : filteredGenes.map((gene) => (
-                <button
-                  key={gene}
-                  type="button"
-                  className={`${styles.listButton} ${selectedGene === gene ? styles.listButtonActive : ''}`}
-                  onClick={() => { onSelectGene(gene); setGeneQuery(''); }}
-                >
-                  <span className={styles.listPrimary}>{gene}</span>
-                  {selectedGene === gene ? <span className={styles.listSecondary}>active</span> : null}
-                </button>
-              ))}
+              ) : (
+                filteredGenes.map((gene) => (
+                  <button
+                    key={gene}
+                    type="button"
+                    className={`${styles.listButton} ${selectedGene === gene ? styles.listButtonActive : ""}`}
+                    onClick={() => {
+                      onSelectGene(gene);
+                      setGeneQuery("");
+                    }}
+                  >
+                    <span className={styles.listPrimary}>{gene}</span>
+                    {selectedGene === gene ? <span className={styles.listSecondary}>active</span> : null}
+                  </button>
+                ))
+              )}
             </div>
           ) : null}
           <label className={styles.fieldLabel}>Clusters</label>
           <div className={styles.list}>
             <button
               type="button"
-              className={`${styles.listButton} ${selectedCluster === null ? styles.listButtonActive : ''}`}
+              className={`${styles.listButton} ${selectedCluster === null ? styles.listButtonActive : ""}`}
               onClick={() => onSelectCluster(null)}
             >
               <span className={styles.listMeta}>
-                <span className={styles.swatch} style={{ background: '#6b7280' }} />
+                <span className={styles.swatch} style={{ background: "#6b7280" }} />
                 <span className={styles.listPrimary}>All clusters</span>
               </span>
             </button>
@@ -208,7 +231,7 @@ export default function ScSpatialControlRail({
               <button
                 key={cluster}
                 type="button"
-                className={`${styles.listButton} ${selectedCluster === cluster ? styles.listButtonActive : ''}`}
+                className={`${styles.listButton} ${selectedCluster === cluster ? styles.listButtonActive : ""}`}
                 onClick={() => onSelectCluster(cluster)}
               >
                 <span className={styles.listMeta}>
@@ -226,7 +249,7 @@ export default function ScSpatialControlRail({
           <div className={styles.advancedBody}>
             <button
               type="button"
-              className={`${styles.toggle} ${developerMode ? styles.toggleActive : ''}`}
+              className={`${styles.toggle} ${developerMode ? styles.toggleActive : ""}`}
               onClick={onToggleDeveloperMode}
             >
               <Layers3 size={13} />
@@ -234,7 +257,7 @@ export default function ScSpatialControlRail({
             </button>
             <button
               type="button"
-              className={`${styles.toggle} ${showKde ? styles.toggleActive : ''}`}
+              className={`${styles.toggle} ${showKde ? styles.toggleActive : ""}`}
               onClick={onToggleKde}
               disabled={busy}
             >
@@ -242,7 +265,7 @@ export default function ScSpatialControlRail({
             </button>
             <button
               type="button"
-              className={`${styles.toggle} ${showNeighbors ? styles.toggleActive : ''}`}
+              className={`${styles.toggle} ${showNeighbors ? styles.toggleActive : ""}`}
               onClick={onToggleNeighbors}
               disabled={busy}
             >
@@ -274,26 +297,34 @@ export default function ScSpatialControlRail({
             </div>
             {datasetMeta ? (
               <div className={styles.inlineStats}>
-                <span><strong>{datasetMeta.warnings.length}</strong>warnings</span>
-                <span><strong>{datasetMeta.missingFields.length}</strong>missing</span>
-                <span>parser <strong style={{ fontSize: 10 }}>{datasetMeta.parserVersion}</strong></span>
+                <span>
+                  <strong>{datasetMeta.warnings.length}</strong>warnings
+                </span>
+                <span>
+                  <strong>{datasetMeta.missingFields.length}</strong>missing
+                </span>
+                <span>
+                  parser <strong style={{ fontSize: 10 }}>{datasetMeta.parserVersion}</strong>
+                </span>
               </div>
             ) : null}
 
-            <div style={{ borderTop: '1px solid #d1d5db', margin: '8px 0', paddingTop: 8 }}>
-              <label className={styles.fieldLabel} style={{ fontWeight: 600, marginBottom: 6, display: 'block' }}>
+            <div style={{ borderTop: "1px solid #d1d5db", margin: "8px 0", paddingTop: 8 }}>
+              <label className={styles.fieldLabel} style={{ fontWeight: 600, marginBottom: 6, display: "block" }}>
                 Analysis Parameters
               </label>
 
               <div>
-                <label className={styles.fieldLabel}>Leiden Resolution: {analysisParams.leidenResolution.toFixed(1)}</label>
+                <label className={styles.fieldLabel}>
+                  Leiden Resolution: {analysisParams.leidenResolution.toFixed(1)}
+                </label>
                 <input
                   type="range"
                   min={0.1}
                   max={3.0}
                   step={0.1}
                   value={analysisParams.leidenResolution}
-                  onChange={(e) => onAnalysisParamChange('leidenResolution', Number(e.target.value))}
+                  onChange={(e) => onAnalysisParamChange("leidenResolution", Number(e.target.value))}
                   className={styles.input}
                   aria-label="Leiden clustering resolution"
                 />
@@ -307,7 +338,7 @@ export default function ScSpatialControlRail({
                   max={50}
                   step={1}
                   value={analysisParams.nNeighbors}
-                  onChange={(e) => onAnalysisParamChange('nNeighbors', Number(e.target.value))}
+                  onChange={(e) => onAnalysisParamChange("nNeighbors", Number(e.target.value))}
                   className={styles.input}
                   aria-label="Number of neighbors for UMAP"
                 />
@@ -321,7 +352,7 @@ export default function ScSpatialControlRail({
                   max={50}
                   step={5}
                   value={analysisParams.nPcs}
-                  onChange={(e) => onAnalysisParamChange('nPcs', Number(e.target.value))}
+                  onChange={(e) => onAnalysisParamChange("nPcs", Number(e.target.value))}
                   className={styles.input}
                   aria-label="Number of principal components"
                 />
@@ -335,21 +366,23 @@ export default function ScSpatialControlRail({
                   max={5000}
                   step={500}
                   value={analysisParams.nTopGenes}
-                  onChange={(e) => onAnalysisParamChange('nTopGenes', Number(e.target.value))}
+                  onChange={(e) => onAnalysisParamChange("nTopGenes", Number(e.target.value))}
                   className={styles.input}
                   aria-label="Number of top highly variable genes"
                 />
               </div>
 
               <div>
-                <label className={styles.fieldLabel}>Moran's I Permutations: {analysisParams.moranPerms.toLocaleString()}</label>
+                <label className={styles.fieldLabel}>
+                  Moran's I Permutations: {analysisParams.moranPerms.toLocaleString()}
+                </label>
                 <input
                   type="range"
                   min={100}
                   max={10000}
                   step={100}
                   value={analysisParams.moranPerms}
-                  onChange={(e) => onAnalysisParamChange('moranPerms', Number(e.target.value))}
+                  onChange={(e) => onAnalysisParamChange("moranPerms", Number(e.target.value))}
                   className={styles.input}
                   aria-label="Moran's I permutation count"
                 />
@@ -360,7 +393,7 @@ export default function ScSpatialControlRail({
                 <select
                   className={styles.select}
                   value={analysisParams.coordType}
-                  onChange={(e) => onAnalysisParamChange('coordType', e.target.value as 'auto' | 'visium' | 'generic')}
+                  onChange={(e) => onAnalysisParamChange("coordType", e.target.value as "auto" | "visium" | "generic")}
                   aria-label="Coordinate type"
                 >
                   <option value="auto">Auto</option>

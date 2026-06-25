@@ -68,7 +68,7 @@ const DEFAULT_TEMP_CORRECTION: TemperatureCorrection = {
 /** pH correction: Gaussian centered at 7.4 (physiological pH) */
 const DEFAULT_PH_CORRECTION: PhCorrection = {
   optimal: 7.4,
-  sigma: 1.10, // sqrt(1.2) ≈ 1.10 pH units standard deviation
+  sigma: 1.1, // sqrt(1.2) ≈ 1.10 pH units standard deviation
 };
 
 /** Reference enzyme concentration */
@@ -83,16 +83,7 @@ const DEFAULT_ENZYME_REF = 5.0;
  * @returns Reaction rate (same units as Vmax)
  */
 export function michaelisRate(params: MichaelisMentenParams): number {
-  const {
-    vmax,
-    km,
-    substrate,
-    temperature = 37,
-    pH = 7.4,
-    enzyme = 1.0,
-    inhibitor,
-    ki,
-  } = params;
+  const { vmax, km, substrate, temperature = 37, pH = 7.4, enzyme = 1.0, inhibitor, ki } = params;
 
   // Guard against invalid inputs
   if (vmax <= 0 || km < 0 || substrate < 0) {
@@ -101,23 +92,17 @@ export function michaelisRate(params: MichaelisMentenParams): number {
 
   // Temperature correction: Gaussian sensitivity
   const tempFactor = Math.exp(
-    -((temperature - DEFAULT_TEMP_CORRECTION.optimal) ** 2) /
-    (2 * DEFAULT_TEMP_CORRECTION.sigma ** 2)
+    -((temperature - DEFAULT_TEMP_CORRECTION.optimal) ** 2) / (2 * DEFAULT_TEMP_CORRECTION.sigma ** 2),
   );
 
   // pH correction: Gaussian sensitivity
-  const phFactor = Math.exp(
-    -((pH - DEFAULT_PH_CORRECTION.optimal) ** 2) /
-    (2 * DEFAULT_PH_CORRECTION.sigma ** 2)
-  );
+  const phFactor = Math.exp(-((pH - DEFAULT_PH_CORRECTION.optimal) ** 2) / (2 * DEFAULT_PH_CORRECTION.sigma ** 2));
 
   // Effective Vmax with corrections
   const vmaxEff = vmax * tempFactor * phFactor * (enzyme / DEFAULT_ENZYME_REF);
 
   // Competitive inhibition: Km_eff = Km * (1 + [I]/Ki)
-  const kmEff = (inhibitor && ki && ki > 0 && inhibitor > 0)
-    ? km * (1 + inhibitor / ki)
-    : km;
+  const kmEff = inhibitor && ki && ki > 0 && inhibitor > 0 ? km * (1 + inhibitor / ki) : km;
 
   // Michaelis-Menten equation
   const denominator = kmEff + Math.max(0, substrate);
@@ -137,17 +122,9 @@ export function michaelisRate(params: MichaelisMentenParams): number {
  * @param inhibitor - Inhibitor concentration (optional)
  * @returns Reaction rate
  */
-export function mmVelocity(
-  substrate: number,
-  vmax: number,
-  km: number,
-  ki?: number,
-  inhibitor?: number,
-): number {
+export function mmVelocity(substrate: number, vmax: number, km: number, ki?: number, inhibitor?: number): number {
   const sSafe = Math.max(0, substrate);
-  const kmEff = (ki && inhibitor && ki > 0 && inhibitor > 0)
-    ? km * (1 + inhibitor / ki)
-    : km;
+  const kmEff = ki && inhibitor && ki > 0 && inhibitor > 0 ? km * (1 + inhibitor / ki) : km;
   const denominator = kmEff + sSafe;
   if (denominator <= 0) return 0;
   return (vmax * sSafe) / denominator;
@@ -162,11 +139,7 @@ export function mmVelocity(
  * @param km - Michaelis constant
  * @returns Substrate concentration
  */
-export function substrateFromRate(
-  rate: number,
-  vmax: number,
-  km: number,
-): number {
+export function substrateFromRate(rate: number, vmax: number, km: number): number {
   if (rate <= 0 || vmax <= 0 || rate >= vmax) {
     return rate <= 0 ? 0 : Infinity;
   }
@@ -181,15 +154,11 @@ export function substrateFromRate(
  * @param vmax - Maximum reaction rate
  * @returns Michaelis constant
  */
-export function kmFromRate(
-  rate: number,
-  substrate: number,
-  vmax: number,
-): number {
+export function kmFromRate(rate: number, substrate: number, vmax: number): number {
   if (rate <= 0 || vmax <= 0 || substrate <= 0 || rate >= vmax) {
     return NaN;
   }
-  return substrate * (vmax - rate) / rate;
+  return (substrate * (vmax - rate)) / rate;
 }
 
 // ── Utility functions ──────────────────────────────────────────────────

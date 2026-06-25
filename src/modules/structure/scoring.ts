@@ -14,7 +14,7 @@
  *   REFERENCE: Zhang & Skolnick (2004) Proteins 57:702 (TM-score)
  */
 
-import type { ComplexScore } from './types';
+import type { ComplexScore } from "./types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -63,23 +63,20 @@ interface ParsedAtom {
  * @param chainIds - Chain IDs to extract
  * @returns Map from chain ID to array of Cα atom positions
  */
-function parseCAlphaAtoms(
-  pdbText: string,
-  chainIds: string[],
-): Map<string, ParsedAtom[]> {
+function parseCAlphaAtoms(pdbText: string, chainIds: string[]): Map<string, ParsedAtom[]> {
   const chainSet = new Set(chainIds);
   const atoms = new Map<string, ParsedAtom[]>();
   for (const id of chainIds) atoms.set(id, []);
 
-  const lines = pdbText.split('\n');
+  const lines = pdbText.split("\n");
   for (const line of lines) {
-    if (!line.startsWith('ATOM')) continue;
+    if (!line.startsWith("ATOM")) continue;
 
     const chain = line.substring(21, 22).trim();
     if (!chainSet.has(chain)) continue;
 
     const atomName = line.substring(12, 16).trim();
-    if (atomName !== 'CA') continue;
+    if (atomName !== "CA") continue;
 
     atoms.get(chain)!.push({
       chain,
@@ -98,10 +95,7 @@ function parseCAlphaAtoms(
 /**
  * Compute Euclidean distance between two 3D points.
  */
-function distance3D(
-  a: { x: number; y: number; z: number },
-  b: { x: number; y: number; z: number },
-): number {
+function distance3D(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
 }
 
@@ -169,7 +163,7 @@ export function computeContactScore(
 
   // Normalize by total possible contacts (product of chain sizes)
   // Use geometric mean of chain sizes as normalization factor
-  const chainSizes = chainIds.map(id => (chainAtoms.get(id) || []).length);
+  const chainSizes = chainIds.map((id) => (chainAtoms.get(id) || []).length);
   const maxPossibleContacts = chainSizes.reduce((acc, size) => acc * size, 1);
 
   if (maxPossibleContacts === 0) return 0;
@@ -194,10 +188,7 @@ export function computeContactScore(
  * console.log(`Area score: ${score.toFixed(3)}`);
  * ```
  */
-export function computeAreaScore(
-  pdbText: string,
-  chainIds: string[],
-): number {
+export function computeAreaScore(pdbText: string, chainIds: string[]): number {
   if (!pdbText || chainIds.length < 2) return 0;
 
   const chainAtoms = parseCAlphaAtoms(pdbText, chainIds);
@@ -273,10 +264,7 @@ export function computeAreaScore(
  * console.log(`Energy score: ${score.toFixed(3)}`);
  * ```
  */
-export function computeEnergyScore(
-  pdbText: string,
-  chainIds: string[],
-): number {
+export function computeEnergyScore(pdbText: string, chainIds: string[]): number {
   if (!pdbText || chainIds.length < 2) return 0;
 
   const chainAtoms = parseCAlphaAtoms(pdbText, chainIds);
@@ -384,7 +372,7 @@ export function computeClashPenalty(
   }
 
   // Normalize by total possible contacts
-  const chainSizes = chainIds.map(id => (chainAtoms.get(id) || []).length);
+  const chainSizes = chainIds.map((id) => (chainAtoms.get(id) || []).length);
   const maxPossibleContacts = chainSizes.reduce((acc, size) => acc * size, 1);
 
   if (maxPossibleContacts === 0) return 0;
@@ -445,10 +433,7 @@ export function scoreComplex(
   const clashPenalty = computeClashPenalty(pdbText, chainIds);
 
   // Compute weighted sum
-  const weightedSum =
-    weights.contact * contactScore +
-    weights.area * areaScore +
-    weights.energy * energyScore;
+  const weightedSum = weights.contact * contactScore + weights.area * areaScore + weights.energy * energyScore;
 
   // Final score: weighted sum minus weighted clash penalty
   const finalScore = Math.max(0, Math.min(1, weightedSum - weights.clash * clashPenalty));

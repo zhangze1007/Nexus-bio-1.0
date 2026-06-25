@@ -33,8 +33,8 @@ export interface TimeSeriesPoint {
 export interface Anomaly {
   time: number;
   channel: string;
-  type: 'spike' | 'drift' | 'dropout' | 'out_of_range' | 'sudden_change' | 'multivariate';
-  severity: 'low' | 'medium' | 'high';
+  type: "spike" | "drift" | "dropout" | "out_of_range" | "sudden_change" | "multivariate";
+  severity: "low" | "medium" | "high";
   value: number;
   expected: number;
   description: string;
@@ -46,7 +46,7 @@ export interface Anomaly {
 }
 
 export interface GrowthPhase {
-  phase: 'lag' | 'exponential' | 'stationary' | 'decline';
+  phase: "lag" | "exponential" | "stationary" | "decline";
   startTime: number;
   endTime: number;
   growthRate?: number;
@@ -70,8 +70,8 @@ export interface KineticEstimate {
 }
 
 export interface BatchComparison {
-  similarity: number;           // 0-1 (1 = identical)
-  distance: number;             // DTW distance
+  similarity: number; // 0-1 (1 = identical)
+  distance: number; // DTW distance
   differences: Array<{
     channel: string;
     metric: string;
@@ -121,9 +121,16 @@ function std(arr: number[]): number {
 function linearRegression(x: number[], y: number[]): { slope: number; intercept: number; r2: number } {
   const n = x.length;
   if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
-  const xM = mean(x), yM = mean(y);
-  let sXY = 0, sXX = 0, sYY = 0;
-  for (let i = 0; i < n; i++) { sXY += (x[i] - xM) * (y[i] - yM); sXX += (x[i] - xM) ** 2; sYY += (y[i] - yM) ** 2; }
+  const xM = mean(x),
+    yM = mean(y);
+  let sXY = 0,
+    sXX = 0,
+    sYY = 0;
+  for (let i = 0; i < n; i++) {
+    sXY += (x[i] - xM) * (y[i] - yM);
+    sXX += (x[i] - xM) ** 2;
+    sYY += (y[i] - yM) ** 2;
+  }
   const slope = sXX > 0 ? sXY / sXX : 0;
   const intercept = yM - slope * xM;
   const ssRes = y.reduce((s, yi, i) => s + (yi - (slope * x[i] + intercept)) ** 2, 0);
@@ -154,17 +161,18 @@ function computePCA(data: number[][]): {
 } {
   const n = data.length;
   const p = data[0].length;
-  if (n < 3 || p < 2) return { scores: [], loadings: [], explainedVariance: [], cumulativeVariance: [], nComponents: 0 };
+  if (n < 3 || p < 2)
+    return { scores: [], loadings: [], explainedVariance: [], cumulativeVariance: [], nComponents: 0 };
 
   // Standardize
   const means = new Array(p).fill(0);
   const stds = new Array(p).fill(0);
   for (let j = 0; j < p; j++) {
-    const col = data.map(row => row[j]);
+    const col = data.map((row) => row[j]);
     means[j] = mean(col);
     stds[j] = std(col) || 1;
   }
-  const standardized = data.map(row => row.map((v, j) => (v - means[j]) / stds[j]));
+  const standardized = data.map((row) => row.map((v, j) => (v - means[j]) / stds[j]));
 
   // Covariance matrix
   const cov: number[][] = Array.from({ length: p }, () => new Array(p).fill(0));
@@ -180,12 +188,12 @@ function computePCA(data: number[][]): {
   const maxComponents = Math.min(p, 3);
   const loadings: number[][] = [];
   const eigenvalues: number[] = [];
-  const covCopy = cov.map(row => [...row]);
+  const covCopy = cov.map((row) => [...row]);
 
   for (let comp = 0; comp < maxComponents; comp++) {
     let vec = new Array(p).fill(0).map(() => Math.random());
-    let norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0));
-    vec = vec.map(v => v / norm);
+    const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0));
+    vec = vec.map((v) => v / norm);
 
     for (let iter = 0; iter < 100; iter++) {
       const newVec = new Array(p).fill(0);
@@ -194,7 +202,7 @@ function computePCA(data: number[][]): {
       }
       const newNorm = Math.sqrt(newVec.reduce((s, v) => s + v * v, 0));
       if (newNorm < 1e-10) break;
-      vec = newVec.map(v => v / newNorm);
+      vec = newVec.map((v) => v / newNorm);
     }
 
     const eigenvalue = vec.reduce((s, v, i) => s + v * covCopy.reduce((ss, row, j) => ss + row[i] * vec[j], 0), 0);
@@ -208,16 +216,14 @@ function computePCA(data: number[][]): {
   }
 
   const totalVar = eigenvalues.reduce((s, v) => s + v, 0) + 0.001;
-  const explainedVariance = eigenvalues.map(v => Math.round(v / totalVar * 1000) / 1000);
+  const explainedVariance = eigenvalues.map((v) => Math.round((v / totalVar) * 1000) / 1000);
   const cumulativeVariance = explainedVariance.reduce((acc: number[], v) => {
     acc.push(Math.round(((acc.length > 0 ? acc[acc.length - 1] : 0) + v) * 1000) / 1000);
     return acc;
   }, []);
 
   // Compute scores
-  const scores = standardized.map(row =>
-    loadings.map(loading => row.reduce((s, v, j) => s + v * loading[j], 0))
-  );
+  const scores = standardized.map((row) => loadings.map((loading) => row.reduce((s, v, j) => s + v * loading[j], 0)));
 
   return { scores, loadings, explainedVariance, cumulativeVariance, nComponents: maxComponents };
 }
@@ -225,7 +231,7 @@ function computePCA(data: number[][]): {
 function detectMultivariateAnomalies(
   data: TimeSeriesPoint[],
   channels: string[],
-): { anomalies: Anomaly[]; pcaModel: BioreactorAnalytics['pcaModel'] } {
+): { anomalies: Anomaly[]; pcaModel: BioreactorAnalytics["pcaModel"] } {
   // Extract numeric matrix
   const matrix: number[][] = [];
   const validIndices: number[] = [];
@@ -235,10 +241,16 @@ function detectMultivariateAnomalies(
     let valid = true;
     for (const ch of channels) {
       const val = (data[i] as unknown as Record<string, unknown>)[ch] as number | undefined;
-      if (val === undefined) { valid = false; break; }
+      if (val === undefined) {
+        valid = false;
+        break;
+      }
       row.push(val);
     }
-    if (valid && row.length >= 2) { matrix.push(row); validIndices.push(i); }
+    if (valid && row.length >= 2) {
+      matrix.push(row);
+      validIndices.push(i);
+    }
   }
 
   if (matrix.length < 5) {
@@ -253,8 +265,8 @@ function detectMultivariateAnomalies(
 
   if (pca.nComponents > 0) {
     // Compute T² and SPE for each observation
-    const t2Values = pca.scores.map(scores =>
-      scores.reduce((s, sc, i) => s + (sc * sc) / (pca.explainedVariance[i] + 0.001), 0)
+    const t2Values = pca.scores.map((scores) =>
+      scores.reduce((s, sc, i) => s + (sc * sc) / (pca.explainedVariance[i] + 0.001), 0),
     );
     const t2Mean = mean(t2Values);
     const t2Std = std(t2Values);
@@ -264,13 +276,13 @@ function detectMultivariateAnomalies(
       if (t2Values[i] > t2Limit) {
         anomalies.push({
           time: data[validIndices[i]].time,
-          channel: 'multivariate',
-          type: 'multivariate',
-          severity: t2Values[i] > t2Limit * 2 ? 'high' : 'medium',
+          channel: "multivariate",
+          type: "multivariate",
+          severity: t2Values[i] > t2Limit * 2 ? "high" : "medium",
           value: t2Values[i],
           expected: t2Limit,
           description: `Multivariate anomaly: T²=${t2Values[i].toFixed(1)} (limit=${t2Limit.toFixed(1)})`,
-          possibleCauses: ['Correlated process upset', 'Sensor drift affecting multiple channels', 'Metabolic shift'],
+          possibleCauses: ["Correlated process upset", "Sensor drift affecting multiple channels", "Metabolic shift"],
           t2Statistic: t2Values[i],
         });
       }
@@ -323,11 +335,11 @@ function detectChangePoints(values: number[], threshold: number = 3): number[] {
 }
 
 function identifyPhases(data: TimeSeriesPoint[]): GrowthPhase[] {
-  const biomassData = data.filter(d => d.biomass !== undefined && d.biomass > 0);
+  const biomassData = data.filter((d) => d.biomass !== undefined && d.biomass > 0);
   if (biomassData.length < 5) return [];
 
-  const logBiomass = biomassData.map(d => Math.log(d.biomass!));
-  const times = biomassData.map(d => d.time);
+  const logBiomass = biomassData.map((d) => Math.log(d.biomass!));
+  const times = biomassData.map((d) => d.time);
 
   // Detect change points in growth rate
   const growthRates: number[] = [];
@@ -358,11 +370,11 @@ function identifyPhases(data: TimeSeriesPoint[]): GrowthPhase[] {
     // Reference: Zwietering et al. (1990) Appl Environ Microbiol 56:1875-1881
     // Reference: Baranyi & Roberts (1994) Int J Food Microbiol 23:277-294
     // Reference: Buchanan et al. (1997) Food Technol 51:33-36
-    let phase: GrowthPhase['phase'];
-    if (avgRate < 0.01) phase = 'lag';
-    else if (avgRate > 0.05) phase = 'exponential';
-    else if (avgRate > -0.01) phase = 'stationary';
-    else phase = 'decline';
+    let phase: GrowthPhase["phase"];
+    if (avgRate < 0.01) phase = "lag";
+    else if (avgRate > 0.05) phase = "exponential";
+    else if (avgRate > -0.01) phase = "stationary";
+    else phase = "decline";
 
     // Confidence based on segment consistency
     const rateStd = std(segmentRates);
@@ -372,7 +384,7 @@ function identifyPhases(data: TimeSeriesPoint[]): GrowthPhase[] {
       phase,
       startTime: biomassData[boundaries[i]].time,
       endTime: biomassData[Math.min(boundaries[i + 1], biomassData.length - 1)].time,
-      growthRate: phase === 'exponential' ? Math.round(avgRate * 1000) / 1000 : undefined,
+      growthRate: phase === "exponential" ? Math.round(avgRate * 1000) / 1000 : undefined,
       duration: biomassData[Math.min(boundaries[i + 1], biomassData.length - 1)].time - biomassData[boundaries[i]].time,
       confidence: Math.round(confidence * 100) / 100,
     });
@@ -400,12 +412,14 @@ function levenbergMarquardt(
   for (let iter = 0; iter < 100; iter++) {
     // Compute residuals and Jacobian
     const residuals = xData.map((x, i) => yData[i] - model(x, params));
-    const J: number[][] = xData.map(x => {
+    const J: number[][] = xData.map((x) => {
       const row: number[] = [];
       for (let j = 0; j < p; j++) {
         const eps = 0.001;
-        const pPlus = [...params]; pPlus[j] += eps;
-        const pMinus = [...params]; pMinus[j] -= eps;
+        const pPlus = [...params];
+        pPlus[j] += eps;
+        const pMinus = [...params];
+        pMinus[j] -= eps;
         row.push((model(x, pPlus) - model(x, pMinus)) / (2 * eps));
       }
       return row;
@@ -446,7 +460,7 @@ function levenbergMarquardt(
   // R²
   const yMean = mean(yData);
   const ssTot = yData.reduce((s, y) => s + (y - yMean) ** 2, 0);
-  const predictions = xData.map(x => model(x, params));
+  const predictions = xData.map((x) => model(x, params));
   const ssRes = yData.reduce((s, y, i) => s + (y - predictions[i]) ** 2, 0);
   const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
 
@@ -478,9 +492,20 @@ function solveLinearSystem(A: number[][], b: number[]): number[] | null {
 }
 
 function estimateKinetics(data: TimeSeriesPoint[]): KineticEstimate {
-  const biomassData = data.filter(d => d.biomass !== undefined && d.substrate !== undefined && d.biomass! > 0 && d.substrate! > 0);
+  const biomassData = data.filter(
+    (d) => d.biomass !== undefined && d.substrate !== undefined && d.biomass! > 0 && d.substrate! > 0,
+  );
   if (biomassData.length < 5) {
-    return { muMax: 0, ks: 0, yieldCoeff: 0, doublingTime: 0, linearEstimate: { muMax: 0, ks: 0 }, nonlinearEstimate: { muMax: 0, ks: 0 }, r2: 0, confidenceIntervals: { muMax: [0, 0], ks: [0, 0] } };
+    return {
+      muMax: 0,
+      ks: 0,
+      yieldCoeff: 0,
+      doublingTime: 0,
+      linearEstimate: { muMax: 0, ks: 0 },
+      nonlinearEstimate: { muMax: 0, ks: 0 },
+      r2: 0,
+      confidenceIntervals: { muMax: [0, 0], ks: [0, 0] },
+    };
   }
 
   // Compute specific growth rates
@@ -488,34 +513,49 @@ function estimateKinetics(data: TimeSeriesPoint[]): KineticEstimate {
   for (let i = 1; i < biomassData.length; i++) {
     const dt = biomassData[i].time - biomassData[i - 1].time;
     if (dt <= 0) continue;
-    const x0 = biomassData[i - 1].biomass!, x1 = biomassData[i].biomass!;
+    const x0 = biomassData[i - 1].biomass!,
+      x1 = biomassData[i].biomass!;
     if (x0 > 0 && x1 > 0) {
-      muData.push({ mu: (Math.log(x1) - Math.log(x0)) / dt, substrate: (biomassData[i].substrate! + biomassData[i - 1].substrate!) / 2 });
+      muData.push({
+        mu: (Math.log(x1) - Math.log(x0)) / dt,
+        substrate: (biomassData[i].substrate! + biomassData[i - 1].substrate!) / 2,
+      });
     }
   }
 
-  const validData = muData.filter(d => d.mu > 0.01 && d.substrate > 0.01);
+  const validData = muData.filter((d) => d.mu > 0.01 && d.substrate > 0.01);
   if (validData.length < 3) {
-    return { muMax: 0, ks: 0, yieldCoeff: 0, doublingTime: 0, linearEstimate: { muMax: 0, ks: 0 }, nonlinearEstimate: { muMax: 0, ks: 0 }, r2: 0, confidenceIntervals: { muMax: [0, 0], ks: [0, 0] } };
+    return {
+      muMax: 0,
+      ks: 0,
+      yieldCoeff: 0,
+      doublingTime: 0,
+      linearEstimate: { muMax: 0, ks: 0 },
+      nonlinearEstimate: { muMax: 0, ks: 0 },
+      r2: 0,
+      confidenceIntervals: { muMax: [0, 0], ks: [0, 0] },
+    };
   }
 
   // Step 1: Linearized Monod (initial estimate)
-  const invMu = validData.map(d => 1 / d.mu);
-  const invS = validData.map(d => 1 / d.substrate);
+  const invMu = validData.map((d) => 1 / d.mu);
+  const invS = validData.map((d) => 1 / d.substrate);
   const { slope, intercept, r2: linearR2 } = linearRegression(invS, invMu);
   const linearMuMax = intercept > 0 ? 1 / intercept : 0.5;
   const linearKs = intercept > 0 ? slope / intercept : 1;
 
   // Step 2: Nonlinear refinement (LM)
-  const monodModel = (s: number, params: number[]) => params[0] * s / (params[1] + s);
-  const sData = validData.map(d => d.substrate);
-  const muDataArr = validData.map(d => d.mu);
+  const monodModel = (s: number, params: number[]) => (params[0] * s) / (params[1] + s);
+  const sData = validData.map((d) => d.substrate);
+  const muDataArr = validData.map((d) => d.mu);
   const { params: nlParams, r2: nlR2 } = levenbergMarquardt(monodModel, sData, muDataArr, [linearMuMax, linearKs]);
 
   // Yield coefficient
-  const firstB = biomassData[0].biomass!, lastB = biomassData[biomassData.length - 1].biomass!;
-  const firstS = biomassData[0].substrate!, lastS = biomassData[biomassData.length - 1].substrate!;
-  const yieldCoeff = (firstS - lastS) > 0 ? (lastB - firstB) / (firstS - lastS) : 0;
+  const firstB = biomassData[0].biomass!,
+    lastB = biomassData[biomassData.length - 1].biomass!;
+  const firstS = biomassData[0].substrate!,
+    lastS = biomassData[biomassData.length - 1].substrate!;
+  const yieldCoeff = firstS - lastS > 0 ? (lastB - firstB) / (firstS - lastS) : 0;
 
   // Confidence intervals (bootstrap)
   const nBoot = 100;
@@ -523,7 +563,12 @@ function estimateKinetics(data: TimeSeriesPoint[]): KineticEstimate {
   const ksSamples: number[] = [];
   for (let b = 0; b < nBoot; b++) {
     const bootS = validData.map(() => validData[Math.floor(Math.random() * validData.length)]);
-    const { params: bootParams } = levenbergMarquardt(monodModel, bootS.map(d => d.substrate), bootS.map(d => d.mu), [nlParams[0], nlParams[1]]);
+    const { params: bootParams } = levenbergMarquardt(
+      monodModel,
+      bootS.map((d) => d.substrate),
+      bootS.map((d) => d.mu),
+      [nlParams[0], nlParams[1]],
+    );
     muSamples.push(bootParams[0]);
     ksSamples.push(bootParams[1]);
   }
@@ -538,7 +583,7 @@ function estimateKinetics(data: TimeSeriesPoint[]): KineticEstimate {
     muMax: Math.round(nlParams[0] * 1000) / 1000,
     ks: Math.round(nlParams[1] * 1000) / 1000,
     yieldCoeff: Math.round(yieldCoeff * 1000) / 1000,
-    doublingTime: nlParams[0] > 0 ? Math.round(Math.log(2) / nlParams[0] * 100) / 100 : 0,
+    doublingTime: nlParams[0] > 0 ? Math.round((Math.log(2) / nlParams[0]) * 100) / 100 : 0,
     linearEstimate: { muMax: Math.round(linearMuMax * 1000) / 1000, ks: Math.round(linearKs * 1000) / 1000 },
     nonlinearEstimate: { muMax: Math.round(nlParams[0] * 1000) / 1000, ks: Math.round(nlParams[1] * 1000) / 1000 },
     r2: nlR2 > linearR2 ? nlR2 : linearR2,
@@ -552,7 +597,8 @@ function estimateKinetics(data: TimeSeriesPoint[]): KineticEstimate {
  * Dynamic Time Warping distance between two time series.
  */
 function dtwDistance(a: number[], b: number[]): number {
-  const n = a.length, m = b.length;
+  const n = a.length,
+    m = b.length;
   const dtw = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(Infinity));
   dtw[0][0] = 0;
   for (let i = 1; i <= n; i++) {
@@ -564,38 +610,39 @@ function dtwDistance(a: number[], b: number[]): number {
   return Math.sqrt(dtw[n][m] / Math.max(n, m));
 }
 
-function compareBatches(
-  current: TimeSeriesPoint[],
-  historical: TimeSeriesPoint[][],
-): BatchComparison | null {
+function compareBatches(current: TimeSeriesPoint[], historical: TimeSeriesPoint[][]): BatchComparison | null {
   if (historical.length === 0) return null;
 
-  const currentBio = current.filter(d => d.biomass !== undefined).map(d => d.biomass!);
-  let bestIdx = 0, bestDist = Infinity;
+  const currentBio = current.filter((d) => d.biomass !== undefined).map((d) => d.biomass!);
+  let bestIdx = 0,
+    bestDist = Infinity;
 
   for (let i = 0; i < historical.length; i++) {
-    const histBio = historical[i].filter(d => d.biomass !== undefined).map(d => d.biomass!);
+    const histBio = historical[i].filter((d) => d.biomass !== undefined).map((d) => d.biomass!);
     if (histBio.length < 2) continue;
     const dist = dtwDistance(currentBio, histBio);
-    if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIdx = i;
+    }
   }
 
   const similarity = Math.max(0, 1 - bestDist / (mean(currentBio) + 0.001));
   const histBest = historical[bestIdx];
 
   // Compare metrics
-  const channels = ['biomass', 'substrate', 'product'] as const;
-  const differences: BatchComparison['differences'] = [];
+  const channels = ["biomass", "substrate", "product"] as const;
+  const differences: BatchComparison["differences"] = [];
   for (const ch of channels) {
-    const currVals = current.filter(d => d[ch] !== undefined).map(d => d[ch]!);
-    const histVals = histBest.filter(d => d[ch] !== undefined).map(d => d[ch]!);
+    const currVals = current.filter((d) => d[ch] !== undefined).map((d) => d[ch]!);
+    const histVals = histBest.filter((d) => d[ch] !== undefined).map((d) => d[ch]!);
     if (currVals.length === 0 || histVals.length === 0) continue;
     const currMean = mean(currVals);
     const histMean = mean(histVals);
-    const pctChange = histMean > 0 ? (currMean - histMean) / histMean * 100 : 0;
+    const pctChange = histMean > 0 ? ((currMean - histMean) / histMean) * 100 : 0;
     differences.push({
       channel: ch,
-      metric: 'mean',
+      metric: "mean",
       current: Math.round(currMean * 1000) / 1000,
       reference: Math.round(histMean * 1000) / 1000,
       percentChange: Math.round(pctChange * 10) / 10,
@@ -617,7 +664,7 @@ export function analyzeBioreactorData(
   data: TimeSeriesPoint[],
   historicalBatches?: TimeSeriesPoint[][],
 ): BioreactorAnalytics {
-  const channels = ['biomass', 'substrate', 'product', 'dissolvedO2', 'pH', 'temperature'];
+  const channels = ["biomass", "substrate", "product", "dissolvedO2", "pH", "temperature"];
 
   // Module 1: Multivariate anomaly detection
   const { anomalies: multivariateAnomalies, pcaModel } = detectMultivariateAnomalies(data, channels);
@@ -638,19 +685,25 @@ export function analyzeBioreactorData(
   const allAnomalies = [...multivariateAnomalies, ...univariateAnomalies].sort((a, b) => a.time - b.time);
 
   // Summary
-  const biomassValues = data.filter(d => d.biomass !== undefined).map(d => d.biomass!);
-  const productValues = data.filter(d => d.product !== undefined).map(d => d.product!);
-  const substrateValues = data.filter(d => d.substrate !== undefined).map(d => d.substrate!);
+  const biomassValues = data.filter((d) => d.biomass !== undefined).map((d) => d.biomass!);
+  const productValues = data.filter((d) => d.product !== undefined).map((d) => d.product!);
+  const substrateValues = data.filter((d) => d.substrate !== undefined).map((d) => d.substrate!);
   const duration = data.length > 0 ? data[data.length - 1].time - data[0].time : 0;
-  const totalSubConsumed = substrateValues.length >= 2 ? Math.max(0, substrateValues[0] - substrateValues[substrateValues.length - 1]) : 0;
+  const totalSubConsumed =
+    substrateValues.length >= 2 ? Math.max(0, substrateValues[0] - substrateValues[substrateValues.length - 1]) : 0;
   const maxProduct = productValues.length > 0 ? Math.max(...productValues) : 0;
 
   // Recommendations
   const recommendations: string[] = [];
-  if (allAnomalies.filter(a => a.severity === 'high').length > 0) recommendations.push(`${allAnomalies.filter(a => a.severity === 'high').length} high-severity anomalies — investigate before next batch`);
-  if (kinetics.muMax < 0.1) recommendations.push('Low growth rate — check substrate and temperature');
-  if (totalSubConsumed > 0 && maxProduct / totalSubConsumed < 0.1) recommendations.push('Low product yield — optimize feed strategy');
-  if (batchComparison && batchComparison.similarity < 0.7) recommendations.push(`Batch deviates from reference (${(batchComparison.similarity * 100).toFixed(0)}% similar)`);
+  if (allAnomalies.filter((a) => a.severity === "high").length > 0)
+    recommendations.push(
+      `${allAnomalies.filter((a) => a.severity === "high").length} high-severity anomalies — investigate before next batch`,
+    );
+  if (kinetics.muMax < 0.1) recommendations.push("Low growth rate — check substrate and temperature");
+  if (totalSubConsumed > 0 && maxProduct / totalSubConsumed < 0.1)
+    recommendations.push("Low product yield — optimize feed strategy");
+  if (batchComparison && batchComparison.similarity < 0.7)
+    recommendations.push(`Batch deviates from reference (${(batchComparison.similarity * 100).toFixed(0)}% similar)`);
 
   return {
     anomalies: allAnomalies,
@@ -664,16 +717,16 @@ export function analyzeBioreactorData(
       maxProduct: Math.round(maxProduct * 1000) / 1000,
       avgGrowthRate: kinetics.muMax,
       totalSubstrateConsumed: Math.round(totalSubConsumed * 1000) / 1000,
-      productYield: totalSubConsumed > 0 ? Math.round(maxProduct / totalSubConsumed * 1000) / 1000 : 0,
+      productYield: totalSubConsumed > 0 ? Math.round((maxProduct / totalSubConsumed) * 1000) / 1000 : 0,
     },
     recommendations,
     designNotes: [
       `Analyzed ${data.length} data points over ${duration.toFixed(1)}h`,
       `PCA: ${pcaModel.nComponents} components, ${(pcaModel.cumulativeVariance[pcaModel.nComponents - 1] * 100).toFixed(0)}% variance explained`,
-      `Anomalies: ${allAnomalies.length} (${allAnomalies.filter(a => a.type === 'multivariate').length} multivariate)`,
-      `Phases: ${phases.map(p => `${p.phase}(${p.duration.toFixed(1)}h)`).join(' → ')}`,
+      `Anomalies: ${allAnomalies.length} (${allAnomalies.filter((a) => a.type === "multivariate").length} multivariate)`,
+      `Phases: ${phases.map((p) => `${p.phase}(${p.duration.toFixed(1)}h)`).join(" → ")}`,
       `Kinetics: μmax=${kinetics.muMax} (linear: ${kinetics.linearEstimate.muMax}, nonlinear: ${kinetics.nonlinearEstimate.muMax})`,
-      `Batch comparison: ${batchComparison ? `${(batchComparison.similarity * 100).toFixed(0)}% similar to ${batchComparison.closestBatchId}` : 'no reference'}`,
+      `Batch comparison: ${batchComparison ? `${(batchComparison.similarity * 100).toFixed(0)}% similar to ${batchComparison.closestBatchId}` : "no reference"}`,
     ],
   };
 }
@@ -681,23 +734,33 @@ export function analyzeBioreactorData(
 function detectUnivariateAnomalies(data: TimeSeriesPoint[]): Anomaly[] {
   const anomalies: Anomaly[] = [];
   const channels: Array<{ key: keyof TimeSeriesPoint; min: number; max: number }> = [
-    { key: 'biomass', min: 0, max: 100 }, { key: 'substrate', min: 0, max: 100 },
-    { key: 'product', min: 0, max: 50 }, { key: 'dissolvedO2', min: 0, max: 100 },
-    { key: 'pH', min: 4, max: 9 }, { key: 'temperature', min: 20, max: 45 },
+    { key: "biomass", min: 0, max: 100 },
+    { key: "substrate", min: 0, max: 100 },
+    { key: "product", min: 0, max: 50 },
+    { key: "dissolvedO2", min: 0, max: 100 },
+    { key: "pH", min: 4, max: 9 },
+    { key: "temperature", min: 20, max: 45 },
   ];
 
   for (const ch of channels) {
-    const values = data.filter(d => d[ch.key] !== undefined).map(d => ({ time: d.time, value: d[ch.key] as number }));
+    const values = data
+      .filter((d) => d[ch.key] !== undefined)
+      .map((d) => ({ time: d.time, value: d[ch.key] as number }));
     if (values.length < 5) continue;
-    const m = mean(values.map(v => v.value)), s = std(values.map(v => v.value));
+    const m = mean(values.map((v) => v.value)),
+      s = std(values.map((v) => v.value));
     for (const pt of values) {
       const z = s > 0 ? Math.abs(pt.value - m) / s : 0;
       if (z > 3) {
         anomalies.push({
-          time: pt.time, channel: ch.key, type: 'spike', severity: z > 5 ? 'high' : 'medium',
-          value: pt.value, expected: Math.round(m * 100) / 100,
+          time: pt.time,
+          channel: ch.key,
+          type: "spike",
+          severity: z > 5 ? "high" : "medium",
+          value: pt.value,
+          expected: Math.round(m * 100) / 100,
           description: `${ch.key} spike: z=${z.toFixed(1)}`,
-          possibleCauses: ['Sensor malfunction', 'Process upset'],
+          possibleCauses: ["Sensor malfunction", "Process upset"],
         });
       }
     }

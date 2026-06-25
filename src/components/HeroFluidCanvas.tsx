@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * HeroFluidCanvas — Hero-section WebGL2 Navier-Stokes fluid
  *
@@ -15,7 +15,7 @@
  *   · Canvas initialises in useEffect so it never blocks LCP text render
  */
 
-import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
 // ── Shader sources ─────────────────────────────────────────────────────
 
@@ -155,9 +155,11 @@ function createProgram(gl: WebGL2RenderingContext, frag: string) {
   const p = gl.createProgram()!;
   const vs = compileShader(gl, gl.VERTEX_SHADER, VERT);
   const fs = compileShader(gl, gl.FRAGMENT_SHADER, frag);
-  gl.attachShader(p, vs); gl.attachShader(p, fs);
+  gl.attachShader(p, vs);
+  gl.attachShader(p, fs);
   gl.linkProgram(p);
-  gl.deleteShader(vs); gl.deleteShader(fs);
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
   return p;
 }
 
@@ -179,11 +181,20 @@ function createFBO(gl: WebGL2RenderingContext, w: number, h: number) {
 type FBO = ReturnType<typeof createFBO>;
 
 function createDoubleFBO(gl: WebGL2RenderingContext, w: number, h: number) {
-  let a = createFBO(gl, w, h), b = createFBO(gl, w, h);
+  let a = createFBO(gl, w, h),
+    b = createFBO(gl, w, h);
   return {
-    get read() { return a; },
-    get write() { return b; },
-    swap() { const t = a; a = b; b = t; },
+    get read() {
+      return a;
+    },
+    get write() {
+      return b;
+    },
+    swap() {
+      const t = a;
+      a = b;
+      b = t;
+    },
   };
 }
 
@@ -208,39 +219,40 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
     if (!canvasOrNull) return;
     const canvas: HTMLCanvasElement = canvasOrNull;
 
-    const glOrNull = canvas.getContext('webgl2');
+    const glOrNull = canvas.getContext("webgl2");
     if (!glOrNull) return;
     const gl: WebGL2RenderingContext = glOrNull;
 
     // Check for float texture support
-    const extColorHalf = gl.getExtension('EXT_color_buffer_half_float');
+    const extColorHalf = gl.getExtension("EXT_color_buffer_half_float");
     if (!extColorHalf) return;
 
     // Simulation resolution
-    const SIM = 128, DYE = 256;
+    const SIM = 128,
+      DYE = 256;
 
     // Programs
-    const pAdvVel  = createProgram(gl, ADVECT);
-    const pAdvDye  = createProgram(gl, ADVECT);
-    const pDiv     = createProgram(gl, DIVERGENCE);
-    const pJacobi  = createProgram(gl, JACOBI);
-    const pGrad    = createProgram(gl, GRADIENT);
-    const pSplat   = createProgram(gl, SPLAT);
+    const pAdvVel = createProgram(gl, ADVECT);
+    const pAdvDye = createProgram(gl, ADVECT);
+    const pDiv = createProgram(gl, DIVERGENCE);
+    const pJacobi = createProgram(gl, JACOBI);
+    const pGrad = createProgram(gl, GRADIENT);
+    const pSplat = createProgram(gl, SPLAT);
     const pDisplay = createProgram(gl, DISPLAY);
 
     // FBOs
-    const velocity  = createDoubleFBO(gl, SIM, SIM);
-    const pressure  = createDoubleFBO(gl, SIM, SIM);
+    const velocity = createDoubleFBO(gl, SIM, SIM);
+    const pressure = createDoubleFBO(gl, SIM, SIM);
     const divergFBO = createFBO(gl, SIM, SIM);
-    const dye       = createDoubleFBO(gl, DYE, DYE);
+    const dye = createDoubleFBO(gl, DYE, DYE);
 
     // Quad
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
 
     function bindQuad(prog: WebGLProgram) {
-      const loc = gl.getAttribLocation(prog, 'a_position');
+      const loc = gl.getAttribLocation(prog, "a_position");
       gl.enableVertexAttribArray(loc);
       gl.bindBuffer(gl.ARRAY_BUFFER, buf);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
@@ -262,13 +274,13 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
       const aspect = canvas.width / canvas.height;
       gl.useProgram(pSplat);
       bindQuad(pSplat);
-      gl.uniform1i(gl.getUniformLocation(pSplat, 'u_target'), 0);
+      gl.uniform1i(gl.getUniformLocation(pSplat, "u_target"), 0);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
-      gl.uniform2f(gl.getUniformLocation(pSplat, 'u_point'), x, y);
-      gl.uniform3f(gl.getUniformLocation(pSplat, 'u_color'), vx, vy, 0);
-      gl.uniform1f(gl.getUniformLocation(pSplat, 'u_radius'), r);
-      gl.uniform1f(gl.getUniformLocation(pSplat, 'u_aspect'), aspect);
+      gl.uniform2f(gl.getUniformLocation(pSplat, "u_point"), x, y);
+      gl.uniform3f(gl.getUniformLocation(pSplat, "u_color"), vx, vy, 0);
+      gl.uniform1f(gl.getUniformLocation(pSplat, "u_radius"), r);
+      gl.uniform1f(gl.getUniformLocation(pSplat, "u_aspect"), aspect);
       blit(velocity.write);
       velocity.swap();
     }
@@ -277,13 +289,13 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
       const aspect = canvas.width / canvas.height;
       gl.useProgram(pSplat);
       bindQuad(pSplat);
-      gl.uniform1i(gl.getUniformLocation(pSplat, 'u_target'), 0);
+      gl.uniform1i(gl.getUniformLocation(pSplat, "u_target"), 0);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, dye.read.tex);
-      gl.uniform2f(gl.getUniformLocation(pSplat, 'u_point'), x, y);
-      gl.uniform3f(gl.getUniformLocation(pSplat, 'u_color'), 0.55, 0.52, 0.48);
-      gl.uniform1f(gl.getUniformLocation(pSplat, 'u_radius'), r);
-      gl.uniform1f(gl.getUniformLocation(pSplat, 'u_aspect'), aspect);
+      gl.uniform2f(gl.getUniformLocation(pSplat, "u_point"), x, y);
+      gl.uniform3f(gl.getUniformLocation(pSplat, "u_color"), 0.55, 0.52, 0.48);
+      gl.uniform1f(gl.getUniformLocation(pSplat, "u_radius"), r);
+      gl.uniform1f(gl.getUniformLocation(pSplat, "u_aspect"), aspect);
       blit(dye.write);
       dye.swap();
     }
@@ -309,9 +321,9 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
     let lastSplat = 0;
     const SPLAT_INTERVAL = 1400; // ms
     const splatColors = [
-      [0.58, 0.55, 0.50],
-      [0.65, 0.60, 0.54],
-      [0.50, 0.48, 0.44],
+      [0.58, 0.55, 0.5],
+      [0.65, 0.6, 0.54],
+      [0.5, 0.48, 0.44],
     ];
     let splatIdx = 0;
 
@@ -326,7 +338,7 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
         y: 1 - (e.clientY - rect.top) / rect.height,
       };
     }
-    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener("mousemove", onMouseMove);
 
     // ── Resize ────────────────────────────────────────────────────────
     function resize() {
@@ -362,13 +374,13 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
         gl.useProgram(pSplat);
         bindQuad(pSplat);
         const aspect = canvas.width / canvas.height;
-        gl.uniform1i(gl.getUniformLocation(pSplat, 'u_target'), 0);
+        gl.uniform1i(gl.getUniformLocation(pSplat, "u_target"), 0);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, dye.read.tex);
-        gl.uniform2f(gl.getUniformLocation(pSplat, 'u_point'), px, py);
-        gl.uniform3f(gl.getUniformLocation(pSplat, 'u_color'), cr, cg, cb);
-        gl.uniform1f(gl.getUniformLocation(pSplat, 'u_radius'), 0.016);
-        gl.uniform1f(gl.getUniformLocation(pSplat, 'u_aspect'), aspect);
+        gl.uniform2f(gl.getUniformLocation(pSplat, "u_point"), px, py);
+        gl.uniform3f(gl.getUniformLocation(pSplat, "u_color"), cr, cg, cb);
+        gl.uniform1f(gl.getUniformLocation(pSplat, "u_radius"), 0.016);
+        gl.uniform1f(gl.getUniformLocation(pSplat, "u_aspect"), aspect);
         blit(dye.write);
         dye.swap();
 
@@ -390,48 +402,55 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
       // 1. Advect velocity
       gl.useProgram(pAdvVel);
       bindQuad(pAdvVel);
-      gl.uniform1i(gl.getUniformLocation(pAdvVel, 'u_velocity'), 0);
-      gl.uniform1i(gl.getUniformLocation(pAdvVel, 'u_source'), 1);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
-      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
-      gl.uniform2f(gl.getUniformLocation(pAdvVel, 'u_texelVel'), simTexel.x, simTexel.y);
-      gl.uniform1f(gl.getUniformLocation(pAdvVel, 'u_dt'), dt);
-      gl.uniform1f(gl.getUniformLocation(pAdvVel, 'u_dissipation'), 0.98);
-      gl.uniform1f(gl.getUniformLocation(pAdvVel, 'u_time'), time);
+      gl.uniform1i(gl.getUniformLocation(pAdvVel, "u_velocity"), 0);
+      gl.uniform1i(gl.getUniformLocation(pAdvVel, "u_source"), 1);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
+      gl.uniform2f(gl.getUniformLocation(pAdvVel, "u_texelVel"), simTexel.x, simTexel.y);
+      gl.uniform1f(gl.getUniformLocation(pAdvVel, "u_dt"), dt);
+      gl.uniform1f(gl.getUniformLocation(pAdvVel, "u_dissipation"), 0.98);
+      gl.uniform1f(gl.getUniformLocation(pAdvVel, "u_time"), time);
       blit(velocity.write);
       velocity.swap();
 
       // 2. Advect dye
       gl.useProgram(pAdvDye);
       bindQuad(pAdvDye);
-      gl.uniform1i(gl.getUniformLocation(pAdvDye, 'u_velocity'), 0);
-      gl.uniform1i(gl.getUniformLocation(pAdvDye, 'u_source'), 1);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
-      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, dye.read.tex);
-      gl.uniform2f(gl.getUniformLocation(pAdvDye, 'u_texelVel'), simTexel.x, simTexel.y);
-      gl.uniform1f(gl.getUniformLocation(pAdvDye, 'u_dt'), dt);
-      gl.uniform1f(gl.getUniformLocation(pAdvDye, 'u_dissipation'), 0.993);
-      gl.uniform1f(gl.getUniformLocation(pAdvDye, 'u_time'), time);
+      gl.uniform1i(gl.getUniformLocation(pAdvDye, "u_velocity"), 0);
+      gl.uniform1i(gl.getUniformLocation(pAdvDye, "u_source"), 1);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, dye.read.tex);
+      gl.uniform2f(gl.getUniformLocation(pAdvDye, "u_texelVel"), simTexel.x, simTexel.y);
+      gl.uniform1f(gl.getUniformLocation(pAdvDye, "u_dt"), dt);
+      gl.uniform1f(gl.getUniformLocation(pAdvDye, "u_dissipation"), 0.993);
+      gl.uniform1f(gl.getUniformLocation(pAdvDye, "u_time"), time);
       blit(dye.write);
       dye.swap();
 
       // 3. Divergence
       gl.useProgram(pDiv);
       bindQuad(pDiv);
-      gl.uniform1i(gl.getUniformLocation(pDiv, 'u_velocity'), 0);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
-      gl.uniform2f(gl.getUniformLocation(pDiv, 'u_texel'), simTexel.x, simTexel.y);
+      gl.uniform1i(gl.getUniformLocation(pDiv, "u_velocity"), 0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
+      gl.uniform2f(gl.getUniformLocation(pDiv, "u_texel"), simTexel.x, simTexel.y);
       blit(divergFBO);
 
       // 4. Jacobi pressure (15 iterations)
       for (let i = 0; i < 15; i++) {
         gl.useProgram(pJacobi);
         bindQuad(pJacobi);
-        gl.uniform1i(gl.getUniformLocation(pJacobi, 'u_pressure'), 0);
-        gl.uniform1i(gl.getUniformLocation(pJacobi, 'u_divergence'), 1);
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, pressure.read.tex);
-        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, divergFBO.tex);
-        gl.uniform2f(gl.getUniformLocation(pJacobi, 'u_texel'), simTexel.x, simTexel.y);
+        gl.uniform1i(gl.getUniformLocation(pJacobi, "u_pressure"), 0);
+        gl.uniform1i(gl.getUniformLocation(pJacobi, "u_divergence"), 1);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, pressure.read.tex);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, divergFBO.tex);
+        gl.uniform2f(gl.getUniformLocation(pJacobi, "u_texel"), simTexel.x, simTexel.y);
         blit(pressure.write);
         pressure.swap();
       }
@@ -439,30 +458,35 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
       // 5. Gradient subtract
       gl.useProgram(pGrad);
       bindQuad(pGrad);
-      gl.uniform1i(gl.getUniformLocation(pGrad, 'u_pressure'), 0);
-      gl.uniform1i(gl.getUniformLocation(pGrad, 'u_velocity'), 1);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, pressure.read.tex);
-      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
-      gl.uniform2f(gl.getUniformLocation(pGrad, 'u_texel'), simTexel.x, simTexel.y);
+      gl.uniform1i(gl.getUniformLocation(pGrad, "u_pressure"), 0);
+      gl.uniform1i(gl.getUniformLocation(pGrad, "u_velocity"), 1);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, pressure.read.tex);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, velocity.read.tex);
+      gl.uniform2f(gl.getUniformLocation(pGrad, "u_texel"), simTexel.x, simTexel.y);
       blit(velocity.write);
       velocity.swap();
 
       // 6. Display
       gl.useProgram(pDisplay);
       bindQuad(pDisplay);
-      gl.uniform1i(gl.getUniformLocation(pDisplay, 'u_dye'), 0);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, dye.read.tex);
-      gl.uniform1f(gl.getUniformLocation(pDisplay, 'u_time'), time);
+      gl.uniform1i(gl.getUniformLocation(pDisplay, "u_dye"), 0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, dye.read.tex);
+      gl.uniform1f(gl.getUniformLocation(pDisplay, "u_time"), time);
       blit(null);
     }
 
     // Delay init to not block LCP text render
-    const tid = setTimeout(() => { animId = requestAnimationFrame(step); }, 80);
+    const tid = setTimeout(() => {
+      animId = requestAnimationFrame(step);
+    }, 80);
 
     return () => {
       clearTimeout(tid);
       cancelAnimationFrame(animId);
-      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener("mousemove", onMouseMove);
       ro.disconnect();
     };
   }, []);
@@ -471,18 +495,18 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
     <canvas
       ref={canvasRef}
       style={{
-        position: 'absolute',
+        position: "absolute",
         inset: 0,
-        width: '100%',
-        height: '100%',
-        display: 'block',
+        width: "100%",
+        height: "100%",
+        display: "block",
         zIndex: 0,
-        background: '#0A0D14',
+        background: "#0A0D14",
       }}
       aria-hidden="true"
     />
   );
 });
 
-HeroFluidCanvas.displayName = 'HeroFluidCanvas';
+HeroFluidCanvas.displayName = "HeroFluidCanvas";
 export default HeroFluidCanvas;

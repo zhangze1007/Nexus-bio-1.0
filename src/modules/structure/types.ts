@@ -8,8 +8,8 @@
  * Reference: Lin et al. (2023) Science 379:1123 (ESMFold)
  */
 
-export type PredictionMode = 'single_chain' | 'multi_chain' | 'protein_dna' | 'protein_rna';
-export type PredictionSource = 'esmfold' | 'alphafold' | 'local';
+export type PredictionMode = "single_chain" | "multi_chain" | "protein_dna" | "protein_rna";
+export type PredictionSource = "esmfold" | "alphafold" | "local";
 
 export interface ProteinChain {
   /** Chain identifier (A, B, C, ...) */
@@ -17,7 +17,7 @@ export interface ProteinChain {
   /** Amino acid sequence */
   sequence: string;
   /** Chain type */
-  type: 'protein' | 'dna' | 'rna';
+  type: "protein" | "dna" | "rna";
   /** Optional description */
   description?: string;
 }
@@ -45,7 +45,7 @@ export interface InterfaceResidue {
   /** Contact distance (Å) */
   distance: number;
   /** Contact type */
-  type: 'hydrogen_bond' | 'salt_bridge' | 'hydrophobic' | 'van_der_waals';
+  type: "hydrogen_bond" | "salt_bridge" | "hydrophobic" | "van_der_waals";
   /** Confidence (0-1) */
   confidence: number;
 }
@@ -91,7 +91,7 @@ export interface ComplexScore {
 
 // ── Hetero-Complex Types ─────────────────────────────────────────────────────
 
-export type ChainType = 'protein' | 'dna' | 'rna';
+export type ChainType = "protein" | "dna" | "rna";
 
 export interface HeteroChain {
   /** Chain identifier */
@@ -111,7 +111,7 @@ export interface HeteroComplex {
   chainPairs: Array<{
     chainA: string;
     chainB: string;
-    pairType: 'protein-protein' | 'protein-dna' | 'protein-rna' | 'dna-dna' | 'rna-rna' | 'dna-rna';
+    pairType: "protein-protein" | "protein-dna" | "protein-rna" | "dna-dna" | "rna-rna" | "dna-rna";
   }>;
 }
 
@@ -136,7 +136,7 @@ export interface StructureResult {
   /** Evidence sources */
   evidence: Array<{
     source: string;
-    type: 'database' | 'literature' | 'predicted';
+    type: "database" | "literature" | "predicted";
     title: string;
   }>;
   /** Design notes */
@@ -151,7 +151,7 @@ export interface ResidueConfidence {
   /** Raw confidence score (pLDDT: 0-100) */
   score: number;
   /** Confidence level classification */
-  confidence: 'very_high' | 'high' | 'low' | 'very_low';
+  confidence: "very_high" | "high" | "low" | "very_low";
   /** Hex color for visualization */
   color: string;
 }

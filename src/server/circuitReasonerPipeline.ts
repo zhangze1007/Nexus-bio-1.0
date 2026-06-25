@@ -28,19 +28,19 @@ import {
   type CircuitParameters,
   type CircuitTopology,
   defaultCircuitParams,
-  simulateCircuit,
   extractCircuitFeatures,
-} from './circuitBuilder';
-import { analyzeStability } from './jacobianAnalysis';
-import { runGridSearch, type ParameterRange, type GridSearchResult } from './gridSearch';
+  simulateCircuit,
+} from "./circuitBuilder";
+import { type GridSearchResult, type ParameterRange, runGridSearch } from "./gridSearch";
+import { analyzeStability } from "./jacobianAnalysis";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
 export interface CircuitSpec {
   topology: CircuitTopology;
-  sensitivityTarget: number;     // 0-1
-  burdenLimit: number;           // 0-1 (max growth burden)
-  inputSignal?: number;          // input signal strength (0-10)
+  sensitivityTarget: number; // 0-1
+  burdenLimit: number; // 0-1 (max growth burden)
+  inputSignal?: number; // input signal strength (0-10)
 }
 
 export interface PhysiologistOutput {
@@ -102,29 +102,32 @@ function runPhysiologist(params: CircuitParameters): PhysiologistOutput {
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
   // Step 1: Run ODE to steady state
-  solverCalls.push({ solver: 'circuitBuilder::simulateCircuit', description: 'RK4 ODE integration to steady state' });
+  solverCalls.push({ solver: "circuitBuilder::simulateCircuit", description: "RK4 ODE integration to steady state" });
   const sim = simulateCircuit(params, 500, 0.5);
 
   // Step 2: Extract features
-  solverCalls.push({ solver: 'circuitBuilder::extractCircuitFeatures', description: 'Period, amplitude, duty cycle extraction' });
+  solverCalls.push({
+    solver: "circuitBuilder::extractCircuitFeatures",
+    description: "Period, amplitude, duty cycle extraction",
+  });
   const features = extractCircuitFeatures(sim.trajectory, params);
 
   // Step 3: Compute growth burden
   // Burden model: (total protein production rate) / (cell capacity)
   // Real FBA would be used here in production
   const totalProtein = Object.entries(sim.steadyState)
-    .filter(([k]) => k.startsWith('p'))
+    .filter(([k]) => k.startsWith("p"))
     .reduce((s, [, v]) => s + v, 0);
   const ribosomeBurden = Math.min(1, totalProtein / 10000); // 10000 nM capacity
   const growthBurden = ribosomeBurden * 0.8; // growth penalty from protein load
-  solverCalls.push({ solver: 'burdenModel::ribosomeLoad', description: 'Growth burden from protein load' });
+  solverCalls.push({ solver: "burdenModel::ribosomeLoad", description: "Growth burden from protein load" });
 
   // Step 4: Jacobian stability analysis
-  solverCalls.push({ solver: 'jacobianAnalysis::analyzeStability', description: 'Finite-difference Jacobian + eigenvalues' });
-  const stability = analyzeStability(
-    sim.system.derivatives,
-    Object.values(sim.steadyState),
-  );
+  solverCalls.push({
+    solver: "jacobianAnalysis::analyzeStability",
+    description: "Finite-difference Jacobian + eigenvalues",
+  });
+  const stability = analyzeStability(sim.system.derivatives, Object.values(sim.steadyState));
 
   return {
     steadyState: sim.steadyState,
@@ -151,11 +154,11 @@ function runJudge(spec: CircuitSpec): JudgeOutput {
   // Define parameter ranges based on topology
   const baseParams = defaultCircuitParams(spec.topology);
   const ranges: ParameterRange[] = [
-    { name: 'transcriptionRate', min: 50, max: 500, steps: 5 },
-    { name: 'translationRate', min: 0.05, max: 0.5, steps: 5 },
-    { name: 'hillCoefficient', min: 1, max: 4, steps: 4 },
-    { name: 'kd', min: 20, max: 300, steps: 4 },
-    { name: 'degradationRate', min: 0.002, max: 0.02, steps: 4 },
+    { name: "transcriptionRate", min: 50, max: 500, steps: 5 },
+    { name: "translationRate", min: 0.05, max: 0.5, steps: 5 },
+    { name: "hillCoefficient", min: 1, max: 4, steps: 4 },
+    { name: "kd", min: 20, max: 300, steps: 4 },
+    { name: "degradationRate", min: 0.002, max: 0.02, steps: 4 },
   ];
 
   // Grid search: evaluate each parameter set
@@ -167,11 +170,11 @@ function runJudge(spec: CircuitSpec): JudgeOutput {
         ...baseParams,
         transcriptionRate: sampledParams.transcriptionRate ?? baseParams.transcriptionRate,
         translationRate: sampledParams.translationRate ?? baseParams.translationRate,
-        nodes: baseParams.nodes.map(n => ({
+        nodes: baseParams.nodes.map((n) => ({
           ...n,
           degradationRate: sampledParams.degradationRate ?? n.degradationRate,
         })),
-        edges: baseParams.edges.map(e => ({
+        edges: baseParams.edges.map((e) => ({
           ...e,
           hillCoefficient: sampledParams.hillCoefficient ?? e.hillCoefficient,
           kd: sampledParams.kd ?? e.kd,
@@ -182,9 +185,10 @@ function runJudge(spec: CircuitSpec): JudgeOutput {
       const phys = runPhysiologist(circuitParams);
 
       // Compute sensitivity: how much output changes with input
-      const sensitivity = phys.amplitude !== null
-        ? Math.min(1, phys.amplitude / 500)  // normalized
-        : (phys.steadyState['pA'] ?? 0) / 1000;  // normalized steady-state
+      const sensitivity =
+        phys.amplitude !== null
+          ? Math.min(1, phys.amplitude / 500) // normalized
+          : (phys.steadyState["pA"] ?? 0) / 1000; // normalized steady-state
 
       return {
         objectives: {
@@ -204,7 +208,7 @@ function runJudge(spec: CircuitSpec): JudgeOutput {
         },
       };
     },
-    'lhs',
+    "lhs",
     50,
     { sensitivity: 1.0 },
   );
@@ -218,11 +222,11 @@ function runJudge(spec: CircuitSpec): JudgeOutput {
     ...baseParams,
     transcriptionRate: best.parameters.transcriptionRate ?? baseParams.transcriptionRate,
     translationRate: best.parameters.translationRate ?? baseParams.translationRate,
-    nodes: baseParams.nodes.map(n => ({
+    nodes: baseParams.nodes.map((n) => ({
       ...n,
       degradationRate: best.parameters.degradationRate ?? n.degradationRate,
     })),
-    edges: baseParams.edges.map(e => ({
+    edges: baseParams.edges.map((e) => ({
       ...e,
       hillCoefficient: best.parameters.hillCoefficient ?? e.hillCoefficient,
       kd: best.parameters.kd ?? e.kd,
@@ -231,16 +235,16 @@ function runJudge(spec: CircuitSpec): JudgeOutput {
   const bestPhys = runPhysiologist(bestParams);
 
   // Build Pareto design list
-  const paretoDesigns = feasiblePareto.map(c => {
+  const paretoDesigns = feasiblePareto.map((c) => {
     const params: CircuitParameters = {
       ...baseParams,
       transcriptionRate: c.parameters.transcriptionRate ?? baseParams.transcriptionRate,
       translationRate: c.parameters.translationRate ?? baseParams.translationRate,
-      nodes: baseParams.nodes.map(n => ({
+      nodes: baseParams.nodes.map((n) => ({
         ...n,
         degradationRate: c.parameters.degradationRate ?? n.degradationRate,
       })),
-      edges: baseParams.edges.map(e => ({
+      edges: baseParams.edges.map((e) => ({
         ...e,
         hillCoefficient: c.parameters.hillCoefficient ?? e.hillCoefficient,
         kd: c.parameters.kd ?? e.kd,
@@ -261,7 +265,7 @@ function runJudge(spec: CircuitSpec): JudgeOutput {
     recommendedBurden: bestPhys.growthBurden,
     recommendedStable: bestPhys.isStable,
     paretoDesigns,
-    summary: '',  // filled by LLM in UI
+    summary: "", // filled by LLM in UI
   };
 }
 
@@ -278,9 +282,12 @@ export function runCircuitReasoner(spec: CircuitSpec): CircuitReasonerResult {
 
   // Collect all solver calls
   const allSolverCalls = [
-    { solver: 'gridSearch::runGridSearch', description: `${judge.gridSearch.stats.totalEvaluated} parameter sets evaluated` },
-    { solver: 'circuitBuilder::simulateCircuit', description: 'RK4 ODE for each candidate' },
-    { solver: 'jacobianAnalysis::analyzeStability', description: 'Eigenvalue analysis for each candidate' },
+    {
+      solver: "gridSearch::runGridSearch",
+      description: `${judge.gridSearch.stats.totalEvaluated} parameter sets evaluated`,
+    },
+    { solver: "circuitBuilder::simulateCircuit", description: "RK4 ODE for each candidate" },
+    { solver: "jacobianAnalysis::analyzeStability", description: "Eigenvalue analysis for each candidate" },
   ];
 
   return { spec, judge, allSolverCalls };

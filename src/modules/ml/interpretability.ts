@@ -14,8 +14,8 @@
  * Reference: Fisher et al. (2019) arXiv:1801.01489 (Permutation importance)
  */
 
-import type { FeatureImportance } from './types';
-import type { MLModel } from './models';
+import type { MLModel } from "./models";
+import type { FeatureImportance } from "./types";
 
 // ── Helper Functions ────────────────────────────────────────────────────────
 
@@ -71,17 +71,14 @@ function sortAndRank(items: Array<{ featureName: string; importance: number }>):
  * model.fit(X, y);
  * const importances = getLinearImportances(model, ['MW', 'pI', 'hydrophobicity']);
  */
-export function getLinearImportances(
-  model: MLModel,
-  featureNames: string[],
-): FeatureImportance[] {
+export function getLinearImportances(model: MLModel, featureNames: string[]): FeatureImportance[] {
   if (featureNames.length === 0) return [];
 
   // getFeatureImportances() returns normalized abs weights summing to 1
   const normalizedImportances = model.getFeatureImportances();
 
   if (normalizedImportances.length === 0) {
-    return featureNames.map(name => ({ featureName: name, importance: 0, rank: 1 }));
+    return featureNames.map((name) => ({ featureName: name, importance: 0, rank: 1 }));
   }
 
   const items = featureNames.map((name, i) => ({
@@ -109,17 +106,14 @@ export function getLinearImportances(
  * forest.fit(X, y);
  * const importances = getTreeImportances(forest, ['MW', 'pI', 'hydrophobicity']);
  */
-export function getTreeImportances(
-  model: MLModel,
-  featureNames: string[],
-): FeatureImportance[] {
+export function getTreeImportances(model: MLModel, featureNames: string[]): FeatureImportance[] {
   if (featureNames.length === 0) return [];
 
   // getFeatureImportances() returns normalized impurity reductions summing to 1
   const normalizedImportances = model.getFeatureImportances();
 
   if (normalizedImportances.length === 0) {
-    return featureNames.map(name => ({ featureName: name, importance: 0, rank: 1 }));
+    return featureNames.map((name) => ({ featureName: name, importance: 0, rank: 1 }));
   }
 
   const items = featureNames.map((name, i) => ({
@@ -186,10 +180,10 @@ export function permutationImportance(
 
     for (let r = 0; r < nRepeats; r++) {
       // Create a shuffled copy of X
-      const XShuffled = X.map(row => [...row]);
+      const XShuffled = X.map((row) => [...row]);
 
       // Fisher-Yates shuffle on column f
-      const column = XShuffled.map(row => row[f]);
+      const column = XShuffled.map((row) => row[f]);
       for (let i = nSamples - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [column[i], column[j]] = [column[j], column[i]];
@@ -248,7 +242,7 @@ function defaultMetric(yTrue: number[], yPred: number[]): number {
 export function rankImportances(importances: FeatureImportance[]): FeatureImportance[] {
   if (importances.length === 0) return [];
 
-  const items = importances.map(imp => ({
+  const items = importances.map((imp) => ({
     featureName: imp.featureName,
     importance: imp.importance,
   }));
@@ -288,9 +282,7 @@ export function exportImportancesToJSON(importances: FeatureImportance[]): strin
  * fs.writeFileSync('importances.csv', csv);
  */
 export function exportImportancesToCSV(importances: FeatureImportance[]): string {
-  const header = 'featureName,importance,rank';
-  const rows = importances.map(
-    imp => `${imp.featureName},${imp.importance},${imp.rank}`,
-  );
-  return [header, ...rows].join('\n');
+  const header = "featureName,importance,rank";
+  const rows = importances.map((imp) => `${imp.featureName},${imp.importance},${imp.rank}`);
+  return [header, ...rows].join("\n");
 }

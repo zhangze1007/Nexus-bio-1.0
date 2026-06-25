@@ -1,24 +1,16 @@
-import type { ClaimSurface } from '../protocol/nexusTrustRuntime';
+import type { ClaimSurface } from "../protocol/nexusTrustRuntime";
 
-export type ExternalReviewerStatus =
-  | 'ok'
-  | 'blocked'
-  | 'gated'
-  | 'demoOnly'
-  | 'unsure';
+export type ExternalReviewerStatus = "ok" | "blocked" | "gated" | "demoOnly" | "unsure";
 
-export type ExternalReviewConfidence =
-  | 'low'
-  | 'medium'
-  | 'high';
+export type ExternalReviewConfidence = "low" | "medium" | "high";
 
 export type ExternalReviewSuggestedAction =
-  | 'keep'
-  | 'tighten-policy'
-  | 'loosen-policy'
-  | 'add-benchmark-case'
-  | 'rewrite-wording'
-  | 'needs-domain-review';
+  | "keep"
+  | "tighten-policy"
+  | "loosen-policy"
+  | "add-benchmark-case"
+  | "rewrite-wording"
+  | "needs-domain-review";
 
 export interface ExternalReviewCaseResponse {
   caseId: string;
@@ -45,7 +37,7 @@ export interface ExternalAdversarialAttempt {
 }
 
 export interface ExternalReviewSubmission {
-  schemaVersion: 'external-review-v1';
+  schemaVersion: "external-review-v1";
   reviewId: string;
   reviewerLabel: string;
   reviewerRole?: string;

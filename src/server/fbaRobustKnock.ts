@@ -1,4 +1,4 @@
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 /**
  * RobustKnock — Guaranteed minimum product flux under ALL optimal growth solutions.
@@ -32,7 +32,7 @@ import { SeededRNG } from '../utils/seededRng';
  *     - For large models, random sampling may miss optimal knockouts
  */
 
-import { solveLP, type LPModel } from './highsSolver';
+import { type LPModel, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                  */
@@ -128,10 +128,7 @@ function collectMetabolites(reactions: RobustKnockReaction[]): Set<string> {
   return metIds;
 }
 
-function buildStoichiometricConstraints(
-  reactions: RobustKnockReaction[],
-  metIds: Set<string>,
-) {
+function buildStoichiometricConstraints(reactions: RobustKnockReaction[], metIds: Set<string>) {
   return Array.from(metIds).map((metId) => ({
     name: `${metId}_balance`,
     vars: reactions
@@ -157,9 +154,9 @@ function buildBounds(
     if (objectiveId && growthLB !== undefined && r.id === objectiveId) {
       lb = Math.max(lb, growthLB);
     }
-    if (r.id.startsWith('EX_')) {
-      const isGlucose = r.id.includes('glc') || r.id.includes('glu');
-      const isOxygen = r.id.includes('o2') || r.id.includes('O2');
+    if (r.id.startsWith("EX_")) {
+      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
+      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
       if (isGlucose) lb = -Math.abs(glucoseUptake);
       if (isOxygen) lb = -Math.abs(oxygenUptake);
     }
@@ -182,7 +179,7 @@ function buildFluxLP(
   oxygenUptake: number,
   growthLB: number,
   objectiveId: string,
-  sense: 'maximize' | 'minimize',
+  sense: "maximize" | "minimize",
 ): LPModel {
   const metIds = collectMetabolites(reactions);
   const constraints = buildStoichiometricConstraints(reactions, metIds);
@@ -216,13 +213,7 @@ export async function runRobustKnock(
   model: RobustKnockModel,
   options: RobustKnockOptions = {},
 ): Promise<RobustKnockResult> {
-  const {
-    maxKnockouts = 3,
-    glucoseUptake = 10,
-    oxygenUptake = 12,
-    growthTolerance = 0.01,
-    maxResults = 10,
-  } = options;
+  const { maxKnockouts = 3, glucoseUptake = 10, oxygenUptake = 12, growthTolerance = 0.01, maxResults = 10 } = options;
 
   // Validate product reaction exists
   const hasProduct = model.reactions.some((r) => r.id === model.productReactionId);
@@ -243,11 +234,11 @@ export async function runRobustKnock(
     oxygenUptake,
     0,
     model.objectiveId,
-    'maximize',
+    "maximize",
   );
   const wtGrowthResult = await solveLP(wtGrowthLP);
 
-  if (wtGrowthResult.status !== 'optimal') {
+  if (wtGrowthResult.status !== "optimal") {
     return {
       knockoutSets: [],
       wildtypeGrowthRate: 0,
@@ -267,22 +258,15 @@ export async function runRobustKnock(
     oxygenUptake,
     wtGrowthLB,
     model.objectiveId,
-    'minimize',
+    "minimize",
   );
   const wtMinProductResult = await solveLP(wtMinProductLP);
-  const wildtypeMinProductFlux = wtMinProductResult.status === 'optimal'
-    ? round(wtMinProductResult.objectiveValue)
-    : 0;
+  const wildtypeMinProductFlux = wtMinProductResult.status === "optimal" ? round(wtMinProductResult.objectiveValue) : 0;
 
   // Step 2: Identify candidate reactions for knockout
   const candidateIds = model.reactions
     .map((r) => r.id)
-    .filter(
-      (id) =>
-        !id.startsWith('EX_') &&
-        id !== model.objectiveId &&
-        id !== model.productReactionId,
-    );
+    .filter((id) => !id.startsWith("EX_") && id !== model.objectiveId && id !== model.productReactionId);
 
   if (candidateIds.length === 0) {
     return {
@@ -297,9 +281,7 @@ export async function runRobustKnock(
   const results: RobustKnockSet[] = [];
 
   for (let k = 1; k <= maxKnockouts; k++) {
-    const combos = useExhaustive
-      ? combinations(candidateIds, k)
-      : sampleCombinations(candidateIds, k, RANDOM_SAMPLES);
+    const combos = useExhaustive ? combinations(candidateIds, k) : sampleCombinations(candidateIds, k, RANDOM_SAMPLES);
 
     for (const combo of combos) {
       // 3a: Solve with knockouts, maximize growth -> growth rate
@@ -311,11 +293,11 @@ export async function runRobustKnock(
         oxygenUptake,
         0,
         model.objectiveId,
-        'maximize',
+        "maximize",
       );
       const koGrowthResult = await solveLP(koGrowthLP);
 
-      if (koGrowthResult.status !== 'optimal' || koGrowthResult.objectiveValue < 1e-6) {
+      if (koGrowthResult.status !== "optimal" || koGrowthResult.objectiveValue < 1e-6) {
         continue; // Growth is zero or infeasible — skip
       }
 
@@ -333,11 +315,11 @@ export async function runRobustKnock(
         oxygenUptake,
         koGrowthLB,
         model.objectiveId,
-        'minimize',
+        "minimize",
       );
       const koMinProductResult = await solveLP(koMinProductLP);
 
-      if (koMinProductResult.status !== 'optimal') continue;
+      if (koMinProductResult.status !== "optimal") continue;
 
       const koMinProduct = round(koMinProductResult.objectiveValue);
 
@@ -350,11 +332,11 @@ export async function runRobustKnock(
         oxygenUptake,
         koGrowthLB,
         model.objectiveId,
-        'maximize',
+        "maximize",
       );
       const koMaxProductResult = await solveLP(koMaxProductLP);
 
-      if (koMaxProductResult.status !== 'optimal') continue;
+      if (koMaxProductResult.status !== "optimal") continue;
 
       const koMaxProduct = round(koMaxProductResult.objectiveValue);
 

@@ -28,14 +28,14 @@
 /** Catalytic residue within an enzyme active site. */
 export interface CatalyticResidue {
   position: number;
-  residue: string;                     // single-letter amino acid
-  role: 'nucleophile' | 'acid_base' | 'stabilizer' | 'oxyanion_hole' | 'substrate_binding';
-  distanceToSubstrate: number;         // Å
-  optimalDistance: number;             // ideal distance
-  orientationAngle: number;            // degrees
+  residue: string; // single-letter amino acid
+  role: "nucleophile" | "acid_base" | "stabilizer" | "oxyanion_hole" | "substrate_binding";
+  distanceToSubstrate: number; // Å
+  optimalDistance: number; // ideal distance
+  orientationAngle: number; // degrees
   optimalAngle: number;
   pKa: number;
-  pKaShift: number;                    // environment-induced pKa shift
+  pKaShift: number; // environment-induced pKa shift
 }
 
 /** Full enzyme structure representation. */
@@ -50,48 +50,48 @@ export interface EnzymeStructure {
   catalyticResidues: CatalyticResidue[];
   substrate: string;
   product: string;
-  kcat: number;              // s⁻¹
-  km: number;                // mM
-  vmax: number;              // μmol/min/mg
-  optimalTemp: number;       // °C
+  kcat: number; // s⁻¹
+  km: number; // mM
+  vmax: number; // μmol/min/mg
+  optimalTemp: number; // °C
   optimalPH: number;
-  meltingTemp: number;       // Tm in °C
-  molecularWeight: number;   // kDa
+  meltingTemp: number; // Tm in °C
+  molecularWeight: number; // kDa
 }
 
 /** Binding affinity prediction result. */
 export interface BindingAffinityResult {
   enzymeId: string;
   substrate: string;
-  predictedKd: number;       // μM
-  bindingEnergy: number;     // kcal/mol
-  distanceScore: number;     // 0-1
-  orientationScore: number;  // 0-1
-  vdwScore: number;          // Van der Waals contribution
+  predictedKd: number; // μM
+  bindingEnergy: number; // kcal/mol
+  distanceScore: number; // 0-1
+  orientationScore: number; // 0-1
+  vdwScore: number; // Van der Waals contribution
   electrostaticScore: number;
-  overallScore: number;      // composite 0-1
+  overallScore: number; // composite 0-1
   interpretation: string;
-  uncertaintyKd: number;      // ± μM (propagated from ±2 kcal/mol ΔG uncertainty)
-  uncertaintyDeltaG: number;  // ± kcal/mol (default 2.0)
+  uncertaintyKd: number; // ± μM (propagated from ±2 kcal/mol ΔG uncertainty)
+  uncertaintyDeltaG: number; // ± kcal/mol (default 2.0)
 }
 
 /** Single designed sequence variant. */
 export interface DesignedSequence {
   rank: number;
   sequence: string;
-  score: number;             // negative log-likelihood (lower = better)
-  recoveryRate: number;      // % identity with wild-type
-  stabilityDelta: number;    // ΔΔG kcal/mol (negative = more stable)
+  score: number; // negative log-likelihood (lower = better)
+  recoveryRate: number; // % identity with wild-type
+  stabilityDelta: number; // ΔΔG kcal/mol (negative = more stable)
   codonOptimized: boolean;
-  cai: number;               // Codon Adaptation Index for S. cerevisiae
-  gcContent: number;         // %
-  dnaSequence: string;       // codon-optimized DNA
-  rareCodons: number;        // count of rare codons remaining
+  cai: number; // Codon Adaptation Index for S. cerevisiae
+  gcContent: number; // %
+  dnaSequence: string; // codon-optimized DNA
+  rareCodons: number; // count of rare codons remaining
 }
 
 /** BLOSUM62-based sequence design result. */
 export interface SequenceDesignResult {
-  backboneSource: string;    // 'RFdiffusion' or 'template'
+  backboneSource: string; // 'RFdiffusion' or 'template'
   targetEnzyme: string;
   designs: DesignedSequence[];
   consensusMotifs: string[]; // conserved regions across designs
@@ -100,13 +100,13 @@ export interface SequenceDesignResult {
 /** Metabolic drain estimation for a single enzyme. */
 export interface MetabolicDrainResult {
   enzymeId: string;
-  requiredFlux: number;      // mmol/gDW/h
-  expressionLevel: number;   // molecules/cell
-  atpCost: number;           // mol ATP per mol enzyme
-  nadphCost: number;         // mol NADPH
-  ribosomeBurden: number;    // % of ribosome pool occupied
+  requiredFlux: number; // mmol/gDW/h
+  expressionLevel: number; // molecules/cell
+  atpCost: number; // mol ATP per mol enzyme
+  nadphCost: number; // mol NADPH
+  ribosomeBurden: number; // % of ribosome pool occupied
   totalMetabolicDrain: number; // composite 0-1
-  growthPenalty: number;     // % reduction in growth rate
+  growthPenalty: number; // % reduction in growth rate
   isViable: boolean;
   recommendation: string;
 }
@@ -117,21 +117,21 @@ export interface PathwayStep {
   enzyme: string;
   substrate: string;
   product: string;
-  kcat: number;              // s⁻¹
-  km: number;                // mM
-  currentFlux: number;       // mmol/gDW/h
+  kcat: number; // s⁻¹
+  km: number; // mM
+  currentFlux: number; // mmol/gDW/h
   targetFlux: number;
-  intermediateConc: number;  // mM (steady-state)
+  intermediateConc: number; // mM (steady-state)
   toxicityThreshold: number; // mM
   isToxic: boolean;
-  adjustedKcat: number;      // after balancing
+  adjustedKcat: number; // after balancing
   expressionMultiplier: number; // fold change needed
 }
 
 /** Pathway balancing result (Newton-Raphson flux balancer). */
 export interface PathwayBalanceResult {
   steps: PathwayStep[];
-  totalFlux: number;         // mmol/gDW/h
+  totalFlux: number; // mmol/gDW/h
   maxIntermediateConc: number;
   toxicIntermediates: string[];
   isBalanced: boolean;
@@ -145,19 +145,19 @@ export interface PathwayCandidate {
   id: string;
   name: string;
   steps: number;
-  deltaG: number;            // kJ/mol (total)
-  theoreticalYield: number;  // mol/mol substrate
-  atpBurden: number;         // mol ATP/mol product
-  nadphBurden: number;       // mol NADPH/mol product
-  enzymeComplexity: number;  // number of heterologous enzymes
+  deltaG: number; // kJ/mol (total)
+  theoreticalYield: number; // mol/mol substrate
+  atpBurden: number; // mol ATP/mol product
+  nadphBurden: number; // mol NADPH/mol product
+  enzymeComplexity: number; // number of heterologous enzymes
   toxicIntermediates: number;
-  paretoRank: number;        // 0 = Pareto-optimal
+  paretoRank: number; // 0 = Pareto-optimal
   dominatedBy: string[];
   scores: {
-    thermodynamic: number;   // 0-1
-    yield: number;           // 0-1
-    metabolicCost: number;   // 0-1 (higher = lower cost, inverted)
-    feasibility: number;     // composite
+    thermodynamic: number; // 0-1
+    yield: number; // 0-1
+    metabolicCost: number; // 0-1 (higher = lower cost, inverted)
+    feasibility: number; // composite
   };
 }
 
@@ -174,13 +174,13 @@ export interface MutagenesisSite {
   position: number;
   wildTypeResidue: string;
   suggestedMutants: string[];
-  conservationScore: number;    // 0-1 (1 = highly conserved)
+  conservationScore: number; // 0-1 (1 = highly conserved)
   structuralImportance: number; // 0-1
-  predictedEffect: 'beneficial' | 'neutral' | 'deleterious';
+  predictedEffect: "beneficial" | "neutral" | "deleterious";
   rationale: string;
-  predictedDeltaKcat: number | null;   // fold change (null = no prediction available)
-  predictedDeltaKm: number | null;     // fold change (null = no prediction available)
-  confidence: number;           // 0-1
+  predictedDeltaKcat: number | null; // fold change (null = no prediction available)
+  predictedDeltaKm: number | null; // fold change (null = no prediction available)
+  confidence: number; // 0-1
 }
 
 /** Mutagenesis prediction result. */
@@ -195,7 +195,14 @@ export interface MutagenesisResult {
 /** Audit trail step. */
 export interface AuditStep {
   step: number;
-  phase: 'retrosynthesis' | 'enzyme_selection' | 'structure_analysis' | 'sequence_design' | 'flux_coupling' | 'balancing' | 'mutagenesis';
+  phase:
+    | "retrosynthesis"
+    | "enzyme_selection"
+    | "structure_analysis"
+    | "sequence_design"
+    | "flux_coupling"
+    | "balancing"
+    | "mutagenesis";
   description: string;
   input: string;
   output: string;
@@ -217,67 +224,67 @@ export interface CatalystDesignResult {
 // Internal Helpers
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { SeededRNG } from '../utils/seededRng';
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Physical / Thermodynamic Constants ───────────────────────────────────────
 
-const R_GAS = 1.987e-3;     // kcal/(mol·K)
-const T_STANDARD = 298.15;  // K (25 °C)
+const R_GAS = 1.987e-3; // kcal/(mol·K)
+const T_STANDARD = 298.15; // K (25 °C)
 const RT = R_GAS * T_STANDARD;
 const AVOGADRO = 6.022e23;
 const BOLTZMANN_KCAL = 1.987e-3; // kcal/(mol·K)
 
 // ── Amino Acid Properties ────────────────────────────────────────────────────
 
-const AA_LETTERS = 'ACDEFGHIKLMNPQRSTVWY';
+const AA_LETTERS = "ACDEFGHIKLMNPQRSTVWY";
 
 const AA_PROPERTIES: Record<string, { mw: number; charge: number; hydrophobicity: number }> = {
-  A: { mw: 89.1,  charge:  0,   hydrophobicity:  1.8  },
-  C: { mw: 121.2, charge:  0,   hydrophobicity:  2.5  },
-  D: { mw: 133.1, charge: -1,   hydrophobicity: -3.5  },
-  E: { mw: 147.1, charge: -1,   hydrophobicity: -3.5  },
-  F: { mw: 165.2, charge:  0,   hydrophobicity:  2.8  },
-  G: { mw: 75.0,  charge:  0,   hydrophobicity: -0.4  },
-  H: { mw: 155.2, charge:  0.1, hydrophobicity: -3.2  },
-  I: { mw: 131.2, charge:  0,   hydrophobicity:  4.5  },
-  K: { mw: 146.2, charge:  1,   hydrophobicity: -3.9  },
-  L: { mw: 131.2, charge:  0,   hydrophobicity:  3.8  },
-  M: { mw: 149.2, charge:  0,   hydrophobicity:  1.9  },
-  N: { mw: 132.1, charge:  0,   hydrophobicity: -3.5  },
-  P: { mw: 115.1, charge:  0,   hydrophobicity: -1.6  },
-  Q: { mw: 146.2, charge:  0,   hydrophobicity: -3.5  },
-  R: { mw: 174.2, charge:  1,   hydrophobicity: -4.5  },
-  S: { mw: 105.1, charge:  0,   hydrophobicity: -0.8  },
-  T: { mw: 119.1, charge:  0,   hydrophobicity: -0.7  },
-  V: { mw: 117.1, charge:  0,   hydrophobicity:  4.2  },
-  W: { mw: 204.2, charge:  0,   hydrophobicity: -0.9  },
-  Y: { mw: 181.2, charge:  0,   hydrophobicity: -1.3  },
+  A: { mw: 89.1, charge: 0, hydrophobicity: 1.8 },
+  C: { mw: 121.2, charge: 0, hydrophobicity: 2.5 },
+  D: { mw: 133.1, charge: -1, hydrophobicity: -3.5 },
+  E: { mw: 147.1, charge: -1, hydrophobicity: -3.5 },
+  F: { mw: 165.2, charge: 0, hydrophobicity: 2.8 },
+  G: { mw: 75.0, charge: 0, hydrophobicity: -0.4 },
+  H: { mw: 155.2, charge: 0.1, hydrophobicity: -3.2 },
+  I: { mw: 131.2, charge: 0, hydrophobicity: 4.5 },
+  K: { mw: 146.2, charge: 1, hydrophobicity: -3.9 },
+  L: { mw: 131.2, charge: 0, hydrophobicity: 3.8 },
+  M: { mw: 149.2, charge: 0, hydrophobicity: 1.9 },
+  N: { mw: 132.1, charge: 0, hydrophobicity: -3.5 },
+  P: { mw: 115.1, charge: 0, hydrophobicity: -1.6 },
+  Q: { mw: 146.2, charge: 0, hydrophobicity: -3.5 },
+  R: { mw: 174.2, charge: 1, hydrophobicity: -4.5 },
+  S: { mw: 105.1, charge: 0, hydrophobicity: -0.8 },
+  T: { mw: 119.1, charge: 0, hydrophobicity: -0.7 },
+  V: { mw: 117.1, charge: 0, hydrophobicity: 4.2 },
+  W: { mw: 204.2, charge: 0, hydrophobicity: -0.9 },
+  Y: { mw: 181.2, charge: 0, hydrophobicity: -1.3 },
 };
 
 // ── BLOSUM62 Substitution Matrix (20 standard amino acids) ───────────────────
 
 const BLOSUM62_RAW: Record<string, number[]> = {
   //              A   C   D   E   F   G   H   I   K   L   M   N   P   Q   R   S   T   V   W   Y
-  A: [            4, -1, -2, -1, -2,  0, -2, -1, -1, -1, -1, -2, -1, -1, -1,  1,  0,  0, -3, -2 ],
-  C: [           -1,  9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2 ],
-  D: [           -2, -3,  6,  2, -3, -1, -1, -3, -1, -4, -3,  1, -1,  0, -2,  0, -1, -3, -4, -3 ],
-  E: [           -1, -4,  2,  5, -3, -2,  0, -3,  1, -3, -2,  0, -1,  2,  0,  0, -1, -2, -3, -2 ],
-  F: [           -2, -2, -3, -3,  6, -3, -1,  0, -3,  0,  0, -3, -4, -3, -3, -2, -2, -1,  1,  3 ],
-  G: [            0, -3, -1, -2, -3,  6, -2, -4, -2, -4, -3,  0, -2, -2, -2,  0, -2, -3, -2, -3 ],
-  H: [           -2, -3, -1,  0, -1, -2,  8, -3, -1, -3, -2,  1, -2,  0,  0, -1, -2, -3, -2,  2 ],
-  I: [           -1, -1, -3, -3,  0, -4, -3,  4, -3,  2,  1, -3, -3, -3, -3, -2, -1,  3, -3, -1 ],
-  K: [           -1, -3, -1,  1, -3, -2, -1, -3,  5, -2, -1,  0, -1,  1,  2,  0, -1, -2, -3, -2 ],
-  L: [           -1, -1, -4, -3,  0, -4, -3,  2, -2,  4,  2, -3, -3, -2, -2, -2, -1,  1, -2, -1 ],
-  M: [           -1, -1, -3, -2,  0, -3, -2,  1, -1,  2,  5, -2, -2,  0, -1, -1, -1,  1, -1, -1 ],
-  N: [           -2, -3,  1,  0, -3,  0,  1, -3,  0, -3, -2,  6, -2,  0,  0,  1,  0, -3, -4, -2 ],
-  P: [           -1, -3, -1, -1, -4, -2, -2, -3, -1, -3, -2, -2,  7, -1, -2, -1, -1, -2, -4, -3 ],
-  Q: [           -1, -3,  0,  2, -3, -2,  0, -3,  1, -2,  0,  0, -1,  5,  1,  0, -1, -2, -2, -1 ],
-  R: [           -1, -3, -2,  0, -3, -2,  0, -3,  2, -2, -1,  0, -2,  1,  5, -1, -1, -3, -3, -2 ],
-  S: [            1, -1,  0,  0, -2,  0, -1, -2,  0, -2, -1,  1, -1,  0, -1,  4,  1, -2, -3, -2 ],
-  T: [            0, -1, -1, -1, -2, -2, -2, -1, -1, -1, -1,  0, -1, -1, -1,  1,  5,  0, -2, -2 ],
-  V: [            0, -1, -3, -2, -1, -3, -3,  3, -2,  1,  1, -3, -2, -2, -3, -2,  0,  4, -3, -1 ],
-  W: [           -3, -2, -4, -3,  1, -2, -2, -3, -3, -2, -1, -4, -4, -2, -3, -3, -2, -3, 11,  2 ],
-  Y: [           -2, -2, -3, -2,  3, -3,  2, -1, -2, -1, -1, -2, -3, -1, -2, -2, -2, -1,  2,  7 ],
+  A: [4, -1, -2, -1, -2, 0, -2, -1, -1, -1, -1, -2, -1, -1, -1, 1, 0, 0, -3, -2],
+  C: [-1, 9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2],
+  D: [-2, -3, 6, 2, -3, -1, -1, -3, -1, -4, -3, 1, -1, 0, -2, 0, -1, -3, -4, -3],
+  E: [-1, -4, 2, 5, -3, -2, 0, -3, 1, -3, -2, 0, -1, 2, 0, 0, -1, -2, -3, -2],
+  F: [-2, -2, -3, -3, 6, -3, -1, 0, -3, 0, 0, -3, -4, -3, -3, -2, -2, -1, 1, 3],
+  G: [0, -3, -1, -2, -3, 6, -2, -4, -2, -4, -3, 0, -2, -2, -2, 0, -2, -3, -2, -3],
+  H: [-2, -3, -1, 0, -1, -2, 8, -3, -1, -3, -2, 1, -2, 0, 0, -1, -2, -3, -2, 2],
+  I: [-1, -1, -3, -3, 0, -4, -3, 4, -3, 2, 1, -3, -3, -3, -3, -2, -1, 3, -3, -1],
+  K: [-1, -3, -1, 1, -3, -2, -1, -3, 5, -2, -1, 0, -1, 1, 2, 0, -1, -2, -3, -2],
+  L: [-1, -1, -4, -3, 0, -4, -3, 2, -2, 4, 2, -3, -3, -2, -2, -2, -1, 1, -2, -1],
+  M: [-1, -1, -3, -2, 0, -3, -2, 1, -1, 2, 5, -2, -2, 0, -1, -1, -1, 1, -1, -1],
+  N: [-2, -3, 1, 0, -3, 0, 1, -3, 0, -3, -2, 6, -2, 0, 0, 1, 0, -3, -4, -2],
+  P: [-1, -3, -1, -1, -4, -2, -2, -3, -1, -3, -2, -2, 7, -1, -2, -1, -1, -2, -4, -3],
+  Q: [-1, -3, 0, 2, -3, -2, 0, -3, 1, -2, 0, 0, -1, 5, 1, 0, -1, -2, -2, -1],
+  R: [-1, -3, -2, 0, -3, -2, 0, -3, 2, -2, -1, 0, -2, 1, 5, -1, -1, -3, -3, -2],
+  S: [1, -1, 0, 0, -2, 0, -1, -2, 0, -2, -1, 1, -1, 0, -1, 4, 1, -2, -3, -2],
+  T: [0, -1, -1, -1, -2, -2, -2, -1, -1, -1, -1, 0, -1, -1, -1, 1, 5, 0, -2, -2],
+  V: [0, -1, -3, -2, -1, -3, -3, 3, -2, 1, 1, -3, -2, -2, -3, -2, 0, 4, -3, -1],
+  W: [-3, -2, -4, -3, 1, -2, -2, -3, -3, -2, -1, -4, -4, -2, -3, -3, -2, -3, 11, 2],
+  Y: [-2, -2, -3, -2, 3, -3, 2, -1, -2, -1, -1, -2, -3, -1, -2, -2, -2, -1, 2, 7],
 };
 
 /** Look up BLOSUM62 score for a pair of amino acids. */
@@ -292,30 +299,93 @@ function blosum62Score(a: string, b: string): number {
 // Top codons per amino acid with relative adaptiveness (w_i).
 
 const YEAST_CODON_TABLE: Record<string, { codon: string; frequency: number }[]> = {
-  A: [{ codon: 'GCT', frequency: 0.38 }, { codon: 'GCC', frequency: 0.22 }, { codon: 'GCA', frequency: 0.29 }],
-  C: [{ codon: 'TGT', frequency: 0.63 }, { codon: 'TGC', frequency: 0.37 }],
-  D: [{ codon: 'GAT', frequency: 0.65 }, { codon: 'GAC', frequency: 0.35 }],
-  E: [{ codon: 'GAA', frequency: 0.70 }, { codon: 'GAG', frequency: 0.30 }],
-  F: [{ codon: 'TTT', frequency: 0.59 }, { codon: 'TTC', frequency: 0.41 }],
-  G: [{ codon: 'GGT', frequency: 0.47 }, { codon: 'GGA', frequency: 0.22 }, { codon: 'GGC', frequency: 0.19 }],
-  H: [{ codon: 'CAT', frequency: 0.64 }, { codon: 'CAC', frequency: 0.36 }],
-  I: [{ codon: 'ATT', frequency: 0.46 }, { codon: 'ATC', frequency: 0.26 }, { codon: 'ATA', frequency: 0.27 }],
-  K: [{ codon: 'AAG', frequency: 0.42 }, { codon: 'AAA', frequency: 0.58 }],
-  L: [{ codon: 'TTG', frequency: 0.29 }, { codon: 'CTT', frequency: 0.13 }, { codon: 'TTA', frequency: 0.28 }],
-  M: [{ codon: 'ATG', frequency: 1.00 }],
-  N: [{ codon: 'AAT', frequency: 0.59 }, { codon: 'AAC', frequency: 0.41 }],
-  P: [{ codon: 'CCA', frequency: 0.42 }, { codon: 'CCT', frequency: 0.31 }, { codon: 'CCG', frequency: 0.12 }],
-  Q: [{ codon: 'CAA', frequency: 0.69 }, { codon: 'CAG', frequency: 0.31 }],
-  R: [{ codon: 'AGA', frequency: 0.48 }, { codon: 'AGG', frequency: 0.21 }, { codon: 'CGT', frequency: 0.14 }],
-  S: [{ codon: 'TCT', frequency: 0.26 }, { codon: 'TCC', frequency: 0.16 }, { codon: 'AGT', frequency: 0.16 }],
-  T: [{ codon: 'ACT', frequency: 0.35 }, { codon: 'ACC', frequency: 0.22 }, { codon: 'ACA', frequency: 0.30 }],
-  V: [{ codon: 'GTT', frequency: 0.39 }, { codon: 'GTC', frequency: 0.21 }, { codon: 'GTA', frequency: 0.21 }],
-  W: [{ codon: 'TGG', frequency: 1.00 }],
-  Y: [{ codon: 'TAT', frequency: 0.56 }, { codon: 'TAC', frequency: 0.44 }],
+  A: [
+    { codon: "GCT", frequency: 0.38 },
+    { codon: "GCC", frequency: 0.22 },
+    { codon: "GCA", frequency: 0.29 },
+  ],
+  C: [
+    { codon: "TGT", frequency: 0.63 },
+    { codon: "TGC", frequency: 0.37 },
+  ],
+  D: [
+    { codon: "GAT", frequency: 0.65 },
+    { codon: "GAC", frequency: 0.35 },
+  ],
+  E: [
+    { codon: "GAA", frequency: 0.7 },
+    { codon: "GAG", frequency: 0.3 },
+  ],
+  F: [
+    { codon: "TTT", frequency: 0.59 },
+    { codon: "TTC", frequency: 0.41 },
+  ],
+  G: [
+    { codon: "GGT", frequency: 0.47 },
+    { codon: "GGA", frequency: 0.22 },
+    { codon: "GGC", frequency: 0.19 },
+  ],
+  H: [
+    { codon: "CAT", frequency: 0.64 },
+    { codon: "CAC", frequency: 0.36 },
+  ],
+  I: [
+    { codon: "ATT", frequency: 0.46 },
+    { codon: "ATC", frequency: 0.26 },
+    { codon: "ATA", frequency: 0.27 },
+  ],
+  K: [
+    { codon: "AAG", frequency: 0.42 },
+    { codon: "AAA", frequency: 0.58 },
+  ],
+  L: [
+    { codon: "TTG", frequency: 0.29 },
+    { codon: "CTT", frequency: 0.13 },
+    { codon: "TTA", frequency: 0.28 },
+  ],
+  M: [{ codon: "ATG", frequency: 1.0 }],
+  N: [
+    { codon: "AAT", frequency: 0.59 },
+    { codon: "AAC", frequency: 0.41 },
+  ],
+  P: [
+    { codon: "CCA", frequency: 0.42 },
+    { codon: "CCT", frequency: 0.31 },
+    { codon: "CCG", frequency: 0.12 },
+  ],
+  Q: [
+    { codon: "CAA", frequency: 0.69 },
+    { codon: "CAG", frequency: 0.31 },
+  ],
+  R: [
+    { codon: "AGA", frequency: 0.48 },
+    { codon: "AGG", frequency: 0.21 },
+    { codon: "CGT", frequency: 0.14 },
+  ],
+  S: [
+    { codon: "TCT", frequency: 0.26 },
+    { codon: "TCC", frequency: 0.16 },
+    { codon: "AGT", frequency: 0.16 },
+  ],
+  T: [
+    { codon: "ACT", frequency: 0.35 },
+    { codon: "ACC", frequency: 0.22 },
+    { codon: "ACA", frequency: 0.3 },
+  ],
+  V: [
+    { codon: "GTT", frequency: 0.39 },
+    { codon: "GTC", frequency: 0.21 },
+    { codon: "GTA", frequency: 0.21 },
+  ],
+  W: [{ codon: "TGG", frequency: 1.0 }],
+  Y: [
+    { codon: "TAT", frequency: 0.56 },
+    { codon: "TAC", frequency: 0.44 },
+  ],
 };
 
 /** Minimum codon frequency below which a codon is flagged as "rare". */
-const RARE_CODON_THRESHOLD = 0.10;
+const RARE_CODON_THRESHOLD = 0.1;
 
 // ── Utility Functions ────────────────────────────────────────────────────────
 
@@ -343,7 +413,7 @@ function blosum62Probabilities(aa: string, temperature: number = 1.0): { aa: str
     scores.push(blosum62Score(aa, c) / temperature);
   }
   const maxS = Math.max(...scores);
-  const exps = scores.map(s => Math.exp(s - maxS));
+  const exps = scores.map((s) => Math.exp(s - maxS));
   const total = exps.reduce((a, b) => a + b, 0);
   return Array.from(AA_LETTERS).map((c, i) => ({ aa: c, prob: exps[i] / total }));
 }
@@ -363,7 +433,7 @@ function sampleSubstitution(aa: string, rng: SeededRNG, temperature: number = 1.
 /** Pick best yeast codon for an amino acid (deterministic). */
 function bestCodon(aa: string): string {
   const codons = YEAST_CODON_TABLE[aa];
-  if (!codons || codons.length === 0) return 'NNN';
+  if (!codons || codons.length === 0) return "NNN";
   let best = codons[0];
   for (const c of codons) {
     if (c.frequency > best.frequency) best = c;
@@ -380,7 +450,7 @@ function bestCodon(aa: string): string {
  */
 function weightedRandomCodon(aa: string, rng: SeededRNG): { codon: string; frequency: number } {
   const codons = YEAST_CODON_TABLE[aa];
-  if (!codons || codons.length === 0) return { codon: 'NNN', frequency: 0 };
+  if (!codons || codons.length === 0) return { codon: "NNN", frequency: 0 };
 
   const totalFreq = codons.reduce((sum, c) => sum + c.frequency, 0);
   const r = rng.next() * totalFreq;
@@ -403,8 +473,11 @@ function weightedRandomCodon(aa: string, rng: SeededRNG): { codon: string; frequ
  * @param proteinSeq  Amino acid sequence
  * @param rng         Seeded RNG for deterministic codon sampling
  */
-function codonOptimize(proteinSeq: string, rng: SeededRNG): { dna: string; cai: number; gcContent: number; rareCodons: number } {
-  let dna = '';
+function codonOptimize(
+  proteinSeq: string,
+  rng: SeededRNG,
+): { dna: string; cai: number; gcContent: number; rareCodons: number } {
+  let dna = "";
   let logCai = 0;
   let gcCount = 0;
   let rareCodons = 0;
@@ -413,21 +486,21 @@ function codonOptimize(proteinSeq: string, rng: SeededRNG): { dna: string; cai: 
   for (const aa of proteinSeq) {
     const codons = YEAST_CODON_TABLE[aa];
     if (!codons || codons.length === 0) {
-      dna += 'NNN';
+      dna += "NNN";
       continue;
     }
     // Weighted random selection: codons chosen with probability ∝ frequency
     const chosen = weightedRandomCodon(aa, rng);
     dna += chosen.codon;
     // CAI uses relative adaptiveness w_i = freq_i / max_freq_for_this_AA
-    const maxFreq = Math.max(...codons.map(c => c.frequency));
+    const maxFreq = Math.max(...codons.map((c) => c.frequency));
     const w = maxFreq > 0 ? chosen.frequency / maxFreq : 0;
     if (w > 0) {
       logCai += Math.log(w);
     }
     if (chosen.frequency < RARE_CODON_THRESHOLD) rareCodons++;
     for (const nt of chosen.codon) {
-      if (nt === 'G' || nt === 'C') gcCount++;
+      if (nt === "G" || nt === "C") gcCount++;
     }
     validAA++;
   }
@@ -520,7 +593,7 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
       vdwScore: 0,
       electrostaticScore: 0,
       overallScore: 0,
-      interpretation: 'No catalytic residues annotated — cannot predict binding.',
+      interpretation: "No catalytic residues annotated — cannot predict binding.",
       uncertaintyKd: 0,
       uncertaintyDeltaG: 0,
     };
@@ -548,12 +621,12 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   // LJ well depth: 0.5 kcal/mol — effective van der Waals contact energy
   // for multi-atom protein-substrate interactions at binding interface
   const epsilon = 0.5;
-  const rMin = 3.5;     // Å — equilibrium separation
+  const rMin = 3.5; // Å — equilibrium separation
   let vdwEnergy = 0;
   for (const res of residues) {
     const r = Math.max(res.distanceToSubstrate, 0.5);
     const ratio = rMin / r;
-    const r6 = Math.pow(ratio, 6);
+    const r6 = ratio ** 6;
     const r12 = r6 * r6;
     vdwEnergy += epsilon * (r12 - 2 * r6);
   }
@@ -571,7 +644,7 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
 
     // pKa shift correction: shifted pKa modifies effective charge
     const pKaCorrected = res.pKa + res.pKaShift;
-    const protonationFraction = 1 / (1 + Math.pow(10, enzyme.optimalPH - pKaCorrected));
+    const protonationFraction = 1 / (1 + 10 ** (enzyme.optimalPH - pKaCorrected));
     const effectiveQ1 = q1 * (1 - protonationFraction) + (q1 + 1) * protonationFraction;
 
     const dielectric = 4 * r; // Warshel model
@@ -594,9 +667,9 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   //   ΔG_nonpolar   = γ × ΔSASA ≈ −γ × (contact area from distance/orientation)
   //   −TΔS          = rigid-body entropy penalty (constant ~1.5 kcal/mol at 298K)
 
-  const eps_in = 4.0;   // protein interior dielectric
-  const eps_out = 80.0;  // solvent dielectric
-  const gamma = 0.0072;  // kcal/(mol·Å²) — SASA coefficient
+  const eps_in = 4.0; // protein interior dielectric
+  const eps_out = 80.0; // solvent dielectric
+  const gamma = 0.0072; // kcal/(mol·Å²) — SASA coefficient
 
   // ΔE_vdw: direct from Lennard-Jones sum
   const dE_vdw = vdwNorm;
@@ -618,8 +691,8 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   // where r_probe = 1.4 Å (water), r_atom = 1.8 Å (typical carbon)
   // overlap_fraction estimated from distance score (0 = fully exposed, 1 = buried)
   const r_probe = 1.4; // Å — water probe radius
-  const r_atom = 1.8;  // Å — typical carbon van der Waals radius
-  const maxSASA = 4 * Math.PI * Math.pow(r_probe + r_atom, 2); // ~128.7 Å² per atom
+  const r_atom = 1.8; // Å — typical carbon van der Waals radius
+  const maxSASA = 4 * Math.PI * (r_probe + r_atom) ** 2; // ~128.7 Å² per atom
   const contactAtoms = residues.length; // number of contacting residues
   const overlapFraction = 1 - distanceScore; // distanceScore=1 → fully buried → overlap=0
   const estimatedSASA = maxSASA * contactAtoms * (1 - overlapFraction * orientationScore);
@@ -635,17 +708,16 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const predictedKd = round3(Math.exp(bindingEnergy / RT) * 1e6); // μM
 
   // Overall composite score — weighted arithmetic mean of component scores
-  const overallScore = round3(clamp(
-    0.35 * distanceScore + 0.25 * orientationScore + 0.20 * vdwScore + 0.20 * electrostaticScore,
-    0, 1,
-  ));
+  const overallScore = round3(
+    clamp(0.35 * distanceScore + 0.25 * orientationScore + 0.2 * vdwScore + 0.2 * electrostaticScore, 0, 1),
+  );
 
   // Interpretation
   let interpretation: string;
-  if (overallScore > 0.8) interpretation = 'Excellent catalytic geometry — high predicted affinity.';
-  else if (overallScore > 0.6) interpretation = 'Good binding predicted — minor geometric deviations.';
-  else if (overallScore > 0.4) interpretation = 'Moderate affinity — consider active-site engineering.';
-  else interpretation = 'Poor predicted binding — significant structural optimisation needed.';
+  if (overallScore > 0.8) interpretation = "Excellent catalytic geometry — high predicted affinity.";
+  else if (overallScore > 0.6) interpretation = "Good binding predicted — minor geometric deviations.";
+  else if (overallScore > 0.4) interpretation = "Moderate affinity — consider active-site engineering.";
+  else interpretation = "Poor predicted binding — significant structural optimisation needed.";
 
   // Propagate ±2 kcal/mol ΔG uncertainty to Kd
   const uncertaintyDeltaG = 2.0; // kcal/mol
@@ -686,12 +758,9 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
  * @param nDesigns  Number of variant sequences to generate (default 10)
  * @returns         Ranked sequence designs with DNA and codon metrics
  */
-export function designSequences(
-  enzyme: EnzymeStructure,
-  nDesigns: number = 10,
-): SequenceDesignResult {
+export function designSequences(enzyme: EnzymeStructure, nDesigns: number = 10): SequenceDesignResult {
   const rng = new SeededRNG(42);
-  const catalyticPositions = new Set(enzyme.catalyticResidues.map(r => r.position));
+  const catalyticPositions = new Set(enzyme.catalyticResidues.map((r) => r.position));
   const wtSeq = enzyme.sequence;
 
   const designs: DesignedSequence[] = [];
@@ -701,7 +770,7 @@ export function designSequences(
     const temperature = 0.5 + (d / nDesigns) * 1.5;
     const mutationRate = 0.05 + (d / nDesigns) * 0.15; // 5-20% positions mutated
 
-    let seq = '';
+    let seq = "";
     for (let i = 0; i < wtSeq.length; i++) {
       if (catalyticPositions.has(i)) {
         seq += wtSeq[i]; // preserve active site
@@ -745,7 +814,9 @@ export function designSequences(
     const compB = b.score - b.cai * 2 + Math.abs(b.stabilityDelta) * 0.5;
     return compA - compB;
   });
-  designs.forEach((d, i) => { d.rank = i + 1; });
+  designs.forEach((d, i) => {
+    d.rank = i + 1;
+  });
 
   // Consensus motifs: find stretches ≥ 5 aa identical across all designs
   const consensusMotifs: string[] = [];
@@ -764,7 +835,7 @@ export function designSequences(
   }
 
   return {
-    backboneSource: 'template',
+    backboneSource: "template",
     targetEnzyme: enzyme.name,
     designs,
     consensusMotifs: consensusMotifs.slice(0, 20), // cap at 20
@@ -790,10 +861,7 @@ export function designSequences(
  * @param requiredFlux  Target pathway flux in mmol/gDW/h
  * @returns             Metabolic drain analysis with viability assessment
  */
-export function estimateMetabolicDrain(
-  enzyme: EnzymeStructure,
-  requiredFlux: number,
-): MetabolicDrainResult {
+export function estimateMetabolicDrain(enzyme: EnzymeStructure, requiredFlux: number): MetabolicDrainResult {
   const len = enzyme.length;
 
   // ATP cost per molecule: 5 ATP per amino acid (4 translation + 1 folding)
@@ -802,14 +870,14 @@ export function estimateMetabolicDrain(
   // NADPH cost: Cys and Met biosynthesis each require ~4 NADPH
   let nadphCost = 0;
   for (const aa of enzyme.sequence) {
-    if (aa === 'C' || aa === 'M') nadphCost += 4;
+    if (aa === "C" || aa === "M") nadphCost += 4;
   }
 
   // Expression level from required flux
   // flux [mmol/gDW/h] → convert to molecules/cell:
   // Assume yeast cell vol ~42 fL, dry weight ~15 pg
   const cellDryWeight = 15e-12; // g
-  const fluxPerCell = requiredFlux * cellDryWeight / 1000; // mol/h per cell
+  const fluxPerCell = (requiredFlux * cellDryWeight) / 1000; // mol/h per cell
   const moleculesPerSec = (fluxPerCell * AVOGADRO) / 3600;
   const expressionLevel = Math.max(1, Math.ceil(moleculesPerSec / Math.max(enzyme.kcat, 0.01)));
 
@@ -826,28 +894,24 @@ export function estimateMetabolicDrain(
   const atpFraction = clamp(enzymeATPFlux / totalATPBudget, 0, 1);
 
   // Growth penalty
-  const growthPenalty = round3(clamp(
-    0.3 * ribosomeBurden + 0.1 * atpFraction,
-    0, 1,
-  ) * 100); // percentage
+  const growthPenalty = round3(clamp(0.3 * ribosomeBurden + 0.1 * atpFraction, 0, 1) * 100); // percentage
 
   const isViable = growthPenalty < 50;
 
   // Total metabolic drain (composite 0-1)
-  const totalMetabolicDrain = round3(clamp(
-    0.4 * ribosomeBurden + 0.3 * atpFraction + 0.3 * (nadphCost / (len * 4)),
-    0, 1,
-  ));
+  const totalMetabolicDrain = round3(
+    clamp(0.4 * ribosomeBurden + 0.3 * atpFraction + 0.3 * (nadphCost / (len * 4)), 0, 1),
+  );
 
   let recommendation: string;
   if (growthPenalty < 5) {
-    recommendation = 'Low metabolic burden — expression is highly feasible.';
+    recommendation = "Low metabolic burden — expression is highly feasible.";
   } else if (growthPenalty < 20) {
-    recommendation = 'Moderate burden — consider using a weaker promoter or fusion protein.';
+    recommendation = "Moderate burden — consider using a weaker promoter or fusion protein.";
   } else if (growthPenalty < 50) {
-    recommendation = 'High burden — dynamic regulation (e.g., GAL promoter) recommended.';
+    recommendation = "High burden — dynamic regulation (e.g., GAL promoter) recommended.";
   } else {
-    recommendation = 'Expression likely lethal — reduce enzyme size or improve kcat.';
+    recommendation = "Expression likely lethal — reduce enzyme size or improve kcat.";
   }
 
   return {
@@ -904,7 +968,7 @@ export function balancePathway(steps: PathwayStep[]): PathwayBalanceResult {
   const convergenceHistory: { iter: number; maxConc: number; flux: number }[] = [];
 
   // Working copies
-  const balanced = steps.map(s => ({ ...s }));
+  const balanced = steps.map((s) => ({ ...s }));
 
   // Initialise intermediate concentrations to Km values
   for (const step of balanced) {
@@ -936,8 +1000,8 @@ export function balancePathway(steps: PathwayStep[]): PathwayBalanceResult {
 
       // Jacobian approximation: ∂(v_i)/∂[S_i] = kcat × E × Km / (Km + [S_i])²
       const sNext = balanced[i + 1];
-      const denom = (sNext.km + balanced[i].intermediateConc);
-      const jacobian = -(sNext.adjustedKcat || sNext.kcat) * sNext.expressionMultiplier * sNext.km / (denom * denom);
+      const denom = sNext.km + balanced[i].intermediateConc;
+      const jacobian = (-(sNext.adjustedKcat || sNext.kcat) * sNext.expressionMultiplier * sNext.km) / (denom * denom);
 
       if (Math.abs(jacobian) > 1e-12) {
         const delta = -residual / jacobian;
@@ -951,13 +1015,13 @@ export function balancePathway(steps: PathwayStep[]): PathwayBalanceResult {
     for (const s of balanced) {
       if (s.currentFlux > 1e-12) {
         const ratio = targetFlux / s.currentFlux;
-        s.expressionMultiplier *= (1 + (ratio - 1) * 0.3); // smooth update
+        s.expressionMultiplier *= 1 + (ratio - 1) * 0.3; // smooth update
         s.expressionMultiplier = clamp(s.expressionMultiplier, 0.01, 100);
         s.adjustedKcat = s.kcat * s.expressionMultiplier;
       }
     }
 
-    const maxConc = Math.max(...balanced.map(s => s.intermediateConc));
+    const maxConc = Math.max(...balanced.map((s) => s.intermediateConc));
     const avgFlux = balanced.reduce((sum, s) => sum + s.currentFlux, 0) / balanced.length;
     convergenceHistory.push({ iter, maxConc: round3(maxConc), flux: round3(avgFlux) });
 
@@ -974,12 +1038,12 @@ export function balancePathway(steps: PathwayStep[]): PathwayBalanceResult {
     if (s.isToxic) toxicIntermediates.push(s.substrate);
   }
 
-  const maxIntermediateConc = round3(Math.max(...balanced.map(s => s.intermediateConc)));
+  const maxIntermediateConc = round3(Math.max(...balanced.map((s) => s.intermediateConc)));
   const totalFlux = round3(balanced.reduce((sum, s) => sum + s.currentFlux, 0) / balanced.length);
   const objectiveValue = round3(1 / (1 + maxIntermediateConc)); // higher = better
 
   return {
-    steps: balanced.map(s => ({
+    steps: balanced.map((s) => ({
       ...s,
       intermediateConc: round3(s.intermediateConc),
       currentFlux: round3(s.currentFlux),
@@ -1013,19 +1077,22 @@ export function balancePathway(steps: PathwayStep[]): PathwayBalanceResult {
  */
 export function rankPathways(candidates: PathwayCandidate[]): ParetoFrontResult {
   if (candidates.length === 0) {
-    return { candidates: [], paretoFront: [], dominanceMatrix: [], bestOverall: '' };
+    return { candidates: [], paretoFront: [], dominanceMatrix: [], bestOverall: "" };
   }
 
   const n = candidates.length;
 
   // ── Normalise objectives to [0,1] ──────────────────────────────────────
-  const deltaGs = candidates.map(c => c.deltaG);
-  const yields = candidates.map(c => c.theoreticalYield);
-  const costs = candidates.map(c => c.atpBurden + c.nadphBurden);
+  const deltaGs = candidates.map((c) => c.deltaG);
+  const yields = candidates.map((c) => c.theoreticalYield);
+  const costs = candidates.map((c) => c.atpBurden + c.nadphBurden);
 
-  const minDG = Math.min(...deltaGs), maxDG = Math.max(...deltaGs);
-  const minY = Math.min(...yields), maxY = Math.max(...yields);
-  const minC = Math.min(...costs), maxC = Math.max(...costs);
+  const minDG = Math.min(...deltaGs),
+    maxDG = Math.max(...deltaGs);
+  const minY = Math.min(...yields),
+    maxY = Math.max(...yields);
+  const minC = Math.min(...costs),
+    maxC = Math.max(...costs);
 
   const rangeDG = maxDG - minDG || 1;
   const rangeY = maxY - minY || 1;
@@ -1050,12 +1117,9 @@ export function rankPathways(candidates: PathwayCandidate[]): ParetoFrontResult 
       const ci = candidates[i].scores;
       const cj = candidates[j].scores;
       // i dominates j if i is ≥ in all objectives and > in at least one
-      const geAll = ci.thermodynamic >= cj.thermodynamic
-                  && ci.yield >= cj.yield
-                  && ci.metabolicCost >= cj.metabolicCost;
-      const gtAny = ci.thermodynamic > cj.thermodynamic
-                  || ci.yield > cj.yield
-                  || ci.metabolicCost > cj.metabolicCost;
+      const geAll =
+        ci.thermodynamic >= cj.thermodynamic && ci.yield >= cj.yield && ci.metabolicCost >= cj.metabolicCost;
+      const gtAny = ci.thermodynamic > cj.thermodynamic || ci.yield > cj.yield || ci.metabolicCost > cj.metabolicCost;
       dominanceMatrix[i][j] = geAll && gtAny;
     }
   }
@@ -1097,9 +1161,7 @@ export function rankPathways(candidates: PathwayCandidate[]): ParetoFrontResult 
     }
     // Feasibility = weighted composite
     const s = candidates[i].scores;
-    candidates[i].scores.feasibility = round3(
-      0.40 * s.thermodynamic + 0.35 * s.yield + 0.25 * s.metabolicCost,
-    );
+    candidates[i].scores.feasibility = round3(0.4 * s.thermodynamic + 0.35 * s.yield + 0.25 * s.metabolicCost);
   }
 
   const paretoFront = candidates.filter((_, i) => ranks[i] === 0);
@@ -1155,21 +1217,18 @@ export function rankPathways(candidates: PathwayCandidate[]): ParetoFrontResult 
  * @param nSites  Number of sites to return (default 8)
  * @returns       Mutagenesis predictions with audit trail
  */
-export function predictMutagenesisSites(
-  enzyme: EnzymeStructure,
-  nSites: number = 8,
-): MutagenesisResult {
-  const catalyticPositions = new Set(enzyme.catalyticResidues.map(r => r.position));
+export function predictMutagenesisSites(enzyme: EnzymeStructure, nSites: number = 8): MutagenesisResult {
+  const catalyticPositions = new Set(enzyme.catalyticResidues.map((r) => r.position));
   const seq = enzyme.sequence;
   const len = seq.length;
   const auditTrail: AuditStep[] = [];
 
   auditTrail.push({
     step: 1,
-    phase: 'mutagenesis',
-    description: 'Computing per-position conservation and structural importance scores',
+    phase: "mutagenesis",
+    description: "Computing per-position conservation and structural importance scores",
     input: `Enzyme ${enzyme.name}, ${len} residues, ${catalyticPositions.size} catalytic residues`,
-    output: '',
+    output: "",
     confidence: 0.9,
   });
 
@@ -1191,7 +1250,7 @@ export function predictMutagenesisSites(
     if (catalyticPositions.has(i)) continue; // never mutate active site
 
     // Conservation: Shannon entropy of BLOSUM62-derived substitution probs
-    const probs = blosum62Probabilities(aa, 1.0).map(p => p.prob);
+    const probs = blosum62Probabilities(aa, 1.0).map((p) => p.prob);
     const entropy = shannonEntropy(probs);
     const maxEntropy = Math.log2(20);
     // Low entropy → highly conserved → conservation near 1
@@ -1208,13 +1267,14 @@ export function predictMutagenesisSites(
     // Near termini (first/last 15%), or on α-helix surface (~every 3.6 residues)
     const relPos = i / len;
     const isTerminal = relPos < 0.15 || relPos > 0.85;
-    const isHelixSurface = (i % 4 === 0) || (i % 4 === 1); // ~2/4 positions surface
+    const isHelixSurface = i % 4 === 0 || i % 4 === 1; // ~2/4 positions surface
     const surfaceAccessibility = (isTerminal ? 0.7 : 0.3) + (isHelixSurface ? 0.3 : 0);
 
     // Composite: we want moderate conservation, low structural importance, high surface
-    const composite = (1 - Math.abs(conservation - 0.5) * 2) // peak at conservation ≈ 0.5
-      * (1 - structuralImportance)
-      * surfaceAccessibility;
+    const composite =
+      (1 - Math.abs(conservation - 0.5) * 2) * // peak at conservation ≈ 0.5
+      (1 - structuralImportance) *
+      surfaceAccessibility;
 
     positions.push({
       position: i,
@@ -1232,15 +1292,15 @@ export function predictMutagenesisSites(
 
   auditTrail.push({
     step: 2,
-    phase: 'mutagenesis',
+    phase: "mutagenesis",
     description: `Selected top ${topPositions.length} mutagenesis sites`,
     input: `${positions.length} scoreable positions`,
-    output: topPositions.map(p => `${p.aa}${p.position}`).join(', '),
+    output: topPositions.map((p) => `${p.aa}${p.position}`).join(", "),
     confidence: 0.85,
   });
 
   // ── Generate mutation suggestions ──────────────────────────────────────
-  const sites: MutagenesisSite[] = topPositions.map(pos => {
+  const sites: MutagenesisSite[] = topPositions.map((pos) => {
     // Find BLOSUM62-positive substitutions (conservative changes)
     const substitutions: { aa: string; score: number }[] = [];
     for (const target of AA_LETTERS) {
@@ -1249,7 +1309,7 @@ export function predictMutagenesisSites(
       if (score > 0) substitutions.push({ aa: target, score });
     }
     substitutions.sort((a, b) => b.score - a.score);
-    const suggestedMutants = substitutions.slice(0, 5).map(s => s.aa);
+    const suggestedMutants = substitutions.slice(0, 5).map((s) => s.aa);
 
     // If no positive substitutions, pick top by BLOSUM62
     if (suggestedMutants.length === 0) {
@@ -1259,27 +1319,30 @@ export function predictMutagenesisSites(
         all.push({ aa: target, score: blosum62Score(pos.aa, target) });
       }
       all.sort((a, b) => b.score - a.score);
-      suggestedMutants.push(...all.slice(0, 3).map(s => s.aa));
+      suggestedMutants.push(...all.slice(0, 3).map((s) => s.aa));
     }
 
     // Predict effect
     const isInSubstrateChannel = pos.structuralImportance > 0.3 && pos.structuralImportance < 0.6;
     const isConservative = substitutions.length > 0 && substitutions[0].score >= 1;
-    let predictedEffect: 'beneficial' | 'neutral' | 'deleterious';
-    if (isInSubstrateChannel && isConservative) predictedEffect = 'beneficial';
-    else if (pos.conservation > 0.7) predictedEffect = 'deleterious';
-    else predictedEffect = 'neutral';
+    let predictedEffect: "beneficial" | "neutral" | "deleterious";
+    if (isInSubstrateChannel && isConservative) predictedEffect = "beneficial";
+    else if (pos.conservation > 0.7) predictedEffect = "deleterious";
+    else predictedEffect = "neutral";
 
     let rationale: string;
-    if (predictedEffect === 'beneficial') {
-      rationale = `Position ${pos.position} is in the substrate access channel with moderate conservation — `
-        + `conservative substitution to ${suggestedMutants[0]} may improve substrate channelling.`;
-    } else if (predictedEffect === 'deleterious') {
-      rationale = `Position ${pos.position} shows high conservation (${pos.conservation}) — `
-        + `mutations here risk disrupting structural integrity.`;
+    if (predictedEffect === "beneficial") {
+      rationale =
+        `Position ${pos.position} is in the substrate access channel with moderate conservation — ` +
+        `conservative substitution to ${suggestedMutants[0]} may improve substrate channelling.`;
+    } else if (predictedEffect === "deleterious") {
+      rationale =
+        `Position ${pos.position} shows high conservation (${pos.conservation}) — ` +
+        `mutations here risk disrupting structural integrity.`;
     } else {
-      rationale = `Position ${pos.position} is surface-exposed with moderate conservation — `
-        + `substitutions likely tolerated without significant kinetic impact.`;
+      rationale =
+        `Position ${pos.position} is surface-exposed with moderate conservation — ` +
+        `substitutions likely tolerated without significant kinetic impact.`;
     }
 
     return {
@@ -1297,16 +1360,16 @@ export function predictMutagenesisSites(
   });
 
   // ── Top combination ────────────────────────────────────────────────────
-  const beneficialSites = sites.filter(s => s.predictedEffect === 'beneficial');
-  const combPositions = (beneficialSites.length > 0 ? beneficialSites : sites.slice(0, 3))
-    .map(s => s.position);
+  const beneficialSites = sites.filter((s) => s.predictedEffect === "beneficial");
+  const combPositions = (beneficialSites.length > 0 ? beneficialSites : sites.slice(0, 3)).map((s) => s.position);
   // No quantitative prediction available for combined improvement
   const combinedImprovement: number | null = null;
 
   auditTrail.push({
     step: 3,
-    phase: 'mutagenesis',
-    description: 'Generated mutation suggestions — no quantitative kinetic predictions available (requires FoldX/Rosetta)',
+    phase: "mutagenesis",
+    description:
+      "Generated mutation suggestions — no quantitative kinetic predictions available (requires FoldX/Rosetta)",
     input: `${sites.length} sites`,
     output: `${beneficialSites.length} beneficial, top combination: no prediction available`,
     confidence: 0.75,
@@ -1355,10 +1418,10 @@ export function runFullDesignPipeline(
   // ── 1. Binding Affinity ────────────────────────────────────────────────
   auditTrail.push({
     step: ++stepCounter,
-    phase: 'structure_analysis',
-    description: 'Predicting enzyme-substrate binding affinity',
+    phase: "structure_analysis",
+    description: "Predicting enzyme-substrate binding affinity",
     input: `Enzyme: ${enzyme.name}, Substrate: ${enzyme.substrate}`,
-    output: '',
+    output: "",
     confidence: 0.85,
   });
   const bindingAffinity = predictBindingAffinity(enzyme);
@@ -1368,26 +1431,25 @@ export function runFullDesignPipeline(
   // ── 2. Sequence Design ─────────────────────────────────────────────────
   auditTrail.push({
     step: ++stepCounter,
-    phase: 'sequence_design',
-    description: 'Generating BLOSUM62-based variant sequences',
+    phase: "sequence_design",
+    description: "Generating BLOSUM62-based variant sequences",
     input: `Wild-type length: ${enzyme.length} aa`,
-    output: '',
-    confidence: 0.80,
+    output: "",
+    confidence: 0.8,
   });
   const sequenceDesign = designSequences(enzyme);
   auditTrail[auditTrail.length - 1].output =
     `${sequenceDesign.designs.length} designs, top CAI = ${sequenceDesign.designs[0]?.cai ?? 0}`;
 
   // ── 3. Metabolic Drain ─────────────────────────────────────────────────
-  const requiredFlux = pathwaySteps.length > 0
-    ? pathwaySteps.reduce((sum, s) => sum + s.targetFlux, 0) / pathwaySteps.length
-    : 1.0;
+  const requiredFlux =
+    pathwaySteps.length > 0 ? pathwaySteps.reduce((sum, s) => sum + s.targetFlux, 0) / pathwaySteps.length : 1.0;
   auditTrail.push({
     step: ++stepCounter,
-    phase: 'flux_coupling',
-    description: 'Estimating expression cost via FBA-coupled drain model',
+    phase: "flux_coupling",
+    description: "Estimating expression cost via FBA-coupled drain model",
     input: `Required flux: ${round3(requiredFlux)} mmol/gDW/h`,
-    output: '',
+    output: "",
     confidence: 0.75,
   });
   const metabolicDrain = estimateMetabolicDrain(enzyme, requiredFlux);
@@ -1397,25 +1459,25 @@ export function runFullDesignPipeline(
   // ── 4. Pathway Balancing ───────────────────────────────────────────────
   auditTrail.push({
     step: ++stepCounter,
-    phase: 'balancing',
-    description: 'Newton-Raphson zero-accumulation pathway balancing',
+    phase: "balancing",
+    description: "Newton-Raphson zero-accumulation pathway balancing",
     input: `${pathwaySteps.length} pathway steps`,
-    output: '',
-    confidence: 0.80,
+    output: "",
+    confidence: 0.8,
   });
   const pathwayBalance = balancePathway(pathwaySteps);
   auditTrail[auditTrail.length - 1].output =
-    `Balanced = ${pathwayBalance.isBalanced}, ${pathwayBalance.iterations} iterations, `
-    + `max intermediate = ${pathwayBalance.maxIntermediateConc} mM`;
+    `Balanced = ${pathwayBalance.isBalanced}, ${pathwayBalance.iterations} iterations, ` +
+    `max intermediate = ${pathwayBalance.maxIntermediateConc} mM`;
 
   // ── 5. Pareto Ranking ──────────────────────────────────────────────────
   auditTrail.push({
     step: ++stepCounter,
-    phase: 'enzyme_selection',
-    description: 'Multi-objective Pareto-front pathway ranking',
+    phase: "enzyme_selection",
+    description: "Multi-objective Pareto-front pathway ranking",
     input: `${candidates.length} candidates`,
-    output: '',
-    confidence: 0.90,
+    output: "",
+    confidence: 0.9,
   });
   const paretoRanking = rankPathways(candidates);
   auditTrail[auditTrail.length - 1].output =
@@ -1424,16 +1486,17 @@ export function runFullDesignPipeline(
   // ── 6. Mutagenesis ─────────────────────────────────────────────────────
   auditTrail.push({
     step: ++stepCounter,
-    phase: 'mutagenesis',
-    description: 'Conservation-weighted mutagenesis site prediction',
+    phase: "mutagenesis",
+    description: "Conservation-weighted mutagenesis site prediction",
     input: `Enzyme: ${enzyme.name}`,
-    output: '',
-    confidence: 0.70,
+    output: "",
+    confidence: 0.7,
   });
   const mutagenesis = predictMutagenesisSites(enzyme);
-  auditTrail[auditTrail.length - 1].output = mutagenesis.topCombination.predictedImprovement != null
-    ? `${mutagenesis.sites.length} sites, top combination: ${mutagenesis.topCombination.predictedImprovement}× improvement`
-    : `${mutagenesis.sites.length} sites, no quantitative improvement prediction available`;
+  auditTrail[auditTrail.length - 1].output =
+    mutagenesis.topCombination.predictedImprovement != null
+      ? `${mutagenesis.sites.length} sites, top combination: ${mutagenesis.topCombination.predictedImprovement}× improvement`
+      : `${mutagenesis.sites.length} sites, no quantitative improvement prediction available`;
 
   return {
     bindingAffinity,
@@ -1506,7 +1569,7 @@ export function identifyBottlenecks(input: BottleneckInput): {
 } {
   const { pathwaySteps, fbaData, cethxData, dbtlflowData } = input;
 
-  const bottlenecks: BottleneckResult[] = pathwaySteps.map(step => {
+  const bottlenecks: BottleneckResult[] = pathwaySteps.map((step) => {
     // FBA factor: normalized shadow price
     let fbaFactor = 0.5; // default if no FBA data
     if (fbaData?.shadowPrices) {
@@ -1527,9 +1590,10 @@ export function identifyBottlenecks(input: BottleneckInput): {
     // Thermo factor: positive ΔG = unfavorable = bottleneck
     let thermoFactor = 0.3; // default
     if (cethxData?.steps) {
-      const stepData = cethxData.steps.find(s =>
-        s.reaction.toLowerCase().includes(step.enzymeId.toLowerCase()) ||
-        s.reaction.toLowerCase().includes(step.enzymeName.toLowerCase())
+      const stepData = cethxData.steps.find(
+        (s) =>
+          s.reaction.toLowerCase().includes(step.enzymeId.toLowerCase()) ||
+          s.reaction.toLowerCase().includes(step.enzymeName.toLowerCase()),
       );
       if (stepData) {
         // ΔG > 0 = unfavorable, scale by RT (2.48 kJ/mol at 298K)
@@ -1542,7 +1606,7 @@ export function identifyBottlenecks(input: BottleneckInput): {
     if (dbtlflowData?.passRate !== undefined) {
       experimentalFactor = 1 - dbtlflowData.passRate;
     } else if (dbtlflowData?.iterations) {
-      const passed = dbtlflowData.iterations.filter(i => i.passed).length;
+      const passed = dbtlflowData.iterations.filter((i) => i.passed).length;
       const total = dbtlflowData.iterations.length;
       if (total > 0) {
         experimentalFactor = 1 - passed / total;
@@ -1553,12 +1617,14 @@ export function identifyBottlenecks(input: BottleneckInput): {
     const score = round3(0.4 * fbaFactor + 0.3 * thermoFactor + 0.3 * experimentalFactor);
 
     // Generate recommendation
-    let recommendation = '';
-    if (fbaFactor > 0.7) recommendation = 'High flux sensitivity — consider overexpression or enzyme replacement';
-    else if (thermoFactor > 0.7) recommendation = 'Thermodynamically unfavorable — consider product removal or substrate feeding';
-    else if (experimentalFactor > 0.7) recommendation = 'Low experimental pass rate — consider alternative assay conditions';
-    else if (score > 0.5) recommendation = 'Moderate bottleneck — monitor in next DBTL cycle';
-    else recommendation = 'Not a significant bottleneck';
+    let recommendation = "";
+    if (fbaFactor > 0.7) recommendation = "High flux sensitivity — consider overexpression or enzyme replacement";
+    else if (thermoFactor > 0.7)
+      recommendation = "Thermodynamically unfavorable — consider product removal or substrate feeding";
+    else if (experimentalFactor > 0.7)
+      recommendation = "Low experimental pass rate — consider alternative assay conditions";
+    else if (score > 0.5) recommendation = "Moderate bottleneck — monitor in next DBTL cycle";
+    else recommendation = "Not a significant bottleneck";
 
     return {
       enzymeId: step.enzymeId,
@@ -1575,7 +1641,7 @@ export function identifyBottlenecks(input: BottleneckInput): {
   const topBottleneck = bottlenecks.length > 0 ? bottlenecks[0] : null;
   const summary = topBottleneck
     ? `${topBottleneck.enzymeName} is the primary bottleneck (score: ${topBottleneck.score}). ${topBottleneck.recommendation}`
-    : 'No significant bottlenecks identified.';
+    : "No significant bottlenecks identified.";
 
   return { bottlenecks, topBottleneck, summary };
 }
@@ -1598,37 +1664,37 @@ export function evaluateThermodynamics(
   overallFeasible: boolean;
   summary: string;
 } {
-  const steps = pathwaySteps.map(step => {
+  const steps = pathwaySteps.map((step) => {
     let deltaG: number | null = null;
     if (cethxData?.steps) {
-      const match = cethxData.steps.find(s =>
-        s.reaction.toLowerCase().includes(step.enzymeId.toLowerCase()) ||
-        s.reaction.toLowerCase().includes(step.enzymeName.toLowerCase())
+      const match = cethxData.steps.find(
+        (s) =>
+          s.reaction.toLowerCase().includes(step.enzymeId.toLowerCase()) ||
+          s.reaction.toLowerCase().includes(step.enzymeName.toLowerCase()),
       );
       if (match) deltaG = match.deltaG;
     }
 
     const feasible = deltaG === null ? true : deltaG < 5; // 5 kJ/mol threshold
-    let recommendation = '';
+    let recommendation = "";
     if (deltaG !== null) {
-      if (deltaG > 10) recommendation = 'Strongly unfavorable — requires energy coupling';
-      else if (deltaG > 5) recommendation = 'Marginally unfavorable — product removal may help';
-      else if (deltaG > 0) recommendation = 'Slightly unfavorable — feasible under cellular conditions';
-      else recommendation = 'Thermodynamically favorable';
+      if (deltaG > 10) recommendation = "Strongly unfavorable — requires energy coupling";
+      else if (deltaG > 5) recommendation = "Marginally unfavorable — product removal may help";
+      else if (deltaG > 0) recommendation = "Slightly unfavorable — feasible under cellular conditions";
+      else recommendation = "Thermodynamically favorable";
     } else {
-      recommendation = 'No thermodynamic data available';
+      recommendation = "No thermodynamic data available";
     }
 
     return { enzymeId: step.enzymeId, enzymeName: step.enzymeName, deltaG, feasible, recommendation };
   });
 
-  const overallFeasible = cethxData?.overallDeltaG !== undefined
-    ? cethxData.overallDeltaG < 0
-    : steps.every(s => s.feasible);
+  const overallFeasible =
+    cethxData?.overallDeltaG !== undefined ? cethxData.overallDeltaG < 0 : steps.every((s) => s.feasible);
 
   const summary = overallFeasible
-    ? 'Pathway is thermodynamically feasible'
-    : 'Pathway has thermodynamic barriers — consider pathway modifications';
+    ? "Pathway is thermodynamically feasible"
+    : "Pathway has thermodynamic barriers — consider pathway modifications";
 
   return { steps, overallFeasible, summary };
 }

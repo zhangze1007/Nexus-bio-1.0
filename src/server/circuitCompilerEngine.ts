@@ -27,7 +27,7 @@
 
 export interface LogicGate {
   id: string;
-  type: 'AND' | 'OR' | 'NOT' | 'NAND' | 'NOR' | 'XOR' | 'BUFFER';
+  type: "AND" | "OR" | "NOT" | "NAND" | "NOR" | "XOR" | "BUFFER";
   inputs: string[];
   output: string;
   /** Genetic implementation */
@@ -39,13 +39,13 @@ export interface LogicGate {
   };
   /** Hill function parameters */
   hill: {
-    ymax: number;      // max expression
-    ymin: number;      // leak expression
-    K: number;         // half-max concentration
-    n: number;         // Hill coefficient
+    ymax: number; // max expression
+    ymin: number; // leak expression
+    K: number; // half-max concentration
+    n: number; // Hill coefficient
   };
   /** Data source: 'cello_characterized' = from Nielsen 2016 Table S1, 'estimated' = extrapolated */
-  source: 'cello_characterized' | 'estimated' | 'literature';
+  source: "cello_characterized" | "estimated" | "literature";
 }
 
 export interface TruthTable {
@@ -68,11 +68,11 @@ export interface GeneticCircuit {
     outputValue: number;
   }>;
   /** Resource burden estimate */
-  burden: number;      // 0-1
+  burden: number; // 0-1
   /** Performance metrics */
   metrics: {
     logicCorrect: boolean;
-    dynamicRange: number;   // fold-change
+    dynamicRange: number; // fold-change
     signalToNoise: number;
     orthogonality: number;
   };
@@ -81,11 +81,11 @@ export interface GeneticCircuit {
 export interface ToeholdSwitch {
   triggerRNA: string;
   switchRNA: string;
-  toeholdDomain: string;    // 6-8 nt
-  loopDomain: string;       // 4-6 nt
+  toeholdDomain: string; // 6-8 nt
+  loopDomain: string; // 4-6 nt
   rbsAccessibility: number; // 0-1
-  threshold: number;        // nM
-  dynamicRange: number;     // fold-change
+  threshold: number; // nM
+  dynamicRange: number; // fold-change
 }
 
 // ── Gate Library ────────────────────────────────────────────────────────────
@@ -105,43 +105,43 @@ export interface ToeholdSwitch {
  * Reference: Nielsen et al. (2016) Science 352:aac7341
  */
 interface GateEntry {
-  hill: LogicGate['hill'];
-  source: 'cello_characterized' | 'estimated' | 'literature';
+  hill: LogicGate["hill"];
+  source: "cello_characterized" | "estimated" | "literature";
 }
 
 const GATE_LIBRARY: Record<string, GateEntry> = {
   // ── NOT gates (single-input repressors) ──
   // source: 'cello_characterized' = from Nielsen et al. (2016) Table S1
   // source: 'estimated' = extrapolated from similar repressor families
-  'NOT_pTac_LacI':   { hill: { ymax: 5377, ymin: 29, K: 164, n: 2.14 }, source: 'cello_characterized' },
-  'NOT_pTet_TetR':   { hill: { ymax: 5775, ymin: 34, K: 97, n: 2.75 },  source: 'cello_characterized' },
-  'NOT_pBAD_AraC':   { hill: { ymax: 4125, ymin: 83, K: 358, n: 1.49 }, source: 'cello_characterized' },
-  'NOT_pLux_LuxR':   { hill: { ymax: 4890, ymin: 45, K: 120, n: 2.30 }, source: 'cello_characterized' },
-  'NOT_pLambda_CI':  { hill: { ymax: 5100, ymin: 18, K: 65, n: 3.20 },  source: 'cello_characterized' },
-  'NOT_pSal_NahR':   { hill: { ymax: 3800, ymin: 55, K: 280, n: 1.80 }, source: 'estimated' },
-  'NOT_pSrpR_SrpR':  { hill: { ymax: 4500, ymin: 22, K: 90, n: 2.60 },  source: 'estimated' },
-  'NOT_pBM3R1_BM3R1':{ hill: { ymax: 4200, ymin: 35, K: 110, n: 2.40 }, source: 'estimated' },
-  'NOT_pAmeR_AmeR':  { hill: { ymax: 4600, ymin: 40, K: 140, n: 2.20 }, source: 'estimated' },
-  'NOT_pLitR_LitR':  { hill: { ymax: 3900, ymin: 30, K: 100, n: 2.50 }, source: 'estimated' },
-  'NOT_pQacR_QacR':  { hill: { ymax: 4100, ymin: 45, K: 130, n: 2.10 }, source: 'estimated' },
-  'NOT_pBetI_BetI':  { hill: { ymax: 3700, ymin: 50, K: 150, n: 1.90 }, source: 'estimated' },
+  NOT_pTac_LacI: { hill: { ymax: 5377, ymin: 29, K: 164, n: 2.14 }, source: "cello_characterized" },
+  NOT_pTet_TetR: { hill: { ymax: 5775, ymin: 34, K: 97, n: 2.75 }, source: "cello_characterized" },
+  NOT_pBAD_AraC: { hill: { ymax: 4125, ymin: 83, K: 358, n: 1.49 }, source: "cello_characterized" },
+  NOT_pLux_LuxR: { hill: { ymax: 4890, ymin: 45, K: 120, n: 2.3 }, source: "cello_characterized" },
+  NOT_pLambda_CI: { hill: { ymax: 5100, ymin: 18, K: 65, n: 3.2 }, source: "cello_characterized" },
+  NOT_pSal_NahR: { hill: { ymax: 3800, ymin: 55, K: 280, n: 1.8 }, source: "estimated" },
+  NOT_pSrpR_SrpR: { hill: { ymax: 4500, ymin: 22, K: 90, n: 2.6 }, source: "estimated" },
+  NOT_pBM3R1_BM3R1: { hill: { ymax: 4200, ymin: 35, K: 110, n: 2.4 }, source: "estimated" },
+  NOT_pAmeR_AmeR: { hill: { ymax: 4600, ymin: 40, K: 140, n: 2.2 }, source: "estimated" },
+  NOT_pLitR_LitR: { hill: { ymax: 3900, ymin: 30, K: 100, n: 2.5 }, source: "estimated" },
+  NOT_pQacR_QacR: { hill: { ymax: 4100, ymin: 45, K: 130, n: 2.1 }, source: "estimated" },
+  NOT_pBetI_BetI: { hill: { ymax: 3700, ymin: 50, K: 150, n: 1.9 }, source: "estimated" },
 
   // ── AND gates ──
-  'AND_pLux_pTac':   { hill: { ymax: 3200, ymin: 25, K: 80, n: 1.80 },  source: 'estimated' },
-  'AND_pBAD_pTet':   { hill: { ymax: 2800, ymin: 40, K: 120, n: 1.60 }, source: 'estimated' },
-  'AND_pLambda_pTac': { hill: { ymax: 3500, ymin: 20, K: 70, n: 2.10 }, source: 'estimated' },
+  AND_pLux_pTac: { hill: { ymax: 3200, ymin: 25, K: 80, n: 1.8 }, source: "estimated" },
+  AND_pBAD_pTet: { hill: { ymax: 2800, ymin: 40, K: 120, n: 1.6 }, source: "estimated" },
+  AND_pLambda_pTac: { hill: { ymax: 3500, ymin: 20, K: 70, n: 2.1 }, source: "estimated" },
 
   // ── OR gates ──
-  'OR_pLac_pTac':    { hill: { ymax: 6200, ymin: 35, K: 150, n: 1.70 }, source: 'estimated' },
-  'OR_pTet_pBAD':    { hill: { ymax: 5500, ymin: 45, K: 180, n: 1.50 }, source: 'estimated' },
+  OR_pLac_pTac: { hill: { ymax: 6200, ymin: 35, K: 150, n: 1.7 }, source: "estimated" },
+  OR_pTet_pBAD: { hill: { ymax: 5500, ymin: 45, K: 180, n: 1.5 }, source: "estimated" },
 
   // ── NOR gates ──
-  'NOR_pLambda_LacI': { hill: { ymax: 5100, ymin: 15, K: 55, n: 3.50 }, source: 'estimated' },
-  'NOR_pTet_TetR':   { hill: { ymax: 4800, ymin: 20, K: 60, n: 3.10 }, source: 'estimated' },
+  NOR_pLambda_LacI: { hill: { ymax: 5100, ymin: 15, K: 55, n: 3.5 }, source: "estimated" },
+  NOR_pTet_TetR: { hill: { ymax: 4800, ymin: 20, K: 60, n: 3.1 }, source: "estimated" },
 
   // ── NAND gates ──
-  'NAND_pTac_pTet':  { hill: { ymax: 4500, ymin: 30, K: 75, n: 2.40 },  source: 'estimated' },
-  'NAND_pBAD_pLux':  { hill: { ymax: 3800, ymin: 40, K: 100, n: 2.00 }, source: 'estimated' },
+  NAND_pTac_pTet: { hill: { ymax: 4500, ymin: 30, K: 75, n: 2.4 }, source: "estimated" },
+  NAND_pBAD_pLux: { hill: { ymax: 3800, ymin: 40, K: 100, n: 2.0 }, source: "estimated" },
 };
 
 // ── Boolean Logic Synthesis ────────────────────────────────────────────────
@@ -157,7 +157,7 @@ export function truthTableToBoolean(tt: TruthTable): string {
 
   for (let i = 0; i < tt.rows.length; i++) {
     const row = tt.rows[i];
-    const binaryKey = tt.inputs.map(inp => row.inputValues[inp] ? 1 : 0).join('');
+    const binaryKey = tt.inputs.map((inp) => (row.inputValues[inp] ? 1 : 0)).join("");
     const index = parseInt(binaryKey, 2);
 
     if (row.outputValue) {
@@ -165,16 +165,16 @@ export function truthTableToBoolean(tt: TruthTable): string {
     }
   }
 
-  if (minterms.length === 0) return '0';
-  if (minterms.length === tt.rows.length) return '1';
+  if (minterms.length === 0) return "0";
+  if (minterms.length === tt.rows.length) return "1";
 
   // Return sum-of-products expression
-  const terms = minterms.map(m => {
-    const binary = m.toString(2).padStart(tt.inputs.length, '0');
-    return tt.inputs.map((inp, i) => binary[i] === '1' ? inp : `${inp}'`).join(' · ');
+  const terms = minterms.map((m) => {
+    const binary = m.toString(2).padStart(tt.inputs.length, "0");
+    return tt.inputs.map((inp, i) => (binary[i] === "1" ? inp : `${inp}'`)).join(" · ");
   });
 
-  return terms.join(' + ');
+  return terms.join(" + ");
 }
 
 /**
@@ -186,42 +186,38 @@ export function truthTableToBoolean(tt: TruthTable): string {
  *   OR → either input sufficient (tandem promoters)
  *   NOR → universal gate (repressilator-style)
  */
-export function booleanToGates(
-  expression: string,
-  inputs: string[],
-  output: string,
-): LogicGate[] {
+export function booleanToGates(expression: string, inputs: string[], output: string): LogicGate[] {
   const gates: LogicGate[] = [];
 
   // Parse expression into gate tree
   // Create NOT/AND/OR gates directly
-  if (expression.includes(' + ')) {
+  if (expression.includes(" + ")) {
     // OR gate
-    const terms = expression.split(' + ');
+    const terms = expression.split(" + ");
     const orInputs = terms.map((_, i) => `gate_${gates.length + i}`);
     gates.push(...terms.flatMap((term, i) => booleanToGates(term, inputs, orInputs[i])));
     gates.push({
       id: `gate_${gates.length}`,
-      type: 'OR',
+      type: "OR",
       inputs: orInputs,
       output,
-      genetic: { promoter: 'pLac_tandem', rbs: 'RBS_strong', cds: 'GFP', terminator: 'T1' },
-      hill: GATE_LIBRARY['OR_pLac_pTac']?.hill || { ymax: 100, ymin: 0.5, K: 50, n: 1.8 },
-      source: GATE_LIBRARY['OR_pLac_pTac']?.source || 'estimated',
+      genetic: { promoter: "pLac_tandem", rbs: "RBS_strong", cds: "GFP", terminator: "T1" },
+      hill: GATE_LIBRARY["OR_pLac_pTac"]?.hill || { ymax: 100, ymin: 0.5, K: 50, n: 1.8 },
+      source: GATE_LIBRARY["OR_pLac_pTac"]?.source || "estimated",
     });
-  } else if (expression.includes(' · ')) {
+  } else if (expression.includes(" · ")) {
     // AND gate
-    const factors = expression.split(' · ');
+    const factors = expression.split(" · ");
     const andInputs = factors.map((_, i) => `gate_${gates.length + i}`);
     gates.push(...factors.flatMap((factor, i) => booleanToGates(factor, inputs, andInputs[i])));
     gates.push({
       id: `gate_${gates.length}`,
-      type: 'AND',
+      type: "AND",
       inputs: andInputs,
       output,
-      genetic: { promoter: 'pLux_split', rbs: 'RBS_medium', cds: 'GFP', terminator: 'T1' },
-      hill: GATE_LIBRARY['AND_pLux_pTac']?.hill || { ymax: 100, ymin: 0.5, K: 40, n: 2.0 },
-      source: GATE_LIBRARY['AND_pLux_pTac']?.source || 'estimated',
+      genetic: { promoter: "pLux_split", rbs: "RBS_medium", cds: "GFP", terminator: "T1" },
+      hill: GATE_LIBRARY["AND_pLux_pTac"]?.hill || { ymax: 100, ymin: 0.5, K: 40, n: 2.0 },
+      source: GATE_LIBRARY["AND_pLux_pTac"]?.source || "estimated",
     });
   } else if (expression.endsWith("'")) {
     // NOT gate
@@ -229,24 +225,24 @@ export function booleanToGates(
     const gateId = `gate_${gates.length}`;
     gates.push({
       id: gateId,
-      type: 'NOT',
+      type: "NOT",
       inputs: [inputName],
       output,
-      genetic: { promoter: 'pTac', rbs: 'RBS_strong', cds: 'LacI', terminator: 'T1' },
-      hill: GATE_LIBRARY['NOT_pTac_LacI']?.hill || { ymax: 100, ymin: 0.5, K: 50, n: 2.0 },
-      source: GATE_LIBRARY['NOT_pTac_LacI']?.source || 'estimated',
+      genetic: { promoter: "pTac", rbs: "RBS_strong", cds: "LacI", terminator: "T1" },
+      hill: GATE_LIBRARY["NOT_pTac_LacI"]?.hill || { ymax: 100, ymin: 0.5, K: 50, n: 2.0 },
+      source: GATE_LIBRARY["NOT_pTac_LacI"]?.source || "estimated",
     });
   } else {
     // BUFFER (direct connection)
     const gateId = `gate_${gates.length}`;
     gates.push({
       id: gateId,
-      type: 'BUFFER',
+      type: "BUFFER",
       inputs: [expression],
       output,
-      genetic: { promoter: 'pConst', rbs: 'RBS_medium', cds: 'GFP', terminator: 'T1' },
+      genetic: { promoter: "pConst", rbs: "RBS_medium", cds: "GFP", terminator: "T1" },
       hill: { ymax: 100, ymin: 0, K: 50, n: 1 },
-      source: 'estimated' as const,
+      source: "estimated" as const,
     });
   }
 
@@ -267,8 +263,8 @@ export function simulateCircuit(
   circuit: GeneticCircuit,
   inputRanges: Record<string, [number, number]>,
   nPoints: number = 20,
-): GeneticCircuit['response'] {
-  const response: GeneticCircuit['response'] = [];
+): GeneticCircuit["response"] {
+  const response: GeneticCircuit["response"] = [];
   const inputNames = Object.keys(inputRanges);
 
   // Generate input combinations
@@ -280,7 +276,7 @@ export function simulateCircuit(
 
     for (const gate of circuit.gates) {
       // Get input values
-      const inputValues = gate.inputs.map(inp => {
+      const inputValues = gate.inputs.map((inp) => {
         if (inputs[inp] !== undefined) return inputs[inp];
         if (gateOutputs.has(inp)) return gateOutputs.get(inp)!;
         return 0;
@@ -291,24 +287,26 @@ export function simulateCircuit(
       const { ymax, ymin, K, n } = gate.hill;
 
       switch (gate.type) {
-        case 'NOT':
-        case 'NOR':
-        case 'NAND':
+        case "NOT":
+        case "NOR":
+        case "NAND":
           // Repressive: output decreases with input
-          output = ymin + (ymax - ymin) * Math.pow(K, n) / (Math.pow(K, n) + Math.pow(inputValues[0], n));
+          output = ymin + ((ymax - ymin) * K ** n) / (K ** n + inputValues[0] ** n);
           break;
-        case 'AND':
+        case "AND": {
           // Requires all inputs
           const andProduct = inputValues.reduce((p, v) => p * v, 1);
-          output = ymin + (ymax - ymin) * Math.pow(andProduct, n) / (Math.pow(K, n) + Math.pow(andProduct, n));
+          output = ymin + ((ymax - ymin) * andProduct ** n) / (K ** n + andProduct ** n);
           break;
-        case 'OR':
+        }
+        case "OR": {
           // Any input suffices
           const orMax = Math.max(...inputValues);
-          output = ymin + (ymax - ymin) * Math.pow(orMax, n) / (Math.pow(K, n) + Math.pow(orMax, n));
+          output = ymin + ((ymax - ymin) * orMax ** n) / (K ** n + orMax ** n);
           break;
+        }
         default: // BUFFER
-          output = ymin + (ymax - ymin) * Math.pow(inputValues[0], n) / (Math.pow(K, n) + Math.pow(inputValues[0], n));
+          output = ymin + ((ymax - ymin) * inputValues[0] ** n) / (K ** n + inputValues[0] ** n);
       }
 
       gateOutputs.set(gate.output, output);
@@ -339,10 +337,7 @@ function generateInputCombinations(
 
   for (let i = 0; i < nPoints; i++) {
     const value = min + (i / (nPoints - 1)) * (max - min);
-    const rest = generateInputCombinations(
-      Object.fromEntries(Object.entries(inputRanges).slice(1)),
-      nPoints,
-    );
+    const rest = generateInputCombinations(Object.fromEntries(Object.entries(inputRanges).slice(1)), nPoints);
 
     for (const r of rest) {
       combinations.push({ [names[0]]: value, ...r });
@@ -363,19 +358,16 @@ function generateInputCombinations(
  *
  * Reference: Green et al. (2014) Cell 159:925-939
  */
-export function designToeholdSwitch(
-  triggerSequence: string,
-  rbsSequence: string = 'AAGGAGG',
-): ToeholdSwitch {
+export function designToeholdSwitch(triggerSequence: string, rbsSequence: string = "AAGGAGG"): ToeholdSwitch {
   // Toehold domain: 6-8 nt complementary to trigger 5' end
   const toeholdLength = 7;
   const toeholdDomain = triggerSequence.substring(0, toeholdLength);
 
   // Loop domain: 4-6 nt spacer
-  const loopDomain = 'GAAA';
+  const loopDomain = "GAAA";
 
   // Switch RNA: toehold + loop + RBS + linker
-  const switchRNA = toeholdDomain + loopDomain + rbsSequence + 'AUG';
+  const switchRNA = toeholdDomain + loopDomain + rbsSequence + "AUG";
 
   // Compute RBS accessibility (fraction of time RBS is exposed)
   // Based on toehold length and GC content
@@ -407,13 +399,13 @@ export function designToeholdSwitch(
  */
 export function estimateBurden(gates: LogicGate[]): number {
   const gateCosts: Record<string, number> = {
-    'NOT': 0.05,      // single repressor
-    'AND': 0.10,       // split activator
-    'OR': 0.08,        // tandem promoters
-    'NAND': 0.12,      // complex gate
-    'NOR': 0.12,       // complex gate
-    'XOR': 0.15,       // most complex
-    'BUFFER': 0.03,    // simplest
+    NOT: 0.05, // single repressor
+    AND: 0.1, // split activator
+    OR: 0.08, // tandem promoters
+    NAND: 0.12, // complex gate
+    NOR: 0.12, // complex gate
+    XOR: 0.15, // most complex
+    BUFFER: 0.03, // simplest
   };
 
   let totalBurden = 0;
@@ -429,10 +421,7 @@ export function estimateBurden(gates: LogicGate[]): number {
 /**
  * Compile a complete genetic circuit from specification.
  */
-export function compileCircuit(
-  name: string,
-  truthTable: TruthTable,
-): GeneticCircuit {
+export function compileCircuit(name: string, truthTable: TruthTable): GeneticCircuit {
   // Step 1: Convert truth table to Boolean expression
   const expression = truthTableToBoolean(truthTable);
 
@@ -444,14 +433,25 @@ export function compileCircuit(
   for (const inp of truthTable.inputs) {
     inputRanges[inp] = [0, 100];
   }
-  const response = simulateCircuit({ id: '', name, gates, truthTable, response: [], burden: 0, metrics: { logicCorrect: false, dynamicRange: 0, signalToNoise: 0, orthogonality: 0 } }, inputRanges);
+  const response = simulateCircuit(
+    {
+      id: "",
+      name,
+      gates,
+      truthTable,
+      response: [],
+      burden: 0,
+      metrics: { logicCorrect: false, dynamicRange: 0, signalToNoise: 0, orthogonality: 0 },
+    },
+    inputRanges,
+  );
 
   // Step 4: Estimate burden
   const burden = estimateBurden(gates);
 
   // Step 5: Compute metrics
-  const maxOutput = Math.max(...response.map(r => r.outputValue));
-  const minOutput = Math.min(...response.map(r => r.outputValue));
+  const maxOutput = Math.max(...response.map((r) => r.outputValue));
+  const minOutput = Math.min(...response.map((r) => r.outputValue));
   const dynamicRange = maxOutput / Math.max(minOutput, 0.001);
   const signalToNoise = (maxOutput - minOutput) / Math.max(minOutput, 0.001);
 

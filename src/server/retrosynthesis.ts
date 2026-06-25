@@ -35,7 +35,7 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const reactionRulesData = require('../data/reactionRules.json') as ReactionRule[];
+const reactionRulesData = require("../data/reactionRules.json") as ReactionRule[];
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                 */
@@ -44,8 +44,8 @@ const reactionRulesData = require('../data/reactionRules.json') as ReactionRule[
 export interface RetrosynthesisRequest {
   targetSmiles: string;
   precursorSmiles?: string;
-  maxSteps?: number;     // default 5
-  maxPathways?: number;  // default 10
+  maxSteps?: number; // default 5
+  maxPathways?: number; // default 10
 }
 
 export interface ReactionRule {
@@ -90,11 +90,7 @@ export interface RetrosynthesisResult {
  * different valid SMILES for the same molecule are more likely to match.
  */
 export function normalizeSmiles(smiles: string): string {
-  return smiles
-    .replace(/\\/g, '')
-    .replace(/\//g, '')
-    .replace(/@/g, '')
-    .trim();
+  return smiles.replace(/\\/g, "").replace(/\//g, "").replace(/@/g, "").trim();
 }
 
 /* ------------------------------------------------------------------ */
@@ -102,24 +98,24 @@ export function normalizeSmiles(smiles: string): string {
 /* ------------------------------------------------------------------ */
 
 const CENTRAL_METABOLITES: Record<string, string> = {
-  'pyruvate':            'CC(=O)C(O)=O',
-  'acetyl_coa':          'CC(=O)SC(=O)O',
-  'oxaloacetate':        'OC(=O)C(=O)CC(O)=O',
-  'glucose':             'OCC1OC(O)C(O)C(O)C1O',
-  'glucose_6_phosphate': 'OC[C@H]1OC(O)[C@H](O)[C@@H]1OP(O)(O)=O',
-  'fructose_6_phosphate':'OC[C@H]1OC(OP(O)(O)=O)[C@@H](O)[C@H]1O',
-  'g3p':                 'OCC(O)C(OP(O)(O)=O)=O',
-  'dhap':                'OCC(OP(O)(O)=O)=O',
-  'succinate':           'OC(=O)CCC(O)=O',
-  'glycerol':            'OCC(O)CO',
-  'glyceraldehyde':      'OCC=O',
-  'acetate':             'CC(O)=O',
-  'lactate':             'CC(O)C(O)=O',
-  'ethanol':             'CCO',
-  'aspartate':           'NC(CC(O)=O)C(O)=O',
-  'glutamate':           'NC(CCC(O)=O)C(O)=O',
-  'glycine':             'NCC(O)=O',
-  'ribose_5_phosphate':  'OCC1OC(O)C(O)C1OP(O)(O)=O',
+  pyruvate: "CC(=O)C(O)=O",
+  acetyl_coa: "CC(=O)SC(=O)O",
+  oxaloacetate: "OC(=O)C(=O)CC(O)=O",
+  glucose: "OCC1OC(O)C(O)C(O)C1O",
+  glucose_6_phosphate: "OC[C@H]1OC(O)[C@H](O)[C@@H]1OP(O)(O)=O",
+  fructose_6_phosphate: "OC[C@H]1OC(OP(O)(O)=O)[C@@H](O)[C@H]1O",
+  g3p: "OCC(O)C(OP(O)(O)=O)=O",
+  dhap: "OCC(OP(O)(O)=O)=O",
+  succinate: "OC(=O)CCC(O)=O",
+  glycerol: "OCC(O)CO",
+  glyceraldehyde: "OCC=O",
+  acetate: "CC(O)=O",
+  lactate: "CC(O)C(O)=O",
+  ethanol: "CCO",
+  aspartate: "NC(CC(O)=O)C(O)=O",
+  glutamate: "NC(CCC(O)=O)C(O)=O",
+  glycine: "NCC(O)=O",
+  ribose_5_phosphate: "OCC1OC(O)C(O)C1OP(O)(O)=O",
 };
 
 const CENTRAL_NORM = new Map<string, string>();
@@ -141,36 +137,37 @@ const REACTION_RULES: ReactionRule[] = reactionRulesData;
 export function enzymeClassScore(ecClass: string): number {
   const prefix = ecClass.charAt(0);
   switch (prefix) {
-    case '1': return 0.9;  // Oxidoreductases
-    case '2': return 0.8;  // Transferases
-    case '3': return 0.7;  // Hydrolases
-    case '4': return 0.6;  // Lyases
-    case '5': return 0.5;  // Isomerases
-    case '6': return 0.4;  // Ligases
-    case '7': return 0.3;  // Translocases
-    default:  return 0.5;
+    case "1":
+      return 0.9; // Oxidoreductases
+    case "2":
+      return 0.8; // Transferases
+    case "3":
+      return 0.7; // Hydrolases
+    case "4":
+      return 0.6; // Lyases
+    case "5":
+      return 0.5; // Isomerases
+    case "6":
+      return 0.4; // Ligases
+    case "7":
+      return 0.3; // Translocases
+    default:
+      return 0.5;
   }
 }
 
-function computeScore(
-  steps: PathwayStep[],
-  targetNorm: string,
-  precursors: Set<string>,
-): number {
+function computeScore(steps: PathwayStep[], targetNorm: string, precursors: Set<string>): number {
   // Length component: shorter pathways score higher
   const lengthScore = 1 / (steps.length + 1);
 
   // Thermodynamic feasibility: penalise irreversible steps
   // (reversible reactions are thermodynamically more favourable in reverse)
-  const reversibleCount = steps.filter(s => s.reversibility).length;
+  const reversibleCount = steps.filter((s) => s.reversibility).length;
   const thermoScore = steps.length > 0 ? reversibleCount / steps.length : 0;
 
   // Enzyme availability: average across all steps
-  const enzymeScores = steps.map(s => enzymeClassScore(s.enzymeClass));
-  const enzymeScore =
-    enzymeScores.length > 0
-      ? enzymeScores.reduce((a, b) => a + b, 0) / enzymeScores.length
-      : 1.0;
+  const enzymeScores = steps.map((s) => enzymeClassScore(s.enzymeClass));
+  const enzymeScore = enzymeScores.length > 0 ? enzymeScores.reduce((a, b) => a + b, 0) / enzymeScores.length : 1.0;
 
   return 0.4 * lengthScore + 0.3 * enzymeScore + 0.3 * thermoScore;
 }
@@ -201,9 +198,9 @@ function findMatchingRules(targetNorm: string): ReactionRule[] {
 /* ------------------------------------------------------------------ */
 
 interface SearchState {
-  frontier: string[];         // molecules still to resolve
-  steps: PathwayStep[];       // reactions applied so far
-  resolved: Set<string>;      // molecules already resolved to central metabolites
+  frontier: string[]; // molecules still to resolve
+  steps: PathwayStep[]; // reactions applied so far
+  resolved: Set<string>; // molecules already resolved to central metabolites
 }
 
 /**
@@ -226,11 +223,13 @@ export function findPathways(request: RetrosynthesisRequest): RetrosynthesisResu
   // Trivial case: target is already a central metabolite
   if (CENTRAL_NORM.has(targetNorm)) {
     return {
-      pathways: [{
-        steps: [],
-        length: 0,
-        score: 1.0,
-      }],
+      pathways: [
+        {
+          steps: [],
+          length: 0,
+          score: 1.0,
+        },
+      ],
       targetSmiles,
       totalTime: Date.now() - t0,
     };
@@ -240,11 +239,13 @@ export function findPathways(request: RetrosynthesisRequest): RetrosynthesisResu
   const visitedStates = new Set<string>();
 
   // BFS queue: each entry is a search state
-  const queue: SearchState[] = [{
-    frontier: [targetSmiles],
-    steps: [],
-    resolved: new Set(),
-  }];
+  const queue: SearchState[] = [
+    {
+      frontier: [targetSmiles],
+      steps: [],
+      resolved: new Set(),
+    },
+  ];
 
   // Seed visited with the target state
   visitedStates.add(JSON.stringify([normalizeSmiles(targetSmiles)]));
@@ -255,7 +256,7 @@ export function findPathways(request: RetrosynthesisRequest): RetrosynthesisResu
     if (state.steps.length >= maxSteps) continue;
 
     // Split frontier into unresolved molecules
-    const unresolved = state.frontier.filter(m => !isCentral(m));
+    const unresolved = state.frontier.filter((m) => !isCentral(m));
     const newlyResolved = new Set(state.resolved);
     for (const m of state.frontier) {
       if (isCentral(m)) newlyResolved.add(normalizeSmiles(m));
@@ -280,7 +281,7 @@ export function findPathways(request: RetrosynthesisRequest): RetrosynthesisResu
 
     for (const rule of matchingRules) {
       // Verify the rule actually matches this molecule
-      const matchedIdx = rule.products.findIndex(p => normalizeSmiles(p) === molNorm);
+      const matchedIdx = rule.products.findIndex((p) => normalizeSmiles(p) === molNorm);
       if (matchedIdx < 0) continue;
 
       // Build new frontier: replace matched molecule with reactants
@@ -314,7 +315,7 @@ export function findPathways(request: RetrosynthesisRequest): RetrosynthesisResu
       // Skip if nothing new to explore
       if (uniqueFrontier.length === 0 && unresolved.length <= 1) {
         // All reactants are central metabolites — record this as a terminal step
-        const allCentral = rule.reactants.every(r => isCentral(r));
+        const allCentral = rule.reactants.every((r) => isCentral(r));
         if (allCentral) {
           const step: PathwayStep = {
             ruleId: rule.id,
@@ -349,7 +350,10 @@ export function findPathways(request: RetrosynthesisRequest): RetrosynthesisResu
       let hasCycle = false;
       for (const fm of uniqueFrontier) {
         const fmNorm = normalizeSmiles(fm);
-        if (fmNorm === molNorm) { hasCycle = true; break; }
+        if (fmNorm === molNorm) {
+          hasCycle = true;
+          break;
+        }
       }
       if (hasCycle) continue;
 

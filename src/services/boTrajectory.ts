@@ -25,8 +25,8 @@
  *     - Candidate pool is fixed; real BO would also generate novel sequences.
  */
 
-import { GaussianProcess } from '../server/gaussianProcess';
-import type { GPConfig, KernelType } from '../server/gaussianProcess';
+import type { GPConfig, KernelType } from "../server/gaussianProcess";
+import { GaussianProcess } from "../server/gaussianProcess";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -45,7 +45,7 @@ export interface BORound {
   bestFitnessSoFar: number;
 }
 
-export type AcquisitionType = 'EI' | 'UCB' | 'EHVI';
+export type AcquisitionType = "EI" | "UCB" | "EHVI";
 
 export interface BOConfig {
   /** Number of BO rounds to simulate (default 5) */
@@ -91,10 +91,10 @@ export interface BOTrajectoryResult {
 const DEFAULT_CONFIG: BOConfig = {
   nRounds: 5,
   batchSize: 10,
-  acquisitionType: 'EI',
+  acquisitionType: "EI",
   stoppingThreshold: 0.01,
   ucbBeta: 2.0,
-  kernelType: 'rbf',
+  kernelType: "rbf",
   optimizeHyperparams: true,
 };
 
@@ -111,9 +111,7 @@ function normCDF(x: number): number {
   const sign = x < 0 ? -1 : 1;
   const absX = Math.abs(x);
   const t = 1.0 / (1.0 + p * absX);
-  const y =
-    1.0 -
-    ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX / 2);
+  const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp((-absX * absX) / 2);
   return 0.5 * (1.0 + sign * y);
 }
 
@@ -127,12 +125,7 @@ function normPDF(x: number): number {
  * EI(x) = (mu - best - xi) * Phi(Z) + sigma * phi(Z)
  * where Z = (mu - best - xi) / sigma
  */
-function computeEI(
-  means: number[],
-  stds: number[],
-  bestY: number,
-  xi = 0.01,
-): number[] {
+function computeEI(means: number[], stds: number[], bestY: number, xi = 0.01): number[] {
   return means.map((mu, i) => {
     const sigma = stds[i];
     if (sigma < 1e-9) return 0;
@@ -146,11 +139,7 @@ function computeEI(
  * Upper Confidence Bound acquisition.
  * UCB(x) = mu + beta * sigma
  */
-function computeUCB(
-  means: number[],
-  stds: number[],
-  beta: number,
-): number[] {
+function computeUCB(means: number[], stds: number[], beta: number): number[] {
   return means.map((mu, i) => mu + beta * stds[i]);
 }
 
@@ -158,11 +147,7 @@ function computeUCB(
  * EHVI acquisition — falls back to EI with xi=0.05 for single-objective.
  * True EHVI requires multi-objective predictions which aren't available here.
  */
-function computeEHVI(
-  means: number[],
-  stds: number[],
-  bestY: number,
-): number[] {
+function computeEHVI(means: number[], stds: number[], bestY: number): number[] {
   return computeEI(means, stds, bestY, 0.05);
 }
 
@@ -220,7 +205,7 @@ function generateCandidates(
 function mulberry32(seed: number): () => number {
   let s = seed | 0;
   return () => {
-    s = (s + 0x6D2B79F5) | 0;
+    s = (s + 0x6d2b79f5) | 0;
     let t = Math.imul(s ^ (s >>> 15), 1 | s);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -250,18 +235,14 @@ function boxMullerSample(rng: () => number): number {
  * console.log(result.convergenceRound); // round where EI dropped below threshold
  * ```
  */
-export function runBOTrajectory(
-  X0: number[][],
-  y0: number[],
-  config?: Partial<BOConfig>,
-): BOTrajectoryResult {
+export function runBOTrajectory(X0: number[][], y0: number[], config?: Partial<BOConfig>): BOTrajectoryResult {
   const cfg: BOConfig = { ...DEFAULT_CONFIG, ...config };
 
   if (X0.length < 3) {
-    throw new Error('Need at least 3 training points to fit GP');
+    throw new Error("Need at least 3 training points to fit GP");
   }
   if (X0.length !== y0.length) {
-    throw new Error('X0 and y0 must have the same length');
+    throw new Error("X0 and y0 must have the same length");
   }
 
   // Deep-copy training data so we don't mutate the originals
@@ -282,7 +263,7 @@ export function runBOTrajectory(
   for (let round = 0; round < cfg.nRounds; round++) {
     // 1. Fit GP (optionally with hyperparameter optimization)
     const gp = new GaussianProcess({
-      kernel: cfg.kernelType ?? 'rbf',
+      kernel: cfg.kernelType ?? "rbf",
       lengthScale: 10.0,
       signalVariance: 1.0,
       noiseVariance: 0.1,
@@ -290,19 +271,14 @@ export function runBOTrajectory(
 
     if (cfg.optimizeHyperparams && round > 0) {
       // Only optimize from round 2+ to avoid overhead on first round
-      gp.fitOptimized(XTrain, yTrain, cfg.kernelType ?? 'rbf');
+      gp.fitOptimized(XTrain, yTrain, cfg.kernelType ?? "rbf");
     } else {
       gp.fit(XTrain, yTrain);
     }
 
     // 2. Generate novel candidate variants
     const nCandidates = Math.max(cfg.batchSize * 3, 30);
-    const candidates = generateCandidates(
-      XTrain,
-      nCandidates,
-      0.15,
-      42 + round * 7,
-    );
+    const candidates = generateCandidates(XTrain, nCandidates, 0.15, 42 + round * 7);
 
     if (candidates.length === 0) break;
 
@@ -314,13 +290,13 @@ export function runBOTrajectory(
     // 4. Compute acquisition values
     let acqValues: number[];
     switch (cfg.acquisitionType) {
-      case 'UCB':
+      case "UCB":
         acqValues = computeUCB(means, stds, cfg.ucbBeta ?? 2.0);
         break;
-      case 'EHVI':
+      case "EHVI":
         acqValues = computeEHVI(means, stds, globalBestY);
         break;
-      case 'EI':
+      case "EI":
       default:
         acqValues = computeEI(means, stds, globalBestY);
         break;

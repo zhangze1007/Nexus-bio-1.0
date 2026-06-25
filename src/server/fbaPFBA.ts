@@ -23,7 +23,7 @@
  *     - Assumes the objective function (e.g., biomass) is correctly defined; results are sensitive to the choice of objective
  *     - Does not account for enzyme expression costs or metabolite concentrations; only minimizes total flux magnitude
  */
-import { solveLP, type LPModel, type LPSolution } from './highsSolver';
+import { type LPModel, type LPSolution, solveLP } from "./highsSolver";
 
 export interface pFBAOutput {
   fluxes: Record<string, number>;
@@ -47,7 +47,7 @@ export async function runPFBA(baseModel: LPModel): Promise<pFBAOutput> {
 
   // Step 1: Solve for optimal objective
   const optResult = await solveLP(baseModel);
-  if (optResult.status !== 'optimal') {
+  if (optResult.status !== "optimal") {
     return {
       fluxes: {},
       totalFlux: 0,
@@ -60,8 +60,8 @@ export async function runPFBA(baseModel: LPModel): Promise<pFBAOutput> {
 
   // Step 2: Build pFBA model
   const pfbaModel: LPModel = {
-    name: 'pfba',
-    sense: 'minimize',
+    name: "pfba",
+    sense: "minimize",
     objective: [],
     constraints: [],
     bounds: [],
@@ -94,9 +94,7 @@ export async function runPFBA(baseModel: LPModel): Promise<pFBAOutput> {
   // incorrectly constrain fluxes that can be reversible.
   // Only add free bounds for variables NOT already bounded by the base model,
   // since the LP builder uses find() which returns the first matching bound.
-  const baseBoundedVars = new Set(
-    (baseModel.bounds ?? []).map((b) => b.name),
-  );
+  const baseBoundedVars = new Set((baseModel.bounds ?? []).map((b) => b.name));
   for (const varName of originalVars) {
     if (!baseBoundedVars.has(varName)) {
       pfbaModel.bounds!.push({ name: varName, lb: -Infinity, ub: Infinity });
@@ -133,7 +131,7 @@ export async function runPFBA(baseModel: LPModel): Promise<pFBAOutput> {
   // Since we solved for maximum, fixing at objectiveValue with a lower bound
   // ensures we stay at the optimum while minimizing total flux.
   pfbaModel.constraints.push({
-    name: 'fix_objective',
+    name: "fix_objective",
     vars: baseModel.objective,
     lb: objectiveValue * (1 - 1e-6),
     ub: Infinity,

@@ -7,9 +7,9 @@
  * Reference: NIH Guidelines for Research Involving Recombinant DNA (2019)
  */
 
-export type BiosafetyPurpose = 'research' | 'production' | 'therapy' | 'environmental';
-export type HostOrganism = 'ecoli' | 'yeast' | 'human' | 'other';
-export type BiosafetyMode = 'research' | 'production';
+export type BiosafetyPurpose = "research" | "production" | "therapy" | "environmental";
+export type HostOrganism = "ecoli" | "yeast" | "human" | "other";
+export type BiosafetyMode = "research" | "production";
 
 export interface BiosafetyInput {
   /** DNA sequence to screen */
@@ -45,7 +45,7 @@ export interface SequenceMatch {
 
 export interface ContainmentStrategy {
   /** Strategy type */
-  type: 'auxotrophic' | 'inducible_survival' | 'compartmentalization' | 'safe_host' | 'research_only';
+  type: "auxotrophic" | "inducible_survival" | "compartmentalization" | "safe_host" | "research_only";
   /** Description */
   description: string;
   /** Confidence (0-1) */
@@ -57,7 +57,7 @@ export interface ContainmentStrategy {
 export interface BiosafetyOutput {
   /** Risk assessment */
   risk: {
-    level: 'low' | 'moderate' | 'elevated' | 'high' | 'blocked';
+    level: "low" | "moderate" | "elevated" | "high" | "blocked";
     score: number;
     reason: string;
     triggerRule: string;
@@ -73,7 +73,7 @@ export interface BiosafetyOutput {
   /** Evidence list */
   evidence: Array<{
     source: string;
-    type: 'database' | 'literature' | 'predicted';
+    type: "database" | "literature" | "predicted";
     title: string;
     url?: string;
   }>;

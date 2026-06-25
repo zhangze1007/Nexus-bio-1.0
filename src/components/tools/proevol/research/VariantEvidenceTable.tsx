@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { PROEVOL_THEME, tableHeaderStyle, tableCellStyle, formatSigned } from '../shared';
-import type { VariantEnrichmentEntry } from '../../../../services/proevolAnalysis';
-import { THEME } from '../../../../theme';
+import { useMemo } from "react";
+import type { VariantEnrichmentEntry } from "../../../../services/proevolAnalysis";
+import { THEME } from "../../../../theme";
+import { formatSigned, PROEVOL_THEME, tableCellStyle, tableHeaderStyle } from "../shared";
 
 interface VariantEvidenceTableProps {
   entries: VariantEnrichmentEntry[];
@@ -17,7 +17,8 @@ export default function VariantEvidenceTable({
   onSelectVariant,
 }: VariantEvidenceTableProps) {
   const sorted = useMemo(
-    () => [...entries].sort((left, right) => right.log2EnrichmentVsWildType - left.log2EnrichmentVsWildType).slice(0, 12),
+    () =>
+      [...entries].sort((left, right) => right.log2EnrichmentVsWildType - left.log2EnrichmentVsWildType).slice(0, 12),
     [entries],
   );
 
@@ -25,8 +26,8 @@ export default function VariantEvidenceTable({
     return (
       <div
         style={{
-          padding: '20px',
-          textAlign: 'center',
+          padding: "20px",
+          textAlign: "center",
           fontFamily: THEME.SANS,
           fontSize: 12,
           color: PROEVOL_THEME.muted,
@@ -38,17 +39,17 @@ export default function VariantEvidenceTable({
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={tableHeaderStyle()}>Variant</th>
             <th style={tableHeaderStyle()}>Family</th>
             <th style={tableHeaderStyle()}>Mutations</th>
-            <th style={{ ...tableHeaderStyle(), textAlign: 'right' }}>Burden</th>
-            <th style={{ ...tableHeaderStyle(), textAlign: 'right' }}>Final freq.</th>
-            <th style={{ ...tableHeaderStyle(), textAlign: 'right' }}>log₂ vs WT</th>
-            <th style={{ ...tableHeaderStyle(), textAlign: 'right' }}>Selection s̄</th>
+            <th style={{ ...tableHeaderStyle(), textAlign: "right" }}>Burden</th>
+            <th style={{ ...tableHeaderStyle(), textAlign: "right" }}>Final freq.</th>
+            <th style={{ ...tableHeaderStyle(), textAlign: "right" }}>log₂ vs WT</th>
+            <th style={{ ...tableHeaderStyle(), textAlign: "right" }}>Selection s̄</th>
           </tr>
         </thead>
         <tbody>
@@ -59,8 +60,8 @@ export default function VariantEvidenceTable({
                 key={entry.variantId}
                 onClick={() => onSelectVariant?.(entry.variantId)}
                 style={{
-                  cursor: onSelectVariant ? 'pointer' : 'default',
-                  background: isHighlighted ? `${PROEVOL_THEME.successHigh}10` : 'transparent',
+                  cursor: onSelectVariant ? "pointer" : "default",
+                  background: isHighlighted ? `${PROEVOL_THEME.successHigh}10` : "transparent",
                   borderBottom: `1px solid ${PROEVOL_THEME.border}`,
                 }}
               >
@@ -69,17 +70,20 @@ export default function VariantEvidenceTable({
                 <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO, fontSize: 10, color: PROEVOL_THEME.muted }}>
                   {entry.mutationString}
                 </td>
-                <td style={{ ...tableCellStyle(), textAlign: 'right', fontFamily: THEME.MONO }}>{entry.mutationBurden}</td>
-                <td style={{ ...tableCellStyle(), textAlign: 'right', fontFamily: THEME.MONO }}>
+                <td style={{ ...tableCellStyle(), textAlign: "right", fontFamily: THEME.MONO }}>
+                  {entry.mutationBurden}
+                </td>
+                <td style={{ ...tableCellStyle(), textAlign: "right", fontFamily: THEME.MONO }}>
                   {(entry.finalFrequency * 100).toFixed(2)}%
                   <div style={{ fontSize: 9, color: PROEVOL_THEME.muted }}>
-                    [{(entry.finalFrequencyCi.lower * 100).toFixed(2)}–{(entry.finalFrequencyCi.upper * 100).toFixed(2)}%]
+                    [{(entry.finalFrequencyCi.lower * 100).toFixed(2)}–{(entry.finalFrequencyCi.upper * 100).toFixed(2)}
+                    %]
                   </div>
                 </td>
                 <td
                   style={{
                     ...tableCellStyle(),
-                    textAlign: 'right',
+                    textAlign: "right",
                     fontFamily: THEME.MONO,
                     color:
                       entry.log2EnrichmentVsWildType > 0
@@ -94,7 +98,7 @@ export default function VariantEvidenceTable({
                 <td
                   style={{
                     ...tableCellStyle(),
-                    textAlign: 'right',
+                    textAlign: "right",
                     fontFamily: THEME.MONO,
                     color:
                       entry.meanSelectionCoefficient > 0
@@ -116,11 +120,12 @@ export default function VariantEvidenceTable({
           fontFamily: THEME.SANS,
           fontSize: 10,
           color: PROEVOL_THEME.muted,
-          padding: '8px 4px 0',
+          padding: "8px 4px 0",
           lineHeight: 1.55,
         }}
       >
-        Top 12 by log₂ enrichment vs WT. Frequency CIs from per-replicate variance (95%). Selection s̄ = mean ln(ft / ft-1) across rounds.
+        Top 12 by log₂ enrichment vs WT. Frequency CIs from per-replicate variance (95%). Selection s̄ = mean ln(ft /
+        ft-1) across rounds.
       </div>
     </div>
   );

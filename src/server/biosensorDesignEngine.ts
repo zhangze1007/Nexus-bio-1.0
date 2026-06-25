@@ -22,30 +22,30 @@ export interface BiosensorDesign {
   ligand: string;
   promoter: string;
   responseCurve: ResponsePoint[];
-  dynamicRange: number;       // fold-change
-  sensitivity: number;        // EC50 (µM)
-  specificity: number;        // 0-1
+  dynamicRange: number; // fold-change
+  sensitivity: number; // EC50 (µM)
+  specificity: number; // 0-1
   signalToNoise: number;
-  leakExpression: number;     // basal leak (0-1)
-  orthogonality: number;      // 0-1 (1 = no cross-talk)
+  leakExpression: number; // basal leak (0-1)
+  orthogonality: number; // 0-1 (1 = no cross-talk)
 }
 
 export interface ResponsePoint {
-  ligandConc: number;         // µM
-  signalIntensity: number;    // normalized (0-1)
+  ligandConc: number; // µM
+  signalIntensity: number; // normalized (0-1)
 }
 
 export interface SensorSpec {
   targetLigand: string;
-  desiredDynamicRange: number;   // fold-change
-  desiredSensitivity: number;    // EC50 in µM
+  desiredDynamicRange: number; // fold-change
+  desiredSensitivity: number; // EC50 in µM
   hostOrganism: string;
 }
 
 export interface CrossTalkEntry {
   sensor: string;
   ligand: string;
-  signal: number;    // normalized signal (0-1)
+  signal: number; // normalized signal (0-1)
 }
 
 // ── Extended Hill Equation ─────────────────────────────────────────────────
@@ -69,11 +69,11 @@ function extendedHillResponse(
   ligandConc: number,
   kd: number,
   hillCoeff: number,
-  alpha: number = 0.01,   // leak expression
-  beta: number = 1.0,     // max expression
+  alpha: number = 0.01, // leak expression
+  beta: number = 1.0, // max expression
   gamma: number = 0.0001, // linear background
 ): number {
-  const hillTerm = (ligandConc ** hillCoeff) / (kd ** hillCoeff + ligandConc ** hillCoeff);
+  const hillTerm = ligandConc ** hillCoeff / (kd ** hillCoeff + ligandConc ** hillCoeff);
   return alpha + (beta - alpha) * hillTerm + gamma * ligandConc;
 }
 
@@ -90,12 +90,12 @@ function generateResponseCurve(
 ): ResponsePoint[] {
   const points: ResponsePoint[] = [];
   const logStart = -3; // 0.001 µM
-  const logEnd = 3;    // 1000 µM
+  const logEnd = 3; // 1000 µM
   const logStep = (logEnd - logStart) / (nPoints - 1);
 
   for (let i = 0; i < nPoints; i++) {
     const logConc = logStart + i * logStep;
-    const conc = Math.pow(10, logConc);
+    const conc = 10 ** logConc;
     points.push({
       ligandConc: Math.round(conc * 1000) / 1000,
       signalIntensity: Math.round(extendedHillResponse(conc, kd, hillCoeff, alpha, beta, gamma) * 10000) / 10000,
@@ -128,31 +128,42 @@ function generateResponseCurve(
  * Reference: d'Oelsnitz et al. (2023) Nat Chem Biol 19:1281-1289
  * Reference: Stanton et al. (2014) ACS Synth Biol 3:880-891
  */
-const TF_DATABASE: Record<string, {
-  tf: string;
-  kd: number;       // µM — measured Kd from literature
-  n: number;        // Hill coefficient — measured from dose-response
-  promoter: string;
-  alpha: number;    // leak expression — measured basal/max ratio
-  beta: number;     // max fold-change — measured dynamic range
-  crossTalk: string[];
-}> = {
+const TF_DATABASE: Record<
+  string,
+  {
+    tf: string;
+    kd: number; // µM — measured Kd from literature
+    n: number; // Hill coefficient — measured from dose-response
+    promoter: string;
+    alpha: number; // leak expression — measured basal/max ratio
+    beta: number; // max fold-change — measured dynamic range
+    crossTalk: string[];
+  }
+> = {
   // AraC/arabinose: Kd ~100 µM, n=1.5 — Schleif (2010) Annu Rev Biochem 79:623
-  'arabinose': { tf: 'AraC', kd: 100, n: 1.5, promoter: 'PBAD', alpha: 0.005, beta: 100, crossTalk: ['glucose'] },
+  arabinose: { tf: "AraC", kd: 100, n: 1.5, promoter: "PBAD", alpha: 0.005, beta: 100, crossTalk: ["glucose"] },
   // LacI/IPTG: Kd ~50 µM, n=2.0 — Lewis (2005) Curr Opin Struct Biol 15:315
-  'IPTG': { tf: 'LacI', kd: 50, n: 2.0, promoter: 'Plac', alpha: 0.01, beta: 50, crossTalk: [] },
+  IPTG: { tf: "LacI", kd: 50, n: 2.0, promoter: "Plac", alpha: 0.01, beta: 50, crossTalk: [] },
   // TetR/aTc: Kd ~10 µM, n=2.5 — Berens & Hillen (2003) Eur J Biochem 270:3109
-  'aTc': { tf: 'TetR', kd: 10, n: 2.5, promoter: 'Ptet', alpha: 0.002, beta: 200, crossTalk: [] },
+  aTc: { tf: "TetR", kd: 10, n: 2.5, promoter: "Ptet", alpha: 0.002, beta: 200, crossTalk: [] },
   // NahR/salicylate: Kd ~200 µM, n=1.8 — Schell (1993) Annu Rev Biochem 62:215
-  'salicylate': { tf: 'NahR', kd: 200, n: 1.8, promoter: 'Psal', alpha: 0.01, beta: 80, crossTalk: ['benzoate'] },
+  salicylate: { tf: "NahR", kd: 200, n: 1.8, promoter: "Psal", alpha: 0.01, beta: 80, crossTalk: ["benzoate"] },
   // LuxR/AHL: Kd ~5 µM, n=2.0 — Waters & Bassler (2005) Annu Rev Cell Dev Biol 21:319
-  'acyl-HSL': { tf: 'LuxR', kd: 5, n: 2.0, promoter: 'Plux', alpha: 0.008, beta: 150, crossTalk: ['C6-HSL', 'C8-HSL'] },
+  "acyl-HSL": { tf: "LuxR", kd: 5, n: 2.0, promoter: "Plux", alpha: 0.008, beta: 150, crossTalk: ["C6-HSL", "C8-HSL"] },
   // Theophylline riboswitch: Kd ~500 µM, n=1.0 — Lynch et al. (2006) J Am Chem Soc 128:7850
-  'theophylline': { tf: 'riboswitch', kd: 500, n: 1.0, promoter: 'Ptheo', alpha: 0.02, beta: 30, crossTalk: ['caffeine'] },
+  theophylline: {
+    tf: "riboswitch",
+    kd: 500,
+    n: 1.0,
+    promoter: "Ptheo",
+    alpha: 0.02,
+    beta: 30,
+    crossTalk: ["caffeine"],
+  },
   // VanR/vanillin: Kd ~30 µM, n=1.8 — Wynands et al. (2019) Metab Eng 54:1
-  'vanillin': { tf: 'VanR', kd: 30, n: 1.8, promoter: 'Pvan', alpha: 0.005, beta: 120, crossTalk: [] },
+  vanillin: { tf: "VanR", kd: 30, n: 1.8, promoter: "Pvan", alpha: 0.005, beta: 120, crossTalk: [] },
   // ErmR/erythromycin: Kd ~5 µM, n=2.0 — Shivakumar et al. (1980) J Bacteriol 142:579
-  'erythromycin': { tf: 'ErmR', kd: 5, n: 2.0, promoter: 'Perm', alpha: 0.003, beta: 100, crossTalk: [] },
+  erythromycin: { tf: "ErmR", kd: 5, n: 2.0, promoter: "Perm", alpha: 0.003, beta: 100, crossTalk: [] },
 };
 
 // ── Binding Affinity Estimation ────────────────────────────────────────────
@@ -168,10 +179,10 @@ const TF_DATABASE: Record<string, {
  * Reference: Fersht (1999) Structure and Mechanism in Protein Science
  */
 function estimateBindingAffinity(kdUM: number): {
-  deltaG: number;     // kcal/mol
-  kon: number;        // estimated on-rate (M⁻¹s⁻¹)
-  koff: number;       // estimated off-rate (s⁻¹)
-  halfLife: number;   // complex half-life (s)
+  deltaG: number; // kcal/mol
+  kon: number; // estimated on-rate (M⁻¹s⁻¹)
+  koff: number; // estimated off-rate (s⁻¹)
+  halfLife: number; // complex half-life (s)
 } {
   const RT = 0.616; // R*T at 310K, R=1.987 cal/(mol·K) — Fersht (1999) Structure and Mechanism
   const kdM = kdUM * 1e-6; // convert to M
@@ -240,16 +251,13 @@ function computeCrossTalkMatrix(
  *
  * Higher = more orthogonal (less cross-talk)
  */
-function computeOrthogonality(
-  sensor: string,
-  crossTalkMatrix: CrossTalkEntry[],
-): number {
-  const cognateEntry = crossTalkMatrix.find(e => e.sensor === sensor && e.signal >= 0.9);
-  const crossTalkEntries = crossTalkMatrix.filter(e => e.sensor === sensor && e.signal < 0.9);
+function computeOrthogonality(sensor: string, crossTalkMatrix: CrossTalkEntry[]): number {
+  const cognateEntry = crossTalkMatrix.find((e) => e.sensor === sensor && e.signal >= 0.9);
+  const crossTalkEntries = crossTalkMatrix.filter((e) => e.sensor === sensor && e.signal < 0.9);
 
   if (!cognateEntry || crossTalkEntries.length === 0) return 1.0;
 
-  const maxCrossTalk = Math.max(...crossTalkEntries.map(e => e.signal));
+  const maxCrossTalk = Math.max(...crossTalkEntries.map((e) => e.signal));
   return Math.round(Math.max(0, 1 - maxCrossTalk / cognateEntry.signal) * 100) / 100;
 }
 
@@ -266,10 +274,10 @@ function computeOrthogonality(
 export function designBiosensor(spec: SensorSpec): BiosensorDesign {
   // Select TF from database
   const entry = TF_DATABASE[spec.targetLigand] ?? {
-    tf: 'GenericTF',
+    tf: "GenericTF",
     kd: spec.desiredSensitivity,
     n: 2.0,
-    promoter: 'Psynthetic',
+    promoter: "Psynthetic",
     alpha: 0.01,
     beta: 100,
     crossTalk: [],
@@ -279,13 +287,13 @@ export function designBiosensor(spec: SensorSpec): BiosensorDesign {
   const responseCurve = generateResponseCurve(entry.kd, entry.n, entry.alpha, entry.beta);
 
   // Compute metrics
-  const maxSignal = Math.max(...responseCurve.map(p => p.signalIntensity));
+  const maxSignal = Math.max(...responseCurve.map((p) => p.signalIntensity));
   const basalSignal = responseCurve[0].signalIntensity;
   const dynamicRange = maxSignal / Math.max(basalSignal, 0.001);
 
   // Find EC50 (concentration at half-max signal)
   const halfMax = (maxSignal + basalSignal) / 2;
-  const ec50Point = responseCurve.find(p => p.signalIntensity >= halfMax);
+  const ec50Point = responseCurve.find((p) => p.signalIntensity >= halfMax);
   const sensitivity = ec50Point?.ligandConc ?? entry.kd;
 
   // Specificity: Hill-based discrimination metric
@@ -326,14 +334,12 @@ export function designBiosensor(spec: SensorSpec): BiosensorDesign {
  *
  * Returns individual designs plus a cross-talk matrix.
  */
-export function designBiosensorPanel(
-  specs: SensorSpec[],
-): {
+export function designBiosensorPanel(specs: SensorSpec[]): {
   sensors: BiosensorDesign[];
   crossTalkMatrix: CrossTalkEntry[];
   systemOrthogonality: number;
 } {
-  const sensors = specs.map(s => designBiosensor(s));
+  const sensors = specs.map((s) => designBiosensor(s));
 
   // Cross-talk analysis
   const allSensors = Object.values(TF_DATABASE);
@@ -341,9 +347,10 @@ export function designBiosensorPanel(
   const crossTalkMatrix = computeCrossTalkMatrix(allSensors, allLigands);
 
   // System orthogonality: average of individual orthogonality scores
-  const systemOrthogonality = sensors.length > 0
-    ? Math.round(sensors.reduce((s, sen) => s + sen.orthogonality, 0) / sensors.length * 100) / 100
-    : 1.0;
+  const systemOrthogonality =
+    sensors.length > 0
+      ? Math.round((sensors.reduce((s, sen) => s + sen.orthogonality, 0) / sensors.length) * 100) / 100
+      : 1.0;
 
   return { sensors, crossTalkMatrix, systemOrthogonality };
 }

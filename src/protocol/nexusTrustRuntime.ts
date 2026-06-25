@@ -1,36 +1,24 @@
-export const VALIDITY_TIERS = ['real', 'partial', 'demo'] as const;
+export const VALIDITY_TIERS = ["real", "partial", "demo"] as const;
 
 export type ValidityTier = (typeof VALIDITY_TIERS)[number];
 
-export const CLAIM_SURFACES = [
-  'payload',
-  'export',
-  'recommendation',
-  'protocol',
-  'external-handoff',
-] as const;
+export const CLAIM_SURFACES = ["payload", "export", "recommendation", "protocol", "external-handoff"] as const;
 
 export type ClaimSurface = (typeof CLAIM_SURFACES)[number];
 
-export const GATE_STATUSES = ['ok', 'blocked', 'gated', 'demoOnly'] as const;
+export const GATE_STATUSES = ["ok", "blocked", "gated", "demoOnly"] as const;
 
 export type GateStatus = (typeof GATE_STATUSES)[number];
 
-export type AssumptionStatus = 'active' | 'resolved' | 'violated' | 'unknown';
+export type AssumptionStatus = "active" | "resolved" | "violated" | "unknown";
 
-export type EvidenceType =
-  | 'literature'
-  | 'dataset'
-  | 'user-input'
-  | 'simulation'
-  | 'experiment'
-  | 'manual-review';
+export type EvidenceType = "literature" | "dataset" | "user-input" | "simulation" | "experiment" | "manual-review";
 
-export type ProvenanceActivityType = 'tool-run' | 'human-gate' | 'export' | 'import' | 'review';
+export type ProvenanceActivityType = "tool-run" | "human-gate" | "export" | "import" | "review";
 
-export type ViolationSeverity = 'warning' | 'blocking';
+export type ViolationSeverity = "warning" | "blocking";
 
-export type GateOverridePath = 'human-review' | 'not-allowed';
+export type GateOverridePath = "human-review" | "not-allowed";
 
 export interface ToolAssumption {
   assumptionId: string;

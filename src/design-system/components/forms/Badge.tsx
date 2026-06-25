@@ -1,8 +1,8 @@
-import React from 'react';
-import { colors, spacing, typography, borderRadius } from '../../tokens';
+import type React from "react";
+import { borderRadius, colors, spacing, typography } from "../../tokens";
 
-type BadgeVariant = 'success' | 'warning' | 'error' | 'info' | 'neutral';
-type BadgeSize = 'sm' | 'md';
+type BadgeVariant = "success" | "warning" | "error" | "info" | "neutral";
+type BadgeSize = "sm" | "md";
 
 interface BadgeProps {
   variant: BadgeVariant;
@@ -29,14 +29,14 @@ const variantStyles: Record<BadgeVariant, { bg: string; text: string }> = {
     text: colors.state.info,
   },
   neutral: {
-    bg: 'rgba(255, 255, 255, 0.08)',
+    bg: "rgba(255, 255, 255, 0.08)",
     text: colors.text.secondary,
   },
 };
 
 const sizeStyles: Record<BadgeSize, { padding: string; fontSize: string; lineHeight: string }> = {
   sm: {
-    padding: `${spacing['2xs']} ${spacing.xs}`,
+    padding: `${spacing["2xs"]} ${spacing.xs}`,
     fontSize: typography.fontSize.xs,
     lineHeight: String(typography.lineHeight.tight),
   },
@@ -47,14 +47,14 @@ const sizeStyles: Record<BadgeSize, { padding: string; fontSize: string; lineHei
   },
 };
 
-export function Badge({ variant, size = 'sm', children, className }: BadgeProps) {
+export function Badge({ variant, size = "sm", children, className }: BadgeProps) {
   const variantStyle = variantStyles[variant];
   const sizeStyle = sizeStyles[size];
 
   const style: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: sizeStyle.padding,
     fontSize: sizeStyle.fontSize,
     lineHeight: sizeStyle.lineHeight,
@@ -64,8 +64,8 @@ export function Badge({ variant, size = 'sm', children, className }: BadgeProps)
     color: variantStyle.text,
     backgroundColor: variantStyle.bg,
     borderRadius: borderRadius.full,
-    whiteSpace: 'nowrap',
-    userSelect: 'none',
+    whiteSpace: "nowrap",
+    userSelect: "none",
   };
 
   return (

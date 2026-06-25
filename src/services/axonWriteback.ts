@@ -18,51 +18,46 @@
  *     compact summary, and the orchestrator-emitted result/error.
  */
 
-import type { AxonTask } from './AxonOrchestrator';
-import type { AxonRunRecord } from '../store/workbenchTypes';
+import type { AxonRunRecord } from "../store/workbenchTypes";
+import type { AxonTask } from "./AxonOrchestrator";
 
 export interface AxonWritebackWorkbenchApi {
   appendAxonRun: (record: AxonRunRecord) => void;
-  addToolRun: (run: {
-    toolId: string;
-    title: string;
-    summary: string;
-    isSimulated: boolean;
-  }) => void;
+  addToolRun: (run: { toolId: string; title: string; summary: string; isSimulated: boolean }) => void;
 }
 
 function summarisePathd(task: AxonTask): string {
-  if (task.status === 'error') return task.error ?? 'PATHD task failed';
+  if (task.status === "error") return task.error ?? "PATHD task failed";
   const r = (task.result ?? {}) as Record<string, unknown>;
   const parts: string[] = [];
-  if (typeof r.nodeCount === 'number') {
-    parts.push(`${r.nodeCount} node${r.nodeCount === 1 ? '' : 's'}`);
+  if (typeof r.nodeCount === "number") {
+    parts.push(`${r.nodeCount} node${r.nodeCount === 1 ? "" : "s"}`);
   }
-  if (typeof r.bottleneckCount === 'number') {
-    parts.push(`${r.bottleneckCount} bottleneck${r.bottleneckCount === 1 ? '' : 's'}`);
+  if (typeof r.bottleneckCount === "number") {
+    parts.push(`${r.bottleneckCount} bottleneck${r.bottleneckCount === 1 ? "" : "s"}`);
   }
-  if (typeof r.provider === 'string') parts.push(r.provider);
-  return parts.join(' · ') || 'PATHD run complete';
+  if (typeof r.provider === "string") parts.push(r.provider);
+  return parts.join(" · ") || "PATHD run complete";
 }
 
 function summariseFbasim(task: AxonTask): string {
-  if (task.status === 'error') return task.error ?? 'FBASIM task failed';
+  if (task.status === "error") return task.error ?? "FBASIM task failed";
   const r = (task.result ?? {}) as Record<string, unknown>;
   const parts: string[] = [];
-  if (typeof r.species === 'string') parts.push(r.species);
-  if (typeof r.objective === 'string') parts.push(`obj ${r.objective}`);
-  if (typeof r.objectiveValue === 'number') {
+  if (typeof r.species === "string") parts.push(r.species);
+  if (typeof r.objective === "string") parts.push(`obj ${r.objective}`);
+  if (typeof r.objectiveValue === "number") {
     parts.push(`value ${r.objectiveValue.toFixed(3)}`);
   }
-  if (typeof r.fluxCount === 'number') parts.push(`${r.fluxCount} flux`);
-  return parts.join(' · ') || 'FBASIM run complete';
+  if (typeof r.fluxCount === "number") parts.push(`${r.fluxCount} flux`);
+  return parts.join(" · ") || "FBASIM run complete";
 }
 
 function buildRecord(task: AxonTask, summary: string): AxonRunRecord {
   return {
     taskId: task.id,
     tool: task.tool,
-    status: task.status as 'done' | 'error',
+    status: task.status as "done" | "error",
     label: task.label,
     summary,
     timestamp: task.finishedAt ?? Date.now(),
@@ -71,8 +66,8 @@ function buildRecord(task: AxonTask, summary: string): AxonRunRecord {
       startedAt: task.startedAt,
       retryCount: task.retryCount,
     },
-    resultPreview: task.status === 'done' ? sanitiseResultPreview(task.result) : null,
-    error: task.status === 'error' ? task.error ?? null : null,
+    resultPreview: task.status === "done" ? sanitiseResultPreview(task.result) : null,
+    error: task.status === "error" ? (task.error ?? null) : null,
   };
 }
 
@@ -82,16 +77,16 @@ function buildRecord(task: AxonTask, summary: string): AxonRunRecord {
  * own reference to the task; the ledger is for inspection, not replay.
  */
 function sanitiseResultPreview(result: unknown): Record<string, unknown> | null {
-  if (!result || typeof result !== 'object') return null;
+  if (!result || typeof result !== "object") return null;
   const r = result as Record<string, unknown>;
   const preview: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(r)) {
-    if (key === 'rawText' || key === 'raw') continue;
-    if (typeof value === 'string' && value.length > 200) {
+    if (key === "rawText" || key === "raw") continue;
+    if (typeof value === "string" && value.length > 200) {
       preview[key] = `${value.slice(0, 199)}…`;
       continue;
     }
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null) {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value === null) {
       preview[key] = value;
     }
   }
@@ -103,12 +98,12 @@ function sanitiseResultPreview(result: unknown): Record<string, unknown> | null 
  * tasks are ignored — only `done` and `error` are meaningful outcomes.
  */
 export function publishTaskOutcome(task: AxonTask, api: AxonWritebackWorkbenchApi): void {
-  if (task.status !== 'done' && task.status !== 'error') return;
+  if (task.status !== "done" && task.status !== "error") return;
 
   let summary: string;
-  if (task.tool === 'pathd') summary = summarisePathd(task);
-  else if (task.tool === 'fbasim') summary = summariseFbasim(task);
-  else summary = task.status === 'error' ? task.error ?? 'Axon task failed' : 'Axon task complete';
+  if (task.tool === "pathd") summary = summarisePathd(task);
+  else if (task.tool === "fbasim") summary = summariseFbasim(task);
+  else summary = task.status === "error" ? (task.error ?? "Axon task failed") : "Axon task complete";
 
   const record = buildRecord(task, summary);
   api.appendAxonRun(record);
@@ -116,7 +111,7 @@ export function publishTaskOutcome(task: AxonTask, api: AxonWritebackWorkbenchAp
   api.addToolRun({
     toolId: task.tool,
     title: `Axon · ${task.tool.toUpperCase()}`,
-    summary: task.status === 'error' ? `Axon error: ${summary}` : `Axon automation · ${summary}`,
+    summary: task.status === "error" ? `Axon error: ${summary}` : `Axon automation · ${summary}`,
     isSimulated: false,
   });
 }

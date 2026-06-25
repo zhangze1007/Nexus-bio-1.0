@@ -2,5 +2,5 @@
  * RNA Engineering Module — Public API
  */
 
-export { designRNA } from './rnaEngine';
-export type { RNADesignInput, RNADesignResult, RNADesignType, RibozymeType } from './types';
+export { designRNA } from "./rnaEngine";
+export type { RibozymeType, RNADesignInput, RNADesignResult, RNADesignType } from "./types";

@@ -1,7 +1,7 @@
-'use client';
-import React from 'react';
-import { colors, typography } from '../../../design-system/tokens';
-import { THEME } from '../../../theme';
+"use client";
+import React from "react";
+import { colors, typography } from "../../../design-system/tokens";
+import { THEME } from "../../../theme";
 
 /**
  * HeatmapGrid — rect-based heatmap for SVG charts.
@@ -76,7 +76,7 @@ export default function HeatmapGrid({
   fontFamily = THEME.MONO,
   fontSize = typography.fontSize.xs,
   labelFill = colors.text.tertiary,
-  gradientId = 'hm',
+  gradientId = "hm",
 }: HeatmapGridProps) {
   const rows = matrix.length;
   if (rows === 0) return null;
@@ -99,7 +99,7 @@ export default function HeatmapGrid({
             height={cellH}
             fill={colorFn(val)}
           />
-        ))
+        )),
       )}
 
       {/* X-axis labels (rotated) */}
@@ -138,16 +138,14 @@ export default function HeatmapGrid({
         <g>
           <defs>
             <linearGradient id={`${gradientId}-grad`} x1="0" y1="0" x2="0" y2="1">
-              {(colorbar.stops ?? [
-                { offset: '0%', value: 1 },
-                { offset: '50%', value: 0 },
-                { offset: '100%', value: -1 },
-              ]).map((stop) => (
-                <stop
-                  key={stop.offset}
-                  offset={stop.offset}
-                  stopColor={colorFn(stop.value)}
-                />
+              {(
+                colorbar.stops ?? [
+                  { offset: "0%", value: 1 },
+                  { offset: "50%", value: 0 },
+                  { offset: "100%", value: -1 },
+                ]
+              ).map((stop) => (
+                <stop key={stop.offset} offset={stop.offset} stopColor={colorFn(stop.value)} />
               ))}
             </linearGradient>
           </defs>

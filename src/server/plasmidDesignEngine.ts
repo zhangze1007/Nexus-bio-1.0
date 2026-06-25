@@ -15,17 +15,17 @@
  *   ALGORITHM: Multi-objective scoring + expression prediction + assembly constraint satisfaction
  */
 
-import { predictGeneExpression } from './geneExpressionPredictor';
+import { predictGeneExpression } from "./geneExpressionPredictor";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export type HostOrganism = 'ecoli' | 'yeast' | 'human';
-export type AssemblyMethod = 'gibson' | 'golden_gate' | 'restriction_ligation' | 'infusion';
-export type Application = 'high_expression' | 'low_expression' | 'tunable' | 'knockdown' | 'reporter';
+export type HostOrganism = "ecoli" | "yeast" | "human";
+export type AssemblyMethod = "gibson" | "golden_gate" | "restriction_ligation" | "infusion";
+export type Application = "high_expression" | "low_expression" | "tunable" | "knockdown" | "reporter";
 
 export interface ComponentMetadata {
   name: string;
-  type: 'replicon' | 'resistance' | 'promoter' | 'rbs' | 'terminator' | 'reporter';
+  type: "replicon" | "resistance" | "promoter" | "rbs" | "terminator" | "reporter";
   sequence: string;
   host: HostOrganism[];
   /** Expression strength range [min, max] */
@@ -50,7 +50,7 @@ export interface CDSOptimizationResult {
     from: string;
     to: string;
     reason: string;
-    module: 'codon' | 'mrna_structure' | 'gc_balance' | 'restriction_cleanup';
+    module: "codon" | "mrna_structure" | "gc_balance" | "restriction_cleanup";
   }>;
   metrics: {
     caiBefore: number;
@@ -66,9 +66,9 @@ export interface CDSOptimizationResult {
 export interface AssemblyCheck {
   method: AssemblyMethod;
   compatible: boolean;
-  junctionStructureRisk: number;  // 0-1
-  repeatRisk: number;             // 0-1
-  efficiency: number;             // 0-1
+  junctionStructureRisk: number; // 0-1
+  repeatRisk: number; // 0-1
+  efficiency: number; // 0-1
   issues: string[];
 }
 
@@ -79,9 +79,9 @@ export interface PlasmidDesign {
   components: ComponentMetadata[];
   cdsOptimization: CDSOptimizationResult;
   assemblyChecks: AssemblyCheck[];
-  predictedExpression: number;    // 0-1
+  predictedExpression: number; // 0-1
   totalSize: number;
-  overallScore: number;           // 0-1
+  overallScore: number; // 0-1
   rank: number;
   changeLog: string[];
   designNotes: string[];
@@ -100,106 +100,406 @@ const COMPONENT_DB: ComponentMetadata[] = [
   // ── Replicons ─────────────────────────────────────────────────────────────
   // All sequences verified against GenBank with exact bp coordinates.
   // Unverified sequences are marked with evidenceLevel: 1 and explicit caveat.
-  { name: 'ColE1 origin (pUC19)', type: 'replicon',
+  {
+    name: "ColE1 origin (pUC19)",
+    type: "replicon",
     // GenBank L09137 bp 867-1455: ColE1/pMB1 origin with RNAI/RNAII regulatory region
     // Includes: RNAII promoter, RNAI promoter, origin of replication
     // Verified: fetched from NCBI GenBank L09137, extracted bp 867-1455
     // URL: https://www.ncbi.nlm.nih.gov/nuccore/L09137
-    sequence: 'tttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaagaacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaa',
-    host: ['ecoli'], strengthRange: [0.9, 1.0], copyNumber: 500, evidenceLevel: 3,
-    sideEffects: ['metabolic burden at high copy'],
+    sequence:
+      "tttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaagaacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaa",
+    host: ["ecoli"],
+    strengthRange: [0.9, 1.0],
+    copyNumber: 500,
+    evidenceLevel: 3,
+    sideEffects: ["metabolic burden at high copy"],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'GenBank L09137 bp 867-1455 (pUC19 ColE1 origin, Vieira & Messing 1982)' },
-  { name: 'pMB1 origin (pBR322)', type: 'replicon',
+    reference: "GenBank L09137 bp 867-1455 (pUC19 ColE1 origin, Vieira & Messing 1982)",
+  },
+  {
+    name: "pMB1 origin (pBR322)",
+    type: "replicon",
     // Sequence approximated from pUC19-family backbone
     // NOT independently verified against GenBank J01749
     // pBR322 and pUC19 share ColE1-family origin but differ in detail
-    sequence: 'tttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaagaacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaa',
-    host: ['ecoli'], strengthRange: [0.5, 0.6], copyNumber: 20, evidenceLevel: 1,
+    sequence:
+      "tttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaagaacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaa",
+    host: ["ecoli"],
+    strengthRange: [0.5, 0.6],
+    copyNumber: 20,
+    evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Sequence approximated from pUC19-family backbone, NOT independently verified against J01749 (Bolivar et al. 1977)' },
-  { name: 'pSC101 origin', type: 'replicon',
+    reference:
+      "Sequence approximated from pUC19-family backbone, NOT independently verified against J01749 (Bolivar et al. 1977)",
+  },
+  {
+    name: "pSC101 origin",
+    type: "replicon",
     // GenBank V00352: pSC101 origin of replication
     // Sequence NOT independently verified — placeholder
-    sequence: 'ATGCATTTTCCTATTTGCATTCAGATTTATGCTTTTCGAGCGTGGGTTTGGAGCAAACTTATATTTGCAGATTTCCGCACTATTTGCCAGTCATTTGCTGCGTTTGATAAAGTCATCCGCAATGTGTTATTTTGCCGATTTTGATCATTTTCAGCGATTTATTTTCTCCATTTTTAATCGATCCCTAATTTCTTGATCAAAGATATTTATTT',
-    host: ['ecoli'], strengthRange: [0.2, 0.3], copyNumber: 5, evidenceLevel: 1,
+    sequence:
+      "ATGCATTTTCCTATTTGCATTCAGATTTATGCTTTTCGAGCGTGGGTTTGGAGCAAACTTATATTTGCAGATTTCCGCACTATTTGCCAGTCATTTGCTGCGTTTGATAAAGTCATCCGCAATGTGTTATTTTGCCGATTTTGATCATTTTCAGCGATTTATTTTCTCCATTTTTAATCGATCCCTAATTTCTTGATCAAAGATATTTATTT",
+    host: ["ecoli"],
+    strengthRange: [0.2, 0.3],
+    copyNumber: 5,
+    evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Cohen et al. (1973) PNAS 70:3240 — sequence NOT independently verified against V00352' },
-  { name: 'p15A origin', type: 'replicon',
+    reference: "Cohen et al. (1973) PNAS 70:3240 — sequence NOT independently verified against V00352",
+  },
+  {
+    name: "p15A origin",
+    type: "replicon",
     // GenBank U07649: p15A replicon (compatible with ColE1)
     // Sequence NOT independently verified against U07649
-    sequence: 'ATCTTCTGCGGTCGGGTTTCGGTTCCGTCAGAATGCTTTTCTCGCATGTTTTCCTTTATTTCCTTTATTTCAATTTTCGTTGAAATCATTTGATCTTGATATCAGCCTTGTTTGTAAACGGCGCGCCACCTGACGTCTAAGAAACCATTATTATCATGACATTAACCTATAAAAATAGGCGTATCACGAGGCCCTTTCGTC',
-    host: ['ecoli'], strengthRange: [0.4, 0.5], copyNumber: 15, evidenceLevel: 1,
+    sequence:
+      "ATCTTCTGCGGTCGGGTTTCGGTTCCGTCAGAATGCTTTTCTCGCATGTTTTCCTTTATTTCCTTTATTTCAATTTTCGTTGAAATCATTTGATCTTGATATCAGCCTTGTTTGTAAACGGCGCGCCACCTGACGTCTAAGAAACCATTATTATCATGACATTAACCTATAAAAATAGGCGTATCACGAGGCCCTTTCGTC",
+    host: ["ecoli"],
+    strengthRange: [0.4, 0.5],
+    copyNumber: 15,
+    evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Chang & Cohen (1978) J Bacteriol 134:1141 — sequence NOT independently verified against U07649' },
-  { name: 'CEN/ARS (S. cerevisiae)', type: 'replicon',
+    reference: "Chang & Cohen (1978) J Bacteriol 134:1141 — sequence NOT independently verified against U07649",
+  },
+  {
+    name: "CEN/ARS (S. cerevisiae)",
+    type: "replicon",
     // Yeast centromeric plasmid: CEN4 + ARS1
     // Sequence NOT independently verified against GenBank
-    sequence: 'ATCGATGAATTCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTTGGCGTAATCATGGTCATAGCTGTTTCCTGTGTGAAATTGTTATCCGCTCACAATTCCACACAACATACGAGCCGGAAGCATAAAGTGTAAAGCCTGGGGTGCCTAATGAGTGAGCTAACTCACATTAATTGCGTTGCGCTCACTGCCCGCTTTCCAGTCGGGAAACCTGTCGTGCCAG',
-    host: ['yeast'], strengthRange: [0.3, 0.4], copyNumber: 2, evidenceLevel: 1,
+    sequence:
+      "ATCGATGAATTCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTTGGCGTAATCATGGTCATAGCTGTTTCCTGTGTGAAATTGTTATCCGCTCACAATTCCACACAACATACGAGCCGGAAGCATAAAGTGTAAAGCCTGGGGTGCCTAATGAGTGAGCTAACTCACATTAATTGCGTTGCGCTCACTGCCCGCTTTCCAGTCGGGAAACCTGTCGTGCCAG",
+    host: ["yeast"],
+    strengthRange: [0.3, 0.4],
+    copyNumber: 2,
+    evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Struhl et al. (1979) PNAS 76:1035 — sequence NOT independently verified' },
-  { name: '2μ origin (S. cerevisiae)', type: 'replicon',
+    reference: "Struhl et al. (1979) PNAS 76:1035 — sequence NOT independently verified",
+  },
+  {
+    name: "2μ origin (S. cerevisiae)",
+    type: "replicon",
     // Yeast 2-micron plasmid origin: includes FLP recombinase sites
     // Sequence NOT independently verified against GenBank
-    sequence: 'GAATTCTGCAGATATCCATCACACTGGCGGCCGCTCGAGCATGCATCTAGAGGGCCCAATTCGCCCTATAGTGAGTCGTATTACGCGCGCTCACTGGCCGTCGTTTTACAACGTCGTGACTGGGAAAACCCTGGCGTTACCCAACTTAATCGCCTTGCAGCACATCCCCCTTTCGCCAGCTGGCGTAATAGCGAAGAGGCCCGCACCGATCGCCCTTCCCAACAGTTGCGCAG',
-    host: ['yeast'], strengthRange: [0.8, 0.9], copyNumber: 100, evidenceLevel: 1,
-    sideEffects: ['plasmid instability'],
+    sequence:
+      "GAATTCTGCAGATATCCATCACACTGGCGGCCGCTCGAGCATGCATCTAGAGGGCCCAATTCGCCCTATAGTGAGTCGTATTACGCGCGCTCACTGGCCGTCGTTTTACAACGTCGTGACTGGGAAAACCCTGGCGTTACCCAACTTAATCGCCTTGCAGCACATCCCCCTTTCGCCAGCTGGCGTAATAGCGAAGAGGCCCGCACCGATCGCCCTTCCCAACAGTTGCGCAG",
+    host: ["yeast"],
+    strengthRange: [0.8, 0.9],
+    copyNumber: 100,
+    evidenceLevel: 1,
+    sideEffects: ["plasmid instability"],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Broach et al. (1982) MCB 2:1077 — sequence NOT independently verified' },
+    reference: "Broach et al. (1982) MCB 2:1077 — sequence NOT independently verified",
+  },
 
   // Resistance markers
-  { name: 'Ampicillin (bla)', type: 'resistance', sequence: 'ATGAAACGC', host: ['ecoli'], strengthRange: [0.9, 1.0], evidenceLevel: 3, sideEffects: ['β-lactamase secretion'], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Sutcliffe (1979) PNAS 76:4717' },
-  { name: 'Kanamycin (aph)', type: 'resistance', sequence: 'ATGAAACGC', host: ['ecoli'], strengthRange: [0.9, 1.0], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Oka et al. (1981) J Mol Biol 147:217' },
-  { name: 'Chloramphenicol (cat)', type: 'resistance', sequence: 'ATGAAACGC', host: ['ecoli'], strengthRange: [0.8, 0.9], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Alton & Vapnek (1979) Nature 282:864' },
-  { name: 'Hygromycin (hph)', type: 'resistance', sequence: 'ATGAAACGC', host: ['yeast'], strengthRange: [0.9, 1.0], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Gritz & Davies (1983) Gene 25:179' },
-  { name: 'Nourseothricin (nat)', type: 'resistance', sequence: 'ATGAAACGC', host: ['yeast'], strengthRange: [0.9, 1.0], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Goldstein & McCusker (1999) Yeast 15:1541' },
+  {
+    name: "Ampicillin (bla)",
+    type: "resistance",
+    sequence: "ATGAAACGC",
+    host: ["ecoli"],
+    strengthRange: [0.9, 1.0],
+    evidenceLevel: 3,
+    sideEffects: ["β-lactamase secretion"],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Sutcliffe (1979) PNAS 76:4717",
+  },
+  {
+    name: "Kanamycin (aph)",
+    type: "resistance",
+    sequence: "ATGAAACGC",
+    host: ["ecoli"],
+    strengthRange: [0.9, 1.0],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Oka et al. (1981) J Mol Biol 147:217",
+  },
+  {
+    name: "Chloramphenicol (cat)",
+    type: "resistance",
+    sequence: "ATGAAACGC",
+    host: ["ecoli"],
+    strengthRange: [0.8, 0.9],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Alton & Vapnek (1979) Nature 282:864",
+  },
+  {
+    name: "Hygromycin (hph)",
+    type: "resistance",
+    sequence: "ATGAAACGC",
+    host: ["yeast"],
+    strengthRange: [0.9, 1.0],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Gritz & Davies (1983) Gene 25:179",
+  },
+  {
+    name: "Nourseothricin (nat)",
+    type: "resistance",
+    sequence: "ATGAAACGC",
+    host: ["yeast"],
+    strengthRange: [0.9, 1.0],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Goldstein & McCusker (1999) Yeast 15:1541",
+  },
 
   // Promoters
-  { name: 'T7 promoter', type: 'promoter', sequence: 'TAATACGACTCACTATAGGG', host: ['ecoli'], strengthRange: [0.9, 1.0], evidenceLevel: 3, sideEffects: ['requires T7 RNAP'], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Studier & Moffatt (1986) J Mol Biol 189:113' },
-  { name: 'tac promoter', type: 'promoter', sequence: 'TTGACATATACATTAAGAATTCGATATCAATGACA', host: ['ecoli'], strengthRange: [0.7, 0.9], evidenceLevel: 3, sideEffects: ['IPTG induction required'], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'de Boer et al. (1983) PNAS 80:21' },
-  { name: 'J23100 (constitutive)', type: 'promoter', sequence: 'TTGACAGCTAGCTCAGTCCTAGGTATAATGCTAGC', host: ['ecoli'], strengthRange: [0.8, 0.95], evidenceLevel: 2, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'iGEM Registry' },
-  { name: 'J23119 (constitutive)', type: 'promoter', sequence: 'TTGACAGCTAGCTCAGTCCTAGGGATTATGCTAGC', host: ['ecoli'], strengthRange: [0.5, 0.7], evidenceLevel: 2, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'iGEM Registry' },
-  { name: 'pTet', type: 'promoter', sequence: 'TCCCTATCAGTGATAGAGATTGACATCCCTATCAGTGATAGAGATACTGAGCAC', host: ['ecoli'], strengthRange: [0.6, 0.8], evidenceLevel: 3, sideEffects: ['aTc induction required'], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Lutz & Bujard (1997) NAR 25:1203' },
-  { name: 'TEF1 promoter', type: 'promoter', sequence: 'ATAGCTTCAAAATGTTTCTACTCCT', host: ['yeast'], strengthRange: [0.7, 0.85], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Partow et al. (2010) Yeast 27:955' },
-  { name: 'pGAL1', type: 'promoter', sequence: 'AATTTCACTGCATTCTAGTTGTGG', host: ['yeast'], strengthRange: [0.8, 0.95], evidenceLevel: 3, sideEffects: ['galactose induction required'], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Johnston & Davis (1984) MCB 4:1440' },
+  {
+    name: "T7 promoter",
+    type: "promoter",
+    sequence: "TAATACGACTCACTATAGGG",
+    host: ["ecoli"],
+    strengthRange: [0.9, 1.0],
+    evidenceLevel: 3,
+    sideEffects: ["requires T7 RNAP"],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Studier & Moffatt (1986) J Mol Biol 189:113",
+  },
+  {
+    name: "tac promoter",
+    type: "promoter",
+    sequence: "TTGACATATACATTAAGAATTCGATATCAATGACA",
+    host: ["ecoli"],
+    strengthRange: [0.7, 0.9],
+    evidenceLevel: 3,
+    sideEffects: ["IPTG induction required"],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "de Boer et al. (1983) PNAS 80:21",
+  },
+  {
+    name: "J23100 (constitutive)",
+    type: "promoter",
+    sequence: "TTGACAGCTAGCTCAGTCCTAGGTATAATGCTAGC",
+    host: ["ecoli"],
+    strengthRange: [0.8, 0.95],
+    evidenceLevel: 2,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "iGEM Registry",
+  },
+  {
+    name: "J23119 (constitutive)",
+    type: "promoter",
+    sequence: "TTGACAGCTAGCTCAGTCCTAGGGATTATGCTAGC",
+    host: ["ecoli"],
+    strengthRange: [0.5, 0.7],
+    evidenceLevel: 2,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "iGEM Registry",
+  },
+  {
+    name: "pTet",
+    type: "promoter",
+    sequence: "TCCCTATCAGTGATAGAGATTGACATCCCTATCAGTGATAGAGATACTGAGCAC",
+    host: ["ecoli"],
+    strengthRange: [0.6, 0.8],
+    evidenceLevel: 3,
+    sideEffects: ["aTc induction required"],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Lutz & Bujard (1997) NAR 25:1203",
+  },
+  {
+    name: "TEF1 promoter",
+    type: "promoter",
+    sequence: "ATAGCTTCAAAATGTTTCTACTCCT",
+    host: ["yeast"],
+    strengthRange: [0.7, 0.85],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Partow et al. (2010) Yeast 27:955",
+  },
+  {
+    name: "pGAL1",
+    type: "promoter",
+    sequence: "AATTTCACTGCATTCTAGTTGTGG",
+    host: ["yeast"],
+    strengthRange: [0.8, 0.95],
+    evidenceLevel: 3,
+    sideEffects: ["galactose induction required"],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Johnston & Davis (1984) MCB 4:1440",
+  },
 
   // Terminators
-  { name: 'T7 terminator', type: 'terminator', sequence: 'GCAAAAAACCCCTCAAGACCCGTTTAGAGGCCCCAAGGGGTTATGCTAGTTATTGCTCAGCGG', host: ['ecoli'], strengthRange: [0.9, 0.95], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Dunn & Studier (1983) J Mol Biol 166:477' },
-  { name: 'rrnB T1', type: 'terminator', sequence: 'AAGCCTGGGTGGGGGATAGATCCGGTCGGAAATTTTTCGCAAACCCGAAAGGGTAAAGCCG', host: ['ecoli'], strengthRange: [0.8, 0.9], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Brosius et al. (1981) J Mol Biol 148:107' },
-  { name: 'CYC1 terminator', type: 'terminator', sequence: 'ATCGATGAATTCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCA', host: ['yeast'], strengthRange: [0.7, 0.85], evidenceLevel: 3, sideEffects: [], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Zaret & Sherman (1982) Cell 28:563' },
+  {
+    name: "T7 terminator",
+    type: "terminator",
+    sequence: "GCAAAAAACCCCTCAAGACCCGTTTAGAGGCCCCAAGGGGTTATGCTAGTTATTGCTCAGCGG",
+    host: ["ecoli"],
+    strengthRange: [0.9, 0.95],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Dunn & Studier (1983) J Mol Biol 166:477",
+  },
+  {
+    name: "rrnB T1",
+    type: "terminator",
+    sequence: "AAGCCTGGGTGGGGGATAGATCCGGTCGGAAATTTTTCGCAAACCCGAAAGGGTAAAGCCG",
+    host: ["ecoli"],
+    strengthRange: [0.8, 0.9],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Brosius et al. (1981) J Mol Biol 148:107",
+  },
+  {
+    name: "CYC1 terminator",
+    type: "terminator",
+    sequence: "ATCGATGAATTCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCA",
+    host: ["yeast"],
+    strengthRange: [0.7, 0.85],
+    evidenceLevel: 3,
+    sideEffects: [],
+    assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
+    reference: "Zaret & Sherman (1982) Cell 28:563",
+  },
 ];
 
 // ── CDS Optimization (4 sub-modules) ───────────────────────────────────────
 
 const CODON_TABLE: Record<string, string> = {
-  'ATG': 'M', 'TTT': 'F', 'TTC': 'F', 'TTA': 'L', 'TTG': 'L', 'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
-  'ATT': 'I', 'ATC': 'I', 'ATA': 'I', 'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
-  'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S', 'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
-  'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T', 'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
-  'TAT': 'Y', 'TAC': 'Y', 'TAA': '*', 'TAG': '*', 'CAT': 'H', 'CAC': 'H', 'CAA': 'Q', 'CAG': 'Q',
-  'AAT': 'N', 'AAC': 'N', 'AAA': 'K', 'AAG': 'K', 'GAT': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
-  'TGT': 'C', 'TGC': 'C', 'TGA': '*', 'TGG': 'W', 'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R',
-  'AGT': 'S', 'AGC': 'S', 'AGA': 'R', 'AGG': 'R', 'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G',
+  ATG: "M",
+  TTT: "F",
+  TTC: "F",
+  TTA: "L",
+  TTG: "L",
+  CTT: "L",
+  CTC: "L",
+  CTA: "L",
+  CTG: "L",
+  ATT: "I",
+  ATC: "I",
+  ATA: "I",
+  GTT: "V",
+  GTC: "V",
+  GTA: "V",
+  GTG: "V",
+  TCT: "S",
+  TCC: "S",
+  TCA: "S",
+  TCG: "S",
+  CCT: "P",
+  CCC: "P",
+  CCA: "P",
+  CCG: "P",
+  ACT: "T",
+  ACC: "T",
+  ACA: "T",
+  ACG: "T",
+  GCT: "A",
+  GCC: "A",
+  GCA: "A",
+  GCG: "A",
+  TAT: "Y",
+  TAC: "Y",
+  TAA: "*",
+  TAG: "*",
+  CAT: "H",
+  CAC: "H",
+  CAA: "Q",
+  CAG: "Q",
+  AAT: "N",
+  AAC: "N",
+  AAA: "K",
+  AAG: "K",
+  GAT: "D",
+  GAC: "D",
+  GAA: "E",
+  GAG: "E",
+  TGT: "C",
+  TGC: "C",
+  TGA: "*",
+  TGG: "W",
+  CGT: "R",
+  CGC: "R",
+  CGA: "R",
+  CGG: "R",
+  AGT: "S",
+  AGC: "S",
+  AGA: "R",
+  AGG: "R",
+  GGT: "G",
+  GGC: "G",
+  GGA: "G",
+  GGG: "G",
 };
 
 /** E. coli codon usage (frequency per 1000) */
 const ECOLI_CODON_USAGE: Record<string, number> = {
-  'GCA': 21, 'GCC': 25, 'GCG': 33, 'GCT': 18, 'TGC': 6, 'TGT': 6, 'GAC': 19, 'GAT': 32,
-  'GAA': 39, 'GAG': 18, 'TTC': 16, 'TTT': 22, 'GGA': 11, 'GGC': 28, 'GGG': 15, 'GGT': 25,
-  'CAC': 9, 'CAT': 12, 'ATA': 5, 'ATC': 25, 'ATT': 30, 'AAA': 34, 'AAG': 12, 'CTA': 4,
-  'CTC': 11, 'CTG': 50, 'CTT': 11, 'TTA': 14, 'TTG': 13, 'ATG': 27, 'AAC': 22, 'AAT': 18,
-  'CCA': 8, 'CCC': 6, 'CCG': 22, 'CCT': 7, 'CAA': 15, 'CAG': 27, 'AGA': 4, 'AGG': 2,
-  'CGA': 4, 'CGC': 22, 'CGG': 6, 'CGT': 21, 'TCA': 8, 'TCC': 8, 'TCG': 8, 'TCT': 8,
-  'ACA': 7, 'ACC': 23, 'ACG': 14, 'ACT': 9, 'GTA': 11, 'GTC': 15, 'GTG': 26, 'GTT': 18,
-  'TGG': 15, 'TAT': 12, 'TAC': 12,
+  GCA: 21,
+  GCC: 25,
+  GCG: 33,
+  GCT: 18,
+  TGC: 6,
+  TGT: 6,
+  GAC: 19,
+  GAT: 32,
+  GAA: 39,
+  GAG: 18,
+  TTC: 16,
+  TTT: 22,
+  GGA: 11,
+  GGC: 28,
+  GGG: 15,
+  GGT: 25,
+  CAC: 9,
+  CAT: 12,
+  ATA: 5,
+  ATC: 25,
+  ATT: 30,
+  AAA: 34,
+  AAG: 12,
+  CTA: 4,
+  CTC: 11,
+  CTG: 50,
+  CTT: 11,
+  TTA: 14,
+  TTG: 13,
+  ATG: 27,
+  AAC: 22,
+  AAT: 18,
+  CCA: 8,
+  CCC: 6,
+  CCG: 22,
+  CCT: 7,
+  CAA: 15,
+  CAG: 27,
+  AGA: 4,
+  AGG: 2,
+  CGA: 4,
+  CGC: 22,
+  CGG: 6,
+  CGT: 21,
+  TCA: 8,
+  TCC: 8,
+  TCG: 8,
+  TCT: 8,
+  ACA: 7,
+  ACC: 23,
+  ACG: 14,
+  ACT: 9,
+  GTA: 11,
+  GTC: 15,
+  GTG: 26,
+  GTT: 18,
+  TGG: 15,
+  TAT: 12,
+  TAC: 12,
 };
 
-const RESTRICTION_SITES = ['GGTCTC', 'GAATTC', 'GGATCC', 'AAGCTT', 'CTGCAG', 'GCGGCCGC', 'ACTAGT', 'TCTAGA'];
+const RESTRICTION_SITES = ["GGTCTC", "GAATTC", "GGATCC", "AAGCTT", "CTGCAG", "GCGGCCGC", "ACTAGT", "TCTAGA"];
 
 /**
  * Optimize CDS with 4 sub-modules, each reporting changes independently.
@@ -207,7 +507,7 @@ const RESTRICTION_SITES = ['GGTCTC', 'GAATTC', 'GGATCC', 'AAGCTT', 'CTGCAG', 'GC
 function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
   const original = cds.toUpperCase();
   let optimized = original;
-  const changes: CDSOptimizationResult['changes'] = [];
+  const changes: CDSOptimizationResult["changes"] = [];
 
   // Count before metrics
   const caiBefore = computeCAI(optimized);
@@ -218,7 +518,7 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
   for (let i = 0; i < optimized.length - 2; i += 3) {
     const codon = optimized.substring(i, i + 3);
     const aa = CODON_TABLE[codon];
-    if (!aa || aa === '*') continue;
+    if (!aa || aa === "*") continue;
 
     // Find best synonymous codon
     const synonymous = Object.entries(CODON_TABLE)
@@ -227,9 +527,19 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
       .sort((a, b) => (ECOLI_CODON_USAGE[b] || 0) - (ECOLI_CODON_USAGE[a] || 0));
 
     const bestCodon = synonymous[0];
-    if (bestCodon && bestCodon !== codon && (ECOLI_CODON_USAGE[bestCodon] || 0) > (ECOLI_CODON_USAGE[codon] || 0) * 1.5) {
+    if (
+      bestCodon &&
+      bestCodon !== codon &&
+      (ECOLI_CODON_USAGE[bestCodon] || 0) > (ECOLI_CODON_USAGE[codon] || 0) * 1.5
+    ) {
       optimized = optimized.substring(0, i) + bestCodon + optimized.substring(i + 3);
-      changes.push({ position: i, from: codon, to: bestCodon, reason: `Codon optimization: ${codon}→${bestCodon} (${aa}) tAI improved`, module: 'codon' });
+      changes.push({
+        position: i,
+        from: codon,
+        to: bestCodon,
+        reason: `Codon optimization: ${codon}→${bestCodon} (${aa}) tAI improved`,
+        module: "codon",
+      });
     }
   }
 
@@ -246,10 +556,16 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
       const synonymous = Object.entries(CODON_TABLE)
         .filter(([c, a]) => a === aa && c !== codon)
         .map(([c]) => c);
-      const lessGC = synonymous.find(c => (c[2] === 'A' || c[2] === 'T') && (codon[2] === 'G' || codon[2] === 'C'));
+      const lessGC = synonymous.find((c) => (c[2] === "A" || c[2] === "T") && (codon[2] === "G" || codon[2] === "C"));
       if (lessGC) {
         optimized = optimized.substring(0, i) + lessGC + optimized.substring(i + 3);
-        changes.push({ position: i, from: codon, to: lessGC, reason: 'Reduce 5\' mRNA folding stability', module: 'mrna_structure' });
+        changes.push({
+          position: i,
+          from: codon,
+          to: lessGC,
+          reason: "Reduce 5' mRNA folding stability",
+          module: "mrna_structure",
+        });
         break;
       }
     }
@@ -272,13 +588,19 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
       const synonymous = Object.entries(CODON_TABLE)
         .filter(([c, a]) => a === aa && c !== codon)
         .map(([c]) => c);
-      const better = synonymous.find(c => {
+      const better = synonymous.find((c) => {
         const cGC = (c.match(/[GC]/g) || []).length;
         return gcContent > 0.65 ? cGC < currentGC : cGC > currentGC;
       });
       if (better) {
         optimized = optimized.substring(0, i) + better + optimized.substring(i + 3);
-        changes.push({ position: i, from: codon, to: better, reason: `GC balance: ${gcContent > 0.65 ? 'reduce' : 'increase'} GC content`, module: 'gc_balance' });
+        changes.push({
+          position: i,
+          from: codon,
+          to: better,
+          reason: `GC balance: ${gcContent > 0.65 ? "reduce" : "increase"} GC content`,
+          module: "gc_balance",
+        });
         gcContent = (optimized.match(/[GC]/g) || []).length / optimized.length;
       }
     }
@@ -301,7 +623,13 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
           if (synonymous.length > 0) {
             const replacement = synonymous[0];
             optimized = optimized.substring(0, codonPos) + replacement + optimized.substring(codonPos + 3);
-            changes.push({ position: codonPos, from: codon, to: replacement, reason: `Remove restriction site: ${site}`, module: 'restriction_cleanup' });
+            changes.push({
+              position: codonPos,
+              from: codon,
+              to: replacement,
+              reason: `Remove restriction site: ${site}`,
+              module: "restriction_cleanup",
+            });
             sitesRemoved++;
           }
         }
@@ -331,16 +659,22 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
 }
 
 function computeCAI(seq: string): number {
-  let logSum = 0, n = 0;
+  let logSum = 0,
+    n = 0;
   for (let i = 0; i < seq.length - 2; i += 3) {
     const codon = seq.substring(i, i + 3);
     const aa = CODON_TABLE[codon];
-    if (!aa || aa === '*') continue;
+    if (!aa || aa === "*") continue;
     const freq = ECOLI_CODON_USAGE[codon] || 1;
-    const maxFreq = Math.max(...Object.entries(CODON_TABLE)
-      .filter(([_, a]) => a === aa)
-      .map(([c]) => ECOLI_CODON_USAGE[c] || 1));
-    if (maxFreq > 0) { logSum += Math.log(freq / maxFreq); n++; }
+    const maxFreq = Math.max(
+      ...Object.entries(CODON_TABLE)
+        .filter(([_, a]) => a === aa)
+        .map(([c]) => ECOLI_CODON_USAGE[c] || 1),
+    );
+    if (maxFreq > 0) {
+      logSum += Math.log(freq / maxFreq);
+      n++;
+    }
   }
   return n > 0 ? Math.exp(logSum / n) : 0;
 }
@@ -355,7 +689,7 @@ function countRareCodons(seq: string): number {
 }
 
 function computeMRNAFolding(seq: string): number {
-  const nn: Record<string, number> = { 'GC': -3.4, 'CG': -2.4, 'AU': -1.1, 'UA': -1.3, 'GU': -1.4, 'UG': -2.1, 'AA': -0.9, 'UU': -0.9 };
+  const nn: Record<string, number> = { GC: -3.4, CG: -2.4, AU: -1.1, UA: -1.3, GU: -1.4, UG: -2.1, AA: -0.9, UU: -0.9 };
   let dg = 0;
   for (let i = 0; i < seq.length - 1; i++) dg += nn[seq.substring(i, i + 2)] || 0;
   return dg;
@@ -379,12 +713,14 @@ function checkAssembly(components: ComponentMetadata[], method: AssemblyMethod):
     // Reference: Gibson et al. (2010) Methods Enzymol 498:11-32
     if (junctionGC > 0.7 || junctionGC < 0.3) {
       junctionRisk += 0.2;
-      issues.push(`Junction ${i}-${i + 1}: extreme GC (${(junctionGC * 100).toFixed(0)}%) may form secondary structure`);
+      issues.push(
+        `Junction ${i}-${i + 1}: extreme GC (${(junctionGC * 100).toFixed(0)}%) may form secondary structure`,
+      );
     }
   }
 
   // Check for repeats between components
-  const allSeqs = components.map(c => c.sequence);
+  const allSeqs = components.map((c) => c.sequence);
   for (let i = 0; i < allSeqs.length; i++) {
     for (let j = i + 1; j < allSeqs.length; j++) {
       const shared20mers = countSharedKmers(allSeqs[i], allSeqs[j], 20);
@@ -396,9 +732,9 @@ function checkAssembly(components: ComponentMetadata[], method: AssemblyMethod):
   }
 
   // Method-specific checks
-  const hasBsaI = allSeqs.some(s => s.includes('GGTCTC'));
-  if (method === 'golden_gate' && hasBsaI) {
-    issues.push('BsaI recognition site present in one or more components');
+  const hasBsaI = allSeqs.some((s) => s.includes("GGTCTC"));
+  if (method === "golden_gate" && hasBsaI) {
+    issues.push("BsaI recognition site present in one or more components");
   }
 
   const efficiency = Math.max(0.1, 1 - junctionRisk - repeatRisk);
@@ -449,34 +785,40 @@ function scoreComponent(comp: ComponentMetadata, host: HostOrganism, targetStren
 
 export function designPlasmid(
   cds: string,
-  host: HostOrganism = 'ecoli',
-  application: Application = 'high_expression',
-  assemblyMethod: AssemblyMethod = 'gibson',
+  host: HostOrganism = "ecoli",
+  application: Application = "high_expression",
+  assemblyMethod: AssemblyMethod = "gibson",
   nAlternatives: number = 2,
 ): PlasmidDesignResult {
-  const targetStrength = application === 'high_expression' ? 0.9
-    : application === 'low_expression' ? 0.3
-    : application === 'tunable' ? 0.6 : 0.5;
+  const targetStrength =
+    application === "high_expression"
+      ? 0.9
+      : application === "low_expression"
+        ? 0.3
+        : application === "tunable"
+          ? 0.6
+          : 0.5;
 
   // Score and rank components
-  const scoredComponents = COMPONENT_DB
-    .map(c => ({ component: c, score: scoreComponent(c, host, targetStrength) }))
-    .filter(s => s.score > 0)
+  const scoredComponents = COMPONENT_DB.map((c) => ({ component: c, score: scoreComponent(c, host, targetStrength) }))
+    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
   const componentScores: Record<string, number> = {};
-  scoredComponents.forEach(s => { componentScores[s.component.name] = Math.round(s.score * 100) / 100; });
+  scoredComponents.forEach((s) => {
+    componentScores[s.component.name] = Math.round(s.score * 100) / 100;
+  });
 
   // Select top components by type
-  const selectByType = (type: ComponentMetadata['type']): ComponentMetadata => {
-    const found = scoredComponents.find(s => s.component.type === type);
-    return found?.component ?? COMPONENT_DB.find(c => c.type === type)!;
+  const selectByType = (type: ComponentMetadata["type"]): ComponentMetadata => {
+    const found = scoredComponents.find((s) => s.component.type === type);
+    return found?.component ?? COMPONENT_DB.find((c) => c.type === type)!;
   };
 
-  const replicon = selectByType('replicon');
-  const resistance = selectByType('resistance');
-  const promoter = selectByType('promoter');
-  const terminator = selectByType('terminator');
+  const replicon = selectByType("replicon");
+  const resistance = selectByType("resistance");
+  const promoter = selectByType("promoter");
+  const terminator = selectByType("terminator");
 
   // Optimize CDS
   const cdsOptimization = optimizeCDS(cds, host);
@@ -486,23 +828,34 @@ export function designPlasmid(
   const mainAssembly = checkAssembly(mainComponents, assemblyMethod);
 
   // Predict expression
-  const rbs = 'AAGAAGGAGATATACAT';
-  const mainExpression = predictGeneExpression(promoter.sequence, rbs, cdsOptimization.optimized, terminator.sequence, host);
+  const rbs = "AAGAAGGAGATATACAT";
+  const mainExpression = predictGeneExpression(
+    promoter.sequence,
+    rbs,
+    cdsOptimization.optimized,
+    terminator.sequence,
+    host,
+  );
 
-  const totalSize = mainComponents.reduce((s, c) => s + c.sequence.length, 0) + cdsOptimization.optimized.length + rbs.length;
+  const totalSize =
+    mainComponents.reduce((s, c) => s + c.sequence.length, 0) + cdsOptimization.optimized.length + rbs.length;
 
   const mainDesign: PlasmidDesign = {
     id: `plasmid_${Date.now().toString(36)}`,
-    name: `p${host.charAt(0).toUpperCase() + host.slice(1)}_${promoter.name.replace(/\s/g, '')}`,
+    name: `p${host.charAt(0).toUpperCase() + host.slice(1)}_${promoter.name.replace(/\s/g, "")}`,
     host,
     components: mainComponents,
     cdsOptimization,
     assemblyChecks: [mainAssembly],
     predictedExpression: mainExpression.relativeExpression,
     totalSize,
-    overallScore: Math.round((mainExpression.relativeExpression * 0.5 + mainAssembly.efficiency * 0.3 + (replicon.evidenceLevel / 3) * 0.2) * 1000) / 1000,
+    overallScore:
+      Math.round(
+        (mainExpression.relativeExpression * 0.5 + mainAssembly.efficiency * 0.3 + (replicon.evidenceLevel / 3) * 0.2) *
+          1000,
+      ) / 1000,
     rank: 1,
-    changeLog: cdsOptimization.changes.map(c => `${c.module}: pos${c.position} ${c.from}→${c.to} (${c.reason})`),
+    changeLog: cdsOptimization.changes.map((c) => `${c.module}: pos${c.position} ${c.from}→${c.to} (${c.reason})`),
     designNotes: [
       `Design: ${replicon.name} (${replicon.copyNumber} copies), ${resistance.name} selection`,
       `Promoter: ${promoter.name} (strength ${(promoter.strengthRange[0] + promoter.strengthRange[1]) / 2})`,
@@ -516,24 +869,41 @@ export function designPlasmid(
   const alternatives: PlasmidDesign[] = [];
   const altConfigs = [
     { strength: targetStrength * 0.7, method: assemblyMethod },
-    { strength: targetStrength * 1.2, method: assemblyMethod === 'gibson' ? 'golden_gate' as AssemblyMethod : 'gibson' as AssemblyMethod },
+    {
+      strength: targetStrength * 1.2,
+      method: assemblyMethod === "gibson" ? ("golden_gate" as AssemblyMethod) : ("gibson" as AssemblyMethod),
+    },
   ];
 
   for (let i = 0; i < nAlternatives && i < altConfigs.length; i++) {
-    const altPromoter = scoredComponents.find(s => s.component.type === 'promoter' && s.component !== promoter)?.component ?? promoter;
-    const altReplicon = scoredComponents.find(s => s.component.type === 'replicon' && s.component !== replicon)?.component ?? replicon;
+    const altPromoter =
+      scoredComponents.find((s) => s.component.type === "promoter" && s.component !== promoter)?.component ?? promoter;
+    const altReplicon =
+      scoredComponents.find((s) => s.component.type === "replicon" && s.component !== replicon)?.component ?? replicon;
     const altComponents = [altReplicon, resistance, altPromoter, terminator];
     const altAssembly = checkAssembly(altComponents, altConfigs[i].method);
-    const altExpression = predictGeneExpression(altPromoter.sequence, rbs, cdsOptimization.optimized, terminator.sequence, host);
+    const altExpression = predictGeneExpression(
+      altPromoter.sequence,
+      rbs,
+      cdsOptimization.optimized,
+      terminator.sequence,
+      host,
+    );
 
     alternatives.push({
       ...mainDesign,
       id: `plasmid_alt${i}_${Date.now().toString(36)}`,
-      name: `p${host}${i + 2}_${altPromoter.name.replace(/\s/g, '')}`,
+      name: `p${host}${i + 2}_${altPromoter.name.replace(/\s/g, "")}`,
       components: altComponents,
       assemblyChecks: [altAssembly],
       predictedExpression: altExpression.relativeExpression,
-      overallScore: Math.round((altExpression.relativeExpression * 0.5 + altAssembly.efficiency * 0.3 + (altReplicon.evidenceLevel / 3) * 0.2) * 1000) / 1000,
+      overallScore:
+        Math.round(
+          (altExpression.relativeExpression * 0.5 +
+            altAssembly.efficiency * 0.3 +
+            (altReplicon.evidenceLevel / 3) * 0.2) *
+            1000,
+        ) / 1000,
       rank: i + 2,
       designNotes: [`Alternative ${i + 1}: ${altPromoter.name} + ${altReplicon.name}`],
     });
@@ -542,8 +912,10 @@ export function designPlasmid(
   // Failure summary
   const failureSummary: string[] = [];
   if (mainAssembly.issues.length > 0) failureSummary.push(...mainAssembly.issues);
-  if (cdsOptimization.metrics.rareCodonsAfter > 0) failureSummary.push(`${cdsOptimization.metrics.rareCodonsAfter} rare codons remain`);
-  if (mainExpression.relativeExpression < 0.3) failureSummary.push('Low predicted expression — consider stronger promoter or RBS');
+  if (cdsOptimization.metrics.rareCodonsAfter > 0)
+    failureSummary.push(`${cdsOptimization.metrics.rareCodonsAfter} rare codons remain`);
+  if (mainExpression.relativeExpression < 0.3)
+    failureSummary.push("Low predicted expression — consider stronger promoter or RBS");
 
   return { mainDesign, alternatives, failureSummary, componentScores };
 }

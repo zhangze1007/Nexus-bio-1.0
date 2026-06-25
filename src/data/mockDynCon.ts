@@ -1,11 +1,11 @@
 import type {
-  ODEState,
   ControllerParams,
-  HillParams,
   ConvergenceMetrics,
-  RBSMapping,
+  HillParams,
   MetabolicBurdenResult,
-} from '../types';
+  ODEState,
+  RBSMapping,
+} from "../types";
 
 /**
  * DYNCON Engine — Fed-batch bioreactor + Hill-function feedback + PID control
@@ -22,63 +22,65 @@ import type {
  */
 
 export const DEFAULT_CONTROLLER: ControllerParams = {
-  kp: 2.0, ki: 0.5, kd: 0.1,
-  setpoint: 0.4,  // 40% saturation — typical dissolved O₂ setpoint for aerobic E. coli fed-batch
-                   // Garcia-Ochoa & Gomez 2009, Biotechnol Adv 27:153
+  kp: 2.0,
+  ki: 0.5,
+  kd: 0.1,
+  setpoint: 0.4, // 40% saturation — typical dissolved O₂ setpoint for aerobic E. coli fed-batch
+  // Garcia-Ochoa & Gomez 2009, Biotechnol Adv 27:153
 };
 // PID gains: Ziegler-Nichols-inspired initial tuning
 // Åström & Hägglund 1995, "PID Controllers: Theory, Design and Tuning" (ISA)
 
 export const DEFAULT_HILL: HillParams = {
-  Vmax: 1.0,   // Max ADS expression (normalized)
-  Kd: 50.0,    // μM — FPP concentration at half-maximal repression
-               // Heuristic: typical TetR-operator Kd ~10-100 nM; scaled for FPP pathway context
-  n: 2.0,      // Hill coefficient — cooperative binding
-               // Weiss 1997, J Theor Biol 184:219 (typical n=1-4 for TF binding)
+  Vmax: 1.0, // Max ADS expression (normalized)
+  Kd: 50.0, // μM — FPP concentration at half-maximal repression
+  // Heuristic: typical TetR-operator Kd ~10-100 nM; scaled for FPP pathway context
+  n: 2.0, // Hill coefficient — cooperative binding
+  // Weiss 1997, J Theor Biol 184:219 (typical n=1-4 for TF binding)
 };
 
 export interface BioreactorParams {
-  muMax: number;    // max growth rate h⁻¹
-  Ks: number;       // substrate affinity constant g/L
-  Ko: number;       // oxygen half-saturation constant mg/L (default 0.2 for E. coli)
-  Yxs: number;      // biomass yield g/g
-  Yps: number;      // product yield g/g
-  kLa: number;      // oxygen transfer coefficient h⁻¹
+  muMax: number; // max growth rate h⁻¹
+  Ks: number; // substrate affinity constant g/L
+  Ko: number; // oxygen half-saturation constant mg/L (default 0.2 for E. coli)
+  Yxs: number; // biomass yield g/g
+  Yps: number; // product yield g/g
+  kLa: number; // oxygen transfer coefficient h⁻¹
   OstarSat: number; // O₂ saturation mg/L
   feedConc: number; // substrate feed concentration g/L
   feedRate: number; // feed rate L/h
   // Artemisinin pathway parameters
-  kFPP: number;     // FPP synthesis rate constant (μM/h per g/L biomass)
-  kADS: number;     // ADS catalytic rate (product formation, g/L per h per a.u. enzyme)
+  kFPP: number; // FPP synthesis rate constant (μM/h per g/L biomass)
+  kADS: number; // ADS catalytic rate (product formation, g/L per h per a.u. enzyme)
   fppDegradation: number; // FPP consumption/degradation (h⁻¹)
   // Toxicity thresholds
-  fppToxicThreshold: number;    // μM — above this, growth inhibited
-  productToxicThreshold: number;// g/L — product IC₅₀
+  fppToxicThreshold: number; // μM — above this, growth inhibited
+  productToxicThreshold: number; // g/L — product IC₅₀
   // Metabolic burden
-  maxBurdenTolerance: number;   // Max protein expression before lethality (0–1)
+  maxBurdenTolerance: number; // Max protein expression before lethality (0–1)
 }
 
 export const DEFAULT_PARAMS: BioreactorParams = {
-  muMax: 0.4,       // h⁻¹ — Varma & Palsson 1994, Appl Environ Microbiol 60:3724
-  Ks: 0.15,         // g/L — Lendenmann et al. 1996, Biotechnol Bioeng 50:273 (Ks ~0.02-0.5 g/L for E. coli/glucose)
-  Ko: 0.2,          // mg/L — Varma & Palsson 1994
-  Yxs: 0.45,        // g/g — Varma & Palsson 1994
-  Yps: 0.38,        // g/g — Heuristic: artemisinic acid theoretical yield from glucose (pathway-dependent)
-  kLa: 0.015,       // h⁻¹ — Tuned for simulation scale; lab bioreactors typically 50-400 h⁻¹
-                     // Garcia-Ochoa & Gomez 2009, Biotechnol Adv 27:153
-  OstarSat: 8,      // mg/L — Dissolved O₂ saturation at 30°C, 1 atm
-                     // Standard DO tables (7.5-8.5 mg/L at 25-30°C)
-  feedConc: 400,    // g/L — Glucose feed; Korz et al. 1995, J Biotechnol 39:59 (typical 400-500 g/L)
-  feedRate: 0.02,   // L/h — Fed-batch feed rate (protocol-specific)
-  kFPP: 12.0,       // μM/h per g/L — Heuristic: mevalonate pathway flux
-                     // Korman et al. 2014, Metab Eng 24:150; Pitera et al. 2007, Metab Eng 9:160
-  kADS: 0.08,       // g/L/h/a.u. — Heuristic: ADS catalytic rate
-                     // Paddon et al. 2013, Nature 496:528; Martin et al. 2003, Nat Biotechnol 21:796
-  fppDegradation: 0.15,  // h⁻¹ — Heuristic: FPP enzymatic/chemical degradation
+  muMax: 0.4, // h⁻¹ — Varma & Palsson 1994, Appl Environ Microbiol 60:3724
+  Ks: 0.15, // g/L — Lendenmann et al. 1996, Biotechnol Bioeng 50:273 (Ks ~0.02-0.5 g/L for E. coli/glucose)
+  Ko: 0.2, // mg/L — Varma & Palsson 1994
+  Yxs: 0.45, // g/g — Varma & Palsson 1994
+  Yps: 0.38, // g/g — Heuristic: artemisinic acid theoretical yield from glucose (pathway-dependent)
+  kLa: 0.015, // h⁻¹ — Tuned for simulation scale; lab bioreactors typically 50-400 h⁻¹
+  // Garcia-Ochoa & Gomez 2009, Biotechnol Adv 27:153
+  OstarSat: 8, // mg/L — Dissolved O₂ saturation at 30°C, 1 atm
+  // Standard DO tables (7.5-8.5 mg/L at 25-30°C)
+  feedConc: 400, // g/L — Glucose feed; Korz et al. 1995, J Biotechnol 39:59 (typical 400-500 g/L)
+  feedRate: 0.02, // L/h — Fed-batch feed rate (protocol-specific)
+  kFPP: 12.0, // μM/h per g/L — Heuristic: mevalonate pathway flux
+  // Korman et al. 2014, Metab Eng 24:150; Pitera et al. 2007, Metab Eng 9:160
+  kADS: 0.08, // g/L/h/a.u. — Heuristic: ADS catalytic rate
+  // Paddon et al. 2013, Nature 496:528; Martin et al. 2003, Nat Biotechnol 21:796
+  fppDegradation: 0.15, // h⁻¹ — Heuristic: FPP enzymatic/chemical degradation
   fppToxicThreshold: 120, // μM — Martin et al. 2003; Pitera et al. 2007 (growth inhibition ~100-200 μM FPP)
   productToxicThreshold: 25, // g/L — Heuristic: product IC₅₀ (pathway-specific)
   maxBurdenTolerance: 0.6, // Heuristic: max metabolic burden before lethality
-                            // Bentley et al. 1990, Biotechnol Bioeng 35:668; Glick 1995, Biotechnol Adv 13:247
+  // Bentley et al. 1990, Biotechnol Bioeng 35:668; Glick 1995, Biotechnol Adv 13:247
 };
 
 // ── Tunable simulation constants — exported for Advanced panel overrides ─────
@@ -101,14 +103,17 @@ export const O2_CONSUMPTION_COEFF = 1.5;
 export function hillFeedback(fpp: number, hill: HillParams): number {
   const { Vmax, Kd, n } = hill;
   if (fpp <= 0) return Vmax;
-  return Vmax * (Kd ** n) / (Kd ** n + fpp ** n);
+  return (Vmax * Kd ** n) / (Kd ** n + fpp ** n);
 }
 
 // ── Monod growth with toxicity + metabolic burden ────────────────────────────
 function monodRate(
-  S: number, O: number,
-  fpp: number, product: number,
-  adsExpr: number, p: BioreactorParams,
+  S: number,
+  O: number,
+  fpp: number,
+  product: number,
+  adsExpr: number,
+  p: BioreactorParams,
   burdenPenaltyCoeff = 0.4,
 ): { mu: number; toxicity: number; burden: number } {
   const muO = O > 0 ? O / (p.Ko + O) : 0;
@@ -131,7 +136,15 @@ function monodRate(
 }
 
 // ── RK4 ODE derivatives ──────────────────────────────────────────────────────
-interface State { X: number; S: number; P: number; O: number; FPP: number; ADS: number; V: number; }
+interface State {
+  X: number;
+  S: number;
+  P: number;
+  O: number;
+  FPP: number;
+  ADS: number;
+  V: number;
+}
 
 export interface DynConOverrides {
   spontaneousLossRate?: number;
@@ -140,8 +153,10 @@ export interface DynConOverrides {
 }
 
 function derivatives(
-  s: State, airflowScale: number,
-  p: BioreactorParams, hill: HillParams,
+  s: State,
+  airflowScale: number,
+  p: BioreactorParams,
+  hill: HillParams,
   overrides?: DynConOverrides,
 ): State {
   const spontaneousLossRate = overrides?.spontaneousLossRate ?? SPONTANEOUS_LOSS_RATE;
@@ -158,7 +173,7 @@ function derivatives(
   // Biomass with dilution: growth minus washout
   const dX = mu * s.X - dilution * s.X;
   // Substrate: consumption for growth, replenished by feed with volume correction
-  const dS = p.feedRate * (p.feedConc - s.S) / s.V - dX / p.Yxs;
+  const dS = (p.feedRate * (p.feedConc - s.S)) / s.V - dX / p.Yxs;
   // FPP intermediate: produced proportional to biomass, consumed by ADS, diluted
   const dFPP = p.kFPP * s.X - s.ADS * s.FPP * p.fppDegradation - s.FPP * spontaneousLossRate - dilution * s.FPP;
   // ADS expression: Hill-function feedback from FPP
@@ -218,9 +233,7 @@ export function runBioreactor(
       const e = controller.setpoint - measurement;
       // Derivative acts on -dMeasurement/dt (negative sign for correct direction)
       const derivative = -(measurement - prevMeasurement) / dt;
-      return Math.max(0, Math.min(3,
-        1 + controller.kp * e + controller.ki * integral + controller.kd * derivative
-      ));
+      return Math.max(0, Math.min(3, 1 + controller.kp * e + controller.ki * integral + controller.kd * derivative));
     };
 
     // RK4 integration with PID recomputed at each sub-step
@@ -239,17 +252,28 @@ export function runBioreactor(
     integral = Math.max(-5, Math.min(5, integral)); // Anti-windup
     prevMeasurement = currentMeasurement;
 
-    state = clampState({
-      X:   state.X   + (dt / 6) * (k1.X   + 2 * k2.X   + 2 * k3.X   + k4.X),
-      S:   state.S   + (dt / 6) * (k1.S   + 2 * k2.S   + 2 * k3.S   + k4.S),
-      P:   state.P   + (dt / 6) * (k1.P   + 2 * k2.P   + 2 * k3.P   + k4.P),
-      O:   state.O   + (dt / 6) * (k1.O   + 2 * k2.O   + 2 * k3.O   + k4.O),
-      FPP: state.FPP + (dt / 6) * (k1.FPP + 2 * k2.FPP + 2 * k3.FPP + k4.FPP),
-      ADS: state.ADS + (dt / 6) * (k1.ADS + 2 * k2.ADS + 2 * k3.ADS + k4.ADS),
-      V:   state.V   + (dt / 6) * (k1.V   + 2 * k2.V   + 2 * k3.V   + k4.V),
-    }, params);
+    state = clampState(
+      {
+        X: state.X + (dt / 6) * (k1.X + 2 * k2.X + 2 * k3.X + k4.X),
+        S: state.S + (dt / 6) * (k1.S + 2 * k2.S + 2 * k3.S + k4.S),
+        P: state.P + (dt / 6) * (k1.P + 2 * k2.P + 2 * k3.P + k4.P),
+        O: state.O + (dt / 6) * (k1.O + 2 * k2.O + 2 * k3.O + k4.O),
+        FPP: state.FPP + (dt / 6) * (k1.FPP + 2 * k2.FPP + 2 * k3.FPP + k4.FPP),
+        ADS: state.ADS + (dt / 6) * (k1.ADS + 2 * k2.ADS + 2 * k3.ADS + k4.ADS),
+        V: state.V + (dt / 6) * (k1.V + 2 * k2.V + 2 * k3.V + k4.V),
+      },
+      params,
+    );
 
-    const { toxicity, burden } = monodRate(state.S, state.O, state.FPP, state.P, state.ADS, params, overrides?.burdenPenalty ?? 0.4);
+    const { toxicity, burden } = monodRate(
+      state.S,
+      state.O,
+      state.FPP,
+      state.P,
+      state.ADS,
+      params,
+      overrides?.burdenPenalty ?? 0.4,
+    );
 
     states.push({
       time: (i + 1) * dt,
@@ -268,16 +292,20 @@ export function runBioreactor(
 }
 
 // ── Convergence Rate Analysis ────────────────────────────────────────────────
-export function analyzeConvergence(
-  trajectory: ODEState[],
-  setpoint: number,
-): ConvergenceMetrics {
+export function analyzeConvergence(trajectory: ODEState[], setpoint: number): ConvergenceMetrics {
   if (trajectory.length < 5) {
-    return { settlingTime: Infinity, overshoot: 0, steadyStateError: 0, convergenceRate: 0, oscillationCount: 0, isStable: false };
+    return {
+      settlingTime: Infinity,
+      overshoot: 0,
+      steadyStateError: 0,
+      convergenceRate: 0,
+      oscillationCount: 0,
+      isStable: false,
+    };
   }
 
-  const doValues = trajectory.map(t => t.dissolvedO2);
-  const errors = doValues.map(v => v - setpoint);
+  const doValues = trajectory.map((t) => t.dissolvedO2);
+  const errors = doValues.map((v) => v - setpoint);
 
   // Settling time: first time |error| stays below 5% of setpoint permanently
   let settlingTime = trajectory[trajectory.length - 1].time;
@@ -291,25 +319,24 @@ export function analyzeConvergence(
 
   // Overshoot
   const maxDO = Math.max(...doValues);
-  const overshoot = maxDO > setpoint
-    ? ((maxDO - setpoint) / setpoint) * 100
-    : 0;
+  const overshoot = maxDO > setpoint ? ((maxDO - setpoint) / setpoint) * 100 : 0;
 
   // Steady-state error (average of last 10%)
   const tail = errors.slice(-Math.max(5, Math.floor(errors.length * 0.1)));
   const steadyStateError = Math.abs(tail.reduce((a, b) => a + b, 0) / tail.length);
 
   // Convergence rate: exponential fit on |error| envelope
-  const absErrors = errors.map(Math.abs).filter(e => e > 0.001);
+  const absErrors = errors.map(Math.abs).filter((e) => e > 0.001);
   let convergenceRate = 0;
   if (absErrors.length > 10) {
-    const logErrors = absErrors.slice(0, Math.floor(absErrors.length * 0.5)).map(e => Math.log(e + 1e-10));
+    const logErrors = absErrors.slice(0, Math.floor(absErrors.length * 0.5)).map((e) => Math.log(e + 1e-10));
     const n = logErrors.length;
     const dt = trajectory[1].time - trajectory[0].time;
     // Linear regression on log(|error|) vs time
-    const xMean = (n - 1) * dt / 2;
+    const xMean = ((n - 1) * dt) / 2;
     const yMean = logErrors.reduce((a, b) => a + b, 0) / n;
-    let num = 0, den = 0;
+    let num = 0,
+      den = 0;
     for (let i = 0; i < n; i++) {
       const x = i * dt - xMean;
       num += x * (logErrors[i] - yMean);
@@ -342,12 +369,12 @@ export function analyzeMetabolicBurden(
   params: BioreactorParams = DEFAULT_PARAMS,
 ): MetabolicBurdenResult {
   if (trajectory.length === 0) {
-    return { burdenIndex: 0, proteinCost: 0, atpDrain: 0, growthPenalty: 0, isViable: true, recommendation: 'No data' };
+    return { burdenIndex: 0, proteinCost: 0, atpDrain: 0, growthPenalty: 0, isViable: true, recommendation: "No data" };
   }
 
   const avgADS = trajectory.reduce((s, t) => s + (t.adsExpression ?? 0), 0) / trajectory.length;
   const avgBurden = trajectory.reduce((s, t) => s + (t.metabolicBurden ?? 0), 0) / trajectory.length;
-  const maxToxicity = Math.max(...trajectory.map(t => t.toxicity ?? 0));
+  const maxToxicity = Math.max(...trajectory.map((t) => t.toxicity ?? 0));
 
   // Protein cost factor = 0.15 — Russell & Cook 1995, Microbiol Rev 59:126
   // ATP cost of protein synthesis: fraction of ribosome budget for heterologous expression
@@ -365,13 +392,15 @@ export function analyzeMetabolicBurden(
 
   let recommendation: string;
   if (burdenIndex < 0.2) {
-    recommendation = 'Low burden — circuit is well-tolerated. Consider increasing expression for higher titer.';
+    recommendation = "Low burden — circuit is well-tolerated. Consider increasing expression for higher titer.";
   } else if (burdenIndex < 0.4) {
-    recommendation = 'Moderate burden — acceptable for production strains. Monitor growth rate in scale-up.';
+    recommendation = "Moderate burden — acceptable for production strains. Monitor growth rate in scale-up.";
   } else if (burdenIndex < 0.6) {
-    recommendation = 'High burden — consider dynamic regulation (e.g., two-stage fermentation) to decouple growth and production.';
+    recommendation =
+      "High burden — consider dynamic regulation (e.g., two-stage fermentation) to decouple growth and production.";
   } else {
-    recommendation = 'Critical burden — host cell viability compromised. Reduce circuit complexity or use chassis with higher metabolic capacity.';
+    recommendation =
+      "Critical burden — host cell viability compromised. Reduce circuit complexity or use chassis with higher metabolic capacity.";
   }
 
   return {
@@ -388,25 +417,100 @@ export function analyzeMetabolicBurden(
 // Maps normalized PID control gain to RBS parts from the iGEM Registry.
 // RBS strengths are relative translation initiation rates from Salis Lab RBS Calculator.
 const RBS_REGISTRY: RBSMapping[] = [
-  { controlGain: 0.0, rbsName: 'B0030',  rbsStrength: 0.07, translationRate: 0.07, sequence: 'ATTAAAGAGGAGAAATACTAG', registryId: 'BBa_B0030' },
-  { controlGain: 0.1, rbsName: 'B0031',  rbsStrength: 0.12, translationRate: 0.12, sequence: 'TCACACAGGAAACCTACTAG',  registryId: 'BBa_B0031' },
-  { controlGain: 0.2, rbsName: 'B0032',  rbsStrength: 0.30, translationRate: 0.30, sequence: 'TCACACAGGAAAG',          registryId: 'BBa_B0032' },
-  { controlGain: 0.3, rbsName: 'B0033',  rbsStrength: 0.01, translationRate: 0.01, sequence: 'TCACACAGGACT',           registryId: 'BBa_B0033' },
-  { controlGain: 0.4, rbsName: 'B0034',  rbsStrength: 1.00, translationRate: 1.00, sequence: 'AAAGAGGAGAAATACTAG',     registryId: 'BBa_B0034' },
-  { controlGain: 0.5, rbsName: 'B0035',  rbsStrength: 0.50, translationRate: 0.50, sequence: 'AATTCATTAAAGAGGAGAAAGGTACC', registryId: 'BBa_B0035' },
-  { controlGain: 0.6, rbsName: 'J61100', rbsStrength: 0.20, translationRate: 0.20, sequence: 'AAAGACAGGACCCTACTAG',    registryId: 'BBa_J61100' },
-  { controlGain: 0.7, rbsName: 'J61101', rbsStrength: 0.40, translationRate: 0.40, sequence: 'AAAGAGAAGACCCTACTAG',    registryId: 'BBa_J61101' },
-  { controlGain: 0.8, rbsName: 'J61104', rbsStrength: 0.60, translationRate: 0.60, sequence: 'AAAGAGGAGAAACCTACTAG',   registryId: 'BBa_J61104' },
-  { controlGain: 0.9, rbsName: 'J61106', rbsStrength: 0.80, translationRate: 0.80, sequence: 'AAAGAGGAGAAATACTAAG',    registryId: 'BBa_J61106' },
-  { controlGain: 1.0, rbsName: 'J61107', rbsStrength: 0.90, translationRate: 0.90, sequence: 'AAAGAGGAGAAATAACAATG',   registryId: 'BBa_J61107' },
+  {
+    controlGain: 0.0,
+    rbsName: "B0030",
+    rbsStrength: 0.07,
+    translationRate: 0.07,
+    sequence: "ATTAAAGAGGAGAAATACTAG",
+    registryId: "BBa_B0030",
+  },
+  {
+    controlGain: 0.1,
+    rbsName: "B0031",
+    rbsStrength: 0.12,
+    translationRate: 0.12,
+    sequence: "TCACACAGGAAACCTACTAG",
+    registryId: "BBa_B0031",
+  },
+  {
+    controlGain: 0.2,
+    rbsName: "B0032",
+    rbsStrength: 0.3,
+    translationRate: 0.3,
+    sequence: "TCACACAGGAAAG",
+    registryId: "BBa_B0032",
+  },
+  {
+    controlGain: 0.3,
+    rbsName: "B0033",
+    rbsStrength: 0.01,
+    translationRate: 0.01,
+    sequence: "TCACACAGGACT",
+    registryId: "BBa_B0033",
+  },
+  {
+    controlGain: 0.4,
+    rbsName: "B0034",
+    rbsStrength: 1.0,
+    translationRate: 1.0,
+    sequence: "AAAGAGGAGAAATACTAG",
+    registryId: "BBa_B0034",
+  },
+  {
+    controlGain: 0.5,
+    rbsName: "B0035",
+    rbsStrength: 0.5,
+    translationRate: 0.5,
+    sequence: "AATTCATTAAAGAGGAGAAAGGTACC",
+    registryId: "BBa_B0035",
+  },
+  {
+    controlGain: 0.6,
+    rbsName: "J61100",
+    rbsStrength: 0.2,
+    translationRate: 0.2,
+    sequence: "AAAGACAGGACCCTACTAG",
+    registryId: "BBa_J61100",
+  },
+  {
+    controlGain: 0.7,
+    rbsName: "J61101",
+    rbsStrength: 0.4,
+    translationRate: 0.4,
+    sequence: "AAAGAGAAGACCCTACTAG",
+    registryId: "BBa_J61101",
+  },
+  {
+    controlGain: 0.8,
+    rbsName: "J61104",
+    rbsStrength: 0.6,
+    translationRate: 0.6,
+    sequence: "AAAGAGGAGAAACCTACTAG",
+    registryId: "BBa_J61104",
+  },
+  {
+    controlGain: 0.9,
+    rbsName: "J61106",
+    rbsStrength: 0.8,
+    translationRate: 0.8,
+    sequence: "AAAGAGGAGAAATACTAAG",
+    registryId: "BBa_J61106",
+  },
+  {
+    controlGain: 1.0,
+    rbsName: "J61107",
+    rbsStrength: 0.9,
+    translationRate: 0.9,
+    sequence: "AAAGAGGAGAAATAACAATG",
+    registryId: "BBa_J61107",
+  },
 ];
 
 // Sort by ascending rbsStrength for monotonic mapping
 const RBS_REGISTRY_SORTED = [...RBS_REGISTRY].sort((a, b) => a.rbsStrength - b.rbsStrength);
 
-export function mapControlGainToRBS(
-  kp: number, ki: number, kd: number,
-): RBSMapping {
+export function mapControlGainToRBS(kp: number, ki: number, kd: number): RBSMapping {
   const combinedGain = (kp / 10) * 0.5 + (ki / 5) * 0.3 + (kd / 2) * 0.2;
   const t = Math.max(0, Math.min(1, combinedGain));
 
@@ -427,7 +531,10 @@ export function mapControlGainToRBS(
   let minDist = Infinity;
   for (const entry of sorted) {
     const dist = Math.abs(entry.rbsStrength - targetStrength);
-    if (dist < minDist) { minDist = dist; closest = entry; }
+    if (dist < minDist) {
+      minDist = dist;
+      closest = entry;
+    }
   }
   // Overwrite controlGain with the actual computed gain (original registry index is meaningless after sort)
   return { ...closest, controlGain: t };

@@ -12,8 +12,8 @@
  * Reference: Tuerk & Gold (1990) Science 249:505 (SELEX)
  */
 
-export type RNADesignType = 'ribozyme' | 'aptamer' | 'toehold' | 'sirna' | 'shrna';
-export type RibozymeType = 'hammerhead' | 'hairpin' | 'hdv' | 'glmS';
+export type RNADesignType = "ribozyme" | "aptamer" | "toehold" | "sirna" | "shrna";
+export type RibozymeType = "hammerhead" | "hairpin" | "hdv" | "glmS";
 
 export interface RNADesignInput {
   /** Design type */
@@ -23,7 +23,7 @@ export interface RNADesignInput {
   /** Ribozyme type (if type=ribozyme) */
   ribozymeType?: RibozymeType;
   /** Target organism */
-  host: 'ecoli' | 'yeast' | 'human';
+  host: "ecoli" | "yeast" | "human";
   /** Length constraint */
   maxLength?: number;
 }
@@ -44,7 +44,7 @@ export interface RNADesignResult {
   /** Evidence sources */
   evidence: Array<{
     source: string;
-    type: 'literature' | 'database' | 'predicted';
+    type: "literature" | "database" | "predicted";
     title: string;
   }>;
   /** Design notes */

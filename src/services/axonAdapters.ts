@@ -19,7 +19,7 @@
  * Adding a new tool: implement an `AxonAdapter`, add it to the union in
  * AxonOrchestrator, and register it in `buildDefaultAdapters`.
  */
-import type { AxonAdapter, AxonAdapterMap } from './AxonOrchestrator';
+import type { AxonAdapter, AxonAdapterMap } from "./AxonOrchestrator";
 
 // ── PATHD ────────────────────────────────────────────────────────────
 
@@ -38,72 +38,69 @@ export interface PathdAdapterResult {
   parseError: { code: string; message: string } | null;
 }
 
-export const pathdAdapter: AxonAdapter<PathdAdapterInput, PathdAdapterResult> =
-  async (input, ctx) => {
-    if (!input || typeof input.targetProduct !== 'string' || !input.targetProduct.trim()) {
-      throw new Error('PATHD adapter requires a non-empty targetProduct');
+export const pathdAdapter: AxonAdapter<PathdAdapterInput, PathdAdapterResult> = async (input, ctx) => {
+  if (!input || typeof input.targetProduct !== "string" || !input.targetProduct.trim()) {
+    throw new Error("PATHD adapter requires a non-empty targetProduct");
+  }
+
+  const res = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ searchQuery: input.targetProduct.trim() }),
+    signal: ctx.signal,
+  });
+
+  const data = await res.json().catch(() => {
+    console.warn(`[Axon] Failed to parse JSON response (status ${res.status})`);
+    return {};
+  });
+  if (!res.ok) {
+    throw new Error(typeof data?.error === "string" ? data.error : `PATHD backend returned HTTP ${res.status}`);
+  }
+
+  const rawText: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) {
+    throw new Error("PATHD backend returned no candidate text");
+  }
+
+  const meta = (data?.meta ?? {}) as Record<string, unknown>;
+  const parseErrorRaw = meta.parseError as { code?: unknown; message?: unknown } | undefined;
+
+  let nodeCount = 0;
+  let bottleneckCount = 0;
+  try {
+    const parsed = JSON.parse(rawText);
+    if (Array.isArray(parsed?.nodes)) nodeCount = parsed.nodes.length;
+    if (Array.isArray(parsed?.bottleneck_enzymes)) {
+      bottleneckCount = parsed.bottleneck_enzymes.length;
     }
+  } catch {
+    // prose or malformed — nodeCount stays 0; parseError is still surfaced
+    console.debug("[axonAdapters] Failed to parse structured analysis JSON, falling back to prose");
+  }
 
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ searchQuery: input.targetProduct.trim() }),
-      signal: ctx.signal,
-    });
-
-    const data = await res.json().catch(() => {
-      console.warn(`[Axon] Failed to parse JSON response (status ${res.status})`);
-      return {};
-    });
-    if (!res.ok) {
-      throw new Error(
-        typeof data?.error === 'string'
-          ? data.error
-          : `PATHD backend returned HTTP ${res.status}`,
-      );
-    }
-
-    const rawText: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) {
-      throw new Error('PATHD backend returned no candidate text');
-    }
-
-    const meta = (data?.meta ?? {}) as Record<string, unknown>;
-    const parseErrorRaw = meta.parseError as { code?: unknown; message?: unknown } | undefined;
-
-    let nodeCount = 0;
-    let bottleneckCount = 0;
-    try {
-      const parsed = JSON.parse(rawText);
-      if (Array.isArray(parsed?.nodes)) nodeCount = parsed.nodes.length;
-      if (Array.isArray(parsed?.bottleneck_enzymes)) {
-        bottleneckCount = parsed.bottleneck_enzymes.length;
-      }
-    } catch {
-      // prose or malformed — nodeCount stays 0; parseError is still surfaced
-      console.debug('[axonAdapters] Failed to parse structured analysis JSON, falling back to prose');
-    }
-
-    return {
-      provider: typeof meta.provider === 'string' ? meta.provider : 'unknown',
-      rawText,
-      nodeCount,
-      bottleneckCount,
-      parseError: parseErrorRaw && typeof parseErrorRaw.code === 'string'
+  return {
+    provider: typeof meta.provider === "string" ? meta.provider : "unknown",
+    rawText,
+    nodeCount,
+    bottleneckCount,
+    parseError:
+      parseErrorRaw && typeof parseErrorRaw.code === "string"
         ? {
             code: parseErrorRaw.code,
-            message: typeof parseErrorRaw.message === 'string'
-              ? parseErrorRaw.message
-              : 'Parse error reported without message',
+            message:
+              typeof parseErrorRaw.message === "string"
+                ? parseErrorRaw.message
+                : "Parse error reported without message",
           }
         : null,
-    };
   };
+};
 
 // ── FBASIM ───────────────────────────────────────────────────────────
 
-export type FbasimSpecies = 'ecoli' | 'yeast';
-export type FbasimObjective = 'biomass' | 'atp' | 'product';
+export type FbasimSpecies = "ecoli" | "yeast";
+export type FbasimObjective = "biomass" | "atp" | "product";
 
 export interface FbasimAdapterInput {
   species?: FbasimSpecies;
@@ -121,45 +118,40 @@ export interface FbasimAdapterResult {
   raw: unknown;
 }
 
-export const fbasimAdapter: AxonAdapter<FbasimAdapterInput, FbasimAdapterResult> =
-  async (input, ctx) => {
-    const payload: Record<string, unknown> = {
-      species: input?.species ?? 'ecoli',
-      objective: input?.objective ?? 'biomass',
-      glucoseUptake: typeof input?.glucoseUptake === 'number' ? input.glucoseUptake : 10,
-      oxygenUptake: typeof input?.oxygenUptake === 'number' ? input.oxygenUptake : 12,
-      knockouts: Array.isArray(input?.knockouts) ? input.knockouts : [],
-    };
-
-    const res = await fetch('/api/fba', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: ctx.signal,
-    });
-
-    const data = await res.json().catch(() => {
-      console.warn(`[Axon] Failed to parse JSON response (status ${res.status})`);
-      return {};
-    });
-    if (!res.ok || !data?.ok) {
-      throw new Error(
-        typeof data?.error === 'string'
-          ? data.error
-          : `FBASIM backend returned HTTP ${res.status}`,
-      );
-    }
-
-    const result = data.result ?? {};
-    const fluxes = Array.isArray(result?.fluxes) ? result.fluxes : [];
-    return {
-      species: payload.species as FbasimSpecies,
-      objective: payload.objective as FbasimObjective,
-      objectiveValue: typeof result?.objectiveValue === 'number' ? result.objectiveValue : 0,
-      fluxCount: fluxes.length,
-      raw: result,
-    };
+export const fbasimAdapter: AxonAdapter<FbasimAdapterInput, FbasimAdapterResult> = async (input, ctx) => {
+  const payload: Record<string, unknown> = {
+    species: input?.species ?? "ecoli",
+    objective: input?.objective ?? "biomass",
+    glucoseUptake: typeof input?.glucoseUptake === "number" ? input.glucoseUptake : 10,
+    oxygenUptake: typeof input?.oxygenUptake === "number" ? input.oxygenUptake : 12,
+    knockouts: Array.isArray(input?.knockouts) ? input.knockouts : [],
   };
+
+  const res = await fetch("/api/fba", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: ctx.signal,
+  });
+
+  const data = await res.json().catch(() => {
+    console.warn(`[Axon] Failed to parse JSON response (status ${res.status})`);
+    return {};
+  });
+  if (!res.ok || !data?.ok) {
+    throw new Error(typeof data?.error === "string" ? data.error : `FBASIM backend returned HTTP ${res.status}`);
+  }
+
+  const result = data.result ?? {};
+  const fluxes = Array.isArray(result?.fluxes) ? result.fluxes : [];
+  return {
+    species: payload.species as FbasimSpecies,
+    objective: payload.objective as FbasimObjective,
+    objectiveValue: typeof result?.objectiveValue === "number" ? result.objectiveValue : 0,
+    fluxCount: fluxes.length,
+    raw: result,
+  };
+};
 
 // ── Adapter registry ─────────────────────────────────────────────────
 
@@ -182,8 +174,6 @@ export function buildDefaultAdapters(): AxonAdapterMap {
  */
 export function buildUnsupportedAdapter(toolName: string): AxonAdapter {
   return async () => {
-    throw new Error(
-      `Tool "${toolName}" has no execution adapter wired yet (deferred to PR-3).`,
-    );
+    throw new Error(`Tool "${toolName}" has no execution adapter wired yet (deferred to PR-3).`);
   };
 }

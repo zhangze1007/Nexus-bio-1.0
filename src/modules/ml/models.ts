@@ -15,7 +15,7 @@
  * Reference: Hastie et al. (2009) The Elements of Statistical Learning
  */
 
-import type { ModelType } from './types';
+import type { ModelType } from "./types";
 
 // ── Public Interface ────────────────────────────────────────────────────────
 
@@ -105,7 +105,7 @@ function identity(n: number): number[][] {
  * Scale a matrix by a scalar value.
  */
 function scaleMat(M: number[][], scalar: number): number[][] {
-  return M.map(row => row.map(v => v * scalar));
+  return M.map((row) => row.map((v) => v * scalar));
 }
 
 /**
@@ -161,7 +161,7 @@ function invertMatrix(M: number[][]): number[][] | null {
   }
 
   // Extract inverse from augmented matrix
-  return aug.map(row => row.slice(n));
+  return aug.map((row) => row.slice(n));
 }
 
 /**
@@ -171,11 +171,7 @@ function invertMatrix(M: number[][]): number[][] | null {
  * @param reg - Regularization matrix (n_features x n_features), or null for no regularization
  * @returns Weight vector or null if singular
  */
-function solveNormalEquation(
-  X: number[][],
-  y: number[],
-  reg: number[][] | null = null,
-): number[] | null {
+function solveNormalEquation(X: number[][], y: number[], reg: number[][] | null = null): number[] | null {
   const Xt = transpose(X);
   const XtX = matMul(Xt, X);
 
@@ -248,7 +244,7 @@ export class LinearRegression implements MLModel {
     const absWeights = featureWeights.map(Math.abs);
     const total = absWeights.reduce((s, v) => s + v, 0);
     if (total === 0) return absWeights.map(() => 0);
-    return absWeights.map(v => v / total);
+    return absWeights.map((v) => v / total);
   }
 
   /**
@@ -256,7 +252,7 @@ export class LinearRegression implements MLModel {
    */
   serialize(): string {
     return JSON.stringify({
-      type: 'linear' as const,
+      type: "linear" as const,
       weights: this.weights,
       nFeatures: this.nFeatures,
     });
@@ -341,7 +337,7 @@ export class RidgeRegression implements MLModel {
     const absWeights = featureWeights.map(Math.abs);
     const total = absWeights.reduce((s, v) => s + v, 0);
     if (total === 0) return absWeights.map(() => 0);
-    return absWeights.map(v => v / total);
+    return absWeights.map((v) => v / total);
   }
 
   /**
@@ -349,7 +345,7 @@ export class RidgeRegression implements MLModel {
    */
   serialize(): string {
     return JSON.stringify({
-      type: 'ridge' as const,
+      type: "ridge" as const,
       weights: this.weights,
       nFeatures: this.nFeatures,
       alpha: this.alpha,
@@ -452,7 +448,7 @@ export class LassoRegression implements MLModel {
           // Soft thresholding for L1 penalty
           if (colNormSq[j] > 0) {
             const z = rho / colNormSq[j];
-            const lambda = n * this.alpha / colNormSq[j];
+            const lambda = (n * this.alpha) / colNormSq[j];
             if (z > lambda) {
               w[j] = z - lambda;
             } else if (z < -lambda) {
@@ -490,7 +486,7 @@ export class LassoRegression implements MLModel {
     const absWeights = featureWeights.map(Math.abs);
     const total = absWeights.reduce((s, v) => s + v, 0);
     if (total === 0) return absWeights.map(() => 0);
-    return absWeights.map(v => v / total);
+    return absWeights.map((v) => v / total);
   }
 
   /**
@@ -498,7 +494,7 @@ export class LassoRegression implements MLModel {
    */
   serialize(): string {
     return JSON.stringify({
-      type: 'lasso' as const,
+      type: "lasso" as const,
       weights: this.weights,
       nFeatures: this.nFeatures,
       alpha: this.alpha,
@@ -593,9 +589,7 @@ export class DecisionTree implements MLModel {
 
     // Normalize feature importances
     const total = impurityTracker.reduce((s, v) => s + v, 0);
-    this.featureImportances = total > 0
-      ? impurityTracker.map(v => v / total)
-      : new Array(this.nFeatures).fill(0);
+    this.featureImportances = total > 0 ? impurityTracker.map((v) => v / total) : new Array(this.nFeatures).fill(0);
   }
 
   /**
@@ -603,7 +597,7 @@ export class DecisionTree implements MLModel {
    */
   predict(X: number[][]): number[] {
     if (!this.tree) return X.map(() => 0);
-    return X.map(x => this.predictSingle(x, this.tree!));
+    return X.map((x) => this.predictSingle(x, this.tree!));
   }
 
   /**
@@ -618,7 +612,7 @@ export class DecisionTree implements MLModel {
    */
   serialize(): string {
     return JSON.stringify({
-      type: 'decision_tree' as const,
+      type: "decision_tree" as const,
       tree: this.tree,
       nFeatures: this.nFeatures,
       maxDepth: this.maxDepth,
@@ -649,12 +643,7 @@ export class DecisionTree implements MLModel {
   /**
    * Build tree recursively.
    */
-  private buildTree(
-    X: number[][],
-    y: number[],
-    depth: number,
-    impurityTracker: number[],
-  ): TreeNode {
+  private buildTree(X: number[][], y: number[], depth: number, impurityTracker: number[]): TreeNode {
     const n = y.length;
 
     // Compute mean prediction
@@ -701,8 +690,8 @@ export class DecisionTree implements MLModel {
         }
 
         // Compute weighted MSE
-        const leftMSE = this.computeMSE(leftIdx.map(i => y[i]));
-        const rightMSE = this.computeMSE(rightIdx.map(i => y[i]));
+        const leftMSE = this.computeMSE(leftIdx.map((i) => y[i]));
+        const rightMSE = this.computeMSE(rightIdx.map((i) => y[i]));
         const weightedMSE = (leftIdx.length * leftMSE + rightIdx.length * rightMSE) / n;
 
         if (weightedMSE < bestMSE) {
@@ -725,10 +714,10 @@ export class DecisionTree implements MLModel {
     impurityTracker[bestFeature] += impurityReduction;
 
     // Recursively build children
-    const leftX = bestLeftIdx.map(i => X[i]);
-    const leftY = bestLeftIdx.map(i => y[i]);
-    const rightX = bestRightIdx.map(i => X[i]);
-    const rightY = bestRightIdx.map(i => y[i]);
+    const leftX = bestLeftIdx.map((i) => X[i]);
+    const leftY = bestLeftIdx.map((i) => y[i]);
+    const rightX = bestRightIdx.map((i) => X[i]);
+    const rightY = bestRightIdx.map((i) => y[i]);
 
     return {
       featureIndex: bestFeature,
@@ -768,7 +757,7 @@ export class DecisionTree implements MLModel {
   private isPure(y: number[]): boolean {
     if (y.length <= 1) return true;
     const first = y[0];
-    return y.every(v => Math.abs(v - first) < 1e-10);
+    return y.every((v) => Math.abs(v - first) < 1e-10);
   }
 }
 
@@ -834,9 +823,10 @@ export class RandomForest implements MLModel {
 
     const n = X.length;
     this.nFeatures = X[0].length;
-    const maxFeat = this.maxFeatures > 0
-      ? Math.min(this.maxFeatures, this.nFeatures)
-      : Math.max(1, Math.round(Math.sqrt(this.nFeatures)));
+    const maxFeat =
+      this.maxFeatures > 0
+        ? Math.min(this.maxFeatures, this.nFeatures)
+        : Math.max(1, Math.round(Math.sqrt(this.nFeatures)));
 
     this.forest = [];
     const aggImportances = new Array(this.nFeatures).fill(0);
@@ -849,14 +839,10 @@ export class RandomForest implements MLModel {
       const featureIndices = this.randomFeatureSubset(maxFeat);
 
       // Create subset of features
-      const subsetX = sampleX.map(row => featureIndices.map(j => row[j]));
+      const subsetX = sampleX.map((row) => featureIndices.map((j) => row[j]));
 
       // Train tree
-      const tree = new DecisionTree(
-        this.maxDepth,
-        this.minSamplesSplit,
-        this.minSamplesLeaf,
-      );
+      const tree = new DecisionTree(this.maxDepth, this.minSamplesSplit, this.minSamplesLeaf);
       tree.fit(subsetX, sampleY);
       this.forest.push({ tree, featureIndices });
 
@@ -869,9 +855,7 @@ export class RandomForest implements MLModel {
 
     // Normalize feature importances
     const total = aggImportances.reduce((s, v) => s + v, 0);
-    this.featureImportances = total > 0
-      ? aggImportances.map(v => v / total)
-      : new Array(this.nFeatures).fill(0);
+    this.featureImportances = total > 0 ? aggImportances.map((v) => v / total) : new Array(this.nFeatures).fill(0);
   }
 
   /**
@@ -879,10 +863,10 @@ export class RandomForest implements MLModel {
    */
   predict(X: number[][]): number[] {
     if (this.forest.length === 0) return X.map(() => 0);
-    return X.map(x => {
+    return X.map((x) => {
       let sum = 0;
       for (const entry of this.forest) {
-        const subset = entry.featureIndices.map(j => x[j]);
+        const subset = entry.featureIndices.map((j) => x[j]);
         const preds = entry.tree.predict([subset]);
         sum += preds[0];
       }
@@ -902,8 +886,8 @@ export class RandomForest implements MLModel {
    */
   serialize(): string {
     return JSON.stringify({
-      type: 'random_forest' as const,
-      forest: this.forest.map(entry => ({
+      type: "random_forest" as const,
+      forest: this.forest.map((entry) => ({
         treeData: JSON.parse(entry.tree.serialize()),
         featureIndices: entry.featureIndices,
       })),
@@ -939,7 +923,7 @@ export class RandomForest implements MLModel {
     );
     model.nFeatures = data.nFeatures;
     model.featureImportances = data.featureImportances;
-    model.forest = data.forest.map(entry => ({
+    model.forest = data.forest.map((entry) => ({
       tree: DecisionTree.hydrate(entry.treeData),
       featureIndices: entry.featureIndices,
     }));
@@ -987,7 +971,7 @@ export class RandomForest implements MLModel {
  * @returns Augmented matrix (n_samples x (n_features + 1))
  */
 function addBiasColumn(X: number[][]): number[][] {
-  return X.map(row => [1, ...row]);
+  return X.map((row) => [1, ...row]);
 }
 
 // ── Deserialization ─────────────────────────────────────────────────────────
@@ -1001,15 +985,15 @@ export function deserializeModel(data: string): MLModel {
   const parsed = JSON.parse(data);
 
   switch (parsed.type) {
-    case 'linear':
+    case "linear":
       return LinearRegression.hydrate(parsed);
-    case 'ridge':
+    case "ridge":
       return RidgeRegression.hydrate(parsed);
-    case 'lasso':
+    case "lasso":
       return LassoRegression.hydrate(parsed);
-    case 'decision_tree':
+    case "decision_tree":
       return DecisionTree.hydrate(parsed);
-    case 'random_forest':
+    case "random_forest":
       return RandomForest.hydrate(parsed);
     default:
       throw new Error(`Unknown model type: ${parsed.type}`);
@@ -1026,31 +1010,29 @@ export function deserializeModel(data: string): MLModel {
  */
 export function createModel(type: ModelType, params?: Record<string, unknown>): MLModel {
   switch (type) {
-    case 'linear':
+    case "linear":
       return new LinearRegression();
-    case 'ridge':
-      return new RidgeRegression(
-        typeof params?.alpha === 'number' ? params.alpha : 1.0,
-      );
-    case 'lasso':
+    case "ridge":
+      return new RidgeRegression(typeof params?.alpha === "number" ? params.alpha : 1.0);
+    case "lasso":
       return new LassoRegression(
-        typeof params?.alpha === 'number' ? params.alpha : 0.1,
-        typeof params?.maxIter === 'number' ? params.maxIter : 1000,
-        typeof params?.tol === 'number' ? params.tol : 1e-4,
+        typeof params?.alpha === "number" ? params.alpha : 0.1,
+        typeof params?.maxIter === "number" ? params.maxIter : 1000,
+        typeof params?.tol === "number" ? params.tol : 1e-4,
       );
-    case 'decision_tree':
+    case "decision_tree":
       return new DecisionTree(
-        typeof params?.maxDepth === 'number' ? params.maxDepth : 10,
-        typeof params?.minSamplesSplit === 'number' ? params.minSamplesSplit : 2,
-        typeof params?.minSamplesLeaf === 'number' ? params.minSamplesLeaf : 1,
+        typeof params?.maxDepth === "number" ? params.maxDepth : 10,
+        typeof params?.minSamplesSplit === "number" ? params.minSamplesSplit : 2,
+        typeof params?.minSamplesLeaf === "number" ? params.minSamplesLeaf : 1,
       );
-    case 'random_forest':
+    case "random_forest":
       return new RandomForest(
-        typeof params?.nEstimators === 'number' ? params.nEstimators : 10,
-        typeof params?.maxFeatures === 'number' ? params.maxFeatures : 0,
-        typeof params?.maxDepth === 'number' ? params.maxDepth : 10,
-        typeof params?.minSamplesSplit === 'number' ? params.minSamplesSplit : 2,
-        typeof params?.minSamplesLeaf === 'number' ? params.minSamplesLeaf : 1,
+        typeof params?.nEstimators === "number" ? params.nEstimators : 10,
+        typeof params?.maxFeatures === "number" ? params.maxFeatures : 0,
+        typeof params?.maxDepth === "number" ? params.maxDepth : 10,
+        typeof params?.minSamplesSplit === "number" ? params.minSamplesSplit : 2,
+        typeof params?.minSamplesLeaf === "number" ? params.minSamplesLeaf : 1,
       );
     default:
       throw new Error(`Unknown model type: ${type}`);

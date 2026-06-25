@@ -1,5 +1,5 @@
-'use client';
-import { THEME } from '../../../theme';
+"use client";
+import { THEME } from "../../../theme";
 
 const MONO = THEME.MONO;
 const SANS = THEME.SANS;
@@ -15,41 +15,61 @@ export default function AlgorithmInsight({ title, description, formula }: Algori
     <div
       className="nb-algorithm-insight"
       style={{
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        padding: '8px 14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        background: 'rgba(255,255,255,0.025)',
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        padding: "8px 14px",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        background: "rgba(255,255,255,0.025)",
         flexShrink: 0,
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1px', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)' }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "1px", flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontFamily: SANS,
+              fontSize: "10px",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "rgba(255,255,255,0.4)",
+            }}
+          >
             Algorithm Insight
           </span>
-          <span style={{ fontFamily: SANS, fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.01em' }}>
+          <span
+            style={{
+              fontFamily: SANS,
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.85)",
+              letterSpacing: "-0.01em",
+            }}
+          >
             {title}
           </span>
         </div>
-        <p style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.45 }}>
+        <p style={{ fontFamily: SANS, fontSize: "10px", color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.45 }}>
           {description}
         </p>
       </div>
       {formula && (
-        <div style={{
-          fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.65)',
-          padding: '4px 10px',
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '8px',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          maxWidth: 'min(42vw, 340px)',
-          flexShrink: 0,
-        }}>
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: "10px",
+            color: "rgba(255,255,255,0.65)",
+            padding: "4px 10px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "8px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            maxWidth: "min(42vw, 340px)",
+            flexShrink: 0,
+          }}
+        >
           {formula}
         </div>
       )}

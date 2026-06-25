@@ -22,10 +22,10 @@
  *     - Genome reduction metric is gene count fraction, not actual base-pair reduction
  */
 
-import { solveAuthorityFBA, type FBASpecies, type FBAObjective } from './fbaEngine';
-import type { FBAOutput } from '../data/mockFBA';
-import { getKnockoutReactions } from './fbaGPR';
-import { IJO1366_REACTIONS } from '../data/iJO1366Subset';
+import { IJO1366_REACTIONS } from "../data/iJO1366Subset";
+import type { FBAOutput } from "../data/mockFBA";
+import { type FBAObjective, type FBASpecies, solveAuthorityFBA } from "./fbaEngine";
+import { getKnockoutReactions } from "./fbaGPR";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -34,13 +34,13 @@ export interface MinimizationSpec {
   objective: FBAObjective;
   glucoseUptake: number;
   oxygenUptake: number;
-  targetGenomeReduction: number;  // fraction (0-1)
-  minGrowthFraction: number;      // min growth as fraction of wild-type
+  targetGenomeReduction: number; // fraction (0-1)
+  minGrowthFraction: number; // min growth as fraction of wild-type
 }
 
 export interface KnockdownPlan {
   genes: string[];
-  knockdownLevel: number;  // 0 = full knockout, 0.5 = 50% reduction
+  knockdownLevel: number; // 0 = full knockout, 0.5 = 50% reduction
   description: string;
 }
 
@@ -60,9 +60,7 @@ export interface MinimizationResult {
 /**
  * Identify essential genes and propose knockdown schedules.
  */
-function planKnockdowns(
-  spec: MinimizationSpec,
-): {
+function planKnockdowns(spec: MinimizationSpec): {
   essentialGenes: string[];
   candidateGenes: string[];
   plans: KnockdownPlan[];
@@ -75,12 +73,12 @@ function planKnockdowns(
   for (const rxn of IJO1366_REACTIONS) {
     if (rxn.gpr) {
       const genes = rxn.gpr.match(/\b[A-Z]{3}[0-9]{4}\b/g) ?? [];
-      genes.forEach(g => allGenes.add(g));
+      genes.forEach((g) => allGenes.add(g));
     }
   }
 
   // Test essentiality: knock out each gene individually
-  solverCalls.push({ solver: 'fbaGPR::essentiality', description: `Testing ${allGenes.size} genes for essentiality` });
+  solverCalls.push({ solver: "fbaGPR::essentiality", description: `Testing ${allGenes.size} genes for essentiality` });
   const essentialGenes: string[] = [];
   const nonEssentialGenes: string[] = [];
 
@@ -89,7 +87,7 @@ function planKnockdowns(
     // If knocking out this gene kills growth, it's essential
     if (knockouts.length > 0) {
       // Quick check: would this knock out biomass?
-      const biomassKnockouts = knockouts.filter(k => k === 'BIOMASS');
+      const biomassKnockouts = knockouts.filter((k) => k === "BIOMASS");
       if (biomassKnockouts.length > 0) {
         essentialGenes.push(gene);
       } else {
@@ -106,7 +104,7 @@ function planKnockdowns(
     const genes = nonEssentialGenes.slice(0, i);
     plans.push({
       genes,
-      knockdownLevel: 0,  // full knockout
+      knockdownLevel: 0, // full knockout
       description: `Knock out ${genes.length} non-essential genes`,
     });
   }
@@ -138,7 +136,10 @@ async function simulateKnockdown(
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
   const knockouts = getKnockoutReactions(plan.genes, gprRules());
-  solverCalls.push({ solver: 'fbaEngine::solveAuthorityFBA', description: `FBA with ${knockouts.length} reaction knockouts` });
+  solverCalls.push({
+    solver: "fbaEngine::solveAuthorityFBA",
+    description: `FBA with ${knockouts.length} reaction knockouts`,
+  });
 
   const result = await solveAuthorityFBA({
     species: spec.species,
@@ -184,9 +185,7 @@ async function optimizeMinimization(
   }
 
   // Filter to feasible plans that meet growth constraint
-  const feasible = results.filter(r =>
-    r.feasible && r.growthRate >= wildTypeGrowthRate * spec.minGrowthFraction
-  );
+  const feasible = results.filter((r) => r.feasible && r.growthRate >= wildTypeGrowthRate * spec.minGrowthFraction);
 
   // Pareto front: maximize genome reduction, maximize growth
   const paretoFront: typeof feasible = [];
@@ -196,7 +195,8 @@ async function optimizeMinimization(
       if (other === candidate) continue;
       const betterGrowth = other.growthRate >= candidate.growthRate;
       const betterReduction = other.genomeReduction >= candidate.genomeReduction;
-      const strictlyBetter = other.growthRate > candidate.growthRate || other.genomeReduction > candidate.genomeReduction;
+      const strictlyBetter =
+        other.growthRate > candidate.growthRate || other.genomeReduction > candidate.genomeReduction;
       if (betterGrowth && betterReduction && strictlyBetter) {
         dominated = true;
         break;
@@ -206,12 +206,17 @@ async function optimizeMinimization(
   }
 
   // Best: highest genome reduction that meets growth constraint
-  const best = paretoFront.length > 0
-    ? paretoFront.reduce((b, r) => r.genomeReduction > b.genomeReduction ? r : b)
-    : feasible[0] ?? results[0];
+  const best =
+    paretoFront.length > 0
+      ? paretoFront.reduce((b, r) => (r.genomeReduction > b.genomeReduction ? r : b))
+      : (feasible[0] ?? results[0]);
 
   return {
-    paretoFront: paretoFront.map(r => ({ plan: r.plan, growthRate: r.growthRate, genomeReduction: r.genomeReduction })),
+    paretoFront: paretoFront.map((r) => ({
+      plan: r.plan,
+      growthRate: r.growthRate,
+      genomeReduction: r.genomeReduction,
+    })),
     bestPlan: best.plan,
     bestGrowthRate: best.growthRate,
     bestGenomeReduction: Math.round(best.genomeReduction * 1000) / 1000,
@@ -237,8 +242,13 @@ export async function runMinimizationPipeline(spec: MinimizationSpec): Promise<M
   allSolverCalls.push(...planCalls);
 
   // Agent B + C: Simulate and optimize
-  const { paretoFront, bestPlan, bestGrowthRate, bestGenomeReduction, solverCalls: optCalls } =
-    await optimizeMinimization(spec, plans, wildType.growthRate, candidateGenes);
+  const {
+    paretoFront,
+    bestPlan,
+    bestGrowthRate,
+    bestGenomeReduction,
+    solverCalls: optCalls,
+  } = await optimizeMinimization(spec, plans, wildType.growthRate, candidateGenes);
   allSolverCalls.push(...optCalls);
 
   return { spec, wildType, essentialGenes, bestPlan, bestGrowthRate, bestGenomeReduction, paretoFront, allSolverCalls };

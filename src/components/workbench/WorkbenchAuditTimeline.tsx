@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useMemo, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { BookOpenText, Database, FlaskConical, Workflow } from 'lucide-react';
-import { useWorkbenchStore } from '../../store/workbenchStore';
-import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
-import { getDownstreamToolIds, getUpstreamToolIds } from '../../config/workbenchGraph';
-import type { WorkbenchStageId } from '../tools/shared/workbenchConfig';
+import { motion } from "framer-motion";
+import { BookOpenText, Database, FlaskConical, Workflow } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { getDownstreamToolIds, getUpstreamToolIds } from "../../config/workbenchGraph";
+import { useWorkbenchStore } from "../../store/workbenchStore";
+import { THEME } from "../../theme";
+import { TOOL_BY_ID } from "../tools/shared/toolRegistry";
+import type { WorkbenchStageId } from "../tools/shared/workbenchConfig";
 import {
-  glassPanel,
-  typography,
-  iconContainer,
-  cardVariants,
-  staggerContainer,
   accentLeftBorder,
-} from './workbenchDesignSystem';
-import { THEME } from '../../theme';
+  cardVariants,
+  glassPanel,
+  iconContainer,
+  staggerContainer,
+  typography,
+} from "./workbenchDesignSystem";
 
 interface WorkbenchAuditTimelineProps {
   toolId?: string | null;
@@ -28,42 +28,42 @@ interface WorkbenchAuditTimelineProps {
 type TimelineEvent = {
   id: string;
   at: number;
-  kind: 'evidence' | 'analysis' | 'run' | 'sync';
+  kind: "evidence" | "analysis" | "run" | "sync";
   title: string;
   detail: string;
   caption: string;
 };
 
 function formatTime(timestamp: number) {
-  if (!timestamp) return 'Pending';
+  if (!timestamp) return "Pending";
   return new Date(timestamp).toLocaleString([], {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
-function getKindAccent(kind: TimelineEvent['kind']) {
+function getKindAccent(kind: TimelineEvent["kind"]) {
   switch (kind) {
-    case 'evidence':
+    case "evidence":
       return THEME.SKY;
-    case 'analysis':
+    case "analysis":
       return THEME.LILAC;
-    case 'run':
+    case "run":
       return THEME.APRICOT;
     default:
       return THEME.CORAL;
   }
 }
 
-function getKindIcon(kind: TimelineEvent['kind']) {
+function getKindIcon(kind: TimelineEvent["kind"]) {
   switch (kind) {
-    case 'evidence':
+    case "evidence":
       return BookOpenText;
-    case 'analysis':
+    case "analysis":
       return FlaskConical;
-    case 'run':
+    case "run":
       return Workflow;
     default:
       return Database;
@@ -73,7 +73,7 @@ function getKindIcon(kind: TimelineEvent['kind']) {
 export default function WorkbenchAuditTimeline({
   toolId = null,
   stageId = null,
-  title = 'Audit Timeline',
+  title = "Audit Timeline",
   limit = 6,
   compact = false,
 }: WorkbenchAuditTimelineProps) {
@@ -85,7 +85,7 @@ export default function WorkbenchAuditTimeline({
 
   const events = useMemo(() => {
     const relevantEvidenceIds = new Set(
-      (analyzeArtifact?.evidenceTraceIds?.length ? analyzeArtifact.evidenceTraceIds : selectedEvidenceIds),
+      analyzeArtifact?.evidenceTraceIds?.length ? analyzeArtifact.evidenceTraceIds : selectedEvidenceIds,
     );
     const relevantToolIds = toolId
       ? new Set([
@@ -103,18 +103,18 @@ export default function WorkbenchAuditTimeline({
         items.push({
           id: `evidence-${item.id}`,
           at: item.savedAt,
-          kind: 'evidence',
+          kind: "evidence",
           title: item.title,
-          detail: item.abstract || 'Evidence item saved into the project bundle.',
-          caption: [item.source ?? item.journal, item.year].filter(Boolean).join(' · ') || 'Evidence bundle',
+          detail: item.abstract || "Evidence item saved into the project bundle.",
+          caption: [item.source ?? item.journal, item.year].filter(Boolean).join(" · ") || "Evidence bundle",
         });
       });
 
-    if (analyzeArtifact && (!stageId || stageId === 'stage-1' || !toolId)) {
+    if (analyzeArtifact && (!stageId || stageId === "stage-1" || !toolId)) {
       items.push({
         id: `analysis-${analyzeArtifact.id}`,
         at: analyzeArtifact.generatedAt,
-        kind: 'analysis',
+        kind: "analysis",
         title: analyzeArtifact.title,
         detail: analyzeArtifact.summary,
         caption: `${analyzeArtifact.nodes.length} nodes · ${analyzeArtifact.bottleneckAssumptions.length} bottleneck assumptions`,
@@ -132,10 +132,10 @@ export default function WorkbenchAuditTimeline({
         items.push({
           id: `run-${artifact.id}`,
           at: artifact.createdAt,
-          kind: 'run',
+          kind: "run",
           title: tool?.name ?? artifact.toolId.toUpperCase(),
           detail: artifact.summary,
-          caption: `${artifact.stageId?.replace('stage-', 'Stage ') ?? 'Cross-stage'} · upstream ${artifact.upstreamArtifactIds.length}${artifact.isSimulated ? ' · simulated' : ' · project-linked'}`,
+          caption: `${artifact.stageId?.replace("stage-", "Stage ") ?? "Cross-stage"} · upstream ${artifact.upstreamArtifactIds.length}${artifact.isSimulated ? " · simulated" : " · project-linked"}`,
         });
       });
 
@@ -143,16 +143,14 @@ export default function WorkbenchAuditTimeline({
       items.push({
         id: `sync-${entry.id}`,
         at: entry.createdAt,
-        kind: 'sync',
+        kind: "sync",
         title: `Canonical DB revision ${entry.revision}`,
         detail: entry.detail ?? `${entry.action} ${entry.status}`,
         caption: `${entry.action} · ${entry.status}`,
       });
     });
 
-    return items
-      .sort((a, b) => b.at - a.at)
-      .slice(0, limit);
+    return items.sort((a, b) => b.at - a.at).slice(0, limit);
   }, [analyzeArtifact, evidenceItems, limit, runArtifacts, selectedEvidenceIds, stageId, syncAuditLog, toolId]);
 
   return (
@@ -160,10 +158,10 @@ export default function WorkbenchAuditTimeline({
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      style={{ display: 'grid', gap: '12px' }}
+      style={{ display: "grid", gap: "12px" }}
     >
       {/* Section Header */}
-      <motion.div variants={cardVariants} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <motion.div variants={cardVariants} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span style={iconContainer(THEME.SKY, 20)}>
           <BookOpenText size={11} color={THEME.SKY} />
         </span>
@@ -171,17 +169,17 @@ export default function WorkbenchAuditTimeline({
       </motion.div>
 
       {events.length ? (
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: "relative" }}>
           {/* Timeline vertical line */}
           <div
             style={{
-              position: 'absolute',
-              left: compact ? '11px' : '13px',
-              top: '16px',
-              bottom: '16px',
-              width: '1px',
+              position: "absolute",
+              left: compact ? "11px" : "13px",
+              top: "16px",
+              bottom: "16px",
+              width: "1px",
               background: `linear-gradient(180deg, ${THEME.SKY}22, ${THEME.LILAC}22, ${THEME.APRICOT}22, transparent)`,
-              pointerEvents: 'none',
+              pointerEvents: "none",
             }}
           />
 
@@ -189,7 +187,7 @@ export default function WorkbenchAuditTimeline({
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            style={{ display: 'grid', gap: compact ? '10px' : '14px', position: 'relative' }}
+            style={{ display: "grid", gap: compact ? "10px" : "14px", position: "relative" }}
           >
             {events.map((event) => (
               <TimelineCard key={event.id} event={event} compact={compact} />
@@ -201,14 +199,12 @@ export default function WorkbenchAuditTimeline({
           variants={cardVariants}
           style={{
             ...glassPanel,
-            padding: '24px',
-            textAlign: 'center',
+            padding: "24px",
+            textAlign: "center",
           }}
         >
-          <div style={{ ...typography.body, maxWidth: '300px', margin: '0 auto' }}>
-            No auditable events yet.
-          </div>
-          <div style={{ ...typography.caption, maxWidth: '300px', margin: '0 auto', opacity: 0.6 }}>
+          <div style={{ ...typography.body, maxWidth: "300px", margin: "0 auto" }}>No auditable events yet.</div>
+          <div style={{ ...typography.caption, maxWidth: "300px", margin: "0 auto", opacity: 0.6 }}>
             Save evidence, run Analyze, or execute a tool to populate the timeline.
           </div>
         </motion.div>
@@ -217,13 +213,7 @@ export default function WorkbenchAuditTimeline({
   );
 }
 
-function TimelineCard({
-  event,
-  compact,
-}: {
-  event: TimelineEvent;
-  compact: boolean;
-}) {
+function TimelineCard({ event, compact }: { event: TimelineEvent; compact: boolean }) {
   const [hovered, setHovered] = useState(false);
   const handleMouseEnter = useCallback(() => setHovered(true), []);
   const handleMouseLeave = useCallback(() => setHovered(false), []);
@@ -237,29 +227,29 @@ function TimelineCard({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
-        display: 'grid',
-        gridTemplateColumns: compact ? '24px 1fr' : '28px 1fr',
-        gap: compact ? '10px' : '14px',
-        alignItems: 'start',
+        display: "grid",
+        gridTemplateColumns: compact ? "24px 1fr" : "28px 1fr",
+        gap: compact ? "10px" : "14px",
+        alignItems: "start",
       }}
     >
       {/* Icon node on the timeline */}
       <div
         style={{
-          width: compact ? '24px' : '28px',
-          height: compact ? '24px' : '28px',
-          borderRadius: '999px',
+          width: compact ? "24px" : "28px",
+          height: compact ? "24px" : "28px",
+          borderRadius: "999px",
           border: `1px solid ${accent}44`,
           background: `rgba(16, 19, 26, 0.8)`,
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           flexShrink: 0,
-          position: 'relative',
+          position: "relative",
           zIndex: 2,
-          boxShadow: hovered ? `0 0 12px ${accent}22` : 'none',
-          transition: 'box-shadow 0.25s ease',
+          boxShadow: hovered ? `0 0 12px ${accent}22` : "none",
+          transition: "box-shadow 0.25s ease",
         }}
       >
         <Icon size={compact ? 11 : 12} color={accent} />
@@ -270,41 +260,41 @@ function TimelineCard({
         style={{
           ...glassPanel,
           ...accentLeftBorder(accent, 2),
-          padding: compact ? '10px 12px' : '12px 14px',
-          borderRadius: compact ? '12px' : '14px',
-          borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
-          transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
-          transition: 'border-color 0.25s ease, transform 0.25s ease',
+          padding: compact ? "10px 12px" : "12px 14px",
+          borderRadius: compact ? "12px" : "14px",
+          borderColor: hovered ? "rgba(255, 255, 255, 0.12)" : glassPanel.borderColor,
+          transform: hovered ? "translateY(-1px)" : "translateY(0)",
+          transition: "border-color 0.25s ease, transform 0.25s ease",
         }}
       >
         {/* Header row */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
           }}
         >
           <div style={{ minWidth: 0 }}>
-            <div style={{
-              ...typography.cardTitle,
-              fontSize: compact ? '12px' : '13px',
-            }}>
+            <div
+              style={{
+                ...typography.cardTitle,
+                fontSize: compact ? "12px" : "13px",
+              }}
+            >
               {event.title}
             </div>
             <div style={typography.caption}>{event.caption}</div>
           </div>
-          <div style={{ ...typography.caption, whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {formatTime(event.at)}
-          </div>
+          <div style={{ ...typography.caption, whiteSpace: "nowrap", flexShrink: 0 }}>{formatTime(event.at)}</div>
         </div>
 
         {/* Detail */}
         <div
           style={{
             ...typography.body,
-            fontSize: compact ? '11px' : '12px',
+            fontSize: compact ? "11px" : "12px",
           }}
         >
           {event.detail}

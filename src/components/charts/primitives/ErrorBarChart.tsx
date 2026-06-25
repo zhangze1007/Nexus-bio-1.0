@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * ErrorBarChart — reusable bar chart with symmetric or asymmetric error bars.
@@ -11,16 +11,31 @@
  */
 
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
-  ErrorBar, ResponsiveContainer, LabelList,
-} from 'recharts';
-import type { ChartTooltipProps } from '../../../types/charts';
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ErrorBar,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { colors } from "../../../design-system/tokens";
+import type { ChartTooltipProps } from "../../../types/charts";
 import {
-  FONT, TOOLTIP_STYLE, rechartsGrid, rechartsTick,
-  rechartsAxisTitle, rechartsAxisLine, SCI_SERIES, LINE, fmt2,
   axisLabel as buildAxisLabel,
-} from '../chartTheme';
-import { colors } from '../../../design-system/tokens';
+  FONT,
+  fmt2,
+  LINE,
+  rechartsAxisLine,
+  rechartsAxisTitle,
+  rechartsGrid,
+  rechartsTick,
+  SCI_SERIES,
+  TOOLTIP_STYLE,
+} from "../chartTheme";
 
 export interface ErrorBarDatum {
   name: string;
@@ -52,22 +67,25 @@ export interface ErrorBarChartProps {
   intervalLabel?: string;
 }
 
-function ErrorBarTooltip({ active, payload, intervalLabel, formatValue }: ChartTooltipProps & { intervalLabel?: string; formatValue?: (value: number) => string }) {
+function ErrorBarTooltip({
+  active,
+  payload,
+  intervalLabel,
+  formatValue,
+}: ChartTooltipProps & { intervalLabel?: string; formatValue?: (value: number) => string }) {
   if (!active || !payload?.length) return null;
   const datum = payload[0].payload as unknown as ErrorBarDatum;
   const fmt = formatValue ?? fmt2;
-  const hasInterval = typeof datum.lower === 'number' && typeof datum.upper === 'number';
+  const hasInterval = typeof datum.lower === "number" && typeof datum.upper === "number";
   return (
     <div style={TOOLTIP_STYLE}>
       <div style={{ fontFamily: FONT.SANS, fontSize: 11, color: colors.text.primary, fontWeight: 600 }}>
         {datum.name}
       </div>
-      <div style={{ fontFamily: FONT.MONO, fontSize: 11, marginTop: 2 }}>
-        {fmt(datum.value)}
-      </div>
+      <div style={{ fontFamily: FONT.MONO, fontSize: 11, marginTop: 2 }}>{fmt(datum.value)}</div>
       {hasInterval ? (
         <div style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.tertiary, marginTop: 2 }}>
-          {intervalLabel ?? 'interval'} [{fmt(datum.lower!)}–{fmt(datum.upper!)}]
+          {intervalLabel ?? "interval"} [{fmt(datum.lower!)}–{fmt(datum.upper!)}]
         </div>
       ) : null}
     </div>
@@ -83,12 +101,12 @@ export default function ErrorBarChart({
   formatValue,
   showValueLabels = false,
   referenceY,
-  intervalLabel = '95% CI',
+  intervalLabel = "95% CI",
 }: ErrorBarChartProps) {
   /** Recharts ErrorBar takes deltas (distance from center), not absolute bounds. */
   const prepared = data.map((d, i) => {
     const color = d.color ?? SCI_SERIES[i % SCI_SERIES.length];
-    const hasInterval = typeof d.lower === 'number' && typeof d.upper === 'number';
+    const hasInterval = typeof d.lower === "number" && typeof d.upper === "number";
     return {
       ...d,
       color,
@@ -99,7 +117,7 @@ export default function ErrorBarChart({
   const hasAnyInterval = prepared.some((d) => d.errorDelta);
 
   return (
-    <div style={{ width: '100%', height }}>
+    <div style={{ width: "100%", height }}>
       <ResponsiveContainer>
         <BarChart data={prepared} margin={{ top: 14, right: 24, left: 12, bottom: xLabel ? 24 : 8 }} barSize={32}>
           <CartesianGrid vertical={false} {...rechartsGrid} />
@@ -109,9 +127,7 @@ export default function ErrorBarChart({
             axisLine={rechartsAxisLine}
             tickLine={false}
             label={
-              xLabel
-                ? { value: xLabel, position: 'insideBottom', offset: -4, style: rechartsAxisTitle }
-                : undefined
+              xLabel ? { value: xLabel, position: "insideBottom", offset: -4, style: rechartsAxisTitle } : undefined
             }
           />
           <YAxis
@@ -122,14 +138,16 @@ export default function ErrorBarChart({
             label={{
               value: buildAxisLabel(yQuantity, yUnit),
               angle: -90,
-              position: 'insideLeft',
+              position: "insideLeft",
               offset: 4,
               style: rechartsAxisTitle,
             }}
           />
           <Tooltip
-            content={<ErrorBarTooltip intervalLabel={hasAnyInterval ? intervalLabel : undefined} formatValue={formatValue} />}
-            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+            content={
+              <ErrorBarTooltip intervalLabel={hasAnyInterval ? intervalLabel : undefined} formatValue={formatValue} />
+            }
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
           <Bar dataKey="value" radius={[4, 4, 0, 0]}>
             {prepared.map((d, i) => (
@@ -153,9 +171,7 @@ export default function ErrorBarChart({
               />
             ) : null}
           </Bar>
-          {referenceY ? (
-            <ReferenceLineFromValue {...referenceY} />
-          ) : null}
+          {referenceY ? <ReferenceLineFromValue {...referenceY} /> : null}
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -164,7 +180,8 @@ export default function ErrorBarChart({
 
 /* Internal wrapper — keeps the public API tidy and avoids importing
  * ReferenceLine at call-sites. */
-import { ReferenceLine } from 'recharts';
+import { ReferenceLine } from "recharts";
+
 function ReferenceLineFromValue({ value, label, color }: { value: number; label?: string; color?: string }) {
   return (
     <ReferenceLine
@@ -176,7 +193,7 @@ function ReferenceLineFromValue({ value, label, color }: { value: number; label?
         label
           ? {
               value: label,
-              position: 'right',
+              position: "right",
               fill: color ?? colors.text.secondary,
               fontSize: 10,
               fontFamily: FONT.SANS,

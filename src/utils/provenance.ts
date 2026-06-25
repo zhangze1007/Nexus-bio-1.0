@@ -1,9 +1,9 @@
-import type { ProvenanceEntry, Evidence } from '../types/assumptions';
-import { TOOL_VALIDITY } from '../config/toolValidity';
+import { TOOL_VALIDITY } from "../config/toolValidity";
+import type { Evidence, ProvenanceEntry } from "../types/assumptions";
 
 export function createProvenanceEntry(args: {
   toolId: string;
-  validityTier?: ProvenanceEntry['validityTier'];
+  validityTier?: ProvenanceEntry["validityTier"];
   inputAssumptions?: string[];
   outputAssumptions?: string[];
   evidence?: Evidence[];
@@ -12,7 +12,7 @@ export function createProvenanceEntry(args: {
   // Read validity tier from TOOL_VALIDITY at call time so the snapshot
   // reflects the current tier. Sub-tier callers can override when the
   // shared registry only has the parent route (for example fbasim-community).
-  const tier = args.validityTier ?? TOOL_VALIDITY[args.toolId]?.level ?? 'partial';
+  const tier = args.validityTier ?? TOOL_VALIDITY[args.toolId]?.level ?? "partial";
   return {
     toolId: args.toolId,
     timestamp: Date.now(),

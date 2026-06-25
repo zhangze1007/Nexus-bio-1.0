@@ -1,12 +1,6 @@
-import React, { useMemo } from 'react';
-import {
-  colors,
-  spacing,
-  typography,
-  borderRadius,
-  shadows,
-  transitions,
-} from '../../tokens';
+import type React from "react";
+import { useMemo } from "react";
+import { borderRadius, colors, shadows, spacing, transitions, typography } from "../../tokens";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,7 +16,7 @@ export interface ToggleProps {
   /** Disabled state */
   disabled?: boolean;
   /** Toggle size */
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
   /** Additional class names for the wrapper */
   className?: string;
 }
@@ -40,7 +34,7 @@ interface SizeConfig {
   gap: string;
 }
 
-const sizeMap: Record<'sm' | 'md', SizeConfig> = {
+const sizeMap: Record<"sm" | "md", SizeConfig> = {
   sm: {
     trackWidth: 32,
     trackHeight: 18,
@@ -63,54 +57,39 @@ const sizeMap: Record<'sm' | 'md', SizeConfig> = {
 // Toggle component
 // ---------------------------------------------------------------------------
 
-export function Toggle({
-  checked,
-  onChange,
-  label,
-  disabled = false,
-  size = 'md',
-  className,
-}: ToggleProps) {
+export function Toggle({ checked, onChange, label, disabled = false, size = "md", className }: ToggleProps) {
   const cfg = sizeMap[size];
 
-  const thumbLeft = checked
-    ? cfg.trackWidth - cfg.thumbSize - cfg.thumbOffset
-    : cfg.thumbOffset;
+  const thumbLeft = checked ? cfg.trackWidth - cfg.thumbSize - cfg.thumbOffset : cfg.thumbOffset;
 
   // ---- Inline style objects (all derived from tokens) ---------------------
 
   const wrapperStyle: React.CSSProperties = useMemo(
     () => ({
-      display: 'inline-flex',
-      alignItems: 'center',
+      display: "inline-flex",
+      alignItems: "center",
       gap: cfg.gap,
-      cursor: disabled ? 'not-allowed' : 'pointer',
+      cursor: disabled ? "not-allowed" : "pointer",
       opacity: disabled ? 0.5 : 1,
-      userSelect: 'none',
+      userSelect: "none",
     }),
     [cfg.gap, disabled],
   );
 
   const trackStyle: React.CSSProperties = useMemo(
     () => ({
-      position: 'relative',
+      position: "relative",
       width: cfg.trackWidth,
       height: cfg.trackHeight,
       borderRadius: borderRadius.full,
-      backgroundColor: checked
-        ? colors.accent.primary
-        : colors.bg.tertiary,
-      border: `1px solid ${
-        checked
-          ? colors.accent.primary
-          : colors.border.default
-      }`,
+      backgroundColor: checked ? colors.accent.primary : colors.bg.tertiary,
+      border: `1px solid ${checked ? colors.accent.primary : colors.border.default}`,
       boxShadow: checked ? shadows.glowPrimary : shadows.inner,
       transition: [
         `background-color ${transitions.duration.normal} ${transitions.easing.apple}`,
         `border-color ${transitions.duration.normal} ${transitions.easing.apple}`,
         `box-shadow ${transitions.duration.normal} ${transitions.easing.apple}`,
-      ].join(', '),
+      ].join(", "),
       flexShrink: 0,
     }),
     [checked, cfg.trackWidth, cfg.trackHeight],
@@ -118,14 +97,14 @@ export function Toggle({
 
   const thumbStyle: React.CSSProperties = useMemo(
     () => ({
-      position: 'absolute',
+      position: "absolute",
       top: cfg.thumbOffset,
       left: thumbLeft,
       width: cfg.thumbSize,
       height: cfg.thumbSize,
       borderRadius: borderRadius.full,
       backgroundColor: colors.text.primary,
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.4)",
       transition: `left ${transitions.duration.normal} ${transitions.easing.apple}`,
     }),
     [cfg.thumbOffset, cfg.thumbSize, thumbLeft],
@@ -153,7 +132,7 @@ export function Toggle({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onChange(!checked);
     }

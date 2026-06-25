@@ -21,9 +21,7 @@ export function normalCDF(x: number): number {
   const sign = x < 0 ? -1 : 1;
   const absX = Math.abs(x);
   const t = 1.0 / (1.0 + p * absX);
-  const y =
-    1.0 -
-    ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-0.5 * absX * absX);
+  const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-0.5 * absX * absX);
 
   return 0.5 * (1.0 + sign * y);
 }
@@ -65,12 +63,9 @@ export function shannonEntropy(counts: number[]): number {
  * @param fitnessWildType Absolute fitness of the wild-type (must be > 0).
  * @returns Selection coefficient (positive = beneficial, negative = deleterious).
  */
-export function selectionCoefficient(
-  fitnessMutant: number,
-  fitnessWildType: number,
-): number {
+export function selectionCoefficient(fitnessMutant: number, fitnessWildType: number): number {
   if (fitnessWildType === 0) {
-    throw new Error('Wild-type fitness must be non-zero');
+    throw new Error("Wild-type fitness must be non-zero");
   }
   return (fitnessMutant - fitnessWildType) / fitnessWildType;
 }
@@ -92,12 +87,9 @@ export interface ConfidenceIntervalResult {
  * @param data       Sample data (length >= 2).
  * @param confidence Confidence level, e.g. 0.95 for 95 %.
  */
-export function confidenceInterval(
-  data: number[],
-  confidence: number,
-): ConfidenceIntervalResult {
+export function confidenceInterval(data: number[], confidence: number): ConfidenceIntervalResult {
   const n = data.length;
-  if (n < 2) throw new Error('At least 2 data points are required');
+  if (n < 2) throw new Error("At least 2 data points are required");
 
   const mu = mean(data);
   const se = standardDeviation(data) / Math.sqrt(n);
@@ -131,12 +123,9 @@ export interface MannWhitneyResult {
  * @param sampleA First sample (non-empty).
  * @param sampleB Second sample (non-empty).
  */
-export function mannWhitneyU(
-  sampleA: number[],
-  sampleB: number[],
-): MannWhitneyResult {
+export function mannWhitneyU(sampleA: number[], sampleB: number[]): MannWhitneyResult {
   if (sampleA.length === 0 || sampleB.length === 0) {
-    throw new Error('Both samples must be non-empty');
+    throw new Error("Both samples must be non-empty");
   }
 
   const n1 = sampleA.length;
@@ -144,9 +133,9 @@ export function mannWhitneyU(
   const N = n1 + n2;
 
   // Combine and rank
-  const combined: { value: number; group: 'A' | 'B' }[] = [
-    ...sampleA.map((v) => ({ value: v, group: 'A' as const })),
-    ...sampleB.map((v) => ({ value: v, group: 'B' as const })),
+  const combined: { value: number; group: "A" | "B" }[] = [
+    ...sampleA.map((v) => ({ value: v, group: "A" as const })),
+    ...sampleB.map((v) => ({ value: v, group: "B" as const })),
   ];
   combined.sort((a, b) => a.value - b.value);
 
@@ -164,7 +153,7 @@ export function mannWhitneyU(
   // Sum ranks for group A
   let R1 = 0;
   for (let k = 0; k < N; k++) {
-    if (combined[k].group === 'A') R1 += ranks[k];
+    if (combined[k].group === "A") R1 += ranks[k];
   }
 
   const U1 = R1 - (n1 * (n1 + 1)) / 2;
@@ -208,7 +197,7 @@ export function benjaminiHochberg(pValues: number[]): number[] {
   for (let rank = 0; rank < n; rank++) {
     const { p, i } = indexed[rank];
     // BH formula: p_adj = p * n / (n - rank)  (rank is 0-based, descending)
-    const q = Math.min(1, p * n / (n - rank));
+    const q = Math.min(1, (p * n) / (n - rank));
     // Enforce monotonicity (each q ≤ min of all q-values below it)
     minSoFar = Math.min(minSoFar, q);
     adjusted[i] = minSoFar;
@@ -225,7 +214,7 @@ export function benjaminiHochberg(pValues: number[]): number[] {
  * Arithmetic mean.
  */
 export function mean(data: number[]): number {
-  if (data.length === 0) throw new Error('Data array must be non-empty');
+  if (data.length === 0) throw new Error("Data array must be non-empty");
   return data.reduce((s, v) => s + v, 0) / data.length;
 }
 
@@ -233,7 +222,7 @@ export function mean(data: number[]): number {
  * Sample standard deviation (Bessel-corrected, denominator n-1).
  */
 export function standardDeviation(data: number[]): number {
-  if (data.length < 2) throw new Error('At least 2 data points are required');
+  if (data.length < 2) throw new Error("At least 2 data points are required");
   const mu = mean(data);
   const ss = data.reduce((s, v) => s + (v - mu) ** 2, 0);
   return Math.sqrt(ss / (data.length - 1));
@@ -285,21 +274,19 @@ function regularisedIncompleteBeta(a: number, b: number, x: number): number {
   if (x >= 1) return 1;
 
   const lbeta = lnGamma(a) + lnGamma(b) - lnGamma(a + b);
-  const front = Math.exp(
-    Math.log(x) * a + Math.log(1 - x) * b - lbeta,
-  );
+  const front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lbeta);
 
   // Use continued fraction (Lentz's method)
-  return front * continuedFractionBeta(a, b, x) / a;
+  return (front * continuedFractionBeta(a, b, x)) / a;
 }
 
 function continuedFractionBeta(a: number, b: number, x: number): number {
   const maxIter = 200;
   const eps = 1e-14;
 
-  let qab = a + b;
-  let qap = a + 1;
-  let qam = a - 1;
+  const qab = a + b;
+  const qap = a + 1;
+  const qam = a - 1;
 
   let c = 1;
   let d = 1 - (qab * x) / qap;
@@ -340,15 +327,8 @@ function continuedFractionBeta(a: number, b: number, x: number): number {
 function lnGamma(z: number): number {
   const g = 7;
   const c = [
-    0.99999999999980993,
-    676.5203681218851,
-    -1259.1392167224028,
-    771.32342877765313,
-    -176.61502916214059,
-    12.507343278686905,
-    -0.13857109526572012,
-    9.9843695780195716e-6,
-    1.5056327351493116e-7,
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+    12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
   ];
 
   if (z < 0.5) {
@@ -373,34 +353,17 @@ function normalInverse(p: number): number {
   if (p === 0.5) return 0;
 
   const a = [
-    -3.969683028665376e1,
-    2.209460984245205e2,
-    -2.759285104469687e2,
-    1.383577518672690e2,
-    -3.066479806614716e1,
-    2.506628277459239e0,
+    -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2, -3.066479806614716e1,
+    2.506628277459239,
   ];
   const b = [
-    -5.447609879822406e1,
-    1.615858368580409e2,
-    -1.556989798598866e2,
-    6.680131188771972e1,
-    -1.328068155288572e1,
+    -5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1,
   ];
   const c = [
-    -7.784894002430293e-3,
-    -3.223964580411365e-1,
-    -2.400758277161838e0,
-    -2.549732539343734e0,
-    4.374664141464968e0,
-    2.938163982698783e0,
+    -7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734, 4.374664141464968,
+    2.938163982698783,
   ];
-  const d = [
-    7.784695709041462e-3,
-    3.224671290700398e-1,
-    2.445134137142996e0,
-    3.754408661907416e0,
-  ];
+  const d = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416];
 
   const pLow = 0.02425;
   const pHigh = 1 - pLow;
@@ -418,14 +381,14 @@ function normalInverse(p: number): number {
     q = p - 0.5;
     r = q * q;
     return (
-      (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) *
-      q /
+      ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) /
       (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
     );
   } else {
     q = Math.sqrt(-2 * Math.log(1 - p));
-    return -
-      (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
-      ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    return (
+      -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+      ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+    );
   }
 }

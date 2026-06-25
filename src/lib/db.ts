@@ -1,6 +1,6 @@
-import { createClient, type Client, type InArgs } from '@libsql/client';
-import path from 'path';
-import fs from 'fs';
+import { type Client, createClient, type InArgs } from "@libsql/client";
+import fs from "fs";
+import path from "path";
 
 /**
  * Shared database singleton for Nexus-Bio.
@@ -18,13 +18,11 @@ function resolveDbUrl(): string {
   const tursoUrl = process.env.TURSO_DATABASE_URL;
   if (tursoUrl) return tursoUrl;
   const isVercel = !!process.env.VERCEL;
-  const dbDir = isVercel
-    ? path.join('/tmp', '.nexus')
-    : path.join(process.cwd(), '.nexus');
+  const dbDir = isVercel ? path.join("/tmp", ".nexus") : path.join(process.cwd(), ".nexus");
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
-  return `file:${path.join(dbDir, 'workbench.db')}`;
+  return `file:${path.join(dbDir, "workbench.db")}`;
 }
 
 export function getLibsqlClient(): Client {

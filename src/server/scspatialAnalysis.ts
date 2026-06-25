@@ -1,22 +1,21 @@
-import { UMAP } from 'umap-js';
+import { UMAP } from "umap-js";
 import {
+  type CellRecord,
+  type ClusterResult,
+  clusterCells,
   computeMoranI,
   computePAGA,
   computeSpatialNeighbors,
+  type GiStarGeneResult,
   identifyHighYieldClusters,
-  normalizeAndLog,
-  preprocessAndQC,
-  selectHVGs,
-  clusterCells,
-  type CellRecord,
-  type ClusterResult,
   type MoranResult,
+  normalizeAndLog,
   type PAGAResult,
+  preprocessAndQC,
   type SpatialAutocorrelationResult,
   type SpatialNeighborResult,
-  type GiStarGeneResult,
-} from '../services/ScSpatialEngine';
-import { benjaminiHochberg } from '../utils/statistics';
+  selectHVGs,
+} from "../services/ScSpatialEngine";
 import type {
   ScSpatialClusterSummary,
   ScSpatialCoexpressionSummary,
@@ -32,7 +31,8 @@ import type {
   ScSpatialTrajectoryNode,
   ScSpatialValidity,
   ScSpatialViewMode,
-} from '../types/scspatial';
+} from "../types/scspatial";
+import { benjaminiHochberg } from "../utils/statistics";
 
 interface PreparedAnalysis {
   validity: ScSpatialValidity;
@@ -65,7 +65,7 @@ function mean(values: number[]) {
 }
 
 function sanitizeLabel(value: string | null | undefined, fallback: string) {
-  if (typeof value !== 'string') return fallback;
+  if (typeof value !== "string") return fallback;
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : fallback;
 }
@@ -104,14 +104,10 @@ function pearsonCorrelation(left: number[], right: number[]) {
 }
 
 function geneIsMitochondrial(geneSymbol: string) {
-  return geneSymbol.startsWith('MT-') || geneSymbol.startsWith('mt-');
+  return geneSymbol.startsWith("MT-") || geneSymbol.startsWith("mt-");
 }
 
-function buildGeneExpressionRecord(
-  indices: number[],
-  values: number[],
-  genes: string[],
-) {
+function buildGeneExpressionRecord(indices: number[], values: number[], genes: string[]) {
   const record: Record<string, number> = {};
   for (let index = 0; index < indices.length; index += 1) {
     const gene = genes[indices[index]];
@@ -138,12 +134,12 @@ function buildDatasetMeta(
   const uniqueSamples = new Set(
     artifact.obs
       .map((record) => record.sampleId)
-      .filter((value): value is string => typeof value === 'string' && value.length > 0),
+      .filter((value): value is string => typeof value === "string" && value.length > 0),
   );
 
   return {
     artifactId: artifact.artifactId,
-    datasetName: artifact.source.fileName.replace(/\.h5ad$/i, ''),
+    datasetName: artifact.source.fileName.replace(/\.h5ad$/i, ""),
     fileName: artifact.source.fileName,
     cellCount: artifact.matrix.X.nObs,
     geneCount: artifact.matrix.X.nVars,
@@ -165,7 +161,7 @@ function buildDatasetMeta(
 
 function pickUmapEmbedding(artifact: ScSpatialNormalizedArtifact) {
   const entries = Object.entries(artifact.obsm.embeddings);
-  const direct = entries.find(([key]) => key.toLowerCase().includes('umap'));
+  const direct = entries.find(([key]) => key.toLowerCase().includes("umap"));
   return direct ?? null;
 }
 
@@ -180,18 +176,17 @@ function createDeterministicRandom(seed = 42) {
 function computeUmapEmbedding(cells: CellRecord[], genes: string[]) {
   if (cells.length === 0) return [];
   const dense = cells.map((cell) => buildDenseVector(cell, genes));
-  const fallback = cells.map((cell, index) => ([
-    genes[0] ? cell.geneExpression[genes[0]] ?? 0 : cell.spatialX || index,
-    genes[1] ? cell.geneExpression[genes[1]] ?? 0 : cell.spatialY || cell.pseudotime || index,
-  ]));
+  const fallback = cells.map((cell, index) => [
+    genes[0] ? (cell.geneExpression[genes[0]] ?? 0) : cell.spatialX || index,
+    genes[1] ? (cell.geneExpression[genes[1]] ?? 0) : cell.spatialY || cell.pseudotime || index,
+  ]);
   if (dense.length < 6 || dense[0]?.length === 0) {
     return fallback;
   }
-  const nNeighbors = Math.max(2, Math.min(
-    15,
-    Math.max(5, Math.floor(Math.sqrt(Math.max(dense.length, 1)))),
-    dense.length - 1,
-  ));
+  const nNeighbors = Math.max(
+    2,
+    Math.min(15, Math.max(5, Math.floor(Math.sqrt(Math.max(dense.length, 1)))), dense.length - 1),
+  );
   const model = new UMAP({
     nComponents: 2,
     nNeighbors,
@@ -220,9 +215,7 @@ function buildProvidedClusterSummary(
 
   const centroids = new Map<number, number[]>();
   clusters.forEach((clusterCells, clusterId) => {
-    const centroid = genesForMetrics.map((gene) =>
-      mean(clusterCells.map((cell) => cell.geneExpression[gene] ?? 0)),
-    );
+    const centroid = genesForMetrics.map((gene) => mean(clusterCells.map((cell) => cell.geneExpression[gene] ?? 0)));
     centroids.set(clusterId, centroid);
   });
 
@@ -244,7 +237,9 @@ function buildProvidedClusterSummary(
   let modularity = 0;
   if (spatialPoints && spatialPoints.length === cells.length) {
     const spatialGraph = computeSpatialNeighbors(cells);
-    const within = spatialGraph.adjacency.filter(([left, right]) => cells[left]?.cluster === cells[right]?.cluster).length;
+    const within = spatialGraph.adjacency.filter(
+      ([left, right]) => cells[left]?.cluster === cells[right]?.cluster,
+    ).length;
     modularity = spatialGraph.adjacency.length > 0 ? within / spatialGraph.adjacency.length : 0;
   }
 
@@ -266,7 +261,7 @@ function buildCellsFromArtifact(artifact: ScSpatialNormalizedArtifact) {
   const genes = artifact.var.map((record) => sanitizeLabel(record.geneSymbol, record.geneId));
   const batchMap = new Map<string, number>();
   const rawClusterLabels = artifact.obs.map((record) =>
-    sanitizeLabel(record.clusterLabel ?? record.cellType ?? null, ''),
+    sanitizeLabel(record.clusterLabel ?? record.cellType ?? null, ""),
   );
   const uniqueClusterLabels = Array.from(new Set(rawClusterLabels.filter(Boolean)));
   const clusterMap = new Map(uniqueClusterLabels.map((label, index) => [label, index]));
@@ -275,11 +270,12 @@ function buildCellsFromArtifact(artifact: ScSpatialNormalizedArtifact) {
   const cells: CellRecord[] = artifact.matrix.X.rows.map((row, index) => {
     const geneExpression = buildGeneExpressionRecord(row.indices, row.values, genes);
     const totalCounts = row.values.reduce((sum, value) => sum + value, 0);
-    const mitoCounts = row.indices.reduce((sum, geneIndex, valueIndex) => (
-      geneIsMitochondrial(genes[geneIndex]) ? sum + row.values[valueIndex] : sum
-    ), 0);
+    const mitoCounts = row.indices.reduce(
+      (sum, geneIndex, valueIndex) => (geneIsMitochondrial(genes[geneIndex]) ? sum + row.values[valueIndex] : sum),
+      0,
+    );
     const batchLabel = artifact.obs[index]?.batchId;
-    const batchKey = batchLabel == null ? 'default' : String(batchLabel);
+    const batchKey = batchLabel == null ? "default" : String(batchLabel);
     if (!batchMap.has(batchKey)) {
       batchMap.set(batchKey, batchMap.size);
     }
@@ -294,13 +290,10 @@ function buildCellsFromArtifact(artifact: ScSpatialNormalizedArtifact) {
       mitoPercent: totalCounts > 0 ? round((mitoCounts / totalCounts) * 100, 2) : 0,
       geneExpression,
       cluster: clusterLabel ? (clusterMap.get(clusterLabel) ?? 0) : 0,
-      cellType: sanitizeLabel(
-        artifact.obs[index]?.cellType ?? clusterLabel ?? null,
-        clusterLabel || 'Unannotated',
-      ),
+      cellType: sanitizeLabel(artifact.obs[index]?.cellType ?? clusterLabel ?? null, clusterLabel || "Unannotated"),
       pseudotime: 0,
-      spatialX: Number.isFinite(spatialX) ? spatialX ?? 0 : Number.NaN,
-      spatialY: Number.isFinite(spatialY) ? spatialY ?? 0 : Number.NaN,
+      spatialX: Number.isFinite(spatialX) ? (spatialX ?? 0) : Number.NaN,
+      spatialY: Number.isFinite(spatialY) ? (spatialY ?? 0) : Number.NaN,
       batchId: batchMap.get(batchKey) ?? 0,
       qcPass: true,
     };
@@ -328,15 +321,15 @@ function createEmptySpatialNeighborGraph(cellCount: number): SpatialNeighborResu
   return {
     nCells: cellCount,
     nNeighbors: 0,
-    graphType: 'knn',
+    graphType: "knn",
     adjacency: [],
   };
 }
 
 function inferValidity(artifact: ScSpatialNormalizedArtifact) {
-  if (artifact.source.fileName === 'bundled-demo.h5ad') return 'demo' as const;
-  if (!artifact.metadata.hasSpatialCoords) return 'partial' as const;
-  return 'real' as const;
+  if (artifact.source.fileName === "bundled-demo.h5ad") return "demo" as const;
+  if (!artifact.metadata.hasSpatialCoords) return "partial" as const;
+  return "real" as const;
 }
 
 function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysis {
@@ -344,15 +337,17 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
   const qcResult = preprocessAndQC(rawCells);
   const warnings = [...artifact.metadata.warnings];
   const missingFields = [...artifact.metadata.missingFields];
-  const qcCells = qcResult.filtered.length > 0
-    ? qcResult.filtered
-    : rawCells.map((cell) => ({ ...cell, qcPass: true }));
+  const qcCells =
+    qcResult.filtered.length > 0 ? qcResult.filtered : rawCells.map((cell) => ({ ...cell, qcPass: true }));
   if (qcResult.filtered.length === 0 && rawCells.length > 0) {
-    warnings.push('QC thresholds removed every cell; SCSPATIAL fell back to unfiltered cells for visualization.');
+    warnings.push("QC thresholds removed every cell; SCSPATIAL fell back to unfiltered cells for visualization.");
   }
   const normalized = normalizeAndLog(qcCells);
   const hvg = selectHVGs(normalized, Math.min(50, genes.length));
-  const genesForMetrics = hvg.genes.filter((gene) => gene.isHVG).slice(0, 25).map((gene) => gene.gene);
+  const genesForMetrics = hvg.genes
+    .filter((gene) => gene.isHVG)
+    .slice(0, 25)
+    .map((gene) => gene.gene);
   const metricGenes = genesForMetrics.length > 0 ? genesForMetrics : genes.slice(0, Math.min(25, genes.length));
 
   let cells = normalized;
@@ -389,11 +384,7 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
     hotspot: result.hotspot,
   }));
 
-  const runtimeViewsBase = buildRuntimeViews(
-    artifact.metadata.hasSpatialCoords,
-    true,
-    clusterResult.nClusters > 0,
-  );
+  const runtimeViewsBase = buildRuntimeViews(artifact.metadata.hasSpatialCoords, true, clusterResult.nClusters > 0);
   const datasetMeta = buildDatasetMeta(artifact, runtimeViewsBase);
   datasetMeta.warnings = warnings;
   datasetMeta.missingFields = missingFields;
@@ -411,7 +402,7 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
   );
 
   const highYieldClusters = identifyHighYieldClusters(cellsWithPseudotime, clusterResult, paga, autocorrelation);
-  const selectedGeneFallback = genes[0] ?? '';
+  const selectedGeneFallback = genes[0] ?? "";
   const clusterSummaries: ScSpatialClusterSummary[] = clusterResult.clusterSizes.map((clusterSize) => {
     const clusterCells = cellsWithPseudotime.filter((cell) => cell.cluster === clusterSize.cluster);
     const yieldCluster = highYieldClusters.find((candidate) => candidate.clusterId === clusterSize.cluster);
@@ -423,7 +414,7 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
       meanExpression: round(mean(clusterCells.map((cell) => cell.geneExpression[selectedGeneFallback] ?? 0))),
       meanPseudotime: round(mean(clusterCells.map((cell) => cell.pseudotime))),
       topGenes,
-      fate: yieldCluster?.fate ?? 'quiescent',
+      fate: yieldCluster?.fate ?? "quiescent",
       spatiallyLocalized: yieldCluster?.spatiallyLocalized ?? false,
     };
   });
@@ -452,7 +443,7 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
       // Niche analysis
       const clusterLabelByIndex = clusterResult.clusterSizes.map((cs) => cs.label);
       const nicheClusterLabels = validCoords.map(
-        (c) => clusterLabelByIndex[cellsWithPseudotime[c.idx]?.cluster ?? 0] ?? 'Unknown',
+        (c) => clusterLabelByIndex[cellsWithPseudotime[c.idx]?.cluster ?? 0] ?? "Unknown",
       );
       const nicheExpression: number[][] = genes.map((gene) =>
         validCoords.map((c) => cellsWithPseudotime[c.idx]?.geneExpression[gene] ?? 0),
@@ -484,13 +475,10 @@ function prepareAnalysis(artifact: ScSpatialNormalizedArtifact): PreparedAnalysi
 
 function resolveSelectedGene(request: ScSpatialQueryRequest, availableGenes: string[]) {
   if (availableGenes.includes(request.selectedGene)) return request.selectedGene;
-  return availableGenes[0] ?? '';
+  return availableGenes[0] ?? "";
 }
 
-function resolveSelectedCluster(
-  request: ScSpatialQueryRequest,
-  clusterSummaries: ScSpatialClusterSummary[],
-) {
+function resolveSelectedCluster(request: ScSpatialQueryRequest, clusterSummaries: ScSpatialClusterSummary[]) {
   if (request.selectedCluster && clusterSummaries.some((cluster) => cluster.clusterLabel === request.selectedCluster)) {
     return request.selectedCluster;
   }
@@ -511,21 +499,18 @@ function resolveSelectedCellId(
   return points[0]?.id ?? null;
 }
 
-function resolveViewMode(
-  requested: ScSpatialViewMode,
-  datasetMeta: ScSpatialDatasetMeta,
-) {
-  const viewOrder: ScSpatialViewMode[] = ['spatial-2d', 'spatial-3d', 'umap', 'trajectory', 'table'];
+function resolveViewMode(requested: ScSpatialViewMode, datasetMeta: ScSpatialDatasetMeta) {
+  const viewOrder: ScSpatialViewMode[] = ["spatial-2d", "spatial-3d", "umap", "trajectory", "table"];
   const availability: Record<ScSpatialViewMode, boolean> = {
-    'spatial-2d': datasetMeta.availableViews.spatial2d,
-    'spatial-3d': datasetMeta.availableViews.spatial3d,
+    "spatial-2d": datasetMeta.availableViews.spatial2d,
+    "spatial-3d": datasetMeta.availableViews.spatial3d,
     umap: datasetMeta.availableViews.umap,
     trajectory: datasetMeta.availableViews.trajectory,
     table: datasetMeta.availableViews.table,
     communication: true, // always available — client-side analysis
   };
   if (availability[requested]) return requested;
-  return viewOrder.find((candidate) => availability[candidate]) ?? 'table';
+  return viewOrder.find((candidate) => availability[candidate]) ?? "table";
 }
 
 function buildViewPoints(
@@ -547,9 +532,9 @@ function buildViewPoints(
       let y = spatialPoint[1];
       let z: number | undefined;
 
-      if (mode === 'umap') {
+      if (mode === "umap") {
         [x, y] = umapPoint;
-      } else if (mode === 'spatial-3d') {
+      } else if (mode === "spatial-3d") {
         [x, y] = spatialPoint;
         z = expression;
       }
@@ -579,9 +564,7 @@ function buildTrajectoryLayout(
     clusterLabel: cluster.label,
     cellCount: cluster.size,
     x: paga.clusterPseudotime[cluster.cluster] ?? index / Math.max(clusterResult.clusterSizes.length, 1),
-    y: clusterResult.clusterSizes.length > 1
-      ? index / Math.max(clusterResult.clusterSizes.length - 1, 1)
-      : 0.5,
+    y: clusterResult.clusterSizes.length > 1 ? index / Math.max(clusterResult.clusterSizes.length - 1, 1) : 0.5,
   }));
   const edges = paga.trajectory.map((edge) => ({
     from: edge.from,
@@ -601,7 +584,12 @@ function buildCoexpressionSummaries(
     .filter((gene) => gene !== selectedGene)
     .map((gene) => ({
       geneSymbol: gene,
-      correlation: round(pearsonCorrelation(selectedVector, cells.map((cell) => cell.geneExpression[gene] ?? 0))),
+      correlation: round(
+        pearsonCorrelation(
+          selectedVector,
+          cells.map((cell) => cell.geneExpression[gene] ?? 0),
+        ),
+      ),
     }))
     .sort((left, right) => Math.abs(right.correlation) - Math.abs(left.correlation))
     .slice(0, 6);
@@ -704,9 +692,9 @@ function detectSVGs(
   // Classify spatial patterns and find co-clustered genes
   const results: ScSpatialSVGResult[] = rawResults.map((r, idx) => {
     const qValue = qValues[idx];
-    let spatialPattern: 'clustered' | 'dispersed' | 'random' = 'random';
+    let spatialPattern: "clustered" | "dispersed" | "random" = "random";
     if (qValue < fdrThreshold) {
-      spatialPattern = r.moranI > 0 ? 'clustered' : 'dispersed';
+      spatialPattern = r.moranI > 0 ? "clustered" : "dispersed";
     }
     return {
       gene: r.gene,
@@ -719,20 +707,16 @@ function detectSVGs(
   });
 
   // Identify hotspot co-members: genes with similar Moran's I sign and significant q
-  const clusteredGenes = results
-    .filter((r) => r.spatialPattern === 'clustered')
-    .sort((a, b) => b.moranI - a.moranI);
-  const dispersedGenes = results
-    .filter((r) => r.spatialPattern === 'dispersed')
-    .sort((a, b) => a.moranI - b.moranI);
+  const clusteredGenes = results.filter((r) => r.spatialPattern === "clustered").sort((a, b) => b.moranI - a.moranI);
+  const dispersedGenes = results.filter((r) => r.spatialPattern === "dispersed").sort((a, b) => a.moranI - b.moranI);
 
   for (const result of results) {
-    if (result.spatialPattern === 'clustered') {
+    if (result.spatialPattern === "clustered") {
       result.hotspotGenes = clusteredGenes
         .filter((r) => r.gene !== result.gene)
         .slice(0, 5)
         .map((r) => r.gene);
-    } else if (result.spatialPattern === 'dispersed') {
+    } else if (result.spatialPattern === "dispersed") {
       result.hotspotGenes = dispersedGenes
         .filter((r) => r.gene !== result.gene)
         .slice(0, 5)
@@ -742,8 +726,8 @@ function detectSVGs(
 
   // Sort: significant clustered first, then dispersed, then random; within each by |I|
   results.sort((a, b) => {
-    const orderA = a.spatialPattern === 'clustered' ? 0 : a.spatialPattern === 'dispersed' ? 1 : 2;
-    const orderB = b.spatialPattern === 'clustered' ? 0 : b.spatialPattern === 'dispersed' ? 1 : 2;
+    const orderA = a.spatialPattern === "clustered" ? 0 : a.spatialPattern === "dispersed" ? 1 : 2;
+    const orderB = b.spatialPattern === "clustered" ? 0 : b.spatialPattern === "dispersed" ? 1 : 2;
     if (orderA !== orderB) return orderA - orderB;
     return Math.abs(b.moranI) - Math.abs(a.moranI);
   });
@@ -786,9 +770,7 @@ function identifyNiches(
       if (minDist < Infinity) nnDists.push(minDist);
     }
     nnDists.sort((a, b) => a - b);
-    const medianNN = nnDists.length > 0
-      ? nnDists[Math.floor(nnDists.length / 2)]
-      : 1;
+    const medianNN = nnDists.length > 0 ? nnDists[Math.floor(nnDists.length / 2)] : 1;
     radius = medianNN * 5;
   }
 
@@ -849,7 +831,10 @@ function identifyNiches(
     let chosen = 0;
     for (let i = 0; i < n; i++) {
       r -= dists[i];
-      if (r <= 0) { chosen = i; break; }
+      if (r <= 0) {
+        chosen = i;
+        break;
+      }
     }
     centroids.push([...compositions[chosen]]);
   }
@@ -868,7 +853,10 @@ function identifyNiches(
         for (let f = 0; f < nClusters; f++) {
           d += (compositions[i][f] - centroids[c][f]) ** 2;
         }
-        if (d < bestD) { bestD = d; bestC = c; }
+        if (d < bestD) {
+          bestD = d;
+          bestC = c;
+        }
       }
       if (assignments[i] !== bestC) {
         assignments[i] = bestC;
@@ -907,7 +895,10 @@ function identifyNiches(
     let dominantCluster = uniqueClusters[0];
     let maxProp = 0;
     for (const [cluster, prop] of Object.entries(composition)) {
-      if (prop > maxProp) { maxProp = prop; dominantCluster = cluster; }
+      if (prop > maxProp) {
+        maxProp = prop;
+        dominantCluster = cluster;
+      }
     }
 
     // Centroid
@@ -922,9 +913,10 @@ function identifyNiches(
     let outsideCount = 0;
     for (let i = 0; i < n; i++) {
       const target = insideSet.has(i) ? insideMean : outsideMean;
-      if (insideSet.has(i)) insideCount++; else outsideCount++;
+      if (insideSet.has(i)) insideCount++;
+      else outsideCount++;
       for (let g = 0; g < geneNames.length; g++) {
-        target[g] += (expression[g]?.[i] ?? 0);
+        target[g] += expression[g]?.[i] ?? 0;
       }
     }
     if (insideCount > 0) for (let g = 0; g < geneNames.length; g++) insideMean[g] /= insideCount;
@@ -998,10 +990,7 @@ export function buildScSpatialQueryResponse(
       ),
     ),
   }));
-  const selectedCluster = resolveSelectedCluster(
-    { ...request, selectedGene },
-    requestedClusterSummaries,
-  );
+  const selectedCluster = resolveSelectedCluster({ ...request, selectedGene }, requestedClusterSummaries);
   const viewMode = resolveViewMode(request.viewMode, analysis.datasetMeta);
   const viewPoints = buildViewPoints(
     viewMode,
@@ -1023,14 +1012,9 @@ export function buildScSpatialQueryResponse(
     clusterLabels,
   );
 
-  const selectedClusterSummary = requestedClusterSummaries.find((cluster) => cluster.clusterLabel === selectedCluster) ?? null;
-  const selectedCell = buildSelectedCellDetail(
-    artifact,
-    analysis.cells,
-    selectedCellId,
-    selectedGene,
-    clusterLabels,
-  );
+  const selectedClusterSummary =
+    requestedClusterSummaries.find((cluster) => cluster.clusterLabel === selectedCluster) ?? null;
+  const selectedCell = buildSelectedCellDetail(artifact, analysis.cells, selectedCellId, selectedGene, clusterLabels);
 
   return {
     artifactId: artifact.artifactId,
@@ -1047,13 +1031,11 @@ export function buildScSpatialQueryResponse(
     },
     centerView: {
       mode: viewMode,
-      points: viewMode === 'trajectory' ? [] : centerViewPoints,
-      xLabel: viewMode.startsWith('spatial') ? 'Spatial X' : viewMode === 'umap' ? 'UMAP 1' : 'Cell',
-      yLabel: viewMode.startsWith('spatial') ? 'Spatial Y' : viewMode === 'umap' ? 'UMAP 2' : 'Expression',
-      zLabel: viewMode === 'spatial-3d' ? `${selectedGene} expression` : undefined,
-      trajectory: viewMode === 'trajectory'
-        ? buildTrajectoryLayout(analysis.clusterResult, analysis.paga)
-        : undefined,
+      points: viewMode === "trajectory" ? [] : centerViewPoints,
+      xLabel: viewMode.startsWith("spatial") ? "Spatial X" : viewMode === "umap" ? "UMAP 1" : "Cell",
+      yLabel: viewMode.startsWith("spatial") ? "Spatial Y" : viewMode === "umap" ? "UMAP 2" : "Expression",
+      zLabel: viewMode === "spatial-3d" ? `${selectedGene} expression` : undefined,
+      trajectory: viewMode === "trajectory" ? buildTrajectoryLayout(analysis.clusterResult, analysis.paga) : undefined,
     },
     rightPanel: {
       clusterSummaries: requestedClusterSummaries,
@@ -1064,7 +1046,7 @@ export function buildScSpatialQueryResponse(
       spatiallyVariableGenes: analysis.svgResults,
       niches: analysis.niches,
       provenance: {
-        source: analysis.validity === 'demo' ? 'bundled-demo' : 'upload',
+        source: analysis.validity === "demo" ? "bundled-demo" : "upload",
         fileName: artifact.source.fileName,
         validity: analysis.validity,
         warnings: analysis.warnings,

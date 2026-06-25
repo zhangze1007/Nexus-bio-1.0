@@ -4,124 +4,143 @@
  * These are stateless utilities used by multiple slices. They have no
  * store dependencies and perform no side effects.
  */
-import { createId, normalizeNonEmptyId, stableSerialize, inferToolSimulation, payloadValidity } from '../workbenchStoreHelpers';
-import type { WorkbenchToolPayloadMap } from '../workbenchPayloads';
-import type { WorkbenchRunArtifact, WorkbenchCanonicalState, WorkbenchEvidenceItem, EvidenceSourceKind, WorkbenchWorkflowControlSnapshot } from '../workbenchTypes';
-import type { WorkbenchState } from './types';
-import { tryGetToolContract } from '../../services/workflowRegistry';
-import { evaluateToolContract } from '../../services/workflowContractEvaluator';
-import { buildWorkflowDecision } from '../../services/workflowSupervisor';
-import { isAxonToolSupported } from '../../services/axonAdapterRegistry';
-import type { AxonTool } from '../../services/AxonOrchestrator';
-import {
-  GOLDEN_PATH_TOOL_IDS,
-  meetsValidityFloor,
-  type ToolId,
-} from '../../domain/workflowContract';
-import type { WorkflowActor, WorkflowStateValue, WorkflowToolStatus } from '../../services/workflowStateMachine';
-import { getStageForTool } from '../../components/tools/shared/workbenchConfig';
-import { buildExecutionSnapshot } from '../../config/workbenchExecution';
-import { getToolValidity } from '../../config/toolValidity';
+
+import { getStageForTool } from "../../components/tools/shared/workbenchConfig";
+import { TOOL_ASSUMPTIONS } from "../../config/toolAssumptions";
+import { getToolValidity } from "../../config/toolValidity";
+import { buildExecutionSnapshot } from "../../config/workbenchExecution";
+import { getUpstreamToolIds } from "../../config/workbenchGraph";
+import type { WorkflowArtifact } from "../../domain/workflowArtifact";
+import { deriveAnalyzeCompatibilityProjection } from "../../domain/workflowArtifactAdapters";
+import { GOLDEN_PATH_TOOL_IDS, meetsValidityFloor, type ToolId } from "../../domain/workflowContract";
+import type { AxonTool } from "../../services/AxonOrchestrator";
+import { isAxonToolSupported } from "../../services/axonAdapterRegistry";
+import { collectProvenanceIds, withProvenanceSync } from "../../services/provenanceMiddleware";
 import {
   evaluateWorkbenchPayloadAdmission,
   inferAdmissionInputFromPayload,
-} from '../../services/workbenchPayloadAdmission';
+} from "../../services/workbenchPayloadAdmission";
+import { evaluateToolContract } from "../../services/workflowContractEvaluator";
+import { tryGetToolContract } from "../../services/workflowRegistry";
+import type { WorkflowActor, WorkflowStateValue, WorkflowToolStatus } from "../../services/workflowStateMachine";
+import { buildWorkflowDecision } from "../../services/workflowSupervisor";
+import type { WorkbenchToolPayloadMap } from "../workbenchPayloads";
 import {
-  collectProvenanceIds,
-  withProvenanceSync,
-} from '../../services/provenanceMiddleware';
-import { getUpstreamToolIds } from '../../config/workbenchGraph';
-import { TOOL_ASSUMPTIONS } from '../../config/toolAssumptions';
+  createId as _createId,
+  buildCheckpoints,
+  buildRecommendationsFromToolIds,
+  createId,
+  DEFAULT_PROJECT_SYNC_SCOPE,
+  getWorkbenchActorId,
+  inferToolSimulation,
+  normalizeNonEmptyId,
+  PROVENANCE_MIDDLEWARE_TOOL_IDS,
+  payloadValidity,
+  stableSerialize,
+  WORKBENCH_ACTOR_KEY,
+} from "../workbenchStoreHelpers";
+import type {
+  EvidenceSourceKind,
+  WorkbenchCanonicalState,
+  WorkbenchEvidenceItem,
+  WorkbenchRunArtifact,
+  WorkbenchWorkflowControlSnapshot,
+} from "../workbenchTypes";
 import {
-  sanitizeWorkbenchState,
+  sanitizeWorkbenchAuditLog,
   sanitizeWorkbenchBackendMeta,
   sanitizeWorkbenchCollaborators,
   sanitizeWorkbenchExperimentRecords,
-  sanitizeWorkbenchAuditLog,
   sanitizeWorkbenchHistory,
-} from '../workbenchValidation';
-import { deriveAnalyzeCompatibilityProjection } from '../../domain/workflowArtifactAdapters';
-import type { WorkflowArtifact } from '../../domain/workflowArtifact';
-import { DEFAULT_PROJECT_SYNC_SCOPE, PROVENANCE_MIDDLEWARE_TOOL_IDS, WORKBENCH_ACTOR_KEY, createId as _createId, getWorkbenchActorId } from '../workbenchStoreHelpers';
-import {
-  buildCheckpoints,
-  buildRecommendationsFromToolIds,
-} from '../workbenchStoreHelpers';
+  sanitizeWorkbenchState,
+} from "../workbenchValidation";
+import type { WorkbenchState } from "./types";
 
 // Re-export for slice convenience
-export { createId, normalizeNonEmptyId, stableSerialize, inferToolSimulation, payloadValidity, buildCheckpoints, buildRecommendationsFromToolIds };
+export {
+  buildCheckpoints,
+  buildRecommendationsFromToolIds,
+  createId,
+  inferToolSimulation,
+  normalizeNonEmptyId,
+  payloadValidity,
+  stableSerialize,
+};
 
 // ── Contract status decision ──
 export type ContractStatusDecision = {
-  status: WorkbenchRunArtifact['status'];
+  status: WorkbenchRunArtifact["status"];
   blockingUpstreamToolIds: string[];
   reason: string;
-  confidence: WorkbenchRunArtifact['confidence'];
-  uncertainty: WorkbenchRunArtifact['uncertainty'];
-  validity: WorkbenchRunArtifact['validity'];
+  confidence: WorkbenchRunArtifact["confidence"];
+  uncertainty: WorkbenchRunArtifact["uncertainty"];
+  validity: WorkbenchRunArtifact["validity"];
   humanGateRequired: boolean;
 };
 
-const EVIDENCE_SOURCE_KINDS: EvidenceSourceKind[] = ['literature', 'analysis', 'tool', 'system'];
+const EVIDENCE_SOURCE_KINDS: EvidenceSourceKind[] = ["literature", "analysis", "tool", "system"];
 
 // ── summarizePayload ──
-export function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, payload: WorkbenchToolPayloadMap[K]) {
+export function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(
+  toolId: K,
+  payload: WorkbenchToolPayloadMap[K],
+) {
   if (!payload) return `${String(toolId).toUpperCase()} updated`;
   switch (toolId) {
-    case 'pathd': {
-      const data = (payload as WorkbenchToolPayloadMap['pathd'])!;
+    case "pathd": {
+      const data = (payload as WorkbenchToolPayloadMap["pathd"])!;
       return `PATHD ${data.activeRouteLabel} · ${data.nodeCount} nodes · ${data.result.bottleneckCount} bottlenecks`;
     }
-    case 'fbasim': {
-      const data = (payload as WorkbenchToolPayloadMap['fbasim'])!;
-      return `FBA ${data.mode} run · growth ${data.result.growthRate.toFixed(3)} · feasible ${data.result.feasible ? 'yes' : 'no'}`;
+    case "fbasim": {
+      const data = (payload as WorkbenchToolPayloadMap["fbasim"])!;
+      return `FBA ${data.mode} run · growth ${data.result.growthRate.toFixed(3)} · feasible ${data.result.feasible ? "yes" : "no"}`;
     }
-    case 'cethx': {
-      const data = (payload as WorkbenchToolPayloadMap['cethx'])!;
+    case "cethx": {
+      const data = (payload as WorkbenchToolPayloadMap["cethx"])!;
       return `Thermo ${data.pathway} · ΔG ${data.result.gibbsFreeEnergy.toFixed(1)} · η ${data.result.efficiency.toFixed(1)}%`;
     }
-    case 'catdes': {
-      const data = (payload as WorkbenchToolPayloadMap['catdes'])!;
-      return `Catalyst ${data.selectedEnzymeName} · ${data.designCount} designs · viable ${data.result.isViable ? 'yes' : 'no'}`;
+    case "catdes": {
+      const data = (payload as WorkbenchToolPayloadMap["catdes"])!;
+      return `Catalyst ${data.selectedEnzymeName} · ${data.designCount} designs · viable ${data.result.isViable ? "yes" : "no"}`;
     }
-    case 'dyncon': {
-      const data = (payload as WorkbenchToolPayloadMap['dyncon'])!;
-      return `Dynamic control · titer ${data.result.productTiter.toFixed(2)} · stable ${data.result.stable ? 'yes' : 'no'}`;
+    case "dyncon": {
+      const data = (payload as WorkbenchToolPayloadMap["dyncon"])!;
+      return `Dynamic control · titer ${data.result.productTiter.toFixed(2)} · stable ${data.result.stable ? "yes" : "no"}`;
     }
-    case 'cellfree': {
-      const data = (payload as WorkbenchToolPayloadMap['cellfree'])!;
+    case "cellfree": {
+      const data = (payload as WorkbenchToolPayloadMap["cellfree"])!;
       return `Cell-free ${data.targetConstruct} · ${data.result.totalProteinYield.toFixed(2)} mg/mL`;
     }
-    case 'dbtlflow': {
-      const data = (payload as WorkbenchToolPayloadMap['dbtlflow'])!;
-      const typedMetricCount = Object.values(data.result.feedback?.learnedMetrics ?? {})
-        .filter((value) => typeof value === 'number')
-        .length;
+    case "dbtlflow": {
+      const data = (payload as WorkbenchToolPayloadMap["dbtlflow"])!;
+      const typedMetricCount = Object.values(data.result.feedback?.learnedMetrics ?? {}).filter(
+        (value) => typeof value === "number",
+      ).length;
       const legacyLearnedCount = data.result.learnedParameters?.length ?? 0;
-      return `DBTL ${data.proposedPhase} · pass ${data.passed ? 'yes' : 'no'} · ${typedMetricCount || legacyLearnedCount} learned`;
+      return `DBTL ${data.proposedPhase} · pass ${data.passed ? "yes" : "no"} · ${typedMetricCount || legacyLearnedCount} learned`;
     }
-    case 'proevol': {
-      const data = (payload as WorkbenchToolPayloadMap['proevol'])!;
+    case "proevol": {
+      const data = (payload as WorkbenchToolPayloadMap["proevol"])!;
       return `PROEVOL ${data.targetProtein} · round ${data.currentRound}/${data.totalRounds} · lead ${data.result.leadVariantName}`;
     }
-    case 'gecair': {
-      const data = (payload as WorkbenchToolPayloadMap['gecair'])!;
+    case "gecair": {
+      const data = (payload as WorkbenchToolPayloadMap["gecair"])!;
       return `Gene circuit ${data.gateType} · output ${data.result.outputLevel.toFixed(2)}`;
     }
-    case 'genmim': {
-      const data = (payload as WorkbenchToolPayloadMap['genmim'])!;
+    case "genmim": {
+      const data = (payload as WorkbenchToolPayloadMap["genmim"])!;
       return `Genome minimizer · ${data.result.selectedTargets} targets · risk ${data.result.offTargetRisk.toFixed(2)}`;
     }
-    case 'multio': {
-      const data = (payload as WorkbenchToolPayloadMap['multio'])!;
+    case "multio": {
+      const data = (payload as WorkbenchToolPayloadMap["multio"])!;
       return `Multi-omics ${data.selectedGene} · ${data.result.significantCount} significant signals`;
     }
-    case 'scspatial': {
-      const data = (payload as WorkbenchToolPayloadMap['scspatial'])!;
+    case "scspatial": {
+      const data = (payload as WorkbenchToolPayloadMap["scspatial"])!;
       return `Spatial ${data.highlightGene} · cluster ${data.result.highestYieldCluster}`;
     }
-    case 'nexai': {
-      const data = (payload as WorkbenchToolPayloadMap['nexai'])!;
+    case "nexai": {
+      const data = (payload as WorkbenchToolPayloadMap["nexai"])!;
       return `Axon ${data.result.mode} · ${data.result.citations} citations · ${(data.result.confidence * 100).toFixed(0)}% confidence`;
     }
     default:
@@ -131,9 +150,9 @@ export function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId
 
 // ── buildRunEvidenceSnapshot ──
 export function buildRunEvidenceSnapshot(
-  state: Pick<WorkbenchState, 'evidenceItems' | 'selectedEvidenceIds'>,
+  state: Pick<WorkbenchState, "evidenceItems" | "selectedEvidenceIds">,
   toolId: keyof WorkbenchToolPayloadMap,
-): WorkbenchRunArtifact['evidenceSnapshot'] {
+): WorkbenchRunArtifact["evidenceSnapshot"] {
   const contract = tryGetToolContract(toolId as string);
   const count = state.evidenceItems.length;
   const selectedEvidenceIds = state.selectedEvidenceIds.filter((id) =>
@@ -149,10 +168,10 @@ export function buildRunEvidenceSnapshot(
   const minRequired = contract?.evidenceRequired.minItems ?? 0;
   const status =
     minRequired === 0 && requiredKinds.length === 0
-      ? 'not-required'
+      ? "not-required"
       : count >= minRequired && missingKinds.length === 0
-        ? 'satisfied'
-        : 'missing';
+        ? "satisfied"
+        : "missing";
 
   return {
     count,
@@ -179,9 +198,9 @@ export function evaluateContractStatus(
   const contract = tryGetToolContract(toolId as string);
   if (!contract) {
     return {
-      status: 'ok',
+      status: "ok",
       blockingUpstreamToolIds: [],
-      reason: '',
+      reason: "",
       confidence: null,
       uncertainty: null,
       validity: payloadValidity(payload),
@@ -222,11 +241,11 @@ export function evaluateContractStatus(
         reasons.push(`${ref.toolId.toUpperCase()} contract unsatisfied: ${upstreamEval.reason}`);
       }
     }
-    if (upstream.status === 'blocked' || upstream.status === 'gated' || upstream.status === 'demoOnly') {
+    if (upstream.status === "blocked" || upstream.status === "gated" || upstream.status === "demoOnly") {
       blocking.push(ref.toolId);
       reasons.push(`${ref.toolId.toUpperCase()} is itself ${upstream.status}`);
     }
-    if (upstream.status === 'simulated') {
+    if (upstream.status === "simulated") {
       blocking.push(ref.toolId);
       reasons.push(`${ref.toolId.toUpperCase()} is simulated`);
     }
@@ -234,16 +253,16 @@ export function evaluateContractStatus(
 
   if (blocking.length) {
     return {
-      status: 'blocked',
+      status: "blocked",
       blockingUpstreamToolIds: Array.from(new Set(blocking)),
-      reason: reasons.join('; '),
+      reason: reasons.join("; "),
       ...runMetadata,
     };
   }
 
   if (!current.status.hasRequiredOutputs) {
     return {
-      status: 'blocked',
+      status: "blocked",
       blockingUpstreamToolIds: [],
       reason: current.reason,
       ...runMetadata,
@@ -252,7 +271,7 @@ export function evaluateContractStatus(
 
   if (current.isSimulated) {
     return {
-      status: 'demoOnly',
+      status: "demoOnly",
       blockingUpstreamToolIds: [],
       reason: current.reason,
       ...runMetadata,
@@ -262,7 +281,7 @@ export function evaluateContractStatus(
 
   if (!current.validityOk || !current.confidenceOk || !current.uncertaintyOk) {
     return {
-      status: 'gated',
+      status: "gated",
       blockingUpstreamToolIds: [],
       reason: current.reason,
       ...runMetadata,
@@ -271,9 +290,9 @@ export function evaluateContractStatus(
   }
 
   return {
-    status: 'ok',
+    status: "ok",
     blockingUpstreamToolIds: [],
-    reason: '',
+    reason: "",
     ...runMetadata,
   };
 }
@@ -302,17 +321,18 @@ export function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
   const contractDecision = evaluateContractStatus(toolId, payload, latestByTool, Boolean(state.project?.isDemo));
 
   const isSimulated =
-    contractDecision.status === 'blocked' ||
-    contractDecision.status === 'simulated' ||
-    contractDecision.status === 'demoOnly' ||
+    contractDecision.status === "blocked" ||
+    contractDecision.status === "simulated" ||
+    contractDecision.status === "demoOnly" ||
     inferToolSimulation(payload) ||
     Boolean(state.project?.isDemo);
 
   return {
-    id: createId('run'),
+    id: createId("run"),
     toolId,
     stageId,
-    targetProduct: payload?.targetProduct ?? analyzeArtifact?.targetProduct ?? state.project?.targetProduct ?? 'Target Product',
+    targetProduct:
+      payload?.targetProduct ?? analyzeArtifact?.targetProduct ?? state.project?.targetProduct ?? "Target Product",
     sourceArtifactId: payload?.sourceArtifactId ?? analyzeArtifact?.id,
     upstreamArtifactIds: execution.upstreamArtifactIds,
     execution,
@@ -323,9 +343,7 @@ export function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
     status: contractDecision.status,
     statusReason: contractDecision.reason || undefined,
     blockingUpstreamToolIds:
-      contractDecision.blockingUpstreamToolIds.length > 0
-        ? contractDecision.blockingUpstreamToolIds
-        : undefined,
+      contractDecision.blockingUpstreamToolIds.length > 0 ? contractDecision.blockingUpstreamToolIds : undefined,
     confidence: contractDecision.confidence ?? null,
     uncertainty: contractDecision.uncertainty ?? null,
     validity: contractDecision.validity ?? null,
@@ -336,33 +354,33 @@ export function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
 }
 
 // ── getAnalyzeArtifactForState ──
-export function getAnalyzeArtifactForState(state: Pick<WorkbenchState, 'workflowArtifact' | 'analyzeArtifact'>) {
-  return state.workflowArtifact
-    ? deriveAnalyzeCompatibilityProjection(state.workflowArtifact)
-    : state.analyzeArtifact;
+export function getAnalyzeArtifactForState(state: Pick<WorkbenchState, "workflowArtifact" | "analyzeArtifact">) {
+  return state.workflowArtifact ? deriveAnalyzeCompatibilityProjection(state.workflowArtifact) : state.analyzeArtifact;
 }
 
 // ── buildCanonicalSlice ──
-export function buildCanonicalSlice(state: Pick<
-  WorkbenchState,
-  | 'schemaVersion'
-  | 'revision'
-  | 'lastMutationAt'
-  | 'activeArtifactId'
-  | 'project'
-  | 'evidenceItems'
-  | 'selectedEvidenceIds'
-  | 'draftAnalyzeInput'
-  | 'workflowArtifact'
-  | 'analyzeArtifact'
-  | 'toolRuns'
-  | 'toolPayloads'
-  | 'payloadAdmissionDecisionsByToolId'
-  | 'runArtifacts'
-  | 'checkpoints'
-  | 'nextRecommendations'
-  | 'workflowControl'
->): WorkbenchCanonicalState {
+export function buildCanonicalSlice(
+  state: Pick<
+    WorkbenchState,
+    | "schemaVersion"
+    | "revision"
+    | "lastMutationAt"
+    | "activeArtifactId"
+    | "project"
+    | "evidenceItems"
+    | "selectedEvidenceIds"
+    | "draftAnalyzeInput"
+    | "workflowArtifact"
+    | "analyzeArtifact"
+    | "toolRuns"
+    | "toolPayloads"
+    | "payloadAdmissionDecisionsByToolId"
+    | "runArtifacts"
+    | "checkpoints"
+    | "nextRecommendations"
+    | "workflowControl"
+  >,
+): WorkbenchCanonicalState {
   return {
     schemaVersion: state.schemaVersion,
     revision: state.revision,
@@ -391,32 +409,27 @@ export function touchState(state: WorkbenchState, patch: Partial<WorkbenchCanoni
     ...patch,
     revision: state.revision + 1,
     lastMutationAt: now,
-    syncStatus: state.hydratedFromServer ? 'saving' : state.syncStatus,
+    syncStatus: state.hydratedFromServer ? "saving" : state.syncStatus,
     syncError: null,
   };
 }
 
 // ── requestCanonicalState ──
 export async function requestCanonicalState(
-  method: 'GET' | 'PUT',
+  method: "GET" | "PUT",
   state?: WorkbenchCanonicalState,
   options?: { projectId?: string | null; artifactId?: string | null },
 ) {
   const actorId = getWorkbenchActorId();
   const projectId = options?.projectId ?? state?.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE;
   const artifactId = normalizeNonEmptyId(
-    options?.artifactId
-    ?? state?.activeArtifactId
-    ?? state?.workflowArtifact?.id
-    ?? null,
+    options?.artifactId ?? state?.activeArtifactId ?? state?.workflowArtifact?.id ?? null,
   );
-  const url = artifactId
-    ? `/api/workbench?artifact=${encodeURIComponent(artifactId)}`
-    : '/api/workbench';
-  const requestBody = method === 'PUT' ? { state } : undefined;
-  const isCanonicalArtifactSave = method === 'PUT' && Boolean(state?.workflowArtifact);
-  if (isCanonicalArtifactSave && process.env.NODE_ENV !== 'production') {
-    console.info('[workbench] canonical save request payload', {
+  const url = artifactId ? `/api/workbench?artifact=${encodeURIComponent(artifactId)}` : "/api/workbench";
+  const requestBody = method === "PUT" ? { state } : undefined;
+  const isCanonicalArtifactSave = method === "PUT" && Boolean(state?.workflowArtifact);
+  if (isCanonicalArtifactSave && process.env.NODE_ENV !== "production") {
+    console.info("[workbench] canonical save request payload", {
       url,
       projectId,
       artifactId,
@@ -426,19 +439,19 @@ export async function requestCanonicalState(
   const response = await fetch(url, {
     method,
     headers: {
-      'Content-Type': 'application/json',
-      'x-workbench-actor-id': actorId,
-      'x-workbench-project-id': projectId,
+      "Content-Type": "application/json",
+      "x-workbench-actor-id": actorId,
+      "x-workbench-project-id": projectId,
     },
-    cache: 'no-store',
+    cache: "no-store",
     body: requestBody ? JSON.stringify(requestBody) : undefined,
   });
   const payload = await response.json().catch(() => {
     console.warn(`[Workbench] Failed to parse JSON response (status ${response.status})`);
     return {};
   });
-  if (isCanonicalArtifactSave && process.env.NODE_ENV !== 'production') {
-    console.info('[workbench] canonical save response payload', payload);
+  if (isCanonicalArtifactSave && process.env.NODE_ENV !== "production") {
+    console.info("[workbench] canonical save response payload", payload);
   }
   if (!response.ok) {
     const error = payload?.error ?? `${method} /api/workbench failed (${response.status})`;
@@ -460,7 +473,7 @@ export async function requestCanonicalState(
   }
   const canonicalState = sanitizeWorkbenchState(payload?.state);
   if (!canonicalState) {
-    throw new Error('Workbench server returned an invalid canonical state');
+    throw new Error("Workbench server returned an invalid canonical state");
   }
   return {
     canonicalState,
@@ -479,11 +492,11 @@ export function buildCanonicalPatchFromWorkflowArtifact(
 ): Partial<WorkbenchCanonicalState> {
   const analyzeArtifact = deriveAnalyzeCompatibilityProjection(artifact);
   const project = state.project ?? {
-    id: createId('project'),
+    id: createId("project"),
     title: analyzeArtifact.title,
     summary: analyzeArtifact.summary,
     targetProduct: analyzeArtifact.targetProduct,
-    status: 'active' as const,
+    status: "active" as const,
     isDemo: false,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -499,27 +512,29 @@ export function buildCanonicalPatchFromWorkflowArtifact(
       summary: analyzeArtifact.summary,
       targetProduct: analyzeArtifact.targetProduct,
       sourceQuery: artifact.intake.sourceQuery ?? project.sourceQuery,
-      status: 'active',
+      status: "active",
       isDemo: false,
       updatedAt: Date.now(),
     },
-    checkpoints: buildCheckpoints('stage-1', analyzeArtifact, state.toolRuns),
+    checkpoints: buildCheckpoints("stage-1", analyzeArtifact, state.toolRuns),
     nextRecommendations: buildRecommendationsFromToolIds(
       analyzeArtifact.recommendedNextTools,
-      'analysis',
-      'Recommended from canonical workflow artifact',
+      "analysis",
+      "Recommended from canonical workflow artifact",
     ),
   };
 }
 
 // ── isValidPersistedWorkflowArtifact ──
-export function isValidPersistedWorkflowArtifact(artifact: WorkflowArtifact | null | undefined): artifact is WorkflowArtifact {
+export function isValidPersistedWorkflowArtifact(
+  artifact: WorkflowArtifact | null | undefined,
+): artifact is WorkflowArtifact {
   return Boolean(
-    artifact
-    && normalizeNonEmptyId(artifact.id)
-    && artifact.status === 'compiled'
-    && artifact.atomicPathwayGraph
-    && artifact.atomicPathwayGraph.nodes.length > 0,
+    artifact &&
+      normalizeNonEmptyId(artifact.id) &&
+      artifact.status === "compiled" &&
+      artifact.atomicPathwayGraph &&
+      artifact.atomicPathwayGraph.nodes.length > 0,
   );
 }
 
@@ -545,21 +560,20 @@ function outputAssumptionIdsForTool(toolId: string): string[] {
   return (TOOL_ASSUMPTIONS[toolId] ?? []).map((assumption) => assumption.id);
 }
 
-function provenanceIdsForToolPayloads(
-  toolIds: readonly string[],
-  toolPayloads: WorkbenchToolPayloadMap,
-): string[] {
-  return Array.from(new Set(
-    toolIds.flatMap((upstreamToolId) =>
-      collectProvenanceIds(toolPayloads[upstreamToolId as keyof WorkbenchToolPayloadMap]),
+function provenanceIdsForToolPayloads(toolIds: readonly string[], toolPayloads: WorkbenchToolPayloadMap): string[] {
+  return Array.from(
+    new Set(
+      toolIds.flatMap((upstreamToolId) =>
+        collectProvenanceIds(toolPayloads[upstreamToolId as keyof WorkbenchToolPayloadMap]),
+      ),
     ),
-  ));
+  );
 }
 
 export function maybeAttachPayloadProvenance<K extends keyof WorkbenchToolPayloadMap>(
   toolId: K,
   payload: WorkbenchToolPayloadMap[K],
-  state: Pick<WorkbenchState, 'toolPayloads'>,
+  state: Pick<WorkbenchState, "toolPayloads">,
 ): WorkbenchToolPayloadMap[K] {
   const toolIdText = String(toolId);
   if (!PROVENANCE_MIDDLEWARE_TOOL_IDS.has(toolIdText)) return payload;
@@ -570,8 +584,8 @@ export function maybeAttachPayloadProvenance<K extends keyof WorkbenchToolPayloa
     payload,
     {
       toolId: toolIdText,
-      activityType: 'tool-run',
-      surface: 'payload',
+      activityType: "tool-run",
+      surface: "payload",
       outputAssumptionIds: outputAssumptionIdsForTool(toolIdText),
       upstreamProvenanceIds: provenanceIdsForToolPayloads(getUpstreamToolIds(toolIdText), state.toolPayloads),
       ...(startedAt ? { startedAt, completedAt: startedAt } : {}),
@@ -582,7 +596,7 @@ export function maybeAttachPayloadProvenance<K extends keyof WorkbenchToolPayloa
 
 // ── Workflow actor management ──
 // These are module-level singletons shared across slices.
-import { createWorkflowActor, GOLDEN_PATH_DONE_EVENT } from '../../services/workflowStateMachine';
+import { createWorkflowActor, GOLDEN_PATH_DONE_EVENT } from "../../services/workflowStateMachine";
 
 let workflowActor: WorkflowActor | null = null;
 
@@ -607,8 +621,8 @@ export function resetWorkflowActor(): void {
 
 /** Test helper. Delegates to resetWorkflowActor(). */
 export function __resetWorkflowActorForTests(): void {
-  if (process.env.NODE_ENV !== 'test') {
-    console.warn('__resetWorkflowActorForTests called outside test environment');
+  if (process.env.NODE_ENV !== "test") {
+    console.warn("__resetWorkflowActorForTests called outside test environment");
     return;
   }
   resetWorkflowActor();
@@ -628,14 +642,14 @@ export function syncWorkflowActor(
   }
 
   if (targetProduct && ctx.targetProduct !== targetProduct) {
-    actor.send({ type: 'SET_TARGET', targetProduct });
+    actor.send({ type: "SET_TARGET", targetProduct });
   }
 
   for (const tool of GOLDEN_PATH_TOOL_IDS) {
     const status = toolStatus[tool];
     if (!status) continue;
     const eventType = GOLDEN_PATH_DONE_EVENT[tool];
-    actor.send({ type: eventType as 'PATHD_DONE', status });
+    actor.send({ type: eventType as "PATHD_DONE", status });
   }
 
   return actor.getSnapshot().value as WorkflowStateValue;
@@ -643,16 +657,16 @@ export function syncWorkflowActor(
 
 export function dispatchEvidenceAdded(ids: string[]): void {
   if (!ids.length) return;
-  getWorkflowActor().send({ type: 'EVIDENCE_ADDED', ids });
+  getWorkflowActor().send({ type: "EVIDENCE_ADDED", ids });
 }
 
 export function dispatchLoopBack(): void {
-  getWorkflowActor().send({ type: 'LOOP_BACK' });
+  getWorkflowActor().send({ type: "LOOP_BACK" });
 }
 
 // ── buildWorkflowControlSnapshot ──
 export function buildWorkflowControlSnapshot(
-  state: Pick<WorkbenchState, 'project' | 'analyzeArtifact' | 'toolPayloads' | 'evidenceItems' | 'runArtifacts'>,
+  state: Pick<WorkbenchState, "project" | "analyzeArtifact" | "toolPayloads" | "evidenceItems" | "runArtifacts">,
   runArtifactsOverride?: WorkbenchRunArtifact[],
 ): WorkbenchWorkflowControlSnapshot {
   const runArtifacts = runArtifactsOverride ?? state.runArtifacts;
@@ -681,41 +695,36 @@ export function buildWorkflowControlSnapshot(
   const latestRun = runArtifacts[0] ?? null;
   const latestRunStatus = latestRun?.status ?? null;
   const latestRunContract = latestRun ? tryGetToolContract(latestRun.toolId) : undefined;
-  const latestRunAffectsWorkflow = latestRunContract?.contractScope === 'workflow';
+  const latestRunAffectsWorkflow = latestRunContract?.contractScope === "workflow";
   const runGateStatus =
     latestRunAffectsWorkflow &&
-    (latestRunStatus === 'blocked' || latestRunStatus === 'gated' || latestRunStatus === 'demoOnly')
+    (latestRunStatus === "blocked" || latestRunStatus === "gated" || latestRunStatus === "demoOnly")
       ? latestRunStatus
       : null;
-  const status =
-    runGateStatus === 'demoOnly'
-      ? 'demoOnly'
-      : runGateStatus ?? decision.status;
+  const status = runGateStatus === "demoOnly" ? "demoOnly" : (runGateStatus ?? decision.status);
 
   return {
     machineState,
     status,
     currentToolId: decision.currentToolId,
     nextRecommendedNode:
-      runGateStatus === 'blocked'
+      runGateStatus === "blocked"
         ? ((latestRun?.blockingUpstreamToolIds?.[0] as ToolId | undefined) ?? decision.nextRecommendedNode)
         : decision.nextRecommendedNode,
     missingEvidence: decision.missingEvidence,
     confidence: decision.confidence,
     uncertainty: decision.uncertainty,
     validity: decision.validity,
-    humanGateRequired: decision.humanGateRequired || status === 'gated' || status === 'demoOnly',
+    humanGateRequired: decision.humanGateRequired || status === "gated" || status === "demoOnly",
     nextNodeIsContractOnly: decision.nextNodeIsContractOnly,
-    isDemoOnly: status === 'demoOnly',
+    isDemoOnly: status === "demoOnly",
     latestRunStatus,
     latestRunToolId: latestRun?.toolId ?? null,
-    reasonCodes: [
-      ...decision.reasonCodes,
-      ...(runGateStatus ? [`LATEST_RUN_${runGateStatus.toUpperCase()}`] : []),
-    ],
-    explanation: runGateStatus && latestRun?.statusReason
-      ? `${String(latestRun.toolId).toUpperCase()} did not advance: ${latestRun.statusReason}`
-      : decision.explanation,
+    reasonCodes: [...decision.reasonCodes, ...(runGateStatus ? [`LATEST_RUN_${runGateStatus.toUpperCase()}`] : [])],
+    explanation:
+      runGateStatus && latestRun?.statusReason
+        ? `${String(latestRun.toolId).toUpperCase()} did not advance: ${latestRun.statusReason}`
+        : decision.explanation,
     iteration,
     updatedAt: Date.now(),
   };
@@ -723,31 +732,29 @@ export function buildWorkflowControlSnapshot(
 
 // ── inferWorkflowMachineState ──
 export const STATE_AFTER_TOOL: Record<string, WorkflowStateValue> = {
-  pathd: 'pathdReady',
-  fbasim: 'fbasimReady',
-  catdes: 'catdesReady',
-  dyncon: 'dynconReady',
-  cellfree: 'cellfreeReady',
-  dbtlflow: 'dbtlCommitted',
+  pathd: "pathdReady",
+  fbasim: "fbasimReady",
+  catdes: "catdesReady",
+  dyncon: "dynconReady",
+  cellfree: "cellfreeReady",
+  dbtlflow: "dbtlCommitted",
 };
 
 export function inferWorkflowMachineState(
   toolStatus: Partial<Record<ToolId, WorkflowToolStatus>>,
   hasTarget: boolean,
 ): WorkflowStateValue {
-  if (!hasTarget) return 'idle';
-  let state: WorkflowStateValue = 'targetSet';
+  if (!hasTarget) return "idle";
+  let state: WorkflowStateValue = "targetSet";
   for (const tool of GOLDEN_PATH_TOOL_IDS) {
     const status = toolStatus[tool];
     const contract = tryGetToolContract(tool);
     if (!status || !contract) break;
-    const validityOk =
-      status.validity !== null && meetsValidityFloor(status.validity, contract.validityBaseline.floor);
+    const validityOk = status.validity !== null && meetsValidityFloor(status.validity, contract.validityBaseline.floor);
     const confidenceOk =
       contract.confidencePolicy.minToAdvance === null ||
       (status.confidence !== null && status.confidence >= contract.confidencePolicy.minToAdvance);
-    const uncertaintyOk =
-      !contract.uncertaintyPolicy.unboundedIsGate || status.uncertainty != null;
+    const uncertaintyOk = !contract.uncertaintyPolicy.unboundedIsGate || status.uncertainty != null;
     if (!status.hasRequiredOutputs || status.isSimulated || !validityOk || !confidenceOk || !uncertaintyOk) break;
     state = STATE_AFTER_TOOL[tool];
   }
@@ -757,10 +764,10 @@ export function inferWorkflowMachineState(
 // ── createInitialWorkflowControl ──
 export function createInitialWorkflowControl(now = Date.now()): WorkbenchWorkflowControlSnapshot {
   return {
-    machineState: 'idle',
-    status: 'idle',
+    machineState: "idle",
+    status: "idle",
     currentToolId: null,
-    nextRecommendedNode: 'pathd',
+    nextRecommendedNode: "pathd",
     missingEvidence: { minRequired: 0, have: 0, kinds: [] },
     confidence: null,
     uncertainty: null,
@@ -770,12 +777,12 @@ export function createInitialWorkflowControl(now = Date.now()): WorkbenchWorkflo
     isDemoOnly: false,
     latestRunStatus: null,
     latestRunToolId: null,
-    reasonCodes: ['NO_TARGET'],
-    explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+    reasonCodes: ["NO_TARGET"],
+    explanation: "No target product set. Set a target via /research or /analyze, then run PATHD.",
     iteration: 0,
     updatedAt: now,
   };
 }
 
 // Import missing helper from workbenchStoreHelpers
-import { isPayloadRecord, payloadTimestamp } from '../workbenchStoreHelpers';
+import { isPayloadRecord, payloadTimestamp } from "../workbenchStoreHelpers";

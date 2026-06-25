@@ -1,17 +1,14 @@
-'use client';
-import { useState, useEffect, useCallback } from 'react';
+"use client";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * useState wrapper that persists to localStorage.
  * Key format: nexus-bio:{toolId}:{paramName}
  * Falls back to defaultValue if localStorage is unavailable or corrupted.
  */
-export function usePersistedState<T>(
-  key: string,
-  defaultValue: T,
-): [T, (v: T | ((prev: T) => T)) => void] {
+export function usePersistedState<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
   const [value, setValue] = useState<T>(() => {
-    if (typeof window === 'undefined') return defaultValue;
+    if (typeof window === "undefined") return defaultValue;
     try {
       const stored = localStorage.getItem(key);
       if (stored === null) return defaultValue;

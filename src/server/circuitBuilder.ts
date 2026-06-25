@@ -22,26 +22,26 @@
  *     - No resource competition or ribosome allocation coupling
  */
 
-import { hillInhibition, hillActivation } from '../data/mockGECAIR';
+import { hillActivation, hillInhibition } from "../data/mockGECAIR";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
-export type CircuitTopology = 'toggle_switch' | 'repressilator' | 'logic_cascade';
+export type CircuitTopology = "toggle_switch" | "repressilator" | "logic_cascade";
 
 export interface CircuitNode {
   id: string;
-  promoterStrength: number;     // relative units (0-10)
-  rbsStrength: number;          // relative units (0-10)
-  degradationRate: number;      // min⁻¹ (protein degradation)
-  mRNAdegradationRate: number;  // min⁻¹ (mRNA degradation)
+  promoterStrength: number; // relative units (0-10)
+  rbsStrength: number; // relative units (0-10)
+  degradationRate: number; // min⁻¹ (protein degradation)
+  mRNAdegradationRate: number; // min⁻¹ (mRNA degradation)
 }
 
 export interface CircuitEdge {
-  from: string;                 // repressor node ID
-  to: string;                   // repressed node ID
-  type: 'repression' | 'activation';
-  hillCoefficient: number;      // dimensionless (1-4)
-  kd: number;                   // nM (half-maximal concentration)
+  from: string; // repressor node ID
+  to: string; // repressed node ID
+  type: "repression" | "activation";
+  hillCoefficient: number; // dimensionless (1-4)
+  kd: number; // nM (half-maximal concentration)
 }
 
 export interface CircuitParameters {
@@ -49,9 +49,9 @@ export interface CircuitParameters {
   nodes: CircuitNode[];
   edges: CircuitEdge[];
   copyNumber: number;
-  transcriptionRate: number;    // mRNA/min (base rate)
-  leakRate: number;             // mRNA/min (leak transcription)
-  translationRate: number;      // protein/mRNA/min
+  transcriptionRate: number; // mRNA/min (base rate)
+  leakRate: number; // mRNA/min (leak transcription)
+  translationRate: number; // protein/mRNA/min
 }
 
 export interface ODESystem {
@@ -72,16 +72,16 @@ export interface ODESystem {
  */
 export function defaultCircuitParams(topology: CircuitTopology): CircuitParameters {
   switch (topology) {
-    case 'toggle_switch':
+    case "toggle_switch":
       return {
-        topology: 'toggle_switch',
+        topology: "toggle_switch",
         nodes: [
-          { id: 'A', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
-          { id: 'B', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "A", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "B", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
         ],
         edges: [
-          { from: 'A', to: 'B', type: 'repression', hillCoefficient: 2.5, kd: 100 },
-          { from: 'B', to: 'A', type: 'repression', hillCoefficient: 2.5, kd: 100 },
+          { from: "A", to: "B", type: "repression", hillCoefficient: 2.5, kd: 100 },
+          { from: "B", to: "A", type: "repression", hillCoefficient: 2.5, kd: 100 },
         ],
         copyNumber: 1,
         transcriptionRate: 216,
@@ -89,18 +89,18 @@ export function defaultCircuitParams(topology: CircuitTopology): CircuitParamete
         translationRate: 0.2,
       };
 
-    case 'repressilator':
+    case "repressilator":
       return {
-        topology: 'repressilator',
+        topology: "repressilator",
         nodes: [
-          { id: 'A', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
-          { id: 'B', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
-          { id: 'C', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "A", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "B", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "C", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
         ],
         edges: [
-          { from: 'A', to: 'B', type: 'repression', hillCoefficient: 2.0, kd: 100 },
-          { from: 'B', to: 'C', type: 'repression', hillCoefficient: 2.0, kd: 100 },
-          { from: 'C', to: 'A', type: 'repression', hillCoefficient: 2.0, kd: 100 },
+          { from: "A", to: "B", type: "repression", hillCoefficient: 2.0, kd: 100 },
+          { from: "B", to: "C", type: "repression", hillCoefficient: 2.0, kd: 100 },
+          { from: "C", to: "A", type: "repression", hillCoefficient: 2.0, kd: 100 },
         ],
         copyNumber: 1,
         transcriptionRate: 216,
@@ -108,17 +108,17 @@ export function defaultCircuitParams(topology: CircuitTopology): CircuitParamete
         translationRate: 0.2,
       };
 
-    case 'logic_cascade':
+    case "logic_cascade":
       return {
-        topology: 'logic_cascade',
+        topology: "logic_cascade",
         nodes: [
-          { id: 'A', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
-          { id: 'B', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
-          { id: 'C', promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "A", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "B", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
+          { id: "C", promoterStrength: 1.0, rbsStrength: 1.0, degradationRate: 0.0075, mRNAdegradationRate: 1.0 },
         ],
         edges: [
-          { from: 'A', to: 'B', type: 'repression', hillCoefficient: 2.0, kd: 100 },
-          { from: 'B', to: 'C', type: 'repression', hillCoefficient: 2.0, kd: 100 },
+          { from: "A", to: "B", type: "repression", hillCoefficient: 2.0, kd: 100 },
+          { from: "B", to: "C", type: "repression", hillCoefficient: 2.0, kd: 100 },
         ],
         copyNumber: 1,
         transcriptionRate: 216,
@@ -186,7 +186,7 @@ export function buildODESystem(params: CircuitParameters): ODESystem {
         for (const edge of regs) {
           const repressorIdx = nodeIndex.get(edge.from)!;
           const repressorProtein = y[repressorIdx.pi];
-          if (edge.type === 'repression') {
+          if (edge.type === "repression") {
             regulation *= hillInhibition(repressorProtein, edge.kd, edge.hillCoefficient);
           } else {
             regulation *= hillActivation(repressorProtein, edge.kd, edge.hillCoefficient);
@@ -208,8 +208,8 @@ export function buildODESystem(params: CircuitParameters): ODESystem {
   // Default initial conditions: low mRNA, low protein
   const initialConditions = new Array(dim).fill(0);
   for (let i = 0; i < n; i++) {
-    initialConditions[i * 2] = 5;      // mRNA starts at 5 nM
-    initialConditions[i * 2 + 1] = 50;  // protein starts at 50 nM
+    initialConditions[i * 2] = 5; // mRNA starts at 5 nM
+    initialConditions[i * 2 + 1] = 50; // protein starts at 50 nM
   }
 
   return { dim, names, derivatives, initialConditions };
@@ -250,16 +250,14 @@ export function simulateCircuit(
     if (step < steps) {
       // RK4 step
       const k1 = derivatives(t, y);
-      const y2 = y.map((yi, i) => yi + dt / 2 * k1[i]);
+      const y2 = y.map((yi, i) => yi + (dt / 2) * k1[i]);
       const k2 = derivatives(t + dt / 2, y2);
-      const y3 = y.map((yi, i) => yi + dt / 2 * k2[i]);
+      const y3 = y.map((yi, i) => yi + (dt / 2) * k2[i]);
       const k3 = derivatives(t + dt / 2, y3);
       const y4 = y.map((yi, i) => yi + dt * k3[i]);
       const k4 = derivatives(t + dt, y4);
 
-      y = y.map((yi, i) =>
-        Math.max(0, yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]))
-      );
+      y = y.map((yi, i) => Math.max(0, yi + (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])));
     }
   }
 
@@ -286,7 +284,7 @@ export function extractCircuitFeatures(
   dutyCycle: number | null;
   isOscillatory: boolean;
 } {
-  const proteinNames = params.nodes.map(n => `p${n.id}`);
+  const proteinNames = params.nodes.map((n) => `p${n.id}`);
   const steadyStateValues: Record<string, number> = {};
   for (const name of proteinNames) {
     steadyStateValues[name] = trajectory[trajectory.length - 1].state[name] ?? 0;
@@ -298,12 +296,12 @@ export function extractCircuitFeatures(
 
   // Use the first protein node for oscillation detection
   const probeName = proteinNames[0];
-  const values = tail.map(t => t.state[probeName] ?? 0);
-  const times = tail.map(t => t.time);
+  const values = tail.map((t) => t.state[probeName] ?? 0);
+  const times = tail.map((t) => t.time);
 
   // Find zero crossings of derivative (approximate)
   const mean = values.reduce((s, v) => s + v, 0) / values.length;
-  let crossings: number[] = [];
+  const crossings: number[] = [];
   for (let i = 1; i < values.length; i++) {
     if ((values[i - 1] - mean) * (values[i] - mean) < 0) {
       crossings.push(times[i]);
@@ -332,7 +330,7 @@ export function extractCircuitFeatures(
 
       // Duty cycle: fraction of time above half-max
       const halfMax = (max + min) / 2;
-      const aboveHalf = values.filter(v => v > halfMax).length;
+      const aboveHalf = values.filter((v) => v > halfMax).length;
       dutyCycle = aboveHalf / values.length;
     }
   }

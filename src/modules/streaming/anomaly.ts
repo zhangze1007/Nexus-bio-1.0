@@ -11,7 +11,7 @@
  * @module streaming/anomaly
  */
 
-import type { AnomalyEvent, ThresholdRule, Severity } from './types';
+import type { AnomalyEvent, Severity, ThresholdRule } from "./types";
 
 // ── SlidingWindow ────────────────────────────────────────────────────────────
 
@@ -171,7 +171,7 @@ export function checkThreshold(value: number, rule: ThresholdRule): AnomalyEvent
   if (!belowMin && !aboveMax) return null;
 
   const threshold = belowMin ? rule.min! : rule.max!;
-  const direction = belowMin ? 'below minimum' : 'above maximum';
+  const direction = belowMin ? "below minimum" : "above maximum";
 
   return {
     timestamp: Date.now(),
@@ -208,11 +208,7 @@ export function checkThreshold(value: number, rule: ThresholdRule): AnomalyEvent
  * detectZScoreAnomaly(101, w); // null — near the mean
  * ```
  */
-export function detectZScoreAnomaly(
-  value: number,
-  window: SlidingWindow,
-  threshold: number = 3,
-): AnomalyEvent | null {
+export function detectZScoreAnomaly(value: number, window: SlidingWindow, threshold: number = 3): AnomalyEvent | null {
   const count = window.count();
   if (count < 2) return null;
 
@@ -226,10 +222,10 @@ export function detectZScoreAnomaly(
     // Deviation from constant stream is always critical
     return {
       timestamp: Date.now(),
-      metric: 'stream',
+      metric: "stream",
       value,
       zScore: value > mean ? Infinity : -Infinity,
-      severity: 'critical',
+      severity: "critical",
       reason: `Z-score anomaly: value ${value} deviates from constant stream (mean=${mean})`,
       windowStats: { mean, std: 0, count },
     };
@@ -239,13 +235,13 @@ export function detectZScoreAnomaly(
   if (Math.abs(zScore) <= threshold) return null;
 
   const absZ = Math.abs(zScore);
-  let severity: Severity = 'medium';
-  if (absZ > 5) severity = 'critical';
-  else if (absZ > 4) severity = 'high';
+  let severity: Severity = "medium";
+  if (absZ > 5) severity = "critical";
+  else if (absZ > 4) severity = "high";
 
   return {
     timestamp: Date.now(),
-    metric: 'stream',
+    metric: "stream",
     value,
     zScore,
     severity,
@@ -318,10 +314,10 @@ export function detectRobustZScoreAnomaly(
     if (value === median) return null;
     return {
       timestamp: Date.now(),
-      metric: 'stream',
+      metric: "stream",
       value,
       zScore: value > median ? Infinity : -Infinity,
-      severity: 'critical',
+      severity: "critical",
       reason: `Robust z-score anomaly: value ${value} deviates from constant stream (median=${median})`,
       windowStats: {
         mean: window.mean(),
@@ -332,17 +328,17 @@ export function detectRobustZScoreAnomaly(
   }
 
   // Robust z-score using the 0.75th quantile constant
-  const robustZScore = 0.6745 * (value - median) / mad;
+  const robustZScore = (0.6745 * (value - median)) / mad;
   if (Math.abs(robustZScore) <= threshold) return null;
 
   const absZ = Math.abs(robustZScore);
-  let severity: Severity = 'medium';
-  if (absZ > 5) severity = 'critical';
-  else if (absZ > 4) severity = 'high';
+  let severity: Severity = "medium";
+  if (absZ > 5) severity = "critical";
+  else if (absZ > 4) severity = "high";
 
   return {
     timestamp: Date.now(),
-    metric: 'stream',
+    metric: "stream",
     value,
     zScore: robustZScore,
     severity,

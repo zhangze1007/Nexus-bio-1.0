@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import type { CSSProperties } from 'react';
-import Link from 'next/link';
-import { Beaker, Layers3, Microscope } from 'lucide-react';
-import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
-import { CROSS_STAGE_TOOL_IDS, WORKBENCH_STAGES } from '../tools/shared/workbenchConfig';
-import { useWorkbenchStore } from '../../store/workbenchStore';
-import { getFreshnessMap } from './workbenchTrust';
-import { THEME } from '../../theme';
+import { Beaker, Layers3, Microscope } from "lucide-react";
+import Link from "next/link";
+import type { CSSProperties } from "react";
+import { useWorkbenchStore } from "../../store/workbenchStore";
+import { THEME } from "../../theme";
+import { TOOL_BY_ID } from "../tools/shared/toolRegistry";
+import { CROSS_STAGE_TOOL_IDS, WORKBENCH_STAGES } from "../tools/shared/workbenchConfig";
+import { getFreshnessMap } from "./workbenchTrust";
+
 const BORDER = THEME.BORDER;
 const LABEL = THEME.LABEL;
 const VALUE = THEME.VALUE;
@@ -15,7 +16,7 @@ const SURFACE = THEME.PANEL_GLASS_STRONG;
 const SURFACE_SOFT = THEME.PANEL_SURFACE;
 
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
-type LauncherSignal = 'dormant' | 'live' | 'revisit';
+type LauncherSignal = "dormant" | "live" | "revisit";
 
 function dedupeToolIds(ids: Array<string | null | undefined>) {
   const seen = new Set<string>();
@@ -31,15 +32,15 @@ function dedupeToolIds(ids: Array<string | null | undefined>) {
 }
 
 function getLauncherSignal(status?: string | null): LauncherSignal {
-  if (status === 'fresh') return 'live';
-  if (status === 'stale' || status === 'awaiting-upstream') return 'revisit';
-  return 'dormant';
+  if (status === "fresh") return "live";
+  if (status === "stale" || status === "awaiting-upstream") return "revisit";
+  return "dormant";
 }
 
 function getLauncherSignalLabel(signal: LauncherSignal) {
-  if (signal === 'live') return 'Live context';
-  if (signal === 'revisit') return 'Needs revisit';
-  return 'Not opened';
+  if (signal === "live") return "Live context";
+  if (signal === "revisit") return "Needs revisit";
+  return "Not opened";
 }
 
 interface LauncherToolCardProps {
@@ -50,13 +51,7 @@ interface LauncherToolCardProps {
   outputs?: string[];
 }
 
-function LauncherToolCard({
-  toolId,
-  signal,
-  compact = false,
-  surface = SURFACE,
-  outputs,
-}: LauncherToolCardProps) {
+function LauncherToolCard({ toolId, signal, compact = false, surface = SURFACE, outputs }: LauncherToolCardProps) {
   const tool = TOOL_BY_ID[toolId];
   if (!tool) return null;
 
@@ -70,31 +65,39 @@ function LauncherToolCard({
       data-signal={signal}
       aria-label={`${tool.name} · ${signalLabel}`}
       style={{
-        borderRadius: compact ? '16px' : '18px',
+        borderRadius: compact ? "16px" : "18px",
         border: `1px solid ${BORDER}`,
         background: surface,
-        padding: compact ? '13px 14px' : '15px 16px',
-        display: 'grid',
-        gap: compact ? '7px' : '8px',
-        textDecoration: 'none',
+        padding: compact ? "13px 14px" : "15px 16px",
+        display: "grid",
+        gap: compact ? "7px" : "8px",
+        textDecoration: "none",
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-        <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+        <span
+          style={{
+            fontFamily: THEME.MONO,
+            fontSize: "10px",
+            color: LABEL,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
           {tool.shortLabel}
         </span>
         <span
           title={signalLabel}
           aria-label={signalLabel}
           style={{
-            width: compact ? '20px' : '22px',
-            height: compact ? '20px' : '22px',
-            borderRadius: '999px',
+            width: compact ? "20px" : "22px",
+            height: compact ? "20px" : "22px",
+            borderRadius: "999px",
             border: `1px solid ${BORDER}`,
             background: SURFACE_SOFT,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             flexShrink: 0,
           }}
         >
@@ -102,20 +105,35 @@ function LauncherToolCard({
         </span>
       </div>
 
-      <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '14px' : '15px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
+      <div
+        style={{
+          fontFamily: THEME.SANS,
+          fontSize: compact ? "14px" : "15px",
+          fontWeight: 700,
+          color: VALUE,
+          letterSpacing: "-0.01em",
+        }}
+      >
         {tool.name}
       </div>
 
-      <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '11px' : '12px', color: VALUE, lineHeight: 1.55 }}>
+      <div style={{ fontFamily: THEME.SANS, fontSize: compact ? "11px" : "12px", color: VALUE, lineHeight: 1.55 }}>
         {tool.focus}
       </div>
 
-      <div style={{ fontFamily: THEME.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.6 }}>
-        {tool.summary}
-      </div>
+      <div style={{ fontFamily: THEME.SANS, fontSize: "11px", color: LABEL, lineHeight: 1.6 }}>{tool.summary}</div>
 
-      <div style={{ marginTop: 'auto', fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, minWidth: 0, lineHeight: 1.5 }}>
-        {cardOutputs.join(' · ')}
+      <div
+        style={{
+          marginTop: "auto",
+          fontFamily: THEME.MONO,
+          fontSize: "10px",
+          color: LABEL,
+          minWidth: 0,
+          lineHeight: 1.5,
+        }}
+      >
+        {cardOutputs.join(" · ")}
       </div>
     </Link>
   );
@@ -143,29 +161,26 @@ export default function WorkbenchDirectoryPage() {
       : nextRecommendations.map((recommendation) => recommendation.toolId),
   ).slice(0, 3);
 
-  const recentToolIds = dedupeToolIds([
-    currentToolId,
-    ...toolRuns.map((run) => run.toolId),
-  ])
+  const recentToolIds = dedupeToolIds([currentToolId, ...toolRuns.map((run) => run.toolId)])
     .filter((toolId) => !recommendedToolIds.includes(toolId))
     .slice(0, 3);
 
   const quickGroups = [
     recommendedToolIds.length > 0
       ? {
-          key: 'recommended',
-          title: 'Recommended',
+          key: "recommended",
+          title: "Recommended",
           detail: analyzeArtifact
-            ? 'Suggested from the current Analyze artifact.'
-            : 'Suggested from the current workbench flow.',
+            ? "Suggested from the current Analyze artifact."
+            : "Suggested from the current workbench flow.",
           toolIds: recommendedToolIds,
         }
       : null,
     recentToolIds.length > 0
       ? {
-          key: 'recent',
-          title: 'Recent',
-          detail: 'Continue where you left off without rescanning the whole launcher.',
+          key: "recent",
+          title: "Recent",
+          detail: "Continue where you left off without rescanning the whole launcher.",
           toolIds: recentToolIds,
         }
       : null,
@@ -173,112 +188,141 @@ export default function WorkbenchDirectoryPage() {
 
   const contextItems = [
     {
-      label: 'Project',
-      value: project?.title ?? 'No active project',
+      label: "Project",
+      value: project?.title ?? "No active project",
       detail: project
-        ? (project.targetProduct ? `Target · ${project.targetProduct}` : 'Project context is ready')
-        : 'Start from Research or Analyze to seed context',
+        ? project.targetProduct
+          ? `Target · ${project.targetProduct}`
+          : "Project context is ready"
+        : "Start from Research or Analyze to seed context",
     },
     {
-      label: 'Evidence',
+      label: "Evidence",
       value: `${selectedEvidenceIds.length} selected`,
-      detail: selectedEvidenceIds.length
-        ? 'Evidence bundle is ready to carry into a tool'
-        : 'No evidence selected yet',
+      detail: selectedEvidenceIds.length ? "Evidence bundle is ready to carry into a tool" : "No evidence selected yet",
     },
     {
-      label: 'Analyze Artifact',
-      value: analyzeArtifact?.targetProduct ?? 'Pending',
+      label: "Analyze Artifact",
+      value: analyzeArtifact?.targetProduct ?? "Pending",
       detail: analyzeArtifact
         ? `${analyzeArtifact.recommendedNextTools.length} next-step signal(s) ready`
-        : 'Run Analyze to unlock recommendations',
+        : "Run Analyze to unlock recommendations",
     },
   ];
 
   const platformSignals = [
     {
-      label: 'Workflow',
-      value: '4 connected stages',
-      detail: 'From literature intake to validation and iteration',
+      label: "Workflow",
+      value: "4 connected stages",
+      detail: "From literature intake to validation and iteration",
     },
     {
-      label: 'Modules',
+      label: "Modules",
       value: `${totalToolCount} specialized tools`,
-      detail: 'Pathway, simulation, chassis, DBTL, omics, and more',
+      detail: "Pathway, simulation, chassis, DBTL, omics, and more",
     },
     {
-      label: 'Continuity',
-      value: 'Evidence-carrying handoff',
-      detail: 'Project and Analyze context persist across the launcher',
+      label: "Continuity",
+      value: "Evidence-carrying handoff",
+      detail: "Project and Analyze context persist across the launcher",
     },
   ];
 
   return (
     <div
       style={{
-        position: 'relative',
-        minHeight: '100%',
+        position: "relative",
+        minHeight: "100%",
         background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
         color: VALUE,
         flex: 1,
       }}
     >
-      <main style={{ padding: '28px 18px 40px' }}>
-        <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'grid', gap: '18px' }}>
+      <main style={{ padding: "28px 18px 40px" }}>
+        <div style={{ maxWidth: "1440px", margin: "0 auto", display: "grid", gap: "18px" }}>
           <section
             style={{
-              borderRadius: '26px',
+              borderRadius: "26px",
               border: `1px solid ${BORDER}`,
               background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
-              padding: '22px',
-              display: 'grid',
-              gap: '14px',
-              boxShadow: '0 16px 38px rgba(0,0,0,0.24)',
+              padding: "22px",
+              display: "grid",
+              gap: "14px",
+              boxShadow: "0 16px 38px rgba(0,0,0,0.24)",
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'grid', gap: '6px' }}>
-                <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "grid", gap: "6px" }}>
+                <div
+                  style={{
+                    fontFamily: THEME.MONO,
+                    fontSize: "10px",
+                    color: LABEL,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                  }}
+                >
                   Workbench Launcher
                 </div>
-                <div style={{ fontFamily: THEME.SANS, fontSize: '32px', fontWeight: 700, letterSpacing: '-0.04em', color: VALUE, lineHeight: 1.02 }}>
+                <div
+                  style={{
+                    fontFamily: THEME.SANS,
+                    fontSize: "32px",
+                    fontWeight: 700,
+                    letterSpacing: "-0.04em",
+                    color: VALUE,
+                    lineHeight: 1.02,
+                  }}
+                >
                   Move through the 4-stage workbench without losing project context
                 </div>
-                <div style={{ fontFamily: THEME.SANS, fontSize: '14px', color: LABEL, maxWidth: '66ch', lineHeight: 1.65 }}>
-                  This launcher mirrors the Nexus-Bio architecture: start from research and analysis,
-                  continue into simulation and optimization, translate findings into chassis or control
-                  interventions, then close the loop with validation, DBTL, omics, and spatial readouts.
+                <div
+                  style={{ fontFamily: THEME.SANS, fontSize: "14px", color: LABEL, maxWidth: "66ch", lineHeight: 1.65 }}
+                >
+                  This launcher mirrors the Nexus-Bio architecture: start from research and analysis, continue into
+                  simulation and optimization, translate findings into chassis or control interventions, then close the
+                  loop with validation, DBTL, omics, and spatial readouts.
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <Link
                   href="/research"
                   className="nb-ui-control"
-                  style={{
-                    minHeight: '36px',
-                    padding: '0 14px',
-                    borderRadius: '999px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '7px',
-                    textDecoration: 'none',
-                    border: '1px solid var(--nb-control-border)',
-                    background: 'var(--nb-control-bg)',
-                    color: 'var(--nb-control-color)',
-                    fontFamily: THEME.SANS,
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    ['--nb-control-bg' as const]: SURFACE_SOFT,
-                    ['--nb-control-border' as const]: BORDER,
-                    ['--nb-control-color' as const]: VALUE,
-                    ['--nb-control-hover-bg' as const]: '#ffffff',
-                    ['--nb-control-hover-border' as const]: '#ffffff',
-                    ['--nb-control-hover-color' as const]: THEME.INK,
-                    ['--nb-control-active-bg' as const]: '#ffffff',
-                    ['--nb-control-active-border' as const]: '#ffffff',
-                    ['--nb-control-active-color' as const]: THEME.INK,
-                  } as ControlVarsStyle}
+                  style={
+                    {
+                      minHeight: "36px",
+                      padding: "0 14px",
+                      borderRadius: "999px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "7px",
+                      textDecoration: "none",
+                      border: "1px solid var(--nb-control-border)",
+                      background: "var(--nb-control-bg)",
+                      color: "var(--nb-control-color)",
+                      fontFamily: THEME.SANS,
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      ["--nb-control-bg" as const]: SURFACE_SOFT,
+                      ["--nb-control-border" as const]: BORDER,
+                      ["--nb-control-color" as const]: VALUE,
+                      ["--nb-control-hover-bg" as const]: "#ffffff",
+                      ["--nb-control-hover-border" as const]: "#ffffff",
+                      ["--nb-control-hover-color" as const]: THEME.INK,
+                      ["--nb-control-active-bg" as const]: "#ffffff",
+                      ["--nb-control-active-border" as const]: "#ffffff",
+                      ["--nb-control-active-color" as const]: THEME.INK,
+                    } as ControlVarsStyle
+                  }
                 >
                   <Microscope size={14} />
                   Research Intake
@@ -286,30 +330,32 @@ export default function WorkbenchDirectoryPage() {
                 <Link
                   href="/analyze"
                   className="nb-ui-control"
-                  style={{
-                    minHeight: '36px',
-                    padding: '0 14px',
-                    borderRadius: '999px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '7px',
-                    textDecoration: 'none',
-                    border: '1px solid var(--nb-control-border)',
-                    background: 'var(--nb-control-bg)',
-                    color: 'var(--nb-control-color)',
-                    fontFamily: THEME.SANS,
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    ['--nb-control-bg' as const]: SURFACE_SOFT,
-                    ['--nb-control-border' as const]: BORDER,
-                    ['--nb-control-color' as const]: VALUE,
-                    ['--nb-control-hover-bg' as const]: '#ffffff',
-                    ['--nb-control-hover-border' as const]: '#ffffff',
-                    ['--nb-control-hover-color' as const]: THEME.INK,
-                    ['--nb-control-active-bg' as const]: '#ffffff',
-                    ['--nb-control-active-border' as const]: '#ffffff',
-                    ['--nb-control-active-color' as const]: THEME.INK,
-                  } as ControlVarsStyle}
+                  style={
+                    {
+                      minHeight: "36px",
+                      padding: "0 14px",
+                      borderRadius: "999px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "7px",
+                      textDecoration: "none",
+                      border: "1px solid var(--nb-control-border)",
+                      background: "var(--nb-control-bg)",
+                      color: "var(--nb-control-color)",
+                      fontFamily: THEME.SANS,
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      ["--nb-control-bg" as const]: SURFACE_SOFT,
+                      ["--nb-control-border" as const]: BORDER,
+                      ["--nb-control-color" as const]: VALUE,
+                      ["--nb-control-hover-bg" as const]: "#ffffff",
+                      ["--nb-control-hover-border" as const]: "#ffffff",
+                      ["--nb-control-hover-color" as const]: THEME.INK,
+                      ["--nb-control-active-bg" as const]: "#ffffff",
+                      ["--nb-control-active-border" as const]: "#ffffff",
+                      ["--nb-control-active-color" as const]: THEME.INK,
+                    } as ControlVarsStyle
+                  }
                 >
                   <Beaker size={14} />
                   Analyze Literature
@@ -319,30 +365,38 @@ export default function WorkbenchDirectoryPage() {
 
             <div
               style={{
-                display: 'grid',
-                gap: '10px',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                display: "grid",
+                gap: "10px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               }}
             >
               {platformSignals.map((item) => (
                 <div
                   key={item.label}
                   style={{
-                    borderRadius: '16px',
+                    borderRadius: "16px",
                     border: `1px solid ${BORDER}`,
                     background: SURFACE_SOFT,
-                    padding: '12px 14px',
-                    display: 'grid',
-                    gap: '4px',
+                    padding: "12px 14px",
+                    display: "grid",
+                    gap: "4px",
                   }}
                 >
-                  <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <div
+                    style={{
+                      fontFamily: THEME.MONO,
+                      fontSize: "10px",
+                      color: LABEL,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                    }}
+                  >
                     {item.label}
                   </div>
-                  <div style={{ fontFamily: THEME.SANS, fontSize: '15px', fontWeight: 700, color: VALUE }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: "15px", fontWeight: 700, color: VALUE }}>
                     {item.value}
                   </div>
-                  <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: "12px", color: LABEL, lineHeight: 1.55 }}>
                     {item.detail}
                   </div>
                 </div>
@@ -351,67 +405,75 @@ export default function WorkbenchDirectoryPage() {
 
             <div
               style={{
-                display: 'grid',
-                gap: '10px',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                display: "grid",
+                gap: "10px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
               }}
             >
               {contextItems.map((item) => (
                 <div
                   key={item.label}
                   style={{
-                    borderRadius: '16px',
+                    borderRadius: "16px",
                     border: `1px solid ${BORDER}`,
                     background: SURFACE,
-                    padding: '12px 14px',
-                    display: 'grid',
-                    gap: '4px',
+                    padding: "12px 14px",
+                    display: "grid",
+                    gap: "4px",
                   }}
                 >
-                  <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <div
+                    style={{
+                      fontFamily: THEME.MONO,
+                      fontSize: "10px",
+                      color: LABEL,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                    }}
+                  >
                     {item.label}
                   </div>
-                  <div style={{ fontFamily: THEME.SANS, fontSize: '15px', fontWeight: 700, color: VALUE }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: "15px", fontWeight: 700, color: VALUE }}>
                     {item.value}
                   </div>
-                  <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: "12px", color: LABEL, lineHeight: 1.55 }}>
                     {item.detail}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               <span
                 style={{
                   fontFamily: THEME.MONO,
-                  fontSize: '10px',
+                  fontSize: "10px",
                   color: LABEL,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
                 }}
               >
                 Launch signals
               </span>
               {[
-                { signal: 'dormant' as LauncherSignal, label: 'Not opened' },
-                { signal: 'live' as LauncherSignal, label: 'Live context' },
-                { signal: 'revisit' as LauncherSignal, label: 'Needs revisit' },
+                { signal: "dormant" as LauncherSignal, label: "Not opened" },
+                { signal: "live" as LauncherSignal, label: "Live context" },
+                { signal: "revisit" as LauncherSignal, label: "Needs revisit" },
               ].map((item) => (
                 <span
                   key={item.signal}
                   style={{
-                    minHeight: '28px',
-                    padding: '0 10px',
-                    borderRadius: '999px',
+                    minHeight: "28px",
+                    padding: "0 10px",
+                    borderRadius: "999px",
                     border: `1px solid ${BORDER}`,
                     background: SURFACE_SOFT,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
                     color: LABEL,
                     fontFamily: THEME.SANS,
-                    fontSize: '12px',
+                    fontSize: "12px",
                   }}
                 >
                   <span className="nb-workbench-launch-card__signal" data-signal={item.signal} aria-hidden="true" />
@@ -424,60 +486,84 @@ export default function WorkbenchDirectoryPage() {
           {quickGroups.length > 0 && (
             <section
               style={{
-                borderRadius: '24px',
+                borderRadius: "24px",
                 border: `1px solid ${BORDER}`,
                 background: SURFACE,
-                padding: '18px',
-                display: 'grid',
-                gap: '16px',
-                boxShadow: '0 14px 30px rgba(0,0,0,0.18)',
+                padding: "18px",
+                display: "grid",
+                gap: "16px",
+                boxShadow: "0 14px 30px rgba(0,0,0,0.18)",
               }}
             >
-              <div style={{ display: 'grid', gap: '4px' }}>
-                <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ display: "grid", gap: "4px" }}>
+                <div
+                  style={{
+                    fontFamily: THEME.MONO,
+                    fontSize: "10px",
+                    color: LABEL,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
                   Quick Entry
                 </div>
-                <div style={{ fontFamily: THEME.SANS, fontSize: '18px', fontWeight: 700, color: VALUE, letterSpacing: '-0.02em' }}>
+                <div
+                  style={{
+                    fontFamily: THEME.SANS,
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: VALUE,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
                   Recommended and recent tools
                 </div>
-                <div style={{ fontFamily: THEME.SANS, fontSize: '13px', color: LABEL, lineHeight: 1.6 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: "13px", color: LABEL, lineHeight: 1.6 }}>
                   Start from the most relevant next step, or jump straight back into the workbench you just used.
                 </div>
               </div>
 
               <div
                 style={{
-                  display: 'grid',
-                  gap: '14px',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  display: "grid",
+                  gap: "14px",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
                 }}
               >
                 {quickGroups.map((group) => (
                   <div
                     key={group.key}
                     style={{
-                      borderRadius: '16px',
+                      borderRadius: "16px",
                       border: `1px solid ${BORDER}`,
                       background: SURFACE_SOFT,
-                      padding: '14px',
-                      display: 'grid',
-                      gap: '12px',
+                      padding: "14px",
+                      display: "grid",
+                      gap: "12px",
                     }}
                   >
-                    <div style={{ display: 'grid', gap: '4px' }}>
-                      <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <div style={{ display: "grid", gap: "4px" }}>
+                      <div
+                        style={{
+                          fontFamily: THEME.MONO,
+                          fontSize: "10px",
+                          color: LABEL,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                        }}
+                      >
                         {group.title}
                       </div>
-                      <div style={{ fontFamily: THEME.SANS, fontSize: '13px', color: LABEL, lineHeight: 1.55 }}>
+                      <div style={{ fontFamily: THEME.SANS, fontSize: "13px", color: LABEL, lineHeight: 1.55 }}>
                         {group.detail}
                       </div>
                     </div>
 
                     <div
                       style={{
-                        display: 'grid',
-                        gap: '10px',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        display: "grid",
+                        gap: "10px",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                       }}
                     >
                       {group.toolIds.map((toolId) => (
@@ -496,51 +582,67 @@ export default function WorkbenchDirectoryPage() {
             </section>
           )}
 
-          <div style={{ display: 'grid', gap: '14px' }}>
+          <div style={{ display: "grid", gap: "14px" }}>
             {WORKBENCH_STAGES.map((stage) => (
               <section
                 key={stage.id}
                 style={{
-                  borderRadius: '22px',
+                  borderRadius: "22px",
                   border: `1px solid ${BORDER}`,
                   background: `linear-gradient(135deg, ${THEME.PANEL_MUTED} 0%, ${stage.accent}18 48%, ${THEME.PANEL_BG} 100%)`,
-                  padding: '16px',
-                  display: 'grid',
-                  gap: '14px',
-                  boxShadow: '0 12px 28px rgba(0,0,0,0.18)',
+                  padding: "16px",
+                  display: "grid",
+                  gap: "14px",
+                  boxShadow: "0 12px 28px rgba(0,0,0,0.18)",
                 }}
               >
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: "grid", gap: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                     <span
                       style={{
-                        padding: '4px 9px',
-                        borderRadius: '999px',
+                        padding: "4px 9px",
+                        borderRadius: "999px",
                         border: `1px solid ${stage.accent}66`,
                         background: `${stage.accent}28`,
                         color: VALUE,
                         fontFamily: THEME.MONO,
-                        fontSize: '10px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
+                        fontSize: "10px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
                       }}
                     >
                       {stage.shortLabel}
                     </span>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: '18px', fontWeight: 700, color: VALUE, letterSpacing: '-0.02em' }}>
+                    <span
+                      style={{
+                        fontFamily: THEME.SANS,
+                        fontSize: "18px",
+                        fontWeight: 700,
+                        color: VALUE,
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
                       {stage.label}
                     </span>
                   </div>
-                  <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, maxWidth: '72ch', lineHeight: 1.6 }}>
+                  <div
+                    style={{
+                      fontFamily: THEME.SANS,
+                      fontSize: "12px",
+                      color: LABEL,
+                      maxWidth: "72ch",
+                      lineHeight: 1.6,
+                    }}
+                  >
                     {stage.description}
                   </div>
                 </div>
 
                 <div
                   style={{
-                    display: 'grid',
-                    gap: '12px',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    display: "grid",
+                    gap: "12px",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
                   }}
                 >
                   {stage.toolIds.map((toolId) => (
@@ -558,24 +660,29 @@ export default function WorkbenchDirectoryPage() {
           {CROSS_STAGE_TOOL_IDS.length > 0 && (
             <section
               style={{
-                borderRadius: '22px',
+                borderRadius: "22px",
                 border: `1px solid ${BORDER}`,
                 background: SURFACE,
-                padding: '16px',
-                display: 'grid',
-                gap: '12px',
+                padding: "16px",
+                display: "grid",
+                gap: "12px",
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Layers3 size={16} color={LABEL} />
-                <div style={{ fontFamily: THEME.SANS, fontSize: '17px', fontWeight: 700, color: VALUE }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: "17px", fontWeight: 700, color: VALUE }}>
                   Cross-stage intelligence
                 </div>
               </div>
-              <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6, maxWidth: '68ch' }}>
-                Keep Axon close as a supporting synthesis layer, but let the stage tools remain the main path through the launcher.
+              <div
+                style={{ fontFamily: THEME.SANS, fontSize: "12px", color: LABEL, lineHeight: 1.6, maxWidth: "68ch" }}
+              >
+                Keep Axon close as a supporting synthesis layer, but let the stage tools remain the main path through
+                the launcher.
               </div>
-              <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+              <div
+                style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}
+              >
                 {CROSS_STAGE_TOOL_IDS.map((toolId) => (
                   <LauncherToolCard
                     key={toolId}

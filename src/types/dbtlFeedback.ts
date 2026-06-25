@@ -27,5 +27,5 @@ export interface DBTLLearnedFeedback {
   learnedMetrics: DBTLLearnedMetrics;
   sources: DBTLMetricSource[];
   legacyText?: string[];
-  schemaVersion: 'dbtl-feedback-v1';
+  schemaVersion: "dbtl-feedback-v1";
 }

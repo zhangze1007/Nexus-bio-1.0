@@ -31,19 +31,19 @@
  *       uses NN-descent for scalability beyond ~10K points.
  */
 
-import { KDTreeIndex, euclideanDistance } from '../utils/knnIndex';
-import { SeededRNG } from '../utils/seededRng';
+import { euclideanDistance, KDTreeIndex } from "../utils/knnIndex";
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface UMAPOptions {
-  nNeighbors?: number;        // k for k-NN (default 15)
-  minDist?: number;           // minimum distance in embedding (default 0.1)
-  nEpochs?: number;           // SGD epochs (default 200)
-  learningRate?: number;      // SGD learning rate (default 1.0)
+  nNeighbors?: number; // k for k-NN (default 15)
+  minDist?: number; // minimum distance in embedding (default 0.1)
+  nEpochs?: number; // SGD epochs (default 200)
+  learningRate?: number; // SGD learning rate (default 1.0)
   negativeSampleRate?: number; // negatives per positive (default 5)
-  seed?: number;              // RNG seed for reproducibility
-  spread?: number;            // effective scale of embedding (default 1.0)
+  seed?: number; // RNG seed for reproducibility
+  spread?: number; // effective scale of embedding (default 1.0)
 }
 
 export interface UMAPResult {
@@ -89,12 +89,19 @@ export function runUMAP(data: number[][], options: UMAPOptions = {}): UMAPResult
   const highDimWeights = computeFuzzySimplicialSet(knnGraph, sigmas, rhos);
 
   // Step 3: Initialize embedding (spectral or random)
-  let embedding = initializeEmbedding(data, n, rng);
+  const embedding = initializeEmbedding(data, n, rng);
 
   // Step 4: SGD optimization
   const { finalEmbedding, convergenceLoss } = optimizeEmbedding(
-    embedding, highDimWeights, knnGraph, nEpochs, learningRate,
-    minDist, spread, negativeSampleRate, rng,
+    embedding,
+    highDimWeights,
+    knnGraph,
+    nEpochs,
+    learningRate,
+    minDist,
+    spread,
+    negativeSampleRate,
+    rng,
   );
 
   return {
@@ -102,9 +109,7 @@ export function runUMAP(data: number[][], options: UMAPOptions = {}): UMAPResult
     nCells: n,
     nEpochs,
     convergenceLoss,
-    knnGraph: knnGraph.map(neighbors =>
-      neighbors.map(nb => ({ index: nb.index, distance: nb.distance }))
-    ),
+    knnGraph: knnGraph.map((neighbors) => neighbors.map((nb) => ({ index: nb.index, distance: nb.distance }))),
   };
 }
 
@@ -123,12 +128,12 @@ function buildKNNGraph(data: number[][], k: number): KNNeighbor[][] {
     const neighbors = tree.query(data[i], k + 1); // +1 because self is included
     graph.push(
       neighbors
-        .filter(nb => nb.distance > 0) // exclude self
+        .filter((nb) => nb.distance > 0) // exclude self
         .slice(0, k)
-        .map(nb => ({
+        .map((nb) => ({
           index: data.indexOf(nb.point),
           distance: nb.distance,
-        }))
+        })),
     );
   }
 
@@ -137,10 +142,7 @@ function buildKNNGraph(data: number[][], k: number): KNNeighbor[][] {
 
 // ── Step 2: Fuzzy Simplicial Set ───────────────────────────────────────────
 
-function computeSmoothKNNDistances(
-  knnGraph: KNNeighbor[][],
-  k: number,
-): { sigmas: number[]; rhos: number[] } {
+function computeSmoothKNNDistances(knnGraph: KNNeighbor[][], k: number): { sigmas: number[]; rhos: number[] } {
   const n = knnGraph.length;
   const sigmas: number[] = new Array(n).fill(1.0);
   const rhos: number[] = new Array(n).fill(0);
@@ -178,11 +180,7 @@ function computeSmoothKNNDistances(
   return { sigmas, rhos };
 }
 
-function computeFuzzySimplicialSet(
-  knnGraph: KNNeighbor[][],
-  sigmas: number[],
-  rhos: number[],
-): Map<string, number> {
+function computeFuzzySimplicialSet(knnGraph: KNNeighbor[][], sigmas: number[], rhos: number[]): Map<string, number> {
   const weights = new Map<string, number>();
   const n = knnGraph.length;
 
@@ -213,18 +211,11 @@ function computeFuzzySimplicialSet(
 
 // ── Step 3: Embedding Initialization ────────────────────────────────────────
 
-function initializeEmbedding(
-  data: number[][],
-  n: number,
-  rng: SeededRNG,
-): number[][] {
+function initializeEmbedding(data: number[][], n: number, rng: SeededRNG): number[][] {
   // Simple PCA-like initialization using first 2 principal components
   // For small datasets, random initialization works fine
   if (n < 100) {
-    return Array.from({ length: n }, () => [
-      (rng.next() - 0.5) * 20,
-      (rng.next() - 0.5) * 20,
-    ]);
+    return Array.from({ length: n }, () => [(rng.next() - 0.5) * 20, (rng.next() - 0.5) * 20]);
   }
 
   // For larger datasets, use a simple spectral initialization
@@ -237,10 +228,7 @@ function initializeEmbedding(
   for (let d = 0; d < dim; d++) centroid[d] /= n;
 
   // Project onto first 2 dimensions (simple but effective for initialization)
-  return data.map(point => [
-    (point[0] - centroid[0]) * 10,
-    (point[1] - centroid[1]) * 10,
-  ]);
+  return data.map((point) => [(point[0] - centroid[0]) * 10, (point[1] - centroid[1]) * 10]);
 }
 
 // ── Step 4: SGD Optimization ────────────────────────────────────────────────
@@ -267,7 +255,7 @@ function optimizeEmbedding(
   // Build edge list from high-dimensional weights
   const edges: Array<{ i: number; j: number; weight: number }> = [];
   for (const [key, weight] of highDimWeights) {
-    const [si, sj] = key.split(':');
+    const [si, sj] = key.split(":");
     const i = parseInt(si);
     const j = parseInt(sj);
     if (i < n && j < n && weight > 0) {
@@ -293,9 +281,9 @@ function optimizeEmbedding(
       const dist = Math.sqrt(dx * dx + dy * dy) + 1e-10;
 
       // Attractive gradient
-      const gradCoeff = -2 * a * Math.pow(dist, 2 * 1 - 1) / (1 + a * Math.pow(dist, 2));
-      const gx = gradCoeff * dx / dist;
-      const gy = gradCoeff * dy / dist;
+      const gradCoeff = (-2 * a * dist ** (2 * 1 - 1)) / (1 + a * dist ** 2);
+      const gx = (gradCoeff * dx) / dist;
+      const gy = (gradCoeff * dy) / dist;
 
       embedding[i][0] -= alpha * weight * gx;
       embedding[i][1] -= alpha * weight * gy;
@@ -306,7 +294,7 @@ function optimizeEmbedding(
     }
 
     // Negative sampling (repulsive)
-    const nNegatives = Math.floor(edges.length * negativeSampleRate / nEpochs);
+    const nNegatives = Math.floor((edges.length * negativeSampleRate) / nEpochs);
     for (let neg = 0; neg < nNegatives; neg++) {
       const i = Math.floor(rng.next() * n);
       const j = Math.floor(rng.next() * n);
@@ -319,8 +307,8 @@ function optimizeEmbedding(
       // Repulsive gradient (only for close points)
       if (dist < 2 * spread) {
         const gradCoeff = 2 / (dist * dist + 1e-10);
-        const gx = gradCoeff * dx / dist;
-        const gy = gradCoeff * dy / dist;
+        const gx = (gradCoeff * dx) / dist;
+        const gy = (gradCoeff * dy) / dist;
 
         embedding[i][0] += alpha * 0.01 * gx;
         embedding[i][1] += alpha * 0.01 * gy;

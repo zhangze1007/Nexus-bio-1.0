@@ -1,8 +1,8 @@
-import type { CommunityFBAOutput, FBAOutput } from '../data/mockFBA';
-import type { ProvenanceEntry } from '../types/assumptions';
-import type { BiGGReaction } from './database/biggClient';
+import type { CommunityFBAOutput, FBAOutput } from "../data/mockFBA";
+import type { ProvenanceEntry } from "../types/assumptions";
+import type { BiGGReaction } from "./database/biggClient";
 
-export type FBAObjective = 'biomass' | 'atp' | 'product';
+export type FBAObjective = "biomass" | "atp" | "product";
 
 interface AuthorityResponse<T> {
   result: T;
@@ -10,7 +10,7 @@ interface AuthorityResponse<T> {
 }
 
 interface SingleAuthorityRequest {
-  species?: 'ecoli' | 'yeast';
+  species?: "ecoli" | "yeast";
   objective: FBAObjective;
   glucoseUptake: number;
   oxygenUptake: number;
@@ -32,13 +32,16 @@ interface CommunityAuthorityRequest {
   };
 }
 
-async function requestAuthorityResponse<T>(body: Record<string, unknown>, signal?: AbortSignal): Promise<AuthorityResponse<T>> {
-  const response = await fetch('/api/fba', {
-    method: 'POST',
+async function requestAuthorityResponse<T>(
+  body: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<AuthorityResponse<T>> {
+  const response = await fetch("/api/fba", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    cache: 'no-store',
+    cache: "no-store",
     signal,
     body: JSON.stringify(body),
   });
@@ -48,7 +51,7 @@ async function requestAuthorityResponse<T>(body: Record<string, unknown>, signal
     return { error: `Response parse failed (status ${response.status})` };
   });
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error ?? 'Authoritative FBA service failed');
+    throw new Error(payload?.error ?? "Authoritative FBA service failed");
   }
 
   return {
@@ -65,8 +68,8 @@ async function requestAuthorityResult<T>(body: Record<string, unknown>, signal?:
 export function solveAuthorityFBA(request: SingleAuthorityRequest, signal?: AbortSignal) {
   return requestAuthorityResult<FBAOutput>(
     {
-      mode: 'single',
-      species: request.species ?? 'ecoli',
+      mode: "single",
+      species: request.species ?? "ecoli",
       objective: request.objective,
       glucoseUptake: request.glucoseUptake,
       oxygenUptake: request.oxygenUptake,
@@ -79,8 +82,8 @@ export function solveAuthorityFBA(request: SingleAuthorityRequest, signal?: Abor
 export function solveAuthorityFBAWithProvenance(request: SingleAuthorityRequest, signal?: AbortSignal) {
   return requestAuthorityResponse<FBAOutput>(
     {
-      mode: 'single',
-      species: request.species ?? 'ecoli',
+      mode: "single",
+      species: request.species ?? "ecoli",
       objective: request.objective,
       glucoseUptake: request.glucoseUptake,
       oxygenUptake: request.oxygenUptake,
@@ -93,7 +96,7 @@ export function solveAuthorityFBAWithProvenance(request: SingleAuthorityRequest,
 export function solveAuthorityCommunityFBA(request: CommunityAuthorityRequest, signal?: AbortSignal) {
   return requestAuthorityResult<CommunityFBAOutput>(
     {
-      mode: 'community',
+      mode: "community",
       objective: request.objective,
       alpha: request.alpha ?? 0.5,
       ecoli: request.ecoli,
@@ -106,7 +109,7 @@ export function solveAuthorityCommunityFBA(request: CommunityAuthorityRequest, s
 export function solveAuthorityCommunityFBAWithProvenance(request: CommunityAuthorityRequest, signal?: AbortSignal) {
   return requestAuthorityResponse<CommunityFBAOutput>(
     {
-      mode: 'community',
+      mode: "community",
       objective: request.objective,
       alpha: request.alpha ?? 0.5,
       ecoli: request.ecoli,
@@ -127,7 +130,7 @@ interface DynamicModelRequest {
 export function solveDynamicModelFBA(request: DynamicModelRequest, signal?: AbortSignal) {
   return requestAuthorityResponse<FBAOutput>(
     {
-      mode: 'custom',
+      mode: "custom",
       reactions: request.reactions,
       objectiveId: request.objectiveId,
       glucoseUptake: request.glucoseUptake,
@@ -149,7 +152,7 @@ interface FSEOFRequest {
 export function solveFSEOF(request: FSEOFRequest, signal?: AbortSignal) {
   return requestAuthorityResponse<unknown>(
     {
-      action: 'fseof',
+      action: "fseof",
       reactions: request.reactions,
       objectiveId: request.objectiveId,
       productReactionId: request.productReactionId,
@@ -171,7 +174,7 @@ interface OptKnockRequest {
 export function solveOptKnock(request: OptKnockRequest, signal?: AbortSignal) {
   return requestAuthorityResponse<unknown>(
     {
-      action: 'optknock',
+      action: "optknock",
       reactions: request.reactions,
       objectiveId: request.objectiveId,
       productReactionId: request.productReactionId,

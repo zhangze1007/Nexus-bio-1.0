@@ -14,7 +14,7 @@
  * (FluidSimCanvas, ToolOverlay, StatusOverlay) reads from one source.
  */
 
-import { createMachine, assign } from 'xstate';
+import { assign, createMachine } from "xstate";
 
 // ── Simulation parameter types ─────────────────────────────────────────
 
@@ -64,43 +64,43 @@ export interface MetabolicContext {
 // ── Events ─────────────────────────────────────────────────────────────
 
 export type MetabolicEvent =
-  | { type: 'START' }
-  | { type: 'PAUSE' }
-  | { type: 'RESET' }
-  | { type: 'STRESS' }
-  | { type: 'RESUME' }
-  | { type: 'EQUILIBRATE' }
-  | { type: 'SET_PARAM'; key: keyof SimParams; value: number }
-  | { type: 'TICK'; readouts: SimReadouts };
+  | { type: "START" }
+  | { type: "PAUSE" }
+  | { type: "RESET" }
+  | { type: "STRESS" }
+  | { type: "RESUME" }
+  | { type: "EQUILIBRATE" }
+  | { type: "SET_PARAM"; key: keyof SimParams; value: number }
+  | { type: "TICK"; readouts: SimReadouts };
 
 // ── Default values ─────────────────────────────────────────────────────
 
 const DEFAULT_PARAMS: SimParams = {
-  substrate:   50,       // [S] in mM — generic test concentration
-  enzyme:       5,       // [E] in nM — typical in vitro
-  temperature: 37,       // °C — E. coli optimal growth temperature
-  pH:         7.4,       // E. coli cytoplasmic pH
-  vmax:        8.5,      // μmol/min — generic test value
-  km:         12.0,      // mM — generic test value
+  substrate: 50, // [S] in mM — generic test concentration
+  enzyme: 5, // [E] in nM — typical in vitro
+  temperature: 37, // °C — E. coli optimal growth temperature
+  pH: 7.4, // E. coli cytoplasmic pH
+  vmax: 8.5, // μmol/min — generic test value
+  km: 12.0, // mM — generic test value
   // Note: For PFK-1 (EC 2.7.1.11), BRENDA reports Km(F6P) ≈ 0.1 mM
   // These defaults are illustrative, not enzyme-specific
 };
 
 const ZERO_READOUTS: SimReadouts = {
-  reactionRate:    0,
-  atpYield:        0,
-  nadphRate:       0,
-  carbonEfficiency:0,
-  fluxBalance:     0,
-  stressIndex:     0,
-  tick:            0,
+  reactionRate: 0,
+  atpYield: 0,
+  nadphRate: 0,
+  carbonEfficiency: 0,
+  fluxBalance: 0,
+  stressIndex: 0,
+  tick: 0,
 };
 
 // ── Machine ────────────────────────────────────────────────────────────
 
 export const metabolicMachine = createMachine({
-  id: 'metabolicEngLab',
-  initial: 'idle',
+  id: "metabolicEngLab",
+  initial: "idle",
 
   types: {} as {
     context: MetabolicContext;
@@ -108,10 +108,10 @@ export const metabolicMachine = createMachine({
   },
 
   context: {
-    params:       DEFAULT_PARAMS,
-    readouts:     ZERO_READOUTS,
-    rateHistory:  [],
-    error:        null,
+    params: DEFAULT_PARAMS,
+    readouts: ZERO_READOUTS,
+    rateHistory: [],
+    error: null,
     stateEnteredAt: Date.now(),
   },
 
@@ -120,7 +120,7 @@ export const metabolicMachine = createMachine({
     idle: {
       on: {
         START: {
-          target: 'simulating',
+          target: "simulating",
           actions: assign({ stateEnteredAt: () => Date.now() }),
         },
         SET_PARAM: {
@@ -138,23 +138,23 @@ export const metabolicMachine = createMachine({
     simulating: {
       on: {
         PAUSE: {
-          target: 'idle',
+          target: "idle",
           actions: assign({ stateEnteredAt: () => Date.now() }),
         },
         RESET: {
-          target: 'idle',
+          target: "idle",
           actions: assign({
-            readouts:    () => ZERO_READOUTS,
+            readouts: () => ZERO_READOUTS,
             rateHistory: () => [],
             stateEnteredAt: () => Date.now(),
           }),
         },
         STRESS: {
-          target: 'stress_test',
+          target: "stress_test",
           actions: assign({ stateEnteredAt: () => Date.now() }),
         },
         EQUILIBRATE: {
-          target: 'equilibrium',
+          target: "equilibrium",
           actions: assign({ stateEnteredAt: () => Date.now() }),
         },
         SET_PARAM: {
@@ -184,13 +184,13 @@ export const metabolicMachine = createMachine({
     stress_test: {
       on: {
         RESUME: {
-          target: 'simulating',
+          target: "simulating",
           actions: assign({ stateEnteredAt: () => Date.now() }),
         },
         RESET: {
-          target: 'idle',
+          target: "idle",
           actions: assign({
-            readouts:    () => ZERO_READOUTS,
+            readouts: () => ZERO_READOUTS,
             rateHistory: () => [],
             stateEnteredAt: () => Date.now(),
           }),
@@ -219,15 +219,15 @@ export const metabolicMachine = createMachine({
     equilibrium: {
       on: {
         RESET: {
-          target: 'idle',
+          target: "idle",
           actions: assign({
-            readouts:    () => ZERO_READOUTS,
+            readouts: () => ZERO_READOUTS,
             rateHistory: () => [],
             stateEnteredAt: () => Date.now(),
           }),
         },
         START: {
-          target: 'simulating',
+          target: "simulating",
           actions: assign({ stateEnteredAt: () => Date.now() }),
         },
         TICK: {
@@ -246,20 +246,20 @@ export const metabolicMachine = createMachine({
 
 // ── Derived helpers ────────────────────────────────────────────────────
 
-export type MachineState = 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
+export type MachineState = "idle" | "simulating" | "stress_test" | "equilibrium";
 
 export const STATE_LABELS: Record<MachineState, string> = {
-  idle:         'IDLE',
-  simulating:   'SIMULATING',
-  stress_test:  'PARAMETER OSCILLATION',
-  equilibrium:  'EQUILIBRIUM',
+  idle: "IDLE",
+  simulating: "SIMULATING",
+  stress_test: "PARAMETER OSCILLATION",
+  equilibrium: "EQUILIBRIUM",
 };
 
 export const STATE_COLORS: Record<MachineState, string> = {
-  idle:         'rgba(255,255,255,0.25)',
-  simulating:   'rgba(255,255,255,0.75)',
-  stress_test:  'rgba(255,255,255,0.45)',
-  equilibrium:  'rgba(255,255,255,0.65)',
+  idle: "rgba(255,255,255,0.25)",
+  simulating: "rgba(255,255,255,0.75)",
+  stress_test: "rgba(255,255,255,0.45)",
+  equilibrium: "rgba(255,255,255,0.65)",
 };
 
 /**
@@ -280,4 +280,4 @@ export function michaelisRate(params: SimParams): number {
 }
 
 // Re-export from unified module for backward compatibility
-import { michaelisRate as mmRate } from '../utils/michaelisMenten';
+import { michaelisRate as mmRate } from "../utils/michaelisMenten";

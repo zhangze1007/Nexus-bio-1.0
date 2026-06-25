@@ -23,10 +23,7 @@
  *   - Noor, E. et al. (2012) Milp for thermodynamic analysis. PLOS Comput Biol
  */
 
-import {
-  calcTransformedGibbs,
-  R,
-} from '../services/thermoEngine';
+import { calcTransformedGibbs, R } from "../services/thermoEngine";
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -75,7 +72,7 @@ export interface TFAReactionResult {
   /** Computed transformed Gibbs energy ΔG′ under the given conditions (kJ/mol) */
   transformedDeltaG: number;
   /** Feasible flux direction based on ΔG′ */
-  feasibleDirection: 'forward' | 'reverse' | 'reversible';
+  feasibleDirection: "forward" | "reverse" | "reversible";
   /** Whether this reaction is thermodynamically feasible to carry flux */
   isFeasible: boolean;
 }
@@ -104,8 +101,8 @@ export interface TFAResult {
 // Defaults
 // ---------------------------------------------------------------------------
 
-const DEFAULT_REVERSIBILITY_THRESHOLD = 1.0;   // kJ/mol
-const DEFAULT_BOTTLENECK_THRESHOLD = 20.0;     // kJ/mol
+const DEFAULT_REVERSIBILITY_THRESHOLD = 1.0; // kJ/mol
+const DEFAULT_BOTTLENECK_THRESHOLD = 20.0; // kJ/mol
 
 // ---------------------------------------------------------------------------
 // Core Algorithm
@@ -138,10 +135,8 @@ const DEFAULT_BOTTLENECK_THRESHOLD = 20.0;     // kJ/mol
  * console.log(result.reactionResults[0].feasibleDirection); // 'forward'
  */
 export function runTFA(model: TFAModel, options?: TFAOptions): TFAResult {
-  const reversibilityThreshold =
-    options?.reversibilityThreshold ?? DEFAULT_REVERSIBILITY_THRESHOLD;
-  const bottleneckThreshold =
-    options?.bottleneckThreshold ?? DEFAULT_BOTTLENECK_THRESHOLD;
+  const reversibilityThreshold = options?.reversibilityThreshold ?? DEFAULT_REVERSIBILITY_THRESHOLD;
+  const bottleneckThreshold = options?.bottleneckThreshold ?? DEFAULT_BOTTLENECK_THRESHOLD;
 
   const { reactions, conditions } = model;
   const { pH, ionicStrength, temperature } = conditions;
@@ -166,23 +161,16 @@ export function runTFA(model: TFAModel, options?: TFAOptions): TFAResult {
 
     // Compute transformed Gibbs energy under the given conditions
     // using the Alberty formalism from thermoEngine
-    const transformedDeltaG = calcTransformedGibbs(
-      rxn.deltaG0Prime,
-      pH,
-      ionicStrength,
-      temperature,
-      nH,
-      deltaZSquared,
-    );
+    const transformedDeltaG = calcTransformedGibbs(rxn.deltaG0Prime, pH, ionicStrength, temperature, nH, deltaZSquared);
 
     // Determine feasible direction based on sign of ΔG′
-    let feasibleDirection: 'forward' | 'reverse' | 'reversible';
+    let feasibleDirection: "forward" | "reverse" | "reversible";
     if (transformedDeltaG < -reversibilityThreshold) {
-      feasibleDirection = 'forward';
+      feasibleDirection = "forward";
     } else if (transformedDeltaG > reversibilityThreshold) {
-      feasibleDirection = 'reverse';
+      feasibleDirection = "reverse";
     } else {
-      feasibleDirection = 'reversible';
+      feasibleDirection = "reversible";
     }
 
     // A reaction is feasible if it has at least one allowed direction
@@ -209,7 +197,7 @@ export function runTFA(model: TFAModel, options?: TFAOptions): TFAResult {
   // Since each reaction always has at least one direction, the model is
   // always feasible. In a full TFA-LP, infeasibility would arise from
   // conflicting direction constraints across a cycle.
-  const feasible = reactionResults.every(r => r.isFeasible);
+  const feasible = reactionResults.every((r) => r.isFeasible);
 
   return {
     feasible,

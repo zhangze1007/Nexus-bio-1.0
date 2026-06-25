@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * RBSCalculatorPanel — Reusable RBS strength calculator for synthetic biology tools.
  *
@@ -10,9 +10,10 @@
  *          ΔG_startCodon, spacing visualization.
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { THEME } from '../../../theme';
-import MetricCard from './MetricCard';
+import type React from "react";
+import { useCallback, useMemo, useState } from "react";
+import { THEME } from "../../../theme";
+import MetricCard from "./MetricCard";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -52,7 +53,7 @@ export interface RBSCalculatorPanelProps {
 
 /* ── Organism presets ───────────────────────────────────────────────────── */
 
-type Organism = 'ecoli' | 'bsubtilis' | 'scerevisiae';
+type Organism = "ecoli" | "bsubtilis" | "scerevisiae";
 
 interface OrganismConfig {
   value: Organism;
@@ -69,10 +70,10 @@ interface OrganismConfig {
 
 const ORGANISMS: OrganismConfig[] = [
   {
-    value: 'ecoli',
-    label: 'E. coli',
-    rRNA: 'AUCCUCCACUAG',
-    sdHexamer: 'AGGAGG',
+    value: "ecoli",
+    label: "E. coli",
+    rRNA: "AUCCUCCACUAG",
+    sdHexamer: "AGGAGG",
     optimalSpacing: [5, 8],
     spacingPenalty: (nt) => {
       // Bernstein et al. (2005): 5-8 nt optimal
@@ -82,10 +83,10 @@ const ORGANISMS: OrganismConfig[] = [
     },
   },
   {
-    value: 'bsubtilis',
-    label: 'B. subtilis',
-    rRNA: 'AUCCUCCACUAG',
-    sdHexamer: 'AGGAGG',
+    value: "bsubtilis",
+    label: "B. subtilis",
+    rRNA: "AUCCUCCACUAG",
+    sdHexamer: "AGGAGG",
     optimalSpacing: [4, 9],
     spacingPenalty: (nt) => {
       if (nt >= 4 && nt <= 9) return 0;
@@ -94,10 +95,10 @@ const ORGANISMS: OrganismConfig[] = [
     },
   },
   {
-    value: 'scerevisiae',
-    label: 'S. cerevisiae',
-    rRNA: 'AAUUUAACACCU',
-    sdHexamer: 'AAAAAA',
+    value: "scerevisiae",
+    label: "S. cerevisiae",
+    rRNA: "AAUUUAACACCU",
+    sdHexamer: "AAAAAA",
     optimalSpacing: [6, 12],
     spacingPenalty: (nt) => {
       // Yeast uses scanning model; less SD-dependent
@@ -110,7 +111,7 @@ const ORGANISMS: OrganismConfig[] = [
 /* ── Thermodynamic constants ────────────────────────────────────────────── */
 
 const GAS_CONSTANT = 1.987e-3; // kcal/(mol·K)
-const BODY_TEMP_K = 310.15;    // 37°C in Kelvin
+const BODY_TEMP_K = 310.15; // 37°C in Kelvin
 
 /** Approximate ΔG values for RNA base pair formation (kcal/mol). */
 const BASE_PAIR_DG: Record<string, Record<string, number>> = {
@@ -137,8 +138,8 @@ const START_CODON_DG: Record<string, number> = {
  * Complement base for RNA/DNA hybridization lookup.
  */
 function complement(b: string): string {
-  const map: Record<string, string> = { A: 'U', U: 'A', T: 'A', G: 'C', C: 'G' };
-  return map[b.toUpperCase()] || 'N';
+  const map: Record<string, string> = { A: "U", U: "A", T: "A", G: "C", C: "G" };
+  return map[b.toUpperCase()] || "N";
 }
 
 /**
@@ -151,18 +152,14 @@ function findSDInteraction(
   rRNA: string,
   sdHexamer: string,
 ): { sdSeq: string; sdPos: number; dg: number } {
-  const seq = rbsSeq.toUpperCase().replace(/[^AUTCG]/g, '');
+  const seq = rbsSeq.toUpperCase().replace(/[^AUTCG]/g, "");
   let bestDg = 0;
-  let bestSeq = '';
+  let bestSeq = "";
   let bestPos = -1;
 
   // Try hexamer, pentamer, tetramer matches
   const lengths = [6, 5, 4];
-  const searchMotifs = [
-    sdHexamer,
-    sdHexamer.slice(0, 5),
-    sdHexamer.slice(0, 4),
-  ];
+  const searchMotifs = [sdHexamer, sdHexamer.slice(0, 5), sdHexamer.slice(0, 4)];
 
   for (let li = 0; li < lengths.length; li++) {
     const motif = searchMotifs[li];
@@ -174,7 +171,7 @@ function findSDInteraction(
       let matchScore = 0;
       let dg = 0;
       for (let j = 0; j < len; j++) {
-        const comp = complement(rRNA[j] || '');
+        const comp = complement(rRNA[j] || "");
         if (sub[j] === comp) {
           matchScore++;
           // Use nearest-neighbor approximation (simplified)
@@ -200,10 +197,10 @@ function findSDInteraction(
       let matchScore = 0;
       let dg = 0;
       for (let j = 0; j < shortLen; j++) {
-        const comp = complement(rRNA[j] || '');
+        const comp = complement(rRNA[j] || "");
         if (sub[j] === comp) {
           matchScore++;
-          dg += (BASE_PAIR_DG[sub[j]]?.[comp] ?? -1.5);
+          dg += BASE_PAIR_DG[sub[j]]?.[comp] ?? -1.5;
         }
       }
       if (matchScore >= 3 && dg < bestDg) {
@@ -231,7 +228,7 @@ function calcSpacing(rbsLength: number, sdEnd: number): number {
  * Uses a simplified Zuker-style approach for the local mRNA structure.
  */
 function calcMRNAFolding(rbsSeq: string, cdsSeq: string): number {
-  const window = (rbsSeq + cdsSeq.slice(0, 20)).toUpperCase().replace(/[^AUTCG]/g, '');
+  const window = (rbsSeq + cdsSeq.slice(0, 20)).toUpperCase().replace(/[^AUTCG]/g, "");
   if (window.length < 4) return 0;
 
   let dg = 0;
@@ -258,13 +255,9 @@ function calcMRNAFolding(rbsSeq: string, cdsSeq: string): number {
 /**
  * Main RBS calculation engine (Salis et al. 2009 simplified).
  */
-function calculateRBS(
-  rbsSeq: string,
-  cdsSeq: string,
-  config: OrganismConfig,
-): RBSResult {
-  const rbs = rbsSeq.toUpperCase().replace(/[^AUTCG]/g, '');
-  const cds = cdsSeq.toUpperCase().replace(/[^AUTCG]/g, '');
+function calculateRBS(rbsSeq: string, cdsSeq: string, config: OrganismConfig): RBSResult {
+  const rbs = rbsSeq.toUpperCase().replace(/[^AUTCG]/g, "");
+  const cds = cdsSeq.toUpperCase().replace(/[^AUTCG]/g, "");
 
   // Detect start codon (first 3 nt of CDS, or scan for ATG/AUG in RBS tail)
   let startCodon = cds.slice(0, 3);
@@ -278,7 +271,7 @@ function calculateRBS(
       }
     }
     if (!START_CODON_DG[startCodon]) {
-      startCodon = 'AUG'; // default
+      startCodon = "AUG"; // default
     }
   }
 
@@ -303,7 +296,7 @@ function calculateRBS(
   // Translation rate ∝ exp(-ΔG_total / RT)
   const translationRate = Math.exp(-dgTotal / (GAS_CONSTANT * BODY_TEMP_K));
 
-  const fullSequence = rbs + (cds.slice(0, 3) || 'AUG');
+  const fullSequence = rbs + (cds.slice(0, 3) || "AUG");
 
   return {
     translationRate,
@@ -326,34 +319,33 @@ const labelStyle: React.CSSProperties = {
   fontFamily: THEME.MONO,
   fontSize: THEME.FS_XS,
   fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
   color: THEME.LABEL,
   marginBottom: 4,
-  display: 'block',
+  display: "block",
 };
 
 const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 10px',
+  width: "100%",
+  padding: "8px 10px",
   borderRadius: THEME.R_SM,
   border: `1px solid ${THEME.BORDER}`,
   background: THEME.PANEL_INSET,
   color: THEME.VALUE,
   fontFamily: THEME.MONO,
   fontSize: THEME.FS_SM,
-  outline: 'none',
-  transition: 'border-color 120ms',
+  outline: "none",
+  transition: "border-color 120ms",
 };
 
 const selectStyle: React.CSSProperties = {
   ...inputStyle,
-  cursor: 'pointer',
-  appearance: 'none' as const,
-  backgroundImage:
-    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%239BA3AE' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 10px center',
+  cursor: "pointer",
+  appearance: "none" as const,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%239BA3AE' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
   paddingRight: 28,
 };
 
@@ -384,11 +376,11 @@ function SpacingDiagram({
       <span style={labelStyle}>Spacing Diagram (SD to Start Codon)</span>
       <div
         style={{
-          padding: '10px 12px',
+          padding: "10px 12px",
           borderRadius: THEME.R_SM,
-          background: 'rgba(0,0,0,0.3)',
+          background: "rgba(0,0,0,0.3)",
           border: `1px solid ${THEME.BORDER}`,
-          overflowX: 'auto',
+          overflowX: "auto",
         }}
       >
         {/* Sequence line */}
@@ -397,19 +389,19 @@ function SpacingDiagram({
             fontFamily: THEME.MONO,
             fontSize: THEME.FS_SM,
             lineHeight: 1.8,
-            whiteSpace: 'pre',
-            letterSpacing: '0.12em',
+            whiteSpace: "pre",
+            letterSpacing: "0.12em",
             color: THEME.VALUE,
           }}
         >
-          {seq.split('').map((nt, i) => {
-            let bg = 'transparent';
+          {seq.split("").map((nt, i) => {
+            let bg = "transparent";
             let color: string = THEME.VALUE;
             if (sdPosition >= 0 && i >= sdPosition && i < sdEnd) {
-              bg = 'rgba(191,220,205,0.25)';
+              bg = "rgba(191,220,205,0.25)";
               color = THEME.MINT;
             } else if (i >= seq.length - 3 && startCodon.includes(seq.slice(i, i + 3))) {
-              bg = 'rgba(232,163,161,0.25)';
+              bg = "rgba(232,163,161,0.25)";
               color = THEME.CORAL;
             }
             return (
@@ -419,7 +411,7 @@ function SpacingDiagram({
                   background: bg,
                   color,
                   borderRadius: 2,
-                  padding: '1px 0',
+                  padding: "1px 0",
                 }}
               >
                 {nt}
@@ -431,8 +423,8 @@ function SpacingDiagram({
         {/* Annotation line */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
+            display: "flex",
+            alignItems: "center",
             gap: 6,
             marginTop: 4,
             fontFamily: THEME.MONO,
@@ -444,44 +436,38 @@ function SpacingDiagram({
               <span
                 style={{
                   color: THEME.MINT,
-                  padding: '1px 6px',
+                  padding: "1px 6px",
                   borderRadius: 4,
-                  background: 'rgba(191,220,205,0.12)',
+                  background: "rgba(191,220,205,0.12)",
                 }}
               >
                 SD: {sdSequence}
               </span>
-              <span style={{ color: THEME.DIM }}>
-                {'─'.repeat(Math.max(1, Math.min(spacing, 12)))}
-              </span>
+              <span style={{ color: THEME.DIM }}>{"─".repeat(Math.max(1, Math.min(spacing, 12)))}</span>
               <span
                 style={{
                   color: inOptimal ? THEME.MINT : THEME.RISK_MEDIUM,
-                  padding: '1px 6px',
+                  padding: "1px 6px",
                   borderRadius: 4,
-                  background: inOptimal
-                    ? 'rgba(191,220,205,0.12)'
-                    : 'rgba(229,143,70,0.12)',
+                  background: inOptimal ? "rgba(191,220,205,0.12)" : "rgba(229,143,70,0.12)",
                 }}
               >
                 {spacing} nt
               </span>
-              <span style={{ color: THEME.DIM }}>{'─'.repeat(2)}</span>
+              <span style={{ color: THEME.DIM }}>{"─".repeat(2)}</span>
               <span
                 style={{
                   color: THEME.CORAL,
-                  padding: '1px 6px',
+                  padding: "1px 6px",
                   borderRadius: 4,
-                  background: 'rgba(232,163,161,0.12)',
+                  background: "rgba(232,163,161,0.12)",
                 }}
               >
                 {startCodon}
               </span>
             </>
           )}
-          {sdPosition < 0 && (
-            <span style={{ color: THEME.DIM }}>No SD sequence detected</span>
-          )}
+          {sdPosition < 0 && <span style={{ color: THEME.DIM }}>No SD sequence detected</span>}
         </div>
 
         {/* Spacing bar */}
@@ -490,43 +476,43 @@ function SpacingDiagram({
             style={{
               height: 6,
               borderRadius: 999,
-              background: 'rgba(255,255,255,0.06)',
-              position: 'relative',
-              overflow: 'hidden',
+              background: "rgba(255,255,255,0.06)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
             {/* Optimal range marker */}
             <div
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: `${(optimalSpacing[0] / 20) * 100}%`,
                 width: `${((optimalSpacing[1] - optimalSpacing[0]) / 20) * 100}%`,
-                height: '100%',
-                background: 'rgba(191,220,205,0.15)',
+                height: "100%",
+                background: "rgba(191,220,205,0.15)",
                 borderRadius: 999,
               }}
             />
             {/* Current spacing marker */}
             <div
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: `${Math.min((spacing / 20) * 100, 100)}%`,
                 top: -2,
                 width: 3,
                 height: 10,
                 borderRadius: 2,
                 background: inOptimal ? THEME.MINT : THEME.RISK_MEDIUM,
-                transform: 'translateX(-50%)',
-                transition: 'left 300ms ease',
+                transform: "translateX(-50%)",
+                transition: "left 300ms ease",
               }}
             />
           </div>
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
+              display: "flex",
+              justifyContent: "space-between",
               fontFamily: THEME.MONO,
-              fontSize: '9px',
+              fontSize: "9px",
               color: THEME.DIM,
               marginTop: 2,
             }}
@@ -548,14 +534,14 @@ function SpacingDiagram({
 function DGBar({ label, value, color }: { label: string; value: number; color: string }) {
   const pct = Math.min(100, Math.abs(value) * 20); // scale for display
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span
         style={{
           fontFamily: THEME.MONO,
           fontSize: THEME.FS_XS,
           color: THEME.LABEL,
           minWidth: 100,
-          textAlign: 'right' as const,
+          textAlign: "right" as const,
         }}
       >
         {label}
@@ -565,17 +551,17 @@ function DGBar({ label, value, color }: { label: string; value: number; color: s
           flex: 1,
           height: 6,
           borderRadius: 999,
-          background: 'rgba(255,255,255,0.06)',
-          overflow: 'hidden',
+          background: "rgba(255,255,255,0.06)",
+          overflow: "hidden",
         }}
       >
         <div
           style={{
             width: `${pct}%`,
-            height: '100%',
+            height: "100%",
             borderRadius: 999,
             background: color,
-            transition: 'width 300ms ease',
+            transition: "width 300ms ease",
           }}
         />
       </div>
@@ -586,10 +572,11 @@ function DGBar({ label, value, color }: { label: string; value: number; color: s
           color,
           fontWeight: 600,
           minWidth: 56,
-          textAlign: 'right' as const,
+          textAlign: "right" as const,
         }}
       >
-        {value >= 0 ? '+' : ''}{value.toFixed(2)}
+        {value >= 0 ? "+" : ""}
+        {value.toFixed(2)}
       </span>
     </div>
   );
@@ -598,21 +585,18 @@ function DGBar({ label, value, color }: { label: string; value: number; color: s
 /* ── Main component ─────────────────────────────────────────────────────── */
 
 export default function RBSCalculatorPanel({
-  initialRBSSequence = '',
-  initialCDSSequence = '',
+  initialRBSSequence = "",
+  initialCDSSequence = "",
   onCalculated,
 }: RBSCalculatorPanelProps) {
   const [rbsSeq, setRbsSeq] = useState(initialRBSSequence);
   const [cdsSeq, setCdsSeq] = useState(initialCDSSequence);
-  const [organism, setOrganism] = useState<Organism>('ecoli');
+  const [organism, setOrganism] = useState<Organism>("ecoli");
   const [result, setResult] = useState<RBSResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [calculating, setCalculating] = useState(false);
 
-  const orgConfig = useMemo(
-    () => ORGANISMS.find((o) => o.value === organism)!,
-    [organism],
-  );
+  const orgConfig = useMemo(() => ORGANISMS.find((o) => o.value === organism)!, [organism]);
 
   /* Validate sequences */
   const validateSequence = useCallback((seq: string, name: string): string | null => {
@@ -626,13 +610,16 @@ export default function RBSCalculatorPanel({
 
   /* Run calculation */
   const handleCalculate = useCallback(() => {
-    const rbsErr = validateSequence(rbsSeq, 'RBS');
-    if (rbsErr) { setError(rbsErr); return; }
+    const rbsErr = validateSequence(rbsSeq, "RBS");
+    if (rbsErr) {
+      setError(rbsErr);
+      return;
+    }
 
     // CDS is optional — default to ATG if empty
     const cleanCds = cdsSeq.trim().toUpperCase();
     if (cleanCds && !/^[AUTCG]+$/.test(cleanCds)) {
-      setError('CDS sequence contains invalid characters. Use A, U/T, C, G only.');
+      setError("CDS sequence contains invalid characters. Use A, U/T, C, G only.");
       return;
     }
 
@@ -641,11 +628,11 @@ export default function RBSCalculatorPanel({
     setResult(null);
 
     try {
-      const res = calculateRBS(rbsSeq, cleanCds || 'AUG', orgConfig);
+      const res = calculateRBS(rbsSeq, cleanCds || "AUG", orgConfig);
       setResult(res);
       onCalculated?.(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Calculation failed.');
+      setError(e instanceof Error ? e.message : "Calculation failed.");
     } finally {
       setCalculating(false);
     }
@@ -653,8 +640,8 @@ export default function RBSCalculatorPanel({
 
   /* Quick-load example */
   const loadExample = useCallback(() => {
-    setRbsSeq('AAGAAGGAGATATACATATG');
-    setCdsSeq('ATGGCTAGCAAAGGAGAAGAACTTTTCACTGGAGTTGTCCC');
+    setRbsSeq("AAGAAGGAGATATACATATG");
+    setCdsSeq("ATGGCTAGCAAAGGAGAAGAACTTTTCACTGGAGTTGTCCC");
     setResult(null);
     setError(null);
   }, []);
@@ -665,8 +652,8 @@ export default function RBSCalculatorPanel({
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
         gap: 16,
         padding: 16,
         borderRadius: THEME.R_MD,
@@ -675,14 +662,14 @@ export default function RBSCalculatorPanel({
       }}
     >
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span
           style={{
             fontFamily: THEME.MONO,
             fontSize: THEME.FS_SM,
             fontWeight: 700,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
             color: THEME.SKY,
           }}
         >
@@ -774,50 +761,50 @@ export default function RBSCalculatorPanel({
       </div>
 
       {/* ── Action buttons ── */}
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
           onClick={handleCalculate}
           disabled={calculating || !rbsSeq.trim()}
           style={{
             flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             gap: 6,
             height: 36,
-            padding: '0 16px',
+            padding: "0 16px",
             borderRadius: THEME.R_MD,
-            border: 'none',
-            background: calculating ? 'rgba(175,195,214,0.3)' : THEME.SKY,
-            color: '#0a0a0a',
+            border: "none",
+            background: calculating ? "rgba(175,195,214,0.3)" : THEME.SKY,
+            color: "#0a0a0a",
             fontFamily: THEME.SANS,
             fontSize: THEME.FS_SM,
             fontWeight: 600,
-            cursor: calculating || !rbsSeq.trim() ? 'not-allowed' : 'pointer',
+            cursor: calculating || !rbsSeq.trim() ? "not-allowed" : "pointer",
             opacity: calculating || !rbsSeq.trim() ? 0.5 : 1,
-            transition: 'background 100ms, opacity 100ms',
+            transition: "background 100ms, opacity 100ms",
           }}
         >
-          {calculating ? 'Calculating...' : 'Calculate RBS Strength'}
+          {calculating ? "Calculating..." : "Calculate RBS Strength"}
         </button>
         <button
           type="button"
           onClick={loadExample}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             height: 36,
-            padding: '0 12px',
+            padding: "0 12px",
             borderRadius: THEME.R_MD,
             border: `1px solid ${THEME.BORDER}`,
-            background: 'rgba(255,255,255,0.04)',
+            background: "rgba(255,255,255,0.04)",
             color: THEME.LABEL,
             fontFamily: THEME.SANS,
             fontSize: THEME.FS_SM,
-            cursor: 'pointer',
-            transition: 'background 80ms',
+            cursor: "pointer",
+            transition: "background 80ms",
           }}
         >
           Example
@@ -828,9 +815,9 @@ export default function RBSCalculatorPanel({
       {error && (
         <div
           style={{
-            padding: '8px 10px',
+            padding: "8px 10px",
             borderRadius: THEME.R_SM,
-            background: 'rgba(232,163,161,0.1)',
+            background: "rgba(232,163,161,0.1)",
             border: `1px solid rgba(232,163,161,0.25)`,
             color: THEME.CORAL,
             fontFamily: THEME.MONO,
@@ -845,43 +832,35 @@ export default function RBSCalculatorPanel({
       {result && (
         <div
           style={{
-            display: 'flex',
-            flexDirection: 'column',
+            display: "flex",
+            flexDirection: "column",
             gap: 12,
             paddingTop: 4,
             borderTop: `1px solid ${THEME.BORDER}`,
           }}
         >
           {/* Metrics row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <MetricCard
               label="Translation Rate"
-              value={result.translationRate < 0.01
-                ? result.translationRate.toExponential(2)
-                : result.translationRate.toFixed(4)}
+              value={
+                result.translationRate < 0.01
+                  ? result.translationRate.toExponential(2)
+                  : result.translationRate.toFixed(4)
+              }
               size="sm"
               accent={
-                result.translationRate > 1
-                  ? THEME.MINT
-                  : result.translationRate > 0.1
-                    ? THEME.APRICOT
-                    : THEME.CORAL
+                result.translationRate > 1 ? THEME.MINT : result.translationRate > 0.1 ? THEME.APRICOT : THEME.CORAL
               }
-              detail={result.translationRate > 1 ? 'Strong' : result.translationRate > 0.1 ? 'Moderate' : 'Weak'}
+              detail={result.translationRate > 1 ? "Strong" : result.translationRate > 0.1 ? "Moderate" : "Weak"}
             />
             <MetricCard
               label="Total ΔG"
               value={`${result.dgTotal.toFixed(2)}`}
               unit="kcal/mol"
               size="sm"
-              accent={
-                result.dgTotal < -3
-                  ? THEME.MINT
-                  : result.dgTotal < 0
-                    ? THEME.APRICOT
-                    : THEME.CORAL
-              }
-              detail={result.dgTotal < -3 ? 'Favorable' : result.dgTotal < 0 ? 'Marginal' : 'Unfavorable'}
+              accent={result.dgTotal < -3 ? THEME.MINT : result.dgTotal < 0 ? THEME.APRICOT : THEME.CORAL}
+              detail={result.dgTotal < -3 ? "Favorable" : result.dgTotal < 0 ? "Marginal" : "Unfavorable"}
             />
           </div>
 
@@ -890,34 +869,22 @@ export default function RBSCalculatorPanel({
             <span style={labelStyle}>Free Energy Components</span>
             <div
               style={{
-                display: 'flex',
-                flexDirection: 'column',
+                display: "flex",
+                flexDirection: "column",
                 gap: 6,
-                padding: '8px 10px',
+                padding: "8px 10px",
                 borderRadius: THEME.R_SM,
-                background: 'rgba(0,0,0,0.25)',
+                background: "rgba(0,0,0,0.25)",
               }}
             >
-              <DGBar
-                label="ΔG mRNA-rRNA"
-                value={result.dgMRNARrna}
-                color={THEME.SKY}
-              />
+              <DGBar label="ΔG mRNA-rRNA" value={result.dgMRNARrna} color={THEME.SKY} />
               <DGBar
                 label="ΔG spacing"
                 value={result.dgSpacing}
                 color={result.dgSpacing === 0 ? THEME.MINT : THEME.RISK_MEDIUM}
               />
-              <DGBar
-                label="ΔG start codon"
-                value={result.dgStartCodon}
-                color={THEME.APRICOT}
-              />
-              <DGBar
-                label="ΔG mRNA fold"
-                value={result.dgMRNA}
-                color={THEME.LILAC}
-              />
+              <DGBar label="ΔG start codon" value={result.dgStartCodon} color={THEME.APRICOT} />
+              <DGBar label="ΔG mRNA fold" value={result.dgMRNA} color={THEME.LILAC} />
               <div
                 style={{
                   borderTop: `1px solid ${THEME.BORDER}`,
@@ -928,41 +895,29 @@ export default function RBSCalculatorPanel({
                 <DGBar
                   label="ΔG total"
                   value={result.dgTotal}
-                  color={
-                    result.dgTotal < -3
-                      ? THEME.MINT
-                      : result.dgTotal < 0
-                        ? THEME.APRICOT
-                        : THEME.CORAL
-                  }
+                  color={result.dgTotal < -3 ? THEME.MINT : result.dgTotal < 0 ? THEME.APRICOT : THEME.CORAL}
                 />
               </div>
             </div>
           </div>
 
           {/* Spacing info */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             <MetricCard
               label="Spacing"
               value={`${result.spacing}`}
               unit="nt"
               size="sm"
               accent={
-                result.spacing >= orgConfig.optimalSpacing[0] &&
-                result.spacing <= orgConfig.optimalSpacing[1]
+                result.spacing >= orgConfig.optimalSpacing[0] && result.spacing <= orgConfig.optimalSpacing[1]
                   ? THEME.MINT
                   : THEME.RISK_MEDIUM
               }
             />
-            <MetricCard
-              label="Start Codon"
-              value={result.startCodon}
-              size="sm"
-              accent={THEME.CORAL}
-            />
+            <MetricCard label="Start Codon" value={result.startCodon} size="sm" accent={THEME.CORAL} />
             <MetricCard
               label="SD Sequence"
-              value={result.sdSequence || 'None'}
+              value={result.sdSequence || "None"}
               size="sm"
               accent={result.sdSequence ? THEME.MINT : THEME.DIM}
             />
@@ -983,15 +938,15 @@ export default function RBSCalculatorPanel({
             <span style={labelStyle}>Full Sequence (5&apos;&rarr;3&apos;)</span>
             <div
               style={{
-                padding: '8px 10px',
+                padding: "8px 10px",
                 borderRadius: THEME.R_SM,
-                background: 'rgba(0,0,0,0.3)',
+                background: "rgba(0,0,0,0.3)",
                 border: `1px solid ${THEME.BORDER}`,
                 fontFamily: THEME.MONO,
                 fontSize: THEME.FS_SM,
                 color: THEME.VALUE,
-                wordBreak: 'break-all' as const,
-                letterSpacing: '0.08em',
+                wordBreak: "break-all" as const,
+                letterSpacing: "0.08em",
                 lineHeight: 1.6,
               }}
             >

@@ -1,9 +1,9 @@
-'use client';
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import EmptyState from './EmptyState';
-import Pagination from './Pagination';
-import { THEME } from '../../../theme';
+"use client";
+import { AnimatePresence, motion } from "framer-motion";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { THEME } from "../../../theme";
+import EmptyState from "./EmptyState";
+import Pagination from "./Pagination";
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -29,13 +29,13 @@ export default function DataTable<T extends object>({
   rows,
   maxRows = 50,
   pageSizeOptions = [25, 50, 100],
-  emptyTitle = 'No rows to display',
-  emptyMessage = 'Adjust the current filters or parameters to populate this table.',
+  emptyTitle = "No rows to display",
+  emptyMessage = "Adjust the current filters or parameters to populate this table.",
   expandable = false,
   renderExpand,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<keyof T | null>(null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(maxRows);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -46,11 +46,10 @@ export default function DataTable<T extends object>({
     return [...rows].sort((a, b) => {
       const av = (a as Record<string, unknown>)[sortKey as string];
       const bv = (b as Record<string, unknown>)[sortKey as string];
-      const cmp = typeof av === 'number' && typeof bv === 'number'
-        ? av - bv
-        : String(av ?? '').localeCompare(String(bv ?? ''));
+      const cmp =
+        typeof av === "number" && typeof bv === "number" ? av - bv : String(av ?? "").localeCompare(String(bv ?? ""));
 
-      return sortDir === 'asc' ? cmp : -cmp;
+      return sortDir === "asc" ? cmp : -cmp;
     });
   }, [rows, sortDir, sortKey]);
 
@@ -72,12 +71,12 @@ export default function DataTable<T extends object>({
 
   function onSort(key: keyof T) {
     if (sortKey === key) {
-      setSortDir((direction) => (direction === 'asc' ? 'desc' : 'asc'));
+      setSortDir((direction) => (direction === "asc" ? "desc" : "asc"));
       return;
     }
 
     setSortKey(key);
-    setSortDir('asc');
+    setSortDir("asc");
   }
 
   function toggleRow(rowIdx: number) {
@@ -95,52 +94,52 @@ export default function DataTable<T extends object>({
   return (
     <div
       style={{
-        width: '100%',
+        width: "100%",
         minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <div style={{ overflowX: 'auto', width: '100%', flex: 1 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div style={{ overflowX: "auto", width: "100%", flex: 1 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
               {expandable && (
-                <th style={{
-                  padding: '8px 6px',
-                  width: '28px',
-                  background: 'rgba(0,0,0,0.94)',
-                  position: 'sticky',
-                  top: 0,
-                  zIndex: 1,
-                }} />
+                <th
+                  style={{
+                    padding: "8px 6px",
+                    width: "28px",
+                    background: "rgba(0,0,0,0.94)",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 1,
+                  }}
+                />
               )}
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
                   onClick={col.sortable !== false ? () => onSort(col.key) : undefined}
                   style={{
-                    padding: '8px 12px',
-                    textAlign: 'left',
+                    padding: "8px 12px",
+                    textAlign: "left",
                     fontFamily: THEME.MONO,
-                    fontSize: '10px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    color: sortKey === col.key ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)',
-                    cursor: col.sortable !== false ? 'pointer' : 'default',
-                    userSelect: 'none',
+                    fontSize: "10px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: sortKey === col.key ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)",
+                    cursor: col.sortable !== false ? "pointer" : "default",
+                    userSelect: "none",
                     width: col.width,
-                    whiteSpace: 'nowrap',
-                    background: 'rgba(0,0,0,0.94)',
-                    position: 'sticky',
+                    whiteSpace: "nowrap",
+                    background: "rgba(0,0,0,0.94)",
+                    position: "sticky",
                     top: 0,
                     zIndex: 1,
                   }}
                 >
                   {col.header}
-                  {sortKey === col.key && (
-                    <span style={{ marginLeft: '4px' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
-                  )}
+                  {sortKey === col.key && <span style={{ marginLeft: "4px" }}>{sortDir === "asc" ? "↑" : "↓"}</span>}
                 </th>
               ))}
             </tr>
@@ -155,24 +154,28 @@ export default function DataTable<T extends object>({
                     <tr
                       onClick={expandable ? () => toggleRow(rowIndex) : undefined}
                       style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.05)',
-                        background: rowIndex % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
-                        cursor: expandable ? 'pointer' : 'default',
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        background: rowIndex % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)",
+                        cursor: expandable ? "pointer" : "default",
                       }}
                     >
                       {expandable && (
-                        <td style={{
-                          padding: '7px 6px',
-                          textAlign: 'center',
-                          width: '28px',
-                        }}>
-                          <span style={{
-                            display: 'inline-block',
-                            transition: 'transform 0.2s ease',
-                            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                            fontSize: '10px',
-                            color: 'rgba(255,255,255,0.4)',
-                          }}>
+                        <td
+                          style={{
+                            padding: "7px 6px",
+                            textAlign: "center",
+                            width: "28px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              transition: "transform 0.2s ease",
+                              transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                              fontSize: "10px",
+                              color: "rgba(255,255,255,0.4)",
+                            }}
+                          >
                             ▶
                           </span>
                         </td>
@@ -181,15 +184,15 @@ export default function DataTable<T extends object>({
                         <td
                           key={String(col.key)}
                           style={{
-                            padding: '7px 12px',
+                            padding: "7px 12px",
                             fontFamily: THEME.SANS,
-                            fontSize: '11px',
-                            color: 'rgba(255,255,255,0.65)',
-                            whiteSpace: 'nowrap',
+                            fontSize: "11px",
+                            color: "rgba(255,255,255,0.65)",
+                            whiteSpace: "nowrap",
                             width: col.width,
                           }}
                         >
-                          {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '')}
+                          {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? "")}
                         </td>
                       ))}
                     </tr>
@@ -198,21 +201,19 @@ export default function DataTable<T extends object>({
                         <motion.tr
                           key="expand"
                           initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
+                          animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2, ease: 'easeInOut' }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
                         >
                           <td
                             colSpan={columns.length + 1}
                             style={{
                               padding: 0,
-                              background: 'rgba(255,255,255,0.02)',
-                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                              background: "rgba(255,255,255,0.02)",
+                              borderBottom: "1px solid rgba(255,255,255,0.05)",
                             }}
                           >
-                            <div style={{ padding: '12px 16px' }}>
-                              {renderExpand(row)}
-                            </div>
+                            <div style={{ padding: "12px 16px" }}>{renderExpand(row)}</div>
                           </td>
                         </motion.tr>
                       )}
@@ -222,7 +223,7 @@ export default function DataTable<T extends object>({
               })
             ) : (
               <tr>
-                <td colSpan={columns.length} style={{ padding: 0, height: '260px' }}>
+                <td colSpan={columns.length} style={{ padding: 0, height: "260px" }}>
                   <EmptyState title={emptyTitle} message={emptyMessage} />
                 </td>
               </tr>

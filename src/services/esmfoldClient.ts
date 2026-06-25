@@ -29,20 +29,17 @@ export interface ESMFoldError {
  * @param name - Optional name for the prediction
  * @returns PDB text and pLDDT confidence score
  */
-export async function predictStructure(
-  sequence: string,
-  name?: string,
-): Promise<ESMFoldResult> {
-  const response = await fetch('/api/esmfold', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+export async function predictStructure(sequence: string, name?: string): Promise<ESMFoldResult> {
+  const response = await fetch("/api/esmfold", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sequence, name }),
   });
 
   const data = await response.json();
 
   if (!data.ok) {
-    throw new Error(data.error || 'ESMFold prediction failed');
+    throw new Error(data.error || "ESMFold prediction failed");
   }
 
   return data as ESMFoldResult;
@@ -69,11 +66,11 @@ export function extractBackboneFromPDB(pdbText: string): Array<{
     z: number;
   }> = [];
 
-  const lines = pdbText.split('\n');
+  const lines = pdbText.split("\n");
   let prevResidue = -1;
 
   for (const line of lines) {
-    if (!line.startsWith('ATOM')) continue;
+    if (!line.startsWith("ATOM")) continue;
 
     const atomName = line.substring(12, 16).trim();
     const residueName = line.substring(17, 20).trim();
@@ -83,7 +80,7 @@ export function extractBackboneFromPDB(pdbText: string): Array<{
     const z = parseFloat(line.substring(46, 54));
 
     // Only take Cα atoms (one per residue)
-    if (atomName === 'CA' && residueIndex !== prevResidue) {
+    if (atomName === "CA" && residueIndex !== prevResidue) {
       backbone.push({
         residueIndex: backbone.length,
         residueName: residueName,
@@ -102,14 +99,14 @@ export function extractBackboneFromPDB(pdbText: string): Array<{
  * Compute average pLDDT from PDB text (B-factor column stores pLDDT in ESMFold output).
  */
 export function computeAveragePLDDT(pdbText: string): number {
-  const lines = pdbText.split('\n');
+  const lines = pdbText.split("\n");
   let totalPLDDT = 0;
   let count = 0;
 
   for (const line of lines) {
-    if (!line.startsWith('ATOM')) continue;
+    if (!line.startsWith("ATOM")) continue;
     const atomName = line.substring(12, 16).trim();
-    if (atomName !== 'CA') continue;
+    if (atomName !== "CA") continue;
 
     const bFactor = parseFloat(line.substring(60, 66));
     if (!isNaN(bFactor)) {

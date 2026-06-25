@@ -1,4 +1,5 @@
-'use client';
+"use client";
+import { usePathname } from "next/navigation";
 /**
  * GlobalAutomationDock — cross-page automation queue view.
  *
@@ -18,44 +19,44 @@
  *   • Reads tasks from the shared AxonOrchestratorProvider, so every
  *     /tools/* route sees the same live queue.
  */
-import { useState } from 'react';
-import { usePathname } from 'next/navigation';
-import AutomationDrawer from '../tools/nexai/AutomationDrawer';
-import AxonLogPanel from './AxonLogPanel';
-import { useAxonOrchestratorOptional } from '../../providers/AxonOrchestratorProvider';
-import { sessionStatusLabel } from '../../services/axonSessionView';
-import { THEME } from '../../theme';
+import { useState } from "react";
+import { useAxonOrchestratorOptional } from "../../providers/AxonOrchestratorProvider";
+import { sessionStatusLabel } from "../../services/axonSessionView";
+import { THEME } from "../../theme";
+import AutomationDrawer from "../tools/nexai/AutomationDrawer";
+import AxonLogPanel from "./AxonLogPanel";
+
 const DOCK_WIDTH = 360;
 
 export default function GlobalAutomationDock() {
   const axon = useAxonOrchestratorOptional();
-  const pathname = usePathname() ?? '';
+  const pathname = usePathname() ?? "";
   const [expanded, setExpanded] = useState(false);
 
   if (!axon) return null;
   if (!axon.agenticMode) return null;
-  if (pathname.startsWith('/tools/nexai')) return null;
+  if (pathname.startsWith("/tools/nexai")) return null;
 
   const { tasks, clearTerminal, cancelTask, retryTask, reorderTask, logs, session } = axon;
-  const running = tasks.filter((t) => t.status === 'running').length;
-  const pending = tasks.filter((t) => t.status === 'pending').length;
+  const running = tasks.filter((t) => t.status === "running").length;
+  const pending = tasks.filter((t) => t.status === "pending").length;
   // PR-5: the dock shows *session status* (not just a queue counter) so
   // cross-tool navigation gives an honest agent-state signal at a glance.
   // The full AgentSessionViewer stays inside /tools/nexai — this dock
   // deliberately only exposes the chip + drawer to avoid duplicating the
   // reading-room surface.
   const SESSION_DOT: Record<string, string> = {
-    idle: 'rgba(255,255,255,0.18)',
-    planning: '#AFC3D6',
-    running: '#93CB52',
-    waiting: '#E7C7A9',
-    completed: '#93CB52',
-    partial: '#E7C7A9',
-    failed: '#FA8072',
-    cancelled: 'rgba(255,255,255,0.40)',
-    interrupted: '#E7C7A9',
-    'off-domain': '#CFC4E3',
-    unsupported: '#E7C7A9',
+    idle: "rgba(255,255,255,0.18)",
+    planning: "#AFC3D6",
+    running: "#93CB52",
+    waiting: "#E7C7A9",
+    completed: "#93CB52",
+    partial: "#E7C7A9",
+    failed: "#FA8072",
+    cancelled: "rgba(255,255,255,0.40)",
+    interrupted: "#E7C7A9",
+    "off-domain": "#CFC4E3",
+    unsupported: "#E7C7A9",
   };
   const sessionDot = SESSION_DOT[session.status] ?? THEME.LABEL;
 
@@ -64,13 +65,13 @@ export default function GlobalAutomationDock() {
       data-testid="global-automation-dock"
       data-expanded={expanded || undefined}
       style={{
-        position: 'fixed',
-        left: '96px',
-        bottom: '84px',
+        position: "fixed",
+        left: "96px",
+        bottom: "84px",
         zIndex: 94,
-        width: expanded ? DOCK_WIDTH : 'auto',
-        maxWidth: '90vw',
-        pointerEvents: 'auto',
+        width: expanded ? DOCK_WIDTH : "auto",
+        maxWidth: "90vw",
+        pointerEvents: "auto",
       }}
     >
       <button
@@ -79,48 +80,45 @@ export default function GlobalAutomationDock() {
         data-testid="global-automation-dock-toggle"
         aria-expanded={expanded}
         style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '6px 10px',
-          marginBottom: expanded ? '8px' : 0,
-          borderRadius: '12px',
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "6px 10px",
+          marginBottom: expanded ? "8px" : 0,
+          borderRadius: "12px",
           border: `1px solid ${THEME.BORDER}`,
           background: THEME.PANEL_INSET,
           color: THEME.VALUE,
           fontFamily: THEME.MONO,
-          fontSize: '10px',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
+          fontSize: "10px",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          cursor: "pointer",
         }}
       >
         <span
           aria-hidden
           data-testid="global-automation-dock-session-dot"
           style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
             background: sessionDot,
-            boxShadow: session.status === 'running' ? '0 0 0 3px rgba(147,203,82,0.22)' : 'none',
+            boxShadow: session.status === "running" ? "0 0 0 3px rgba(147,203,82,0.22)" : "none",
           }}
         />
-        <span
-          data-testid="global-automation-dock-session-label"
-          data-status={session.status}
-        >
+        <span data-testid="global-automation-dock-session-label" data-status={session.status}>
           Axon · {sessionStatusLabel(session.status)}
         </span>
-        <span style={{ color: THEME.LABEL, letterSpacing: 0, textTransform: 'none' }}>
+        <span style={{ color: THEME.LABEL, letterSpacing: 0, textTransform: "none" }}>
           {pending}P · {running}R · {tasks.length}T
         </span>
         <span aria-hidden style={{ color: THEME.LABEL, letterSpacing: 0 }}>
-          {expanded ? '▾' : '▸'}
+          {expanded ? "▾" : "▸"}
         </span>
       </button>
       {expanded && (
-        <div style={{ display: 'grid', gap: '8px' }}>
+        <div style={{ display: "grid", gap: "8px" }}>
           <AutomationDrawer
             tasks={tasks}
             enabled
@@ -132,22 +130,22 @@ export default function GlobalAutomationDock() {
           <div
             data-testid="global-automation-dock-log"
             style={{
-              borderRadius: '12px',
+              borderRadius: "12px",
               border: `1px solid ${THEME.BORDER}`,
               background: THEME.PANEL_INSET,
-              padding: '10px 12px',
-              display: 'grid',
-              gap: '8px',
-              maxHeight: '280px',
-              overflowY: 'auto',
+              padding: "10px 12px",
+              display: "grid",
+              gap: "8px",
+              maxHeight: "280px",
+              overflowY: "auto",
             }}
           >
             <div
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: '10px',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                fontSize: "10px",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
                 color: THEME.LABEL,
               }}
             >

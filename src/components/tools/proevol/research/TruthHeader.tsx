@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
-import { PROEVOL_THEME } from '../shared';
-import type { ProEvolProvenance } from '../../../../domain/proevolArtifact';
-import ValidityIndicator from './ValidityIndicator';
-import { THEME } from '../../../../theme';
+import type { ReactNode } from "react";
+import type { ProEvolProvenance } from "../../../../domain/proevolArtifact";
+import { THEME } from "../../../../theme";
+import { PROEVOL_THEME } from "../shared";
+import ValidityIndicator from "./ValidityIndicator";
 
 interface TruthHeaderProps {
   campaignName: string;
@@ -20,43 +20,38 @@ interface TruthHeaderProps {
  * disclaimer when bands are modeled. Designed to be impossible to scroll past
  * before reading any chart.
  */
-export default function TruthHeader({
-  campaignName,
-  targetProduct,
-  provenance,
-  actions,
-}: TruthHeaderProps) {
-  const isModeled = provenance.bandSemantic === 'modeled';
+export default function TruthHeader({ campaignName, targetProduct, provenance, actions }: TruthHeaderProps) {
+  const isModeled = provenance.bandSemantic === "modeled";
   const accent = isModeled ? PROEVOL_THEME.riskLow : PROEVOL_THEME.successHigh;
 
   return (
     <div
       style={{
-        display: 'grid',
-        gap: '10px',
-        padding: '10px 12px',
-        borderRadius: 'var(--nb-radius-md)',
+        display: "grid",
+        gap: "10px",
+        padding: "10px 12px",
+        borderRadius: "var(--nb-radius-md)",
         border: `1px solid ${accent}33`,
         background: PROEVOL_THEME.surface,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
       }}
     >
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr) auto',
-          gap: '14px',
-          alignItems: 'center',
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.3fr) minmax(0, 1fr) auto",
+          gap: "14px",
+          alignItems: "center",
         }}
       >
-        <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
+        <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
           <div
             style={{
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
+              fontSize: "var(--nb-fs-xs)",
               color: PROEVOL_THEME.label,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
             }}
           >
             PROEVOL · Directed Evolution Workbench
@@ -64,13 +59,13 @@ export default function TruthHeader({
           <div
             style={{
               fontFamily: THEME.SANS,
-              fontSize: 'var(--nb-fs-md)',
+              fontSize: "var(--nb-fs-md)",
               fontWeight: 700,
               color: PROEVOL_THEME.value,
-              letterSpacing: '-0.02em',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              letterSpacing: "-0.02em",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
             {campaignName}
@@ -78,7 +73,7 @@ export default function TruthHeader({
           <div
             style={{
               fontFamily: THEME.SANS,
-              fontSize: 'var(--nb-fs-sm)',
+              fontSize: "var(--nb-fs-sm)",
               color: PROEVOL_THEME.muted,
               lineHeight: 1.5,
             }}
@@ -87,7 +82,7 @@ export default function TruthHeader({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
+        <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
           <ValidityIndicator
             validity={provenance.validity}
             bandSemantic={provenance.bandSemantic}
@@ -98,7 +93,7 @@ export default function TruthHeader({
           <div
             style={{
               fontFamily: THEME.SANS,
-              fontSize: '10.5px',
+              fontSize: "10.5px",
               color: PROEVOL_THEME.muted,
               lineHeight: 1.5,
             }}
@@ -107,19 +102,17 @@ export default function TruthHeader({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-          {actions}
-        </div>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>{actions}</div>
       </div>
 
       {isModeled ? (
         <div
           style={{
-            display: 'flex',
-            gap: '6px',
-            alignItems: 'center',
-            padding: '5px 8px',
-            borderRadius: 'var(--nb-radius-sm)',
+            display: "flex",
+            gap: "6px",
+            alignItems: "center",
+            padding: "5px 8px",
+            borderRadius: "var(--nb-radius-sm)",
             border: `1px solid ${accent}33`,
             background: `${accent}10`,
           }}
@@ -127,9 +120,9 @@ export default function TruthHeader({
           <span
             style={{
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
+              fontSize: "var(--nb-fs-xs)",
               fontWeight: 700,
-              letterSpacing: '0.1em',
+              letterSpacing: "0.1em",
               color: accent,
               flexShrink: 0,
             }}
@@ -139,7 +132,7 @@ export default function TruthHeader({
           <span
             style={{
               fontFamily: THEME.SANS,
-              fontSize: 'var(--nb-fs-xs)',
+              fontSize: "var(--nb-fs-xs)",
               color: PROEVOL_THEME.muted,
               lineHeight: 1.4,
             }}

@@ -1,15 +1,10 @@
-import type {
-  ClaimSurface,
-  ProvenanceEntry,
-} from '../protocol/nexusTrustRuntime';
-import { TOOL_VALIDITY } from '../config/toolValidity';
-import type {
-  ProvenanceEntry as WorkbenchProvenanceEntry,
-} from '../types/assumptions';
+import { TOOL_VALIDITY } from "../config/toolValidity";
+import type { ClaimSurface, ProvenanceEntry } from "../protocol/nexusTrustRuntime";
+import type { ProvenanceEntry as WorkbenchProvenanceEntry } from "../types/assumptions";
 
 export interface ProvenanceContext {
   toolId: string;
-  activityType: ProvenanceEntry['activityType'];
+  activityType: ProvenanceEntry["activityType"];
   surface?: ClaimSurface;
   actor?: string;
   inputAssumptionIds?: string[];
@@ -35,7 +30,7 @@ export interface ProvenanceChainDiagnostics {
 type ProvenanceLike = ProvenanceEntry | WorkbenchProvenanceEntry;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function unique(items: string[]): string[] {
@@ -79,7 +74,7 @@ function toWorkbenchProvenanceEntry(entry: ProvenanceEntry): WorkbenchProvenance
     inputAssumptions: [...entry.inputAssumptionIds],
     outputAssumptions: [...entry.outputAssumptionIds],
     evidence: [],
-    validityTier: TOOL_VALIDITY[entry.toolId]?.level ?? 'partial',
+    validityTier: TOOL_VALIDITY[entry.toolId]?.level ?? "partial",
     upstreamProvenance: [...entry.upstreamProvenanceIds],
   };
 }
@@ -100,10 +95,7 @@ function makeProvenanceEntry(context: ProvenanceContext, startedAt: string, comp
   };
 }
 
-function cloneWithRunProvenance<TPayload>(
-  payload: TPayload,
-  provenanceEntry: ProvenanceEntry,
-): TPayload {
+function cloneWithRunProvenance<TPayload>(payload: TPayload, provenanceEntry: ProvenanceEntry): TPayload {
   if (!isRecord(payload)) return payload;
   const workbenchEntry = toWorkbenchProvenanceEntry(provenanceEntry);
   const existing = payload.runProvenance;
@@ -128,10 +120,7 @@ function cloneWithRunProvenance<TPayload>(
   } as TPayload;
 }
 
-export function appendRunProvenance<TPayload>(
-  payload: TPayload,
-  provenanceEntry: ProvenanceEntry,
-): TPayload {
+export function appendRunProvenance<TPayload>(payload: TPayload, provenanceEntry: ProvenanceEntry): TPayload {
   return cloneWithRunProvenance(payload, provenanceEntry);
 }
 
@@ -167,8 +156,8 @@ export function withProvenanceSync<TPayload>(
 
 function provenanceIdFromEntry(value: unknown): string | null {
   if (!isRecord(value)) return null;
-  if (typeof value.provenanceId === 'string') return value.provenanceId;
-  if (typeof value.toolId === 'string' && typeof value.timestamp === 'number' && Number.isFinite(value.timestamp)) {
+  if (typeof value.provenanceId === "string") return value.provenanceId;
+  if (typeof value.toolId === "string" && typeof value.timestamp === "number" && Number.isFinite(value.timestamp)) {
     return `${value.toolId}:${value.timestamp}`;
   }
   return null;
@@ -177,10 +166,10 @@ function provenanceIdFromEntry(value: unknown): string | null {
 function upstreamIdsFromEntry(value: unknown): string[] {
   if (!isRecord(value)) return [];
   const protocolIds = Array.isArray(value.upstreamProvenanceIds)
-    ? value.upstreamProvenanceIds.filter((item): item is string => typeof item === 'string')
+    ? value.upstreamProvenanceIds.filter((item): item is string => typeof item === "string")
     : [];
   const workbenchIds = Array.isArray(value.upstreamProvenance)
-    ? value.upstreamProvenance.filter((item): item is string => typeof item === 'string')
+    ? value.upstreamProvenance.filter((item): item is string => typeof item === "string")
     : [];
   return unique([...protocolIds, ...workbenchIds]);
 }
@@ -195,7 +184,11 @@ function entriesFromPayload(payload: unknown): ProvenanceLike[] {
 }
 
 export function collectProvenanceIds(payload: unknown): string[] {
-  return unique(entriesFromPayload(payload).map((entry) => provenanceIdFromEntry(entry)).filter((id): id is string => id !== null));
+  return unique(
+    entriesFromPayload(payload)
+      .map((entry) => provenanceIdFromEntry(entry))
+      .filter((id): id is string => id !== null),
+  );
 }
 
 export function getProvenanceChainLength(payload: unknown): number {

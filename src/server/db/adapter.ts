@@ -43,11 +43,11 @@ export function getDb(): DatabaseAdapter {
     cachedDb = createTursoAdapter(tursoUrl, tursoToken);
   } else {
     // Local development: file-based SQLite via @libsql/client
-    const path = require('path') as typeof import('path');
-    const fs = require('fs') as typeof import('fs');
-    const dbDir = path.join(process.cwd(), '.data');
+    const path = require("path") as typeof import("path");
+    const fs = require("fs") as typeof import("fs");
+    const dbDir = path.join(process.cwd(), ".data");
     if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-    const localUrl = `file:${path.join(dbDir, 'workbench.db')}`;
+    const localUrl = `file:${path.join(dbDir, "workbench.db")}`;
     cachedDb = createTursoAdapter(localUrl, undefined);
   }
 
@@ -57,7 +57,7 @@ export function getDb(): DatabaseAdapter {
 function createTursoAdapter(url: string, authToken: string | undefined): DatabaseAdapter {
   // Dynamic import to avoid bundling @libsql/client in Edge Runtime
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createClient } = require('@libsql/client');
+  const { createClient } = require("@libsql/client");
   const client = createClient({ url, authToken });
 
   return {
@@ -81,7 +81,11 @@ function createTursoAdapter(url: string, authToken: string | undefined): Databas
         return result.rows as Record<string, unknown>[];
       },
     }),
-    pragma: () => { /* Turso handles pragmas automatically */ },
-    close: () => { client.close(); },
+    pragma: () => {
+      /* Turso handles pragmas automatically */
+    },
+    close: () => {
+      client.close();
+    },
   };
 }

@@ -1,25 +1,25 @@
-'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  runFullCFSPipeline,
-  generateDefaultConstructs,
-  generateDefaultParameters,
-} from '../../../services/CellFreeEngine';
+"use client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CalibrationResult } from "../../../server/mcmcCalibration";
+import { calibrateParameters } from "../../../server/mcmcCalibration";
 import type {
   CFSFullResult,
-  GeneConstruct,
   CFSParameters,
+  GeneConstruct,
   PlateReaderDataPoint,
-} from '../../../services/CellFreeEngine';
-import { useWorkbenchStore } from '../../../store/workbenchStore';
-import type { ProvenanceEntry } from '../../../types/assumptions';
-import { createProvenanceEntry } from '../../../utils/provenance';
-import { buildCellFreeSeed } from '../shared/workbenchDataflow';
-import { calibrateParameters } from '../../../server/mcmcCalibration';
-import type { CalibrationResult } from '../../../server/mcmcCalibration';
-import { getBRENDAKinetics } from '../../../services/database/brendaClient';
-import type { BRENDAKinetics } from '../../../services/database/brendaClient';
-import { getIvivExpressionLabel } from './sharedComponents';
+} from "../../../services/CellFreeEngine";
+import {
+  generateDefaultConstructs,
+  generateDefaultParameters,
+  runFullCFSPipeline,
+} from "../../../services/CellFreeEngine";
+import type { BRENDAKinetics } from "../../../services/database/brendaClient";
+import { getBRENDAKinetics } from "../../../services/database/brendaClient";
+import { useWorkbenchStore } from "../../../store/workbenchStore";
+import type { ProvenanceEntry } from "../../../types/assumptions";
+import { createProvenanceEntry } from "../../../utils/provenance";
+import { buildCellFreeSeed } from "../shared/workbenchDataflow";
+import { getIvivExpressionLabel } from "./sharedComponents";
 
 export interface CellFreeState {
   constructs: GeneConstruct[];
@@ -33,7 +33,7 @@ export interface CellFreeState {
   brendaEcInput: string;
   setBrendaEcInput: React.Dispatch<React.SetStateAction<string>>;
   brendaData: BRENDAKinetics | null;
-  brendaSource: 'live' | 'mock';
+  brendaSource: "live" | "mock";
   brendaLoading: boolean;
   brendaApplied: boolean;
   calibrationResult: CalibrationResult | null;
@@ -41,10 +41,13 @@ export interface CellFreeState {
   cellfreeError: string | null;
   setCellfreeError: React.Dispatch<React.SetStateAction<string | null>>;
   pipelineResult: {
-    predictedYield: number; robustnessScore: number; energyDepletionTime: number;
-    recommendedConstruct: string; confidenceLevel: string;
+    predictedYield: number;
+    robustnessScore: number;
+    energyDepletionTime: number;
+    recommendedConstruct: string;
+    confidenceLevel: string;
   } | null;
-  setPipelineResult: React.Dispatch<React.SetStateAction<CellFreeState['pipelineResult']>>;
+  setPipelineResult: React.Dispatch<React.SetStateAction<CellFreeState["pipelineResult"]>>;
   pipelineLoading: boolean;
   setPipelineLoading: React.Dispatch<React.SetStateAction<boolean>>;
   pipelineError: string | null;
@@ -56,9 +59,9 @@ export interface CellFreeState {
   handleCsvUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   result: CFSFullResult | null;
   simError: string | null;
-  sim: CFSFullResult['simulation'];
-  fit: CFSFullResult['fitting'];
-  iviv: CFSFullResult['iviv'];
+  sim: CFSFullResult["simulation"];
+  fit: CFSFullResult["fitting"];
+  iviv: CFSFullResult["iviv"];
   invitroMaxProtein: number;
   exportData: Record<string, unknown>[];
 }
@@ -76,17 +79,31 @@ export function useCellFreeState(): CellFreeState {
   const [params, setParams] = useState<CFSParameters>(() => generateDefaultParameters());
   const recommendedSeed = useMemo(
     () => buildCellFreeSeed(project, analyzeArtifact, catalystPayload, dynconPayload, cethxPayload, dbtlPayload),
-    [analyzeArtifact?.generatedAt, analyzeArtifact?.id, catalystPayload?.updatedAt, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, dynconPayload?.updatedAt, project?.id, project?.updatedAt],
+    [
+      analyzeArtifact?.generatedAt,
+      analyzeArtifact?.id,
+      catalystPayload?.updatedAt,
+      cethxPayload?.updatedAt,
+      dbtlPayload?.feedbackSource,
+      dbtlPayload?.result.improvementRate,
+      dbtlPayload?.result.latestPhase,
+      dbtlPayload?.result.passRate,
+      dbtlPayload?.updatedAt,
+      dynconPayload?.updatedAt,
+      project?.id,
+      project?.updatedAt,
+    ],
   );
 
   const seedSignature = useMemo(
-    () => JSON.stringify({
-      ids: recommendedSeed.constructs.map((c) => c.id),
-      temp: recommendedSeed.params.temperature,
-      time: recommendedSeed.params.simulationTime,
-      ribo: recommendedSeed.params.ribosomeTotal,
-      atp: recommendedSeed.params.initialEnergy.atp,
-    }),
+    () =>
+      JSON.stringify({
+        ids: recommendedSeed.constructs.map((c) => c.id),
+        temp: recommendedSeed.params.temperature,
+        time: recommendedSeed.params.simulationTime,
+        ribo: recommendedSeed.params.ribosomeTotal,
+        atp: recommendedSeed.params.initialEnergy.atp,
+      }),
     [recommendedSeed],
   );
   const lastAppliedSeedRef = useRef<string | null>(null);
@@ -98,11 +115,11 @@ export function useCellFreeState(): CellFreeState {
     lastAppliedSeedRef.current = seedSignature;
   }, [seedSignature, recommendedSeed]);
 
-  const [activeTab, setActiveTab] = useState('timecourse');
+  const [activeTab, setActiveTab] = useState("timecourse");
   const [userData, setUserData] = useState<PlateReaderDataPoint[] | null>(null);
-  const [brendaEcInput, setBrendaEcInput] = useState('');
+  const [brendaEcInput, setBrendaEcInput] = useState("");
   const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
-  const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
+  const [brendaSource, setBrendaSource] = useState<"live" | "mock">("mock");
   const [brendaLoading, setBrendaLoading] = useState(false);
   const [brendaApplied, setBrendaApplied] = useState(false);
   const [calibrationResult, setCalibrationResult] = useState<CalibrationResult | null>(null);
@@ -110,8 +127,11 @@ export function useCellFreeState(): CellFreeState {
   const [cellfreeError, setCellfreeError] = useState<string | null>(null);
 
   const [pipelineResult, setPipelineResult] = useState<{
-    predictedYield: number; robustnessScore: number; energyDepletionTime: number;
-    recommendedConstruct: string; confidenceLevel: string;
+    predictedYield: number;
+    robustnessScore: number;
+    energyDepletionTime: number;
+    recommendedConstruct: string;
+    confidenceLevel: string;
   } | null>(null);
   const [pipelineLoading, setPipelineLoading] = useState(false);
   const [pipelineError, setPipelineError] = useState<string | null>(null);
@@ -120,27 +140,37 @@ export function useCellFreeState(): CellFreeState {
     setCalibrationLoading(true);
     try {
       const timepoints = userData
-        ? Array.from(new Set(userData.map(d => d.time))).sort((a, b) => a - b)
+        ? Array.from(new Set(userData.map((d) => d.time))).sort((a, b) => a - b)
         : [0, 30, 60, 90, 120];
       const observations = userData
-        ? { protein: timepoints.map(t => userData.filter(d => d.time === t).reduce((sum, d) => sum + d.fluorescence, 0) / Math.max(1, userData.filter(d => d.time === t).length)) }
+        ? {
+            protein: timepoints.map(
+              (t) =>
+                userData.filter((d) => d.time === t).reduce((sum, d) => sum + d.fluorescence, 0) /
+                Math.max(1, userData.filter((d) => d.time === t).length),
+            ),
+          }
         : { protein: [0, 0.5, 1.2, 1.8, 2.1] };
       const data = { timepoints, observations };
-      const result = calibrateParameters(data, {
-        nSamples: 200,
-        burnIn: 50,
-        priorRanges: { k_tx: [0.01, 5], k_tl: [0.1, 20], d_mRNA: [0.001, 0.5] },
-      }, (params) => {
-        const { k_tx, k_tl, d_mRNA } = params;
-        return {
-          protein: data.timepoints.map(t => (k_tx * k_tl / d_mRNA) * (1 - Math.exp(-d_mRNA * t))),
-        };
-      });
+      const result = calibrateParameters(
+        data,
+        {
+          nSamples: 200,
+          burnIn: 50,
+          priorRanges: { k_tx: [0.01, 5], k_tl: [0.1, 20], d_mRNA: [0.001, 0.5] },
+        },
+        (params) => {
+          const { k_tx, k_tl, d_mRNA } = params;
+          return {
+            protein: data.timepoints.map((t) => ((k_tx * k_tl) / d_mRNA) * (1 - Math.exp(-d_mRNA * t))),
+          };
+        },
+      );
       setCalibrationResult(result);
     } catch (calibrationError) {
-      console.warn('Calibration failed:', calibrationError);
+      console.warn("Calibration failed:", calibrationError);
       setCalibrationResult(null);
-      const msg = calibrationError instanceof Error ? calibrationError.message : 'MCMC calibration failed';
+      const msg = calibrationError instanceof Error ? calibrationError.message : "MCMC calibration failed";
       setCellfreeError(msg);
     } finally {
       setCalibrationLoading(false);
@@ -156,7 +186,7 @@ export function useCellFreeState(): CellFreeState {
       setBrendaSource(result.source);
       setBrendaApplied(false);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'BRENDA lookup failed';
+      const msg = err instanceof Error ? err.message : "BRENDA lookup failed";
       setCellfreeError(msg);
     } finally {
       setBrendaLoading(false);
@@ -168,7 +198,7 @@ export function useCellFreeState(): CellFreeState {
     const km = brendaData.km.length > 0 ? brendaData.km[0].value : undefined;
     const kcat = brendaData.kcat.length > 0 ? brendaData.kcat[0].value : undefined;
     if (km === undefined && kcat === undefined) return;
-    setParams(prev => ({
+    setParams((prev) => ({
       ...prev,
       ...(km !== undefined ? { brendaKm: km } : {}),
       ...(kcat !== undefined ? { brendaKcat: kcat } : {}),
@@ -177,7 +207,7 @@ export function useCellFreeState(): CellFreeState {
   }, [brendaData]);
 
   const handleClearBrenda = useCallback(() => {
-    setParams(prev => {
+    setParams((prev) => {
       const next = { ...prev };
       delete next.brendaKm;
       delete next.brendaKcat;
@@ -187,16 +217,18 @@ export function useCellFreeState(): CellFreeState {
   }, []);
 
   const { data: result, error: simError } = useMemo(() => {
-    try { return { data: runFullCFSPipeline(constructs, params, userData ?? undefined), error: null as string | null }; }
-    catch (e) {
-      const errMsg = e instanceof Error ? e.message : 'CFS pipeline failed';
-      try { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg }; }
-      catch (fallbackErr) {
-        console.warn('CFS fallback also failed:', fallbackErr);
+    try {
+      return { data: runFullCFSPipeline(constructs, params, userData ?? undefined), error: null as string | null };
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : "CFS pipeline failed";
+      try {
+        return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg };
+      } catch (fallbackErr) {
+        console.warn("CFS fallback also failed:", fallbackErr);
         try {
           return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg };
         } catch (finalErr) {
-          console.error('CFS all fallbacks failed:', finalErr);
+          console.error("CFS all fallbacks failed:", finalErr);
           return { data: null as CFSFullResult | null, error: errMsg };
         }
       }
@@ -209,10 +241,10 @@ export function useCellFreeState(): CellFreeState {
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const lines = text.trim().split('\n');
+      const lines = text.trim().split("\n");
       const data: PlateReaderDataPoint[] = [];
       lines.slice(1).forEach((line, i) => {
-        const cols = line.split(',').map(s => s.trim());
+        const cols = line.split(",").map((s) => s.trim());
         const time = Number(cols[0]);
         const fluorescence = Number(cols[1]);
         if (isNaN(time) || isNaN(fluorescence)) return;
@@ -231,45 +263,51 @@ export function useCellFreeState(): CellFreeState {
   const iviv = result?.iviv ?? null;
 
   const invitroMaxProtein = useMemo(
-    () => result ? Math.max(...sim.steadyState.map((entry) => entry.maxProtein), 0) : 0,
+    () => (result ? Math.max(...sim.steadyState.map((entry) => entry.maxProtein), 0) : 0),
     [result, sim.steadyState],
   );
 
   useEffect(() => {
     if (simError || !result) return;
     const now = Date.now();
-    const upstreamProvenance = [cethxPayload?.runProvenance, catalystPayload?.runProvenance, dynconPayload?.runProvenance]
+    const upstreamProvenance = [
+      cethxPayload?.runProvenance,
+      catalystPayload?.runProvenance,
+      dynconPayload?.runProvenance,
+    ]
       .filter((entry): entry is ProvenanceEntry => Boolean(entry))
       .map((entry) => `${entry.toolId}:${entry.timestamp}`);
-    setToolPayload('cellfree', {
-      validity: 'demo',
+    setToolPayload("cellfree", {
+      validity: "demo",
       runProvenance: createProvenanceEntry({
-        toolId: 'cellfree',
+        toolId: "cellfree",
         outputAssumptions: [
-          'cellfree.parameters_unsourced',
-          'cellfree.tx_tl_kinetics_ref',
-          'cellfree.no_chassis_specificity',
-          'cellfree.lm_fitting_local',
-          'cellfree.iviv_heuristic_unfit',
-          ...(brendaApplied ? ['cellfree.brenda_constants_applied'] : []),
+          "cellfree.parameters_unsourced",
+          "cellfree.tx_tl_kinetics_ref",
+          "cellfree.no_chassis_specificity",
+          "cellfree.lm_fitting_local",
+          "cellfree.iviv_heuristic_unfit",
+          ...(brendaApplied ? ["cellfree.brenda_constants_applied"] : []),
         ],
-        evidence: [{
-          id: `cellfree-${now}`,
-          source: brendaApplied ? (brendaSource === 'live' ? 'database' : 'mock') : 'mock',
-          reference: brendaApplied
-            ? `BRENDA: Km=${params.brendaKm ?? '—'} mM, Kcat=${params.brendaKcat ?? '—'} 1/s seeded into ODE and LM fitter.`
-            : 'MOCK_DATA: no calibrated source for the bundled cell-free parameter defaults.',
-          confidence: brendaApplied ? (brendaSource === 'live' ? 'high' : 'demo') : 'demo',
-          notes: brendaApplied
-            ? 'BRENDA constants injected as initial guesses for LM optimizer and as construct kinetic overrides.'
-            : 'Tier/code mismatch is preserved honestly; no parameter calibration or chassis-specific TXTL model is claimed.',
-        }],
+        evidence: [
+          {
+            id: `cellfree-${now}`,
+            source: brendaApplied ? (brendaSource === "live" ? "database" : "mock") : "mock",
+            reference: brendaApplied
+              ? `BRENDA: Km=${params.brendaKm ?? "—"} mM, Kcat=${params.brendaKcat ?? "—"} 1/s seeded into ODE and LM fitter.`
+              : "MOCK_DATA: no calibrated source for the bundled cell-free parameter defaults.",
+            confidence: brendaApplied ? (brendaSource === "live" ? "high" : "demo") : "demo",
+            notes: brendaApplied
+              ? "BRENDA constants injected as initial guesses for LM optimizer and as construct kinetic overrides."
+              : "Tier/code mismatch is preserved honestly; no parameter calibration or chassis-specific TXTL model is claimed.",
+          },
+        ],
         upstreamProvenance,
       }),
-      toolId: 'cellfree',
-      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      toolId: "cellfree",
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || "Target Product",
       sourceArtifactId: analyzeArtifact?.id,
-      targetConstruct: constructs[1]?.name || constructs[0]?.name || 'Primary construct',
+      targetConstruct: constructs[1]?.name || constructs[0]?.name || "Primary construct",
       constructCount: constructs.length,
       temperature: params.temperature,
       simulationTime: params.simulationTime,
@@ -314,7 +352,7 @@ export function useCellFreeState(): CellFreeState {
   const exportData = useMemo(() => {
     if (!result) return [];
     const rows: Record<string, unknown>[] = [];
-    sim.genes.forEach(g => {
+    sim.genes.forEach((g) => {
       g.time.forEach((t, i) => {
         rows.push({ gene: g.geneName, time: t, protein: g.protein[i], mRNA: g.mRNA[i] });
       });
@@ -323,24 +361,40 @@ export function useCellFreeState(): CellFreeState {
   }, [sim, result]);
 
   return {
-    constructs, setConstructs,
-    params, setParams,
-    activeTab, setActiveTab,
-    userData, setUserData,
-    brendaEcInput, setBrendaEcInput,
-    brendaData, brendaSource, brendaLoading, brendaApplied,
-    calibrationResult, calibrationLoading,
-    cellfreeError, setCellfreeError,
-    pipelineResult, setPipelineResult,
-    pipelineLoading, setPipelineLoading,
-    pipelineError, setPipelineError,
+    constructs,
+    setConstructs,
+    params,
+    setParams,
+    activeTab,
+    setActiveTab,
+    userData,
+    setUserData,
+    brendaEcInput,
+    setBrendaEcInput,
+    brendaData,
+    brendaSource,
+    brendaLoading,
+    brendaApplied,
+    calibrationResult,
+    calibrationLoading,
+    cellfreeError,
+    setCellfreeError,
+    pipelineResult,
+    setPipelineResult,
+    pipelineLoading,
+    setPipelineLoading,
+    pipelineError,
+    setPipelineError,
     handleCalibrate,
     handleBrendaLookup,
     handleApplyBrenda,
     handleClearBrenda,
     handleCsvUpload,
-    result, simError,
-    sim, fit, iviv,
+    result,
+    simError,
+    sim,
+    fit,
+    iviv,
     invitroMaxProtein,
     exportData,
   };

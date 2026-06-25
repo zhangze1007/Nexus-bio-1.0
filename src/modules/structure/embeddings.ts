@@ -12,7 +12,7 @@
  *   ALGORITHM: Hash-based simulated ESM-2 embeddings (deterministic, 32-dim)
  */
 
-import type { ProteinChain } from './types';
+import type { ProteinChain } from "./types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -62,7 +62,7 @@ function createPRNG(seeds: number[]): () => number {
 
   return () => {
     // xorshift128
-    let t = s3;
+    const t = s3;
     const v = (s0 ^ (s0 << 11)) >>> 0;
     s0 = s1;
     s1 = s2;
@@ -110,7 +110,7 @@ export async function generateEmbedding(sequence: string): Promise<number[]> {
     return new Array(EMBEDDING_DIM).fill(0);
   }
 
-  return raw.map(v => v / magnitude);
+  return raw.map((v) => v / magnitude);
 }
 
 // ── Multi-Chain Embedding Support ────────────────────────────────────────────
@@ -133,9 +133,7 @@ export async function generateEmbedding(sequence: string): Promise<number[]> {
  * const embeddings = await generateComplexEmbedding(chains);
  * ```
  */
-export async function generateComplexEmbedding(
-  chains: ProteinChain[]
-): Promise<Map<string, number[]>> {
+export async function generateComplexEmbedding(chains: ProteinChain[]): Promise<Map<string, number[]>> {
   const result = new Map<string, number[]>();
 
   for (const chain of chains) {
@@ -234,7 +232,7 @@ export const sharedCache = new EmbeddingCache();
  */
 export async function generateBatchEmbeddings(
   sequences: string[],
-  options?: { batchSize?: number }
+  options?: { batchSize?: number },
 ): Promise<Map<string, number[]>> {
   const result = new Map<string, number[]>();
   const batchSize = options?.batchSize ?? sequences.length;
@@ -278,28 +276,28 @@ export async function generateBatchEmbeddings(
  * ```
  */
 export async function generateEmbeddingWithFallback(
-  sequence: string
-): Promise<{ embedding: number[]; source: 'cache' | 'computed' | 'fallback' }> {
+  sequence: string,
+): Promise<{ embedding: number[]; source: "cache" | "computed" | "fallback" }> {
   // Try cache first
   const cached = sharedCache.get(sequence);
   if (cached) {
-    return { embedding: cached, source: 'cache' };
+    return { embedding: cached, source: "cache" };
   }
 
   // Handle empty sequence as fallback
   if (!sequence || sequence.length === 0) {
     const zeroVec = new Array(EMBEDDING_DIM).fill(0);
-    return { embedding: zeroVec, source: 'fallback' };
+    return { embedding: zeroVec, source: "fallback" };
   }
 
   // Compute embedding
   try {
     const embedding = await generateEmbedding(sequence);
     sharedCache.set(sequence, embedding);
-    return { embedding, source: 'computed' };
+    return { embedding, source: "computed" };
   } catch {
     // Fallback to zero vector
     const zeroVec = new Array(EMBEDDING_DIM).fill(0);
-    return { embedding: zeroVec, source: 'fallback' };
+    return { embedding: zeroVec, source: "fallback" };
   }
 }

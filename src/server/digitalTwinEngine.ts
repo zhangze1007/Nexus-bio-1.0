@@ -29,46 +29,46 @@
 
 export interface DigitalTwinConfig {
   // Initial process conditions
-  volume: number;              // L
-  temperature: number;         // °C
+  volume: number; // L
+  temperature: number; // °C
   pH: number;
-  dissolvedO2: number;         // % saturation
+  dissolvedO2: number; // % saturation
 
   // Kinetic parameters (initial estimates)
-  muMax: number;               // max specific growth rate (h⁻¹)
-  ks: number;                  // Monod constant (g/L)
-  yieldCoeff: number;          // biomass yield on substrate (g/g)
-  maintenanceCoeff: number;    // maintenance coefficient (g/g/h)
-  productYield: number;        // product yield on biomass (g/g)
+  muMax: number; // max specific growth rate (h⁻¹)
+  ks: number; // Monod constant (g/L)
+  yieldCoeff: number; // biomass yield on substrate (g/g)
+  maintenanceCoeff: number; // maintenance coefficient (g/g/h)
+  productYield: number; // product yield on biomass (g/g)
 
   // Feeding strategy
-  feedConcentration: number;   // g/L
-  feedRate: number;            // L/h
+  feedConcentration: number; // g/L
+  feedRate: number; // L/h
 
   // EKF tuning
-  processNoise: number;        // Q diagonal scale
-  measurementNoise: number;    // R diagonal scale
-  initialUncertainty: number;  // P0 diagonal scale
+  processNoise: number; // Q diagonal scale
+  measurementNoise: number; // R diagonal scale
+  initialUncertainty: number; // P0 diagonal scale
 }
 
 export interface SensorReading {
-  timestamp: number;           // hours
-  temperature?: number;        // °C
+  timestamp: number; // hours
+  temperature?: number; // °C
   pH?: number;
-  dissolvedO2?: number;        // % saturation
-  biomass?: number;            // g/L (OD600-derived)
-  substrate?: number;          // g/L
-  product?: number;            // g/L
-  co2?: number;                // % in off-gas
-  oxygenUptake?: number;       // mmol/L/h
+  dissolvedO2?: number; // % saturation
+  biomass?: number; // g/L (OD600-derived)
+  substrate?: number; // g/L
+  product?: number; // g/L
+  co2?: number; // % in off-gas
+  oxygenUptake?: number; // mmol/L/h
 }
 
 export interface DigitalTwinState {
   // Estimated states
-  biomass: number;             // g/L
-  substrate: number;           // g/L
-  product: number;             // g/L
-  volume: number;              // L
+  biomass: number; // g/L
+  substrate: number; // g/L
+  product: number; // g/L
+  volume: number; // L
 
   // Estimated parameters (adaptive)
   muMax: number;
@@ -76,7 +76,7 @@ export interface DigitalTwinState {
   yieldCoeff: number;
 
   // Growth rate
-  specificGrowthRate: number;  // h⁻¹
+  specificGrowthRate: number; // h⁻¹
   substrateUptakeRate: number; // g/g/h
   productFormationRate: number; // g/g/h
 
@@ -90,7 +90,7 @@ export interface DigitalTwinState {
   };
 
   // Anomaly detection
-  anomalyScore: number;        // 0-1, higher = more anomalous
+  anomalyScore: number; // 0-1, higher = more anomalous
   anomalyType?: string;
 }
 
@@ -154,46 +154,43 @@ function matIdentity(n: number): Matrix {
 }
 
 function matAdd(A: Matrix, B: Matrix): Matrix {
-  const rows = A.length, cols = A[0].length;
+  const rows = A.length,
+    cols = A[0].length;
   const C = matCreate(rows, cols);
-  for (let i = 0; i < rows; i++)
-    for (let j = 0; j < cols; j++)
-      C[i][j] = A[i][j] + B[i][j];
+  for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) C[i][j] = A[i][j] + B[i][j];
   return C;
 }
 
 function matSub(A: Matrix, B: Matrix): Matrix {
-  const rows = A.length, cols = A[0].length;
+  const rows = A.length,
+    cols = A[0].length;
   const C = matCreate(rows, cols);
-  for (let i = 0; i < rows; i++)
-    for (let j = 0; j < cols; j++)
-      C[i][j] = A[i][j] - B[i][j];
+  for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) C[i][j] = A[i][j] - B[i][j];
   return C;
 }
 
 function matMul(A: Matrix, B: Matrix): Matrix {
-  const rowsA = A.length, colsA = A[0].length, colsB = B[0].length;
+  const rowsA = A.length,
+    colsA = A[0].length,
+    colsB = B[0].length;
   const C = matCreate(rowsA, colsB);
   for (let i = 0; i < rowsA; i++)
-    for (let j = 0; j < colsB; j++)
-      for (let k = 0; k < colsA; k++)
-        C[i][j] += A[i][k] * B[k][j];
+    for (let j = 0; j < colsB; j++) for (let k = 0; k < colsA; k++) C[i][j] += A[i][k] * B[k][j];
   return C;
 }
 
 function matTranspose(A: Matrix): Matrix {
-  const rows = A.length, cols = A[0].length;
+  const rows = A.length,
+    cols = A[0].length;
   const AT = matCreate(cols, rows);
-  for (let i = 0; i < rows; i++)
-    for (let j = 0; j < cols; j++)
-      AT[j][i] = A[i][j];
+  for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) AT[j][i] = A[i][j];
   return AT;
 }
 
 function matInverse(A: Matrix): Matrix {
   const n = A.length;
   // Augment with identity
-  const aug: Matrix = A.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+  const aug: Matrix = A.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
 
   // Gauss-Jordan elimination
   for (let col = 0; col < n; col++) {
@@ -219,7 +216,7 @@ function matInverse(A: Matrix): Matrix {
     }
   }
 
-  return aug.map(row => row.slice(n));
+  return aug.map((row) => row.slice(n));
 }
 
 // ── Process Model ──────────────────────────────────────────────────────────
@@ -256,8 +253,8 @@ function processModel(
 
   // Monod kinetics with oxygen limitation
   const ko = 0.5; // oxygen Monod constant (% saturation)
-  const mu = params.muMax * Math.max(0, S) / (params.ks + Math.max(0, S)) *
-             params.dissolvedO2 / (ko + params.dissolvedO2);
+  const mu =
+    (((params.muMax * Math.max(0, S)) / (params.ks + Math.max(0, S))) * params.dissolvedO2) / (ko + params.dissolvedO2);
 
   // Dilution rate
   const D = params.feedRate / Math.max(V, 0.01);
@@ -288,25 +285,25 @@ function processJacobian(
 ): Matrix {
   const [X, S] = state;
   const ko = 0.5;
-  const mu = params.muMax * Math.max(0, S) / (params.ks + Math.max(0, S)) *
-             params.dissolvedO2 / (ko + params.dissolvedO2);
+  const mu =
+    (((params.muMax * Math.max(0, S)) / (params.ks + Math.max(0, S))) * params.dissolvedO2) / (ko + params.dissolvedO2);
 
   // Partial derivatives (linearized around current state)
-  const dMu_dS = params.muMax * params.ks / Math.pow(params.ks + Math.max(0, S), 2) *
-                 params.dissolvedO2 / (ko + params.dissolvedO2);
+  const dMu_dS =
+    (((params.muMax * params.ks) / (params.ks + Math.max(0, S)) ** 2) * params.dissolvedO2) / (ko + params.dissolvedO2);
 
   const D = params.feedRate / Math.max(params.volume, 0.01);
 
   // 4×4 Jacobian for [X, S, P, V]
   const F = matCreate(4, 4);
-  F[0][0] = mu - D;                          // d(dX/dt)/dX
-  F[0][1] = dMu_dS * X;                      // d(dX/dt)/dS
+  F[0][0] = mu - D; // d(dX/dt)/dX
+  F[0][1] = dMu_dS * X; // d(dX/dt)/dS
   F[1][0] = -mu / params.yieldCoeff - params.maintenanceCoeff; // d(dS/dt)/dX
-  F[1][1] = -dMu_dS * X / params.yieldCoeff + D;  // d(dS/dt)/dS
-  F[2][0] = 0.01;                             // d(dP/dt)/dX (non-growth)
-  F[2][1] = 0;                                // d(dP/dt)/dS
-  F[2][2] = -D;                               // d(dP/dt)/dP
-  F[3][3] = 0;                                // d(dV/dt)/dV
+  F[1][1] = (-dMu_dS * X) / params.yieldCoeff + D; // d(dS/dt)/dS
+  F[2][0] = 0.01; // d(dP/dt)/dX (non-growth)
+  F[2][1] = 0; // d(dP/dt)/dS
+  F[2][2] = -D; // d(dP/dt)/dP
+  F[3][3] = 0; // d(dV/dt)/dV
 
   return F;
 }
@@ -329,10 +326,10 @@ function processJacobian(
  *   P⁺ = (I - K H) P⁻
  */
 class ExtendedKalmanFilter {
-  private state: number[];       // state vector [X, S, P, V, muMax, ks, Yxs]
-  private covariance: Matrix;    // state covariance P
-  private Q: Matrix;             // process noise
-  private R: Matrix;             // measurement noise
+  private state: number[]; // state vector [X, S, P, V, muMax, ks, Yxs]
+  private covariance: Matrix; // state covariance P
+  private Q: Matrix; // process noise
+  private R: Matrix; // measurement noise
   private nStates: number;
 
   constructor(config: DigitalTwinConfig) {
@@ -340,13 +337,13 @@ class ExtendedKalmanFilter {
 
     // Initial state
     this.state = [
-      0.1,                     // initial biomass (g/L)
-      10.0,                    // initial substrate (g/L)
-      0.0,                     // initial product (g/L)
-      config.volume,           // initial volume
-      config.muMax,            // muMax (adaptive)
-      config.ks,               // Ks (adaptive)
-      config.yieldCoeff,       // Yxs (adaptive)
+      0.1, // initial biomass (g/L)
+      10.0, // initial substrate (g/L)
+      0.0, // initial product (g/L)
+      config.volume, // initial volume
+      config.muMax, // muMax (adaptive)
+      config.ks, // Ks (adaptive)
+      config.yieldCoeff, // Yxs (adaptive)
     ];
 
     // Initial covariance
@@ -357,19 +354,19 @@ class ExtendedKalmanFilter {
 
     // Process noise (Q)
     this.Q = matIdentity(this.nStates);
-    this.Q[0][0] = config.processNoise * 0.01;  // biomass
-    this.Q[1][1] = config.processNoise * 0.05;  // substrate
+    this.Q[0][0] = config.processNoise * 0.01; // biomass
+    this.Q[1][1] = config.processNoise * 0.05; // substrate
     this.Q[2][2] = config.processNoise * 0.001; // product
     this.Q[3][3] = config.processNoise * 0.001; // volume
     this.Q[4][4] = config.processNoise * 0.0001; // muMax (slow drift)
-    this.Q[5][5] = config.processNoise * 0.001;  // Ks (slow drift)
+    this.Q[5][5] = config.processNoise * 0.001; // Ks (slow drift)
     this.Q[6][6] = config.processNoise * 0.0001; // Yxs (slow drift)
 
     // Measurement noise (R) — 3 measurements: X, S, P
     this.R = matIdentity(3);
-    this.R[0][0] = config.measurementNoise * 0.01;  // biomass sensor
-    this.R[1][1] = config.measurementNoise * 0.05;  // substrate sensor
-    this.R[2][2] = config.measurementNoise * 0.01;  // product sensor
+    this.R[0][0] = config.measurementNoise * 0.01; // biomass sensor
+    this.R[1][1] = config.measurementNoise * 0.05; // substrate sensor
+    this.R[2][2] = config.measurementNoise * 0.01; // product sensor
   }
 
   /**
@@ -380,7 +377,8 @@ class ExtendedKalmanFilter {
 
     // Propagate state using Runge-Kutta 4th order
     const params = {
-      muMax, ks,
+      muMax,
+      ks,
       yieldCoeff: yxs,
       maintenanceCoeff: config.maintenanceCoeff,
       productYield: config.productYield,
@@ -410,9 +408,7 @@ class ExtendedKalmanFilter {
     const F = processJacobian(this.state.slice(0, 4), params);
     // Extend Jacobian for parameter states (identity for parameters)
     const Ffull = matIdentity(this.nStates);
-    for (let i = 0; i < 4; i++)
-      for (let j = 0; j < 4; j++)
-        Ffull[i][j] = F[i][j];
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) Ffull[i][j] = F[i][j];
 
     // Propagate covariance: P⁻ = F P⁺ Fᵀ + Q
     const FP = matMul(Ffull, this.covariance);
@@ -423,7 +419,10 @@ class ExtendedKalmanFilter {
   /**
    * Update step — incorporate sensor measurement.
    */
-  update(measurement: number[], measurementMask: boolean[]): {
+  update(
+    measurement: number[],
+    measurementMask: boolean[],
+  ): {
     innovation: number[];
     kalmanGains: number[];
     likelihood: number;
@@ -442,7 +441,8 @@ class ExtendedKalmanFilter {
     const hx = new Array(nMeas);
 
     let row = 0;
-    for (let i = 0; i < 3; i++) { // X, S, P observed
+    for (let i = 0; i < 3; i++) {
+      // X, S, P observed
       if (measurementMask[i]) {
         H[row][i] = 1;
         Rsub[row][row] = this.R[i][i];
@@ -484,27 +484,30 @@ class ExtendedKalmanFilter {
 
     // Likelihood (Gaussian)
     const Sdet = S[0][0] * (nMeas > 1 ? S[1][1] : 1) * (nMeas > 2 ? S[2][2] : 1);
-    const SinvTimesInnovation = matMul(Sinv, innovation.map(v => [v])).flat();
+    const SinvTimesInnovation = matMul(
+      Sinv,
+      innovation.map((v) => [v]),
+    ).flat();
     const mahalanobis = innovation.reduce((sum, yi, i) => sum + yi * SinvTimesInnovation[i], 0);
-    const likelihood = Math.exp(-0.5 * mahalanobis) / Math.sqrt(Math.pow(2 * Math.PI, nMeas) * Math.abs(Sdet) + 1e-300);
+    const likelihood = Math.exp(-0.5 * mahalanobis) / Math.sqrt((2 * Math.PI) ** nMeas * Math.abs(Sdet) + 1e-300);
 
     // Extract Kalman gains for display
     const kalmanGains = [K[0][0] || 0, K[1]?.[0] || 0, K[2]?.[0] || 0];
 
     // Extract innovation covariance diagonal for anomaly detection
-    const innovationCovDiag = [
-      S[0][0],
-      S[1]?.[1] ?? S[0][0],
-      S[2]?.[2] ?? S[0][0],
-    ];
+    const innovationCovDiag = [S[0][0], S[1]?.[1] ?? S[0][0], S[2]?.[2] ?? S[0][0]];
 
     return { innovation, kalmanGains, likelihood: Math.min(1, likelihood), innovationCovDiag };
   }
 
-  getState(): number[] { return [...this.state]; }
-  getCovariance(): Matrix { return this.covariance; }
+  getState(): number[] {
+    return [...this.state];
+  }
+  getCovariance(): Matrix {
+    return this.covariance;
+  }
 
-  getUncertainty(): DigitalTwinState['uncertainty'] {
+  getUncertainty(): DigitalTwinState["uncertainty"] {
     return {
       biomass: Math.sqrt(Math.abs(this.covariance[0][0])),
       substrate: Math.sqrt(Math.abs(this.covariance[1][1])),
@@ -542,9 +545,9 @@ function detectAnomaly(
   const score = Math.min(1, nis / threshold);
 
   let type: string | undefined;
-  if (score > 0.8) type = 'severe_mismatch';
-  else if (score > 0.5) type = 'moderate_drift';
-  else if (score > 0.3) type = 'minor_deviation';
+  if (score > 0.8) type = "severe_mismatch";
+  else if (score > 0.5) type = "moderate_drift";
+  else if (score > 0.3) type = "minor_deviation";
 
   return { score, type };
 }
@@ -557,8 +560,8 @@ function detectAnomaly(
 function monteCarloForecast(
   ekf: ExtendedKalmanFilter,
   config: DigitalTwinConfig,
-  horizon: number,  // hours
-  dt: number,       // time step
+  horizon: number, // hours
+  dt: number, // time step
   nSamples: number = 100,
 ): ForecastPoint[] {
   const forecast: ForecastPoint[] = [];
@@ -608,8 +611,9 @@ function monteCarloForecast(
         if (i < 3) sample[i] = Math.max(0, sample[i]);
       }
 
-      const mu = params.muMax * Math.max(0, sample[1]) / (params.ks + Math.max(0, sample[1])) *
-                 params.dissolvedO2 / (0.5 + params.dissolvedO2);
+      const mu =
+        (((params.muMax * Math.max(0, sample[1])) / (params.ks + Math.max(0, sample[1]))) * params.dissolvedO2) /
+        (0.5 + params.dissolvedO2);
 
       biomassValues.push(sample[0]);
       substrateValues.push(sample[1]);
@@ -629,15 +633,24 @@ function monteCarloForecast(
       time: Math.round(t * 100) / 100,
       biomass: {
         mean: Math.round(mean(biomassValues) * 1000) / 1000,
-        ci95: [Math.round(percentile(biomassValues, 0.025) * 1000) / 1000, Math.round(percentile(biomassValues, 0.975) * 1000) / 1000],
+        ci95: [
+          Math.round(percentile(biomassValues, 0.025) * 1000) / 1000,
+          Math.round(percentile(biomassValues, 0.975) * 1000) / 1000,
+        ],
       },
       substrate: {
         mean: Math.round(mean(substrateValues) * 1000) / 1000,
-        ci95: [Math.round(percentile(substrateValues, 0.025) * 1000) / 1000, Math.round(percentile(substrateValues, 0.975) * 1000) / 1000],
+        ci95: [
+          Math.round(percentile(substrateValues, 0.025) * 1000) / 1000,
+          Math.round(percentile(substrateValues, 0.975) * 1000) / 1000,
+        ],
       },
       product: {
         mean: Math.round(mean(productValues) * 1000) / 1000,
-        ci95: [Math.round(percentile(productValues, 0.025) * 1000) / 1000, Math.round(percentile(productValues, 0.975) * 1000) / 1000],
+        ci95: [
+          Math.round(percentile(productValues, 0.025) * 1000) / 1000,
+          Math.round(percentile(productValues, 0.975) * 1000) / 1000,
+        ],
       },
       specificGrowthRate: Math.round(mean(muValues) * 1000) / 1000,
     });
@@ -673,16 +686,8 @@ export function runDigitalTwin(
     ekf.predict(dt, config);
 
     // Build measurement vector and mask
-    const measurement = [
-      reading.biomass ?? 0,
-      reading.substrate ?? 0,
-      reading.product ?? 0,
-    ];
-    const mask = [
-      reading.biomass !== undefined,
-      reading.substrate !== undefined,
-      reading.product !== undefined,
-    ];
+    const measurement = [reading.biomass ?? 0, reading.substrate ?? 0, reading.product ?? 0];
+    const mask = [reading.biomass !== undefined, reading.substrate !== undefined, reading.product !== undefined];
 
     // Update
     const priorState = buildState(ekf, config);
@@ -719,20 +724,21 @@ export function runDigitalTwin(
 
   // Compute diagnostics
   const currentState = buildState(ekf, config);
-  const avgLikelihood = updateHistory.length > 0
-    ? updateHistory.reduce((s, u) => s + u.likelihood, 0) / updateHistory.length
-    : 1.0;
+  const avgLikelihood =
+    updateHistory.length > 0 ? updateHistory.reduce((s, u) => s + u.likelihood, 0) / updateHistory.length : 1.0;
 
   // Parameter drift from initial
   const paramDrift = {
-    muMax: Math.round((currentState.muMax - config.muMax) / config.muMax * 100),
-    ks: Math.round((currentState.ks - config.ks) / config.ks * 100),
-    yieldCoeff: Math.round((currentState.yieldCoeff - config.yieldCoeff) / config.yieldCoeff * 100),
+    muMax: Math.round(((currentState.muMax - config.muMax) / config.muMax) * 100),
+    ks: Math.round(((currentState.ks - config.ks) / config.ks) * 100),
+    yieldCoeff: Math.round(((currentState.yieldCoeff - config.yieldCoeff) / config.yieldCoeff) * 100),
   };
 
   // Model fit (R² of predicted vs measured biomass)
-  let ssRes = 0, ssTot = 0;
-  const meanBiomass = updateHistory.reduce((s, u) => s + (u.priorState.biomass || 0), 0) / Math.max(1, updateHistory.length);
+  let ssRes = 0,
+    ssTot = 0;
+  const meanBiomass =
+    updateHistory.reduce((s, u) => s + (u.priorState.biomass || 0), 0) / Math.max(1, updateHistory.length);
   for (const u of updateHistory) {
     const predicted = u.priorState.biomass;
     const measured = u.posteriorState.biomass; // posterior approximates "truth"
@@ -769,7 +775,8 @@ function buildState(ekf: ExtendedKalmanFilter, config: DigitalTwinConfig): Digit
   const s = ekf.getState();
   const unc = ekf.getUncertainty();
   const ko = 0.5;
-  const mu = s[4] * Math.max(0, s[1]) / (s[5] + Math.max(0, s[1])) * config.dissolvedO2 / (ko + config.dissolvedO2);
+  const mu =
+    (((s[4] * Math.max(0, s[1])) / (s[5] + Math.max(0, s[1]))) * config.dissolvedO2) / (ko + config.dissolvedO2);
 
   return {
     biomass: Math.round(s[0] * 1000) / 1000,
@@ -790,10 +797,7 @@ function buildState(ekf: ExtendedKalmanFilter, config: DigitalTwinConfig): Digit
 /**
  * Quick state estimation from single measurement.
  */
-export function quickStateEstimate(
-  config: DigitalTwinConfig,
-  measurement: SensorReading,
-): DigitalTwinState {
+export function quickStateEstimate(config: DigitalTwinConfig, measurement: SensorReading): DigitalTwinState {
   const result = runDigitalTwin(config, [measurement], 0);
   return result.currentState;
 }

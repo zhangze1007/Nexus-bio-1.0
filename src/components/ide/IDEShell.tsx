@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * Nexus-Bio IDE Shell (legacy — kept for reference).
  *
@@ -13,8 +13,8 @@
  * if a tool is rendered outside the /tools route tree.
  */
 
-import IDESidebar from './IDESidebar';
-import IDETopBar from './IDETopBar';
+import IDESidebar from "./IDESidebar";
+import IDETopBar from "./IDETopBar";
 
 interface IDEShellProps {
   moduleId: string;

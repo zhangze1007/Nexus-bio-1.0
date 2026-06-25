@@ -13,9 +13,9 @@
  * claims that contradict solver output, it injects corrections.
  */
 
-import type { RoutingDecision, CachedResponse } from './cognitiveRouter';
-import { routeQuery, formatSolverResult, setCachedResponse } from './cognitiveRouter';
-import type { AxonAdapterContext } from './AxonOrchestrator';
+import type { AxonAdapterContext } from "./AxonOrchestrator";
+import type { CachedResponse, RoutingDecision } from "./cognitiveRouter";
+import { formatSolverResult, routeQuery, setCachedResponse } from "./cognitiveRouter";
 
 // ── Executor Result ────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ export interface ExecutorResult {
   solverCalls: Array<{ solver: string; description: string }>;
   confidence: number;
   cached: boolean;
-  costEstimate: number;  // USD
+  costEstimate: number; // USD
   latencyMs: number;
   correctionApplied: boolean;
 }
@@ -42,68 +42,81 @@ async function getPipelineExecutor(pipeline: string): Promise<PipelineExecutor |
   let executor: PipelineExecutor | null = null;
 
   switch (pipeline) {
-    case 'fbaStrainPipeline': {
-      const mod = await import('../server/fbaStrainPipeline');
+    case "fbaStrainPipeline": {
+      const mod = await import("../server/fbaStrainPipeline");
       executor = (input) => mod.runStrainDesignPipeline(input as Parameters<typeof mod.runStrainDesignPipeline>[0]);
       break;
     }
-    case 'identifyBottlenecks': {
-      const mod = await import('./CatalystDesignerEngine');
-      executor = (input) => Promise.resolve(mod.identifyBottlenecks(input as Parameters<typeof mod.identifyBottlenecks>[0]));
+    case "identifyBottlenecks": {
+      const mod = await import("./CatalystDesignerEngine");
+      executor = (input) =>
+        Promise.resolve(mod.identifyBottlenecks(input as Parameters<typeof mod.identifyBottlenecks>[0]));
       break;
     }
-    case 'proevolPipeline': {
-      const mod = await import('../server/proevolPipeline');
-      executor = (input) => Promise.resolve(mod.runProteinDesignPipeline(input as Parameters<typeof mod.runProteinDesignPipeline>[0]));
+    case "proevolPipeline": {
+      const mod = await import("../server/proevolPipeline");
+      executor = (input) =>
+        Promise.resolve(mod.runProteinDesignPipeline(input as Parameters<typeof mod.runProteinDesignPipeline>[0]));
       break;
     }
-    case 'robustnessPipeline': {
-      const mod = await import('../server/robustnessPipeline');
-      executor = (input) => Promise.resolve(mod.runRobustnessPredictor(
-        (input as Record<string, unknown>)?.singleCellData as Parameters<typeof mod.runRobustnessPredictor>[0] ?? [],
-        undefined,
-        (input as Record<string, unknown>)?.nTrials as number ?? 200,
-      ));
+    case "robustnessPipeline": {
+      const mod = await import("../server/robustnessPipeline");
+      executor = (input) =>
+        Promise.resolve(
+          mod.runRobustnessPredictor(
+            ((input as Record<string, unknown>)?.singleCellData as Parameters<typeof mod.runRobustnessPredictor>[0]) ??
+              [],
+            undefined,
+            ((input as Record<string, unknown>)?.nTrials as number) ?? 200,
+          ),
+        );
       break;
     }
-    case 'circuitReasonerPipeline': {
-      const mod = await import('../server/circuitReasonerPipeline');
-      executor = (input) => Promise.resolve(mod.runCircuitReasoner(input as Parameters<typeof mod.runCircuitReasoner>[0]));
+    case "circuitReasonerPipeline": {
+      const mod = await import("../server/circuitReasonerPipeline");
+      executor = (input) =>
+        Promise.resolve(mod.runCircuitReasoner(input as Parameters<typeof mod.runCircuitReasoner>[0]));
       break;
     }
-    case 'cethxPipeline': {
-      const mod = await import('../server/cethxPipeline');
-      executor = (input) => Promise.resolve(mod.runThermodynamicPipeline(input as Parameters<typeof mod.runThermodynamicPipeline>[0]));
+    case "cethxPipeline": {
+      const mod = await import("../server/cethxPipeline");
+      executor = (input) =>
+        Promise.resolve(mod.runThermodynamicPipeline(input as Parameters<typeof mod.runThermodynamicPipeline>[0]));
       break;
     }
-    case 'dynconPipeline': {
-      const mod = await import('../server/dynconPipeline');
-      executor = (input) => Promise.resolve(mod.runControlDesignPipeline(input as Parameters<typeof mod.runControlDesignPipeline>[0]));
+    case "dynconPipeline": {
+      const mod = await import("../server/dynconPipeline");
+      executor = (input) =>
+        Promise.resolve(mod.runControlDesignPipeline(input as Parameters<typeof mod.runControlDesignPipeline>[0]));
       break;
     }
-    case 'scspatialPipeline': {
-      const mod = await import('../server/scspatialPipeline');
-      executor = (input) => Promise.resolve(mod.runScSpatialPipeline(input as Parameters<typeof mod.runScSpatialPipeline>[0]));
+    case "scspatialPipeline": {
+      const mod = await import("../server/scspatialPipeline");
+      executor = (input) =>
+        Promise.resolve(mod.runScSpatialPipeline(input as Parameters<typeof mod.runScSpatialPipeline>[0]));
       break;
     }
-    case 'multioPipeline': {
-      const mod = await import('../server/multioPipeline');
-      executor = (input) => Promise.resolve(mod.runMultiOmicsPipeline(input as Parameters<typeof mod.runMultiOmicsPipeline>[0]));
+    case "multioPipeline": {
+      const mod = await import("../server/multioPipeline");
+      executor = (input) =>
+        Promise.resolve(mod.runMultiOmicsPipeline(input as Parameters<typeof mod.runMultiOmicsPipeline>[0]));
       break;
     }
-    case 'genmimPipeline': {
-      const mod = await import('../server/genmimPipeline');
+    case "genmimPipeline": {
+      const mod = await import("../server/genmimPipeline");
       executor = (input) => mod.runMinimizationPipeline(input as Parameters<typeof mod.runMinimizationPipeline>[0]);
       break;
     }
-    case 'nexaiPipeline': {
-      const mod = await import('../server/nexaiPipeline');
+    case "nexaiPipeline": {
+      const mod = await import("../server/nexaiPipeline");
       executor = (input) => {
         const p = input as Record<string, unknown>;
-        return Promise.resolve(mod.runResearchPipeline(
-          (p?.question as Parameters<typeof mod.runResearchPipeline>[0]) ?? { topic: '', subtopics: [] },
-          (p?.papers as Parameters<typeof mod.runResearchPipeline>[1]) ?? [],
-        ));
+        return Promise.resolve(
+          mod.runResearchPipeline(
+            (p?.question as Parameters<typeof mod.runResearchPipeline>[0]) ?? { topic: "", subtopics: [] },
+            (p?.papers as Parameters<typeof mod.runResearchPipeline>[1]) ?? [],
+          ),
+        );
       };
       break;
     }
@@ -134,9 +147,9 @@ async function callLLM(
   };
   if (context) body.context = context;
 
-  const response = await fetch('/api/analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
     signal,
   });
@@ -147,8 +160,8 @@ async function callLLM(
 
   const data = await response.json();
   return {
-    text: data.text ?? data.answer ?? '',
-    provider: data.provider ?? 'unknown',
+    text: data.text ?? data.answer ?? "",
+    provider: data.provider ?? "unknown",
     tokensUsed: data.tokensUsed ?? 0,
   };
 }
@@ -164,7 +177,7 @@ function applySelfCorrection(
   solverResult: unknown,
   solverName: string,
 ): { text: string; corrected: boolean } {
-  if (!solverResult || typeof solverResult !== 'object') {
+  if (!solverResult || typeof solverResult !== "object") {
     return { text: llmText, corrected: false };
   }
 
@@ -172,7 +185,7 @@ function applySelfCorrection(
   const corrections: string[] = [];
 
   // Check growth rate claims
-  if (r.growthRate !== undefined && typeof r.growthRate === 'number') {
+  if (r.growthRate !== undefined && typeof r.growthRate === "number") {
     const claimMatch = llmText.match(/growth\s+rate\s+(?:of\s+|is\s+)?(?:approximately\s+|~)?(\d+\.?\d*)/i);
     if (claimMatch) {
       const claimed = parseFloat(claimMatch[1]);
@@ -184,7 +197,7 @@ function applySelfCorrection(
   }
 
   // Check ΔΔG claims
-  if (r.ddG !== undefined && typeof r.ddG === 'number') {
+  if (r.ddG !== undefined && typeof r.ddG === "number") {
     const claimMatch = llmText.match(/ΔΔG\s+(?:of\s+|is\s+)?(?:approximately\s+|~)?(-?\d+\.?\d*)/i);
     if (claimMatch) {
       const claimed = parseFloat(claimMatch[1]);
@@ -199,7 +212,7 @@ function applySelfCorrection(
     return { text: llmText, corrected: false };
   }
 
-  const correctionNote = `\n\n> **Numerical correction** (${solverName}): ${corrections.join('; ')}`;
+  const correctionNote = `\n\n> **Numerical correction** (${solverName}): ${corrections.join("; ")}`;
   return { text: llmText + correctionNote, corrected: true };
 }
 
@@ -224,10 +237,10 @@ export async function executeQuery(
   const decision = routeQuery(query, workbenchContext);
 
   // Tier 0: Cache hit
-  if (decision.tier === 'cache' && decision.cachedResponse) {
+  if (decision.tier === "cache" && decision.cachedResponse) {
     return {
       text: formatCachedResponse(decision.cachedResponse),
-      tier: 'cache',
+      tier: "cache",
       solverCalls: decision.cachedResponse.solverCalls ?? [],
       confidence: 0.9,
       cached: true,
@@ -238,21 +251,22 @@ export async function executeQuery(
   }
 
   // Tier 1: Solver direct
-  if (decision.tier === 'solver-direct' && decision.pipeline) {
+  if (decision.tier === "solver-direct" && decision.pipeline) {
     const executor = await getPipelineExecutor(decision.pipeline);
     if (executor) {
       try {
         const result = await executor({});
         const text = formatSolverResult(decision.solver ?? decision.pipeline, result);
-        const solverCalls = (result as Record<string, unknown>)?.allSolverCalls as Array<{ solver: string; description: string }> ?? [];
+        const solverCalls =
+          ((result as Record<string, unknown>)?.allSolverCalls as Array<{ solver: string; description: string }>) ?? [];
 
         // Cache the result
         const cacheKey = hashQueryForCache(query, workbenchContext);
-        setCachedResponse(cacheKey, { result, timestamp: Date.now(), tier: 'solver-direct', solverCalls });
+        setCachedResponse(cacheKey, { result, timestamp: Date.now(), tier: "solver-direct", solverCalls });
 
         return {
           text,
-          tier: 'solver-direct',
+          tier: "solver-direct",
           solverCalls,
           confidence: 0.85,
           cached: false,
@@ -268,7 +282,7 @@ export async function executeQuery(
   }
 
   // Tier 2: Solver + LLM explain
-  if (decision.tier === 'solver-explain' && decision.pipeline) {
+  if (decision.tier === "solver-explain" && decision.pipeline) {
     const executor = await getPipelineExecutor(decision.pipeline);
     let solverResult: unknown = null;
     let solverCalls: Array<{ solver: string; description: string }> = [];
@@ -276,23 +290,35 @@ export async function executeQuery(
     if (executor) {
       try {
         solverResult = await executor({});
-        solverCalls = (solverResult as Record<string, unknown>)?.allSolverCalls as Array<{ solver: string; description: string }> ?? [];
+        solverCalls =
+          ((solverResult as Record<string, unknown>)?.allSolverCalls as Array<{
+            solver: string;
+            description: string;
+          }>) ?? [];
       } catch (solverErr) {
-        console.warn('[TieredExecutor] Solver failed in explain tier, proceeding with LLM only:', solverErr instanceof Error ? solverErr.message : solverErr);
+        console.warn(
+          "[TieredExecutor] Solver failed in explain tier, proceeding with LLM only:",
+          solverErr instanceof Error ? solverErr.message : solverErr,
+        );
       }
     }
 
     try {
-      const llm = await callLLM(query, workbenchContext ?? '', solverResult, signal);
+      const llm = await callLLM(query, workbenchContext ?? "", solverResult, signal);
       const { text, corrected } = applySelfCorrection(llm.text, solverResult, decision.solver ?? decision.pipeline);
 
       // Cache
       const cacheKey = hashQueryForCache(query, workbenchContext);
-      setCachedResponse(cacheKey, { result: { text, solverResult }, timestamp: Date.now(), tier: 'solver-explain', solverCalls });
+      setCachedResponse(cacheKey, {
+        result: { text, solverResult },
+        timestamp: Date.now(),
+        tier: "solver-explain",
+        solverCalls,
+      });
 
       return {
         text,
-        tier: 'solver-explain',
+        tier: "solver-explain",
         solverCalls,
         confidence: 0.75,
         cached: false,
@@ -305,7 +331,7 @@ export async function executeQuery(
       if (solverResult) {
         return {
           text: formatSolverResult(decision.solver ?? decision.pipeline, solverResult),
-          tier: 'solver-direct-fallback',
+          tier: "solver-direct-fallback",
           solverCalls,
           confidence: 0.6,
           cached: false,
@@ -319,15 +345,15 @@ export async function executeQuery(
 
   // Tier 3: LLM reasoning
   try {
-    const llm = await callLLM(query, workbenchContext ?? '', null, signal);
+    const llm = await callLLM(query, workbenchContext ?? "", null, signal);
 
     // Cache
     const cacheKey = hashQueryForCache(query, workbenchContext);
-    setCachedResponse(cacheKey, { result: llm.text, timestamp: Date.now(), tier: 'llm-reasoning' });
+    setCachedResponse(cacheKey, { result: llm.text, timestamp: Date.now(), tier: "llm-reasoning" });
 
     return {
       text: llm.text,
-      tier: 'llm-reasoning',
+      tier: "llm-reasoning",
       solverCalls: [],
       confidence: 0.6,
       cached: false,
@@ -337,8 +363,8 @@ export async function executeQuery(
     };
   } catch (err) {
     return {
-      text: `I encountered an error processing your query: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again or rephrase your question.`,
-      tier: 'error',
+      text: `I encountered an error processing your query: ${err instanceof Error ? err.message : "Unknown error"}. Please try again or rephrase your question.`,
+      tier: "error",
       solverCalls: [],
       confidence: 0,
       cached: false,
@@ -352,17 +378,17 @@ export async function executeQuery(
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function hashQueryForCache(query: string, context?: string): string {
-  const normalized = query.toLowerCase().trim().replace(/\s+/g, ' ');
-  const ctxHash = context ? context.substring(0, 200) : '';
+  const normalized = query.toLowerCase().trim().replace(/\s+/g, " ");
+  const ctxHash = context ? context.substring(0, 200) : "";
   return `${normalized}||${ctxHash}`;
 }
 
 function formatCachedResponse(cached: CachedResponse): string {
-  if (typeof cached.result === 'string') return cached.result;
-  if (cached.result && typeof cached.result === 'object') {
+  if (typeof cached.result === "string") return cached.result;
+  if (cached.result && typeof cached.result === "object") {
     const r = cached.result as Record<string, unknown>;
     if (r.text) return r.text as string;
-    if (r.solverResult) return formatSolverResult('cached', r.solverResult);
+    if (r.solverResult) return formatSolverResult("cached", r.solverResult);
   }
   return JSON.stringify(cached.result, null, 2);
 }

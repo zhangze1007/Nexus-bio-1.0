@@ -17,10 +17,10 @@
  *   ALGORITHM: Monte Carlo approximation of Knowledge Gradient
  */
 
-import { BaseAcquisition, createRNG, normalSample, type AcquisitionInput } from './base';
+import { type AcquisitionInput, BaseAcquisition, createRNG, normalSample } from "./base";
 
 export class KnowledgeGradient extends BaseAcquisition {
-  name = 'Knowledge Gradient';
+  name = "Knowledge Gradient";
 
   private nSamples: number;
 

@@ -3,17 +3,17 @@
  * Extracted from app/api/analyze/route.ts.
  */
 
+import { AXON_SYSTEM_PROMPT, buildGeminiBodyWithSystemPrompt } from "./promptBuilder";
 import {
-  GROQ_MODELS,
-  GEMINI_MODELS,
-  GROQ_BASE,
-  GEMINI_BASE,
-  TIMEOUT_MS,
   type ConversationTurn,
-  type GeminiRequestBody,
+  GEMINI_BASE,
+  GEMINI_MODELS,
   type GeminiContent,
-} from './types';
-import { buildGeminiBodyWithSystemPrompt, AXON_SYSTEM_PROMPT } from './promptBuilder';
+  type GeminiRequestBody,
+  GROQ_BASE,
+  GROQ_MODELS,
+  TIMEOUT_MS,
+} from "./types";
 
 function withTimeout<T>(promise: Promise<T>, ms: number, controller: AbortController): Promise<T> {
   const timeoutId = setTimeout(() => controller.abort(), ms);
@@ -21,7 +21,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, controller: AbortContro
   return Promise.race([
     promise,
     new Promise<T>((_, reject) => {
-      controller.signal.addEventListener('abort', () => reject(new Error('TIMEOUT')));
+      controller.signal.addEventListener("abort", () => reject(new Error("TIMEOUT")));
     }),
   ]).finally(() => clearTimeout(timeoutId));
 }
@@ -37,18 +37,18 @@ export async function tryGroq(
     try {
       // Build messages array: [system, ...history, current user]
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: systemPrompt },
+        { role: "system", content: systemPrompt },
         ...conversationHistory.map((h) => ({ role: h.role, content: h.content })),
-        { role: 'user', content: prompt },
+        { role: "user", content: prompt },
       ];
 
       const controller = new AbortController();
       const res = await withTimeout(
         fetch(GROQ_BASE, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
             model,
@@ -65,9 +65,9 @@ export async function tryGroq(
       const data = await res.json();
 
       if (res.status === 429) {
-        const retryAfter = res.headers.get('Retry-After');
+        const retryAfter = res.headers.get("Retry-After");
         const delayMs = retryAfter ? Math.min(parseInt(retryAfter) * 1000, 5000) : 2000;
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
         continue;
       }
       if (res.status === 503) continue; // unavailable
@@ -75,10 +75,15 @@ export async function tryGroq(
 
       const text = data?.choices?.[0]?.message?.content;
       if (text) return text;
-
     } catch (err) {
-      console.warn(JSON.stringify({ level: 'warn', message: 'Groq provider failed', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
-      continue;
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          message: "Groq provider failed",
+          error: err instanceof Error ? err.message : String(err),
+          timestamp: new Date().toISOString(),
+        }),
+      );
     }
   }
   return null;
@@ -96,17 +101,14 @@ export async function tryGemini(
       // Build history contents for Gemini multi-turn format.
       // Gemini uses 'user' and 'model' roles (not 'assistant').
       const historyContents: GeminiContent[] = conversationHistory.map((h) => ({
-        role: h.role === 'assistant' ? 'model' : 'user',
+        role: h.role === "assistant" ? "model" : "user",
         parts: [{ text: h.content }],
       }));
 
       // Prepend history to the existing contents array.
       const bodyWithHistory: GeminiRequestBody = {
         ...body,
-        contents: [
-          ...historyContents,
-          ...(body.contents ?? []),
-        ],
+        contents: [...historyContents, ...(body.contents ?? [])],
       };
 
       const geminiBody = {
@@ -122,10 +124,10 @@ export async function tryGemini(
       const controller = new AbortController();
       const res = await withTimeout(
         fetch(`${GEMINI_BASE}/${model}:generateContent`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey,
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
           },
           body: JSON.stringify(geminiBody),
           signal: controller.signal,
@@ -137,9 +139,9 @@ export async function tryGemini(
       const data = await res.json();
 
       if (res.status === 429) {
-        const retryAfter = res.headers.get('Retry-After');
+        const retryAfter = res.headers.get("Retry-After");
         const delayMs = retryAfter ? Math.min(parseInt(retryAfter) * 1000, 5000) : 2000;
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
         continue;
       }
       if (res.status === 503) continue;
@@ -148,10 +150,15 @@ export async function tryGemini(
 
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) return text;
-
     } catch (err) {
-      console.warn(JSON.stringify({ level: 'warn', message: 'Gemini provider failed', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
-      continue;
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          message: "Gemini provider failed",
+          error: err instanceof Error ? err.message : String(err),
+          timestamp: new Date().toISOString(),
+        }),
+      );
     }
   }
   return null;

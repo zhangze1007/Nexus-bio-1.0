@@ -13,8 +13,8 @@
  * Provider chain: Groq (primary) → Gemini (fallback)
  */
 
-import { createMachine, assign } from 'xstate';
-import type { PathwayNode, PathwayEdge } from '../types';
+import { assign, createMachine } from "xstate";
+import type { PathwayEdge, PathwayNode } from "../types";
 
 // ── Context shape ──────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ export interface AnalysisContext {
   /** Raw text / URL / query submitted */
   input: string;
   /** Input mode (determines how the server builds the prompt) */
-  inputMode: 'text' | 'pdf' | 'image' | 'web' | 'search';
+  inputMode: "text" | "pdf" | "image" | "web" | "search";
   /** Successfully extracted pathway nodes */
   nodes: PathwayNode[];
   /** Successfully extracted pathway edges */
@@ -30,7 +30,7 @@ export interface AnalysisContext {
   /** Error message if analysis failed */
   error: string | null;
   /** Which AI provider ultimately served the response */
-  provider: 'groq' | 'gemini' | null;
+  provider: "groq" | "gemini" | null;
   /** Wall-clock ms of how long the last analysis took */
   latencyMs: number | null;
   /** Timestamp when analysis was kicked off */
@@ -42,23 +42,23 @@ export interface AnalysisContext {
 // ── Events ─────────────────────────────────────────────────────────────
 
 export type AnalysisEvent =
-  | { type: 'SUBMIT'; input: string; inputMode?: AnalysisContext['inputMode'] }
+  | { type: "SUBMIT"; input: string; inputMode?: AnalysisContext["inputMode"] }
   | {
-      type: 'SUCCESS';
+      type: "SUCCESS";
       nodes: PathwayNode[];
       edges: PathwayEdge[];
-      provider: 'groq' | 'gemini';
+      provider: "groq" | "gemini";
       latencyMs: number;
     }
-  | { type: 'ERROR'; message: string }
-  | { type: 'RETRY' }
-  | { type: 'RESET' };
+  | { type: "ERROR"; message: string }
+  | { type: "RETRY" }
+  | { type: "RESET" };
 
 // ── Machine ────────────────────────────────────────────────────────────
 
 export const analysisMachine = createMachine({
-  id: 'nexusBioAnalysis',
-  initial: 'idle',
+  id: "nexusBioAnalysis",
+  initial: "idle",
 
   types: {} as {
     context: AnalysisContext;
@@ -66,8 +66,8 @@ export const analysisMachine = createMachine({
   },
 
   context: {
-    input: '',
-    inputMode: 'text',
+    input: "",
+    inputMode: "text",
     nodes: [],
     edges: [],
     error: null,
@@ -82,10 +82,10 @@ export const analysisMachine = createMachine({
     idle: {
       on: {
         SUBMIT: {
-          target: 'analyzing',
+          target: "analyzing",
           actions: assign({
             input: ({ event }) => event.input,
-            inputMode: ({ event }) => event.inputMode ?? 'text',
+            inputMode: ({ event }) => event.inputMode ?? "text",
             error: () => null,
             startedAt: () => Date.now(),
             retryCount: () => 0,
@@ -98,7 +98,7 @@ export const analysisMachine = createMachine({
     analyzing: {
       on: {
         SUCCESS: {
-          target: 'success',
+          target: "success",
           actions: assign({
             nodes: ({ event }) => event.nodes,
             edges: ({ event }) => event.edges,
@@ -108,16 +108,16 @@ export const analysisMachine = createMachine({
           }),
         },
         ERROR: {
-          target: 'error',
+          target: "error",
           actions: assign({
             error: ({ event }) => event.message,
           }),
         },
         // Allow cancellation back to idle mid-flight
         RESET: {
-          target: 'idle',
+          target: "idle",
           actions: assign({
-            input: () => '',
+            input: () => "",
             nodes: () => [],
             edges: () => [],
             error: () => null,
@@ -135,19 +135,19 @@ export const analysisMachine = createMachine({
       on: {
         // Re-submit without resetting (iterative refinement)
         SUBMIT: {
-          target: 'analyzing',
+          target: "analyzing",
           actions: assign({
             input: ({ event }) => event.input,
-            inputMode: ({ event }) => event.inputMode ?? 'text',
+            inputMode: ({ event }) => event.inputMode ?? "text",
             error: () => null,
             startedAt: () => Date.now(),
             retryCount: () => 0,
           }),
         },
         RESET: {
-          target: 'idle',
+          target: "idle",
           actions: assign({
-            input: () => '',
+            input: () => "",
             nodes: () => [],
             edges: () => [],
             error: () => null,
@@ -165,7 +165,7 @@ export const analysisMachine = createMachine({
       on: {
         // Retry with same input
         RETRY: {
-          target: 'analyzing',
+          target: "analyzing",
           actions: assign({
             error: () => null,
             startedAt: () => Date.now(),
@@ -174,17 +174,17 @@ export const analysisMachine = createMachine({
         },
         // New submission after failure
         SUBMIT: {
-          target: 'analyzing',
+          target: "analyzing",
           actions: assign({
             input: ({ event }) => event.input,
-            inputMode: ({ event }) => event.inputMode ?? 'text',
+            inputMode: ({ event }) => event.inputMode ?? "text",
             error: () => null,
             startedAt: () => Date.now(),
             retryCount: () => 0,
           }),
         },
         RESET: {
-          target: 'idle',
+          target: "idle",
           actions: assign({
             error: () => null,
             retryCount: () => 0,
@@ -197,14 +197,10 @@ export const analysisMachine = createMachine({
 
 // ── State guards (for consumers) ───────────────────────────────────────
 
-export const isAnalyzing = (state: { value: string }) =>
-  state.value === 'analyzing';
+export const isAnalyzing = (state: { value: string }) => state.value === "analyzing";
 
-export const isSuccess = (state: { value: string }) =>
-  state.value === 'success';
+export const isSuccess = (state: { value: string }) => state.value === "success";
 
-export const isError = (state: { value: string }) =>
-  state.value === 'error';
+export const isError = (state: { value: string }) => state.value === "error";
 
-export const isIdle = (state: { value: string }) =>
-  state.value === 'idle';
+export const isIdle = (state: { value: string }) => state.value === "idle";

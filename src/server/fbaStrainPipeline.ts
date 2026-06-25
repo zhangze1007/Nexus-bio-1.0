@@ -24,13 +24,13 @@
  *     - Strategies limited to single-species; no community FBA or consortia design
  */
 
-import { solveAuthorityFBA, type FBASpecies, type FBAObjective } from './fbaEngine';
-import type { FBAOutput } from '../data/mockFBA';
-import { runOptKnock, type OptKnockModel, type OptKnockReaction, type KnockoutSet } from './fbaOptKnock';
-import { runFSEOF, type FSEOFModel, type FSEOFReaction, type FSEOFResult } from './fbaFSEOF';
-import { getKnockoutReactions } from './fbaGPR';
-import { IJO1366_REACTIONS } from '../data/iJO1366Subset';
-import { runGridSearch, type ParameterRange, type GridSearchResult } from './gridSearch';
+import { IJO1366_REACTIONS } from "../data/iJO1366Subset";
+import type { FBAOutput } from "../data/mockFBA";
+import { type FBAObjective, type FBASpecies, solveAuthorityFBA } from "./fbaEngine";
+import { type FSEOFModel, type FSEOFReaction, type FSEOFResult, runFSEOF } from "./fbaFSEOF";
+import { getKnockoutReactions } from "./fbaGPR";
+import { type KnockoutSet, type OptKnockModel, type OptKnockReaction, runOptKnock } from "./fbaOptKnock";
+import { type GridSearchResult, type ParameterRange, runGridSearch } from "./gridSearch";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ export interface StrainDesignSpec {
   oxygenUptake: number;
   targetProduct: string;
   maxKnockouts: number;
-  growthFractionConstraint: number;  // min growth as fraction of wild-type
+  growthFractionConstraint: number; // min growth as fraction of wild-type
 }
 
 export interface StrainStrategy {
@@ -89,11 +89,14 @@ async function generateStrategies(
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
   // OptKnock: find knockout strategies
-  solverCalls.push({ solver: 'fbaOptKnock::runOptKnock', description: `Bilevel knockout optimization, max ${spec.maxKnockouts} knockouts` });
+  solverCalls.push({
+    solver: "fbaOptKnock::runOptKnock",
+    description: `Bilevel knockout optimization, max ${spec.maxKnockouts} knockouts`,
+  });
   const optKnockModel: OptKnockModel = {
     reactions,
-    objectiveId: 'BIOMASS',
-    productReactionId: 'PRODUCT',
+    objectiveId: "BIOMASS",
+    productReactionId: "PRODUCT",
   };
   const optKnockResult = await runOptKnock(optKnockModel, {
     maxKnockouts: spec.maxKnockouts,
@@ -102,11 +105,11 @@ async function generateStrategies(
   const knockoutStrategies = optKnockResult.knockoutSets;
 
   // FSEOF: find overexpression targets
-  solverCalls.push({ solver: 'fbaFSEOF::runFSEOF', description: 'Flux scanning for overexpression targets' });
+  solverCalls.push({ solver: "fbaFSEOF::runFSEOF", description: "Flux scanning for overexpression targets" });
   const fseofModel: FSEOFModel = {
     reactions,
-    objectiveId: 'BIOMASS',
-    productReactionId: 'PRODUCT',
+    objectiveId: "BIOMASS",
+    productReactionId: "PRODUCT",
   };
   const overexpressionTargets = await runFSEOF(fseofModel);
 
@@ -127,7 +130,10 @@ async function evaluateStrategy(
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
   // Run FBA with knockouts
-  solverCalls.push({ solver: 'fbaEngine::solveAuthorityFBA', description: `FBA with ${strategy.knockouts.length} knockouts` });
+  solverCalls.push({
+    solver: "fbaEngine::solveAuthorityFBA",
+    description: `FBA with ${strategy.knockouts.length} knockouts`,
+  });
   const result = await solveAuthorityFBA({
     species: spec.species,
     objective: spec.objective,
@@ -136,9 +142,7 @@ async function evaluateStrategy(
     knockouts: strategy.knockouts,
   });
 
-  const growthFraction = wildTypeGrowthRate > 0
-    ? result.growthRate / wildTypeGrowthRate
-    : 0;
+  const growthFraction = wildTypeGrowthRate > 0 ? result.growthRate / wildTypeGrowthRate : 0;
 
   return {
     strategy,
@@ -170,7 +174,10 @@ async function optimizeStrategies(
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
   // Evaluate all strategies
-  solverCalls.push({ solver: 'fbaEngine::evaluateStrategy', description: `Evaluating ${strategies.length} strategies` });
+  solverCalls.push({
+    solver: "fbaEngine::evaluateStrategy",
+    description: `Evaluating ${strategies.length} strategies`,
+  });
   const evaluations: StrainEvaluation[] = [];
   for (const strategy of strategies) {
     const eval_ = await evaluateStrategy(spec, strategy, wildTypeGrowthRate);
@@ -178,7 +185,7 @@ async function optimizeStrategies(
   }
 
   // Build Pareto front: maximize productFlux, constrain growthFraction > threshold
-  const feasible = evaluations.filter(e => e.feasible && e.growthFractionOfWT >= spec.growthFractionConstraint);
+  const feasible = evaluations.filter((e) => e.feasible && e.growthFractionOfWT >= spec.growthFractionConstraint);
   const paretoFront: StrainEvaluation[] = [];
 
   for (const candidate of feasible) {
@@ -187,7 +194,8 @@ async function optimizeStrategies(
       if (other === candidate) continue;
       const betterProduct = other.productFlux >= candidate.productFlux;
       const betterGrowth = other.growthFractionOfWT >= candidate.growthFractionOfWT;
-      const strictlyBetter = other.productFlux > candidate.productFlux || other.growthFractionOfWT > candidate.growthFractionOfWT;
+      const strictlyBetter =
+        other.productFlux > candidate.productFlux || other.growthFractionOfWT > candidate.growthFractionOfWT;
       if (betterProduct && betterGrowth && strictlyBetter) {
         dominated = true;
         break;
@@ -197,13 +205,14 @@ async function optimizeStrategies(
   }
 
   // Best by composite: 0.6 * product + 0.4 * growth
-  const bestDesign = paretoFront.length > 0
-    ? paretoFront.reduce((best, e) => {
-        const scoreE = 0.6 * (e.productFlux / 10) + 0.4 * e.growthFractionOfWT;
-        const scoreB = 0.6 * (best.productFlux / 10) + 0.4 * best.growthFractionOfWT;
-        return scoreE > scoreB ? e : best;
-      })
-    : evaluations[0];
+  const bestDesign =
+    paretoFront.length > 0
+      ? paretoFront.reduce((best, e) => {
+          const scoreE = 0.6 * (e.productFlux / 10) + 0.4 * e.growthFractionOfWT;
+          const scoreB = 0.6 * (best.productFlux / 10) + 0.4 * best.growthFractionOfWT;
+          return scoreE > scoreB ? e : best;
+        })
+      : evaluations[0];
 
   return { evaluations, paretoFront, bestDesign, solverCalls };
 }
@@ -213,13 +222,11 @@ async function optimizeStrategies(
 /**
  * Run the complete FBAsim Strain Design pipeline.
  */
-export async function runStrainDesignPipeline(
-  spec: StrainDesignSpec,
-): Promise<StrainDesignResult> {
+export async function runStrainDesignPipeline(spec: StrainDesignSpec): Promise<StrainDesignResult> {
   const allSolverCalls: Array<{ solver: string; description: string }> = [];
 
   // Get reactions for the model
-  const reactions: OptKnockReaction[] = IJO1366_REACTIONS.map(r => ({
+  const reactions: OptKnockReaction[] = IJO1366_REACTIONS.map((r) => ({
     id: r.id,
     lb: r.lb,
     ub: r.ub,
@@ -228,26 +235,30 @@ export async function runStrainDesignPipeline(
   }));
 
   // Agent A: Generate strategies
-  allSolverCalls.push({ solver: 'pipeline::generateStrategies', description: 'OptKnock + FSEOF strategy generation' });
-  const { knockoutStrategies, overexpressionTargets, solverCalls: genCalls } = await generateStrategies(spec, reactions);
+  allSolverCalls.push({ solver: "pipeline::generateStrategies", description: "OptKnock + FSEOF strategy generation" });
+  const {
+    knockoutStrategies,
+    overexpressionTargets,
+    solverCalls: genCalls,
+  } = await generateStrategies(spec, reactions);
   allSolverCalls.push(...genCalls);
 
   // Build strategy list from OptKnock results
   const strategies: StrainStrategy[] = knockoutStrategies.map((ks: KnockoutSet) => ({
     knockouts: ks.reactions,
     overexpressions: [],
-    description: `OptKnock: knock out ${ks.reactions.join(', ')}`,
+    description: `OptKnock: knock out ${ks.reactions.join(", ")}`,
   }));
 
   // Add FSEOF overexpression strategies
   const oeTargets = overexpressionTargets.overexpressionTargets
-    .filter((t: { direction: string; monotonicityScore: number }) => t.direction === 'up' && t.monotonicityScore > 0.5)
+    .filter((t: { direction: string; monotonicityScore: number }) => t.direction === "up" && t.monotonicityScore > 0.5)
     .slice(0, 5);
   if (oeTargets.length > 0) {
     strategies.push({
       knockouts: [],
       overexpressions: oeTargets.map((t: { reactionId: string }) => ({ reactionId: t.reactionId, foldChange: 2.0 })),
-      description: `FSEOF: overexpress ${oeTargets.map((t: { reactionId: string }) => t.reactionId).join(', ')}`,
+      description: `FSEOF: overexpress ${oeTargets.map((t: { reactionId: string }) => t.reactionId).join(", ")}`,
     });
   }
 
@@ -260,8 +271,16 @@ export async function runStrainDesignPipeline(
   });
 
   // Agent B + C: Evaluate and optimize
-  allSolverCalls.push({ solver: 'pipeline::optimizeStrategies', description: `Evaluating ${strategies.length} strategies` });
-  const { evaluations, paretoFront, bestDesign, solverCalls: optCalls } = await optimizeStrategies(spec, strategies, wildType.growthRate);
+  allSolverCalls.push({
+    solver: "pipeline::optimizeStrategies",
+    description: `Evaluating ${strategies.length} strategies`,
+  });
+  const {
+    evaluations,
+    paretoFront,
+    bestDesign,
+    solverCalls: optCalls,
+  } = await optimizeStrategies(spec, strategies, wildType.growthRate);
   allSolverCalls.push(...optCalls);
 
   return {

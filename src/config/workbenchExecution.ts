@@ -1,9 +1,5 @@
-import type {
-  WorkbenchAnalyzeArtifact,
-  WorkbenchProjectBrief,
-  WorkbenchRunArtifact,
-} from '../store/workbenchTypes';
-import { getUpstreamToolIds } from './workbenchGraph';
+import type { WorkbenchAnalyzeArtifact, WorkbenchProjectBrief, WorkbenchRunArtifact } from "../store/workbenchTypes";
+import { getUpstreamToolIds } from "./workbenchGraph";
 
 export interface WorkbenchExecutionSnapshot {
   projectRef: string | null;
@@ -15,12 +11,18 @@ export interface WorkbenchExecutionSnapshot {
 
 function buildProjectRef(project?: WorkbenchProjectBrief | null) {
   if (!project) return null;
-  return [project.id, project.updatedAt, project.targetProduct, project.status, project.isDemo ? 'demo' : 'project'].join(':');
+  return [
+    project.id,
+    project.updatedAt,
+    project.targetProduct,
+    project.status,
+    project.isDemo ? "demo" : "project",
+  ].join(":");
 }
 
 function buildAnalyzeRef(analyzeArtifact?: WorkbenchAnalyzeArtifact | null) {
   if (!analyzeArtifact) return null;
-  return [analyzeArtifact.id, analyzeArtifact.generatedAt, analyzeArtifact.targetProduct].join(':');
+  return [analyzeArtifact.id, analyzeArtifact.generatedAt, analyzeArtifact.targetProduct].join(":");
 }
 
 function latestArtifactByTool(runArtifacts: WorkbenchRunArtifact[]) {
@@ -49,10 +51,10 @@ export function buildExecutionSnapshot(options: {
   const analyzeRef = buildAnalyzeRef(options.analyzeArtifact);
   const dependencySignature = [
     options.toolId,
-    projectRef ?? 'project:none',
-    analyzeRef ?? 'analyze:none',
-    ...upstreamToolIds.map((toolId) => `upstream:${toolId}:${latestByTool.get(toolId)?.id ?? 'none'}`),
-  ].join('|');
+    projectRef ?? "project:none",
+    analyzeRef ?? "analyze:none",
+    ...upstreamToolIds.map((toolId) => `upstream:${toolId}:${latestByTool.get(toolId)?.id ?? "none"}`),
+  ].join("|");
 
   const snapshot: WorkbenchExecutionSnapshot = {
     projectRef,
@@ -79,7 +81,10 @@ export function diffExecutionSnapshot(
   }
 
   const blockingToolIds = current.upstreamToolIds.filter((toolId, index) => {
-    return previous.upstreamToolIds[index] !== toolId || previous.upstreamArtifactIds[index] !== current.upstreamArtifactIds[index];
+    return (
+      previous.upstreamToolIds[index] !== toolId ||
+      previous.upstreamArtifactIds[index] !== current.upstreamArtifactIds[index]
+    );
   });
 
   return {

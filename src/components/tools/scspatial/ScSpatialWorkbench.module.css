@@ -21,12 +21,12 @@
   --sc-risk-low: #16a34a;
   --sc-risk-medium: #d97706;
   --sc-risk-high: #dc2626;
-  --sc-mint: #3CB44B;
-  --sc-sky: #4363D8;
-  --sc-lilac: #911EB4;
-  --sc-coral: #E6194B;
-  --sc-apricot: #F58231;
-  --sc-yellow: #FFE119;
+  --sc-mint: #3cb44b;
+  --sc-sky: #4363d8;
+  --sc-lilac: #911eb4;
+  --sc-coral: #e6194b;
+  --sc-apricot: #f58231;
+  --sc-yellow: #ffe119;
   --sc-space-1: 8px;
   --sc-space-2: 12px;
   --sc-space-3: 16px;
@@ -130,10 +130,18 @@
   text-transform: uppercase;
 }
 
-.readyReal { color: #16a34a; }
-.readyPartial { color: #d97706; }
-.readyDemo { color: #2563eb; }
-.readyIdle { color: var(--sc-muted); }
+.readyReal {
+  color: #16a34a;
+}
+.readyPartial {
+  color: #d97706;
+}
+.readyDemo {
+  color: #2563eb;
+}
+.readyIdle {
+  color: var(--sc-muted);
+}
 
 .readyDot {
   width: 8px;
@@ -172,7 +180,9 @@
   font-family: var(--font-sans);
   font-size: 11px;
   cursor: pointer;
-  transition: color 0.18s ease, border-color 0.18s ease;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .headerIconButton:hover {
@@ -333,7 +343,10 @@
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
   width: 100%;
 }
 
@@ -429,7 +442,9 @@
   font-family: var(--font-sans);
   font-size: 12px;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .listButton:hover:not(:disabled) {
@@ -576,7 +591,9 @@
   border-radius: 4px;
   background: var(--sc-surface);
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
 .viewportSvg,
@@ -665,7 +682,7 @@
 
 .scaleBarLine::before,
 .scaleBarLine::after {
-  content: '';
+  content: "";
   position: absolute;
   top: -3px;
   width: 2px;
@@ -673,8 +690,12 @@
   background: var(--sc-border-rule);
 }
 
-.scaleBarLine::before { left: 0; }
-.scaleBarLine::after { right: 0; }
+.scaleBarLine::before {
+  left: 0;
+}
+.scaleBarLine::after {
+  right: 0;
+}
 
 .scaleBarLabel {
   margin-top: 4px;
@@ -720,7 +741,9 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .analysisTab:hover {
@@ -752,7 +775,7 @@
 
 .analysisCaption {
   margin: 0 0 6px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 10px;
   font-style: italic;
   color: var(--sc-muted);
@@ -848,7 +871,7 @@
 
 .evidentiaryBody {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 11px;
   font-style: italic;
   line-height: 1.5;
@@ -1126,7 +1149,7 @@
 }
 
 .advancedSummary::before {
-  content: '▸';
+  content: "▸";
   font-size: 9px;
   transition: transform 0.15s ease;
 }
@@ -1264,7 +1287,7 @@
 }
 
 .groupSummary::after {
-  content: '▸';
+  content: "▸";
   font-size: 9px;
   color: var(--sc-muted);
   transition: transform 0.15s ease;

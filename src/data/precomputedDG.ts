@@ -29,21 +29,21 @@
  *   - ΔG° values are for aqueous solution; in vivo values may differ.
  */
 
-import type { PathwayKey } from './mockCETHX';
+import type { PathwayKey } from "./mockCETHX";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
 /** Standard conditions for reference ΔG° values */
 export interface StandardConditions {
-  pH: number;              // default 7.0
-  temperature_C: number;   // default 25
+  pH: number; // default 7.0
+  temperature_C: number; // default 25
   ionicStrength_M: number; // default 0.1
 }
 
 /** Physiological conditions for transformed ΔG' values */
 export interface PhysiologicalConditions {
-  pH: number;              // default 7.4
-  temperature_C: number;   // default 37
+  pH: number; // default 7.4
+  temperature_C: number; // default 37
   ionicStrength_M: number; // default 0.25
 }
 
@@ -118,9 +118,7 @@ function albertyTransform(
 ): number {
   const protonTerm = R * tempK * LN10 * (pH - 7) * nH;
   const sqrtI = Math.sqrt(ionicStrength);
-  const debyeHuckel = dz2 !== 0
-    ? 9.205 * dz2 * sqrtI / (1 + 1.6 * sqrtI)
-    : 0;
+  const debyeHuckel = dz2 !== 0 ? (9.205 * dz2 * sqrtI) / (1 + 1.6 * sqrtI) : 0;
   return dG0 + protonTerm + debyeHuckel;
 }
 
@@ -128,36 +126,36 @@ function albertyTransform(
 // Copied from src/hooks/useEquilibrator.ts KEGG_REACTIONS
 
 const KEGG_GLYCOLYSIS: Record<string, string> = {
-  'Glc → G6P': 'kegg:C00031 + kegg:C00002 = kegg:C00085 + kegg:C00008',
-  'G6P → F6P': 'kegg:C00085 = kegg:C00076',
-  'F6P → FBP': 'kegg:C00076 + kegg:C00002 = kegg:C00354 + kegg:C00008',
-  'FBP → DHAP+GAP': 'kegg:C00354 = kegg:C00111 + kegg:C00118',
-  'DHAP → GAP': 'kegg:C00111 = kegg:C00118',
-  'GAP → 1,3-BPG': 'kegg:C00118 + kegg:C00002 + kegg:C00003 = kegg:C00236 + kegg:C00004 + kegg:C00080',
-  '1,3-BPG → 3PG': 'kegg:C00236 + kegg:C00005 = kegg:C00197 + kegg:C00002',
-  '3PG → 2PG': 'kegg:C00197 = kegg:C00631',
-  '2PG → PEP': 'kegg:C00631 = kegg:C00074 + kegg:C00001',
-  'PEP → Pyr': 'kegg:C00074 + kegg:C00001 = kegg:C00022 + kegg:C00009',
+  "Glc → G6P": "kegg:C00031 + kegg:C00002 = kegg:C00085 + kegg:C00008",
+  "G6P → F6P": "kegg:C00085 = kegg:C00076",
+  "F6P → FBP": "kegg:C00076 + kegg:C00002 = kegg:C00354 + kegg:C00008",
+  "FBP → DHAP+GAP": "kegg:C00354 = kegg:C00111 + kegg:C00118",
+  "DHAP → GAP": "kegg:C00111 = kegg:C00118",
+  "GAP → 1,3-BPG": "kegg:C00118 + kegg:C00002 + kegg:C00003 = kegg:C00236 + kegg:C00004 + kegg:C00080",
+  "1,3-BPG → 3PG": "kegg:C00236 + kegg:C00005 = kegg:C00197 + kegg:C00002",
+  "3PG → 2PG": "kegg:C00197 = kegg:C00631",
+  "2PG → PEP": "kegg:C00631 = kegg:C00074 + kegg:C00001",
+  "PEP → Pyr": "kegg:C00074 + kegg:C00001 = kegg:C00022 + kegg:C00009",
 };
 
 const KEGG_TCA: Record<string, string> = {
-  'AcCoA + OAA → Citrate': 'kegg:C00024 + kegg:C00036 = kegg:C00158 + kegg:C00010',
-  'Citrate → Isocitrate': 'kegg:C00158 = kegg:C00311',
-  'Isocitrate → α-KG': 'kegg:C00311 + kegg:C00003 = kegg:C00026 + kegg:C00004 + kegg:C00011',
-  'α-KG → Succinyl-CoA': 'kegg:C00026 + kegg:C00003 + kegg:C00010 = kegg:C00091 + kegg:C00004 + kegg:C00011',
-  'Succinyl-CoA → Succinate': 'kegg:C00091 + kegg:C00005 + kegg:C00002 = kegg:C00042 + kegg:C00010',
-  'Succinate → Fumarate': 'kegg:C00042 + kegg:C00003 = kegg:C00122 + kegg:C00004',
-  'Fumarate → Malate': 'kegg:C00122 + kegg:C00001 = kegg:C00149',
-  'Malate → OAA': 'kegg:C00149 + kegg:C00003 = kegg:C00036 + kegg:C00004',
+  "AcCoA + OAA → Citrate": "kegg:C00024 + kegg:C00036 = kegg:C00158 + kegg:C00010",
+  "Citrate → Isocitrate": "kegg:C00158 = kegg:C00311",
+  "Isocitrate → α-KG": "kegg:C00311 + kegg:C00003 = kegg:C00026 + kegg:C00004 + kegg:C00011",
+  "α-KG → Succinyl-CoA": "kegg:C00026 + kegg:C00003 + kegg:C00010 = kegg:C00091 + kegg:C00004 + kegg:C00011",
+  "Succinyl-CoA → Succinate": "kegg:C00091 + kegg:C00005 + kegg:C00002 = kegg:C00042 + kegg:C00010",
+  "Succinate → Fumarate": "kegg:C00042 + kegg:C00003 = kegg:C00122 + kegg:C00004",
+  "Fumarate → Malate": "kegg:C00122 + kegg:C00001 = kegg:C00149",
+  "Malate → OAA": "kegg:C00149 + kegg:C00003 = kegg:C00036 + kegg:C00004",
 };
 
 const KEGG_PPP: Record<string, string> = {
-  'G6P → 6-PGL': 'kegg:C00085 + kegg:C00003 = kegg:C00936 + kegg:C00004',
-  '6-PGL → 6-PG': 'kegg:C00936 + kegg:C00001 = kegg:C00345',
-  '6-PG → Ribulose-5P': 'kegg:C00345 + kegg:C00003 = kegg:C00199 + kegg:C00004 + kegg:C00011',
-  'Ribulose-5P → Ribose-5P': 'kegg:C00199 = kegg:C00117',
-  'Transketolase (×2)': 'kegg:C00117 + kegg:C00118 = kegg:C00085 + kegg:C00279',
-  'Transaldolase': 'kegg:C00279 + kegg:C00118 = kegg:C00031 + kegg:C00074',
+  "G6P → 6-PGL": "kegg:C00085 + kegg:C00003 = kegg:C00936 + kegg:C00004",
+  "6-PGL → 6-PG": "kegg:C00936 + kegg:C00001 = kegg:C00345",
+  "6-PG → Ribulose-5P": "kegg:C00345 + kegg:C00003 = kegg:C00199 + kegg:C00004 + kegg:C00011",
+  "Ribulose-5P → Ribose-5P": "kegg:C00199 = kegg:C00117",
+  "Transketolase (×2)": "kegg:C00117 + kegg:C00118 = kegg:C00085 + kegg:C00279",
+  Transaldolase: "kegg:C00279 + kegg:C00118 = kegg:C00031 + kegg:C00074",
 };
 
 // ── Raw Reference Data ─────────────────────────────────────────────────
@@ -165,43 +163,43 @@ const KEGG_PPP: Record<string, string> = {
 
 interface RawStep {
   stepName: string;
-  dG0: number;           // kJ/mol, Lehninger reference (pH 7, 25°C)
-  nH: number;            // net H+ absorbed
-  dz2: number;           // Δz² charge change
+  dG0: number; // kJ/mol, Lehninger reference (pH 7, 25°C)
+  nH: number; // net H+ absorbed
+  dz2: number; // Δz² charge change
   keggFormula: string;
 }
 
 const GLYCOLYSIS_RAW: RawStep[] = [
-  { stepName: 'Glc → G6P',       dG0: -16.7, nH:  0, dz2: -2, keggFormula: KEGG_GLYCOLYSIS['Glc → G6P'] },
-  { stepName: 'G6P → F6P',       dG0:   1.7, nH:  0, dz2:  0, keggFormula: KEGG_GLYCOLYSIS['G6P → F6P'] },
-  { stepName: 'F6P → FBP',       dG0: -14.2, nH:  0, dz2: -2, keggFormula: KEGG_GLYCOLYSIS['F6P → FBP'] },
-  { stepName: 'FBP → DHAP+GAP',  dG0:  23.8, nH:  0, dz2:  0, keggFormula: KEGG_GLYCOLYSIS['FBP → DHAP+GAP'] },
-  { stepName: 'DHAP → GAP',      dG0:   7.5, nH:  0, dz2:  0, keggFormula: KEGG_GLYCOLYSIS['DHAP → GAP'] },
-  { stepName: 'GAP → 1,3-BPG',   dG0:   6.3, nH: -1, dz2:  1, keggFormula: KEGG_GLYCOLYSIS['GAP → 1,3-BPG'] },
-  { stepName: '1,3-BPG → 3PG',   dG0: -18.8, nH:  0, dz2:  2, keggFormula: KEGG_GLYCOLYSIS['1,3-BPG → 3PG'] },
-  { stepName: '3PG → 2PG',       dG0:   4.4, nH:  0, dz2:  0, keggFormula: KEGG_GLYCOLYSIS['3PG → 2PG'] },
-  { stepName: '2PG → PEP',       dG0:   1.8, nH:  0, dz2:  0, keggFormula: KEGG_GLYCOLYSIS['2PG → PEP'] },
-  { stepName: 'PEP → Pyr',       dG0: -31.4, nH:  0, dz2:  0, keggFormula: KEGG_GLYCOLYSIS['PEP → Pyr'] },
+  { stepName: "Glc → G6P", dG0: -16.7, nH: 0, dz2: -2, keggFormula: KEGG_GLYCOLYSIS["Glc → G6P"] },
+  { stepName: "G6P → F6P", dG0: 1.7, nH: 0, dz2: 0, keggFormula: KEGG_GLYCOLYSIS["G6P → F6P"] },
+  { stepName: "F6P → FBP", dG0: -14.2, nH: 0, dz2: -2, keggFormula: KEGG_GLYCOLYSIS["F6P → FBP"] },
+  { stepName: "FBP → DHAP+GAP", dG0: 23.8, nH: 0, dz2: 0, keggFormula: KEGG_GLYCOLYSIS["FBP → DHAP+GAP"] },
+  { stepName: "DHAP → GAP", dG0: 7.5, nH: 0, dz2: 0, keggFormula: KEGG_GLYCOLYSIS["DHAP → GAP"] },
+  { stepName: "GAP → 1,3-BPG", dG0: 6.3, nH: -1, dz2: 1, keggFormula: KEGG_GLYCOLYSIS["GAP → 1,3-BPG"] },
+  { stepName: "1,3-BPG → 3PG", dG0: -18.8, nH: 0, dz2: 2, keggFormula: KEGG_GLYCOLYSIS["1,3-BPG → 3PG"] },
+  { stepName: "3PG → 2PG", dG0: 4.4, nH: 0, dz2: 0, keggFormula: KEGG_GLYCOLYSIS["3PG → 2PG"] },
+  { stepName: "2PG → PEP", dG0: 1.8, nH: 0, dz2: 0, keggFormula: KEGG_GLYCOLYSIS["2PG → PEP"] },
+  { stepName: "PEP → Pyr", dG0: -31.4, nH: 0, dz2: 0, keggFormula: KEGG_GLYCOLYSIS["PEP → Pyr"] },
 ];
 
 const TCA_RAW: RawStep[] = [
-  { stepName: 'AcCoA + OAA → Citrate', dG0: -32.2, nH:  0, dz2:  0, keggFormula: KEGG_TCA['AcCoA + OAA → Citrate'] },
-  { stepName: 'Citrate → Isocitrate',  dG0:  13.3, nH:  0, dz2:  0, keggFormula: KEGG_TCA['Citrate → Isocitrate'] },
-  { stepName: 'Isocitrate → α-KG',     dG0: -20.9, nH: -1, dz2:  1, keggFormula: KEGG_TCA['Isocitrate → α-KG'] },
-  { stepName: 'α-KG → Succinyl-CoA',   dG0: -33.5, nH: -1, dz2:  1, keggFormula: KEGG_TCA['α-KG → Succinyl-CoA'] },
-  { stepName: 'Succinyl-CoA → Succinate', dG0: -2.1, nH:  0, dz2:  2, keggFormula: KEGG_TCA['Succinyl-CoA → Succinate'] },
-  { stepName: 'Succinate → Fumarate',  dG0:   0.0, nH: -1, dz2:  0, keggFormula: KEGG_TCA['Succinate → Fumarate'] },
-  { stepName: 'Fumarate → Malate',     dG0:  -3.6, nH:  0, dz2:  0, keggFormula: KEGG_TCA['Fumarate → Malate'] },
-  { stepName: 'Malate → OAA',          dG0:  29.7, nH: -1, dz2:  1, keggFormula: KEGG_TCA['Malate → OAA'] },
+  { stepName: "AcCoA + OAA → Citrate", dG0: -32.2, nH: 0, dz2: 0, keggFormula: KEGG_TCA["AcCoA + OAA → Citrate"] },
+  { stepName: "Citrate → Isocitrate", dG0: 13.3, nH: 0, dz2: 0, keggFormula: KEGG_TCA["Citrate → Isocitrate"] },
+  { stepName: "Isocitrate → α-KG", dG0: -20.9, nH: -1, dz2: 1, keggFormula: KEGG_TCA["Isocitrate → α-KG"] },
+  { stepName: "α-KG → Succinyl-CoA", dG0: -33.5, nH: -1, dz2: 1, keggFormula: KEGG_TCA["α-KG → Succinyl-CoA"] },
+  { stepName: "Succinyl-CoA → Succinate", dG0: -2.1, nH: 0, dz2: 2, keggFormula: KEGG_TCA["Succinyl-CoA → Succinate"] },
+  { stepName: "Succinate → Fumarate", dG0: 0.0, nH: -1, dz2: 0, keggFormula: KEGG_TCA["Succinate → Fumarate"] },
+  { stepName: "Fumarate → Malate", dG0: -3.6, nH: 0, dz2: 0, keggFormula: KEGG_TCA["Fumarate → Malate"] },
+  { stepName: "Malate → OAA", dG0: 29.7, nH: -1, dz2: 1, keggFormula: KEGG_TCA["Malate → OAA"] },
 ];
 
 const PPP_RAW: RawStep[] = [
-  { stepName: 'G6P → 6-PGL',            dG0: -17.6, nH: -1, dz2:  1, keggFormula: KEGG_PPP['G6P → 6-PGL'] },
-  { stepName: '6-PGL → 6-PG',           dG0: -25.0, nH:  0, dz2:  0, keggFormula: KEGG_PPP['6-PGL → 6-PG'] },
-  { stepName: '6-PG → Ribulose-5P',     dG0: -19.0, nH: -1, dz2:  1, keggFormula: KEGG_PPP['6-PG → Ribulose-5P'] },
-  { stepName: 'Ribulose-5P → Ribose-5P', dG0:   2.4, nH:  0, dz2:  0, keggFormula: KEGG_PPP['Ribulose-5P → Ribose-5P'] },
-  { stepName: 'Transketolase (×2)',      dG0:  -6.3, nH:  0, dz2:  0, keggFormula: KEGG_PPP['Transketolase (×2)'] },
-  { stepName: 'Transaldolase',           dG0:  -0.4, nH:  0, dz2:  0, keggFormula: KEGG_PPP['Transaldolase'] },
+  { stepName: "G6P → 6-PGL", dG0: -17.6, nH: -1, dz2: 1, keggFormula: KEGG_PPP["G6P → 6-PGL"] },
+  { stepName: "6-PGL → 6-PG", dG0: -25.0, nH: 0, dz2: 0, keggFormula: KEGG_PPP["6-PGL → 6-PG"] },
+  { stepName: "6-PG → Ribulose-5P", dG0: -19.0, nH: -1, dz2: 1, keggFormula: KEGG_PPP["6-PG → Ribulose-5P"] },
+  { stepName: "Ribulose-5P → Ribose-5P", dG0: 2.4, nH: 0, dz2: 0, keggFormula: KEGG_PPP["Ribulose-5P → Ribose-5P"] },
+  { stepName: "Transketolase (×2)", dG0: -6.3, nH: 0, dz2: 0, keggFormula: KEGG_PPP["Transketolase (×2)"] },
+  { stepName: "Transaldolase", dG0: -0.4, nH: 0, dz2: 0, keggFormula: KEGG_PPP["Transaldolase"] },
 ];
 
 // ── Pre-computation ────────────────────────────────────────────────────
@@ -210,13 +208,9 @@ function buildPrecomputedEntries(rawSteps: RawStep[]): PrecomputedDGEntry[] {
   const physT = PHYSIOLOGICAL.temperature_C + 273.15;
   const stdT = STANDARD.temperature_C + 273.15;
 
-  return rawSteps.map(s => {
-    const dG_prime_phys = albertyTransform(
-      s.dG0, PHYSIOLOGICAL.pH, PHYSIOLOGICAL.ionicStrength_M, physT, s.nH, s.dz2,
-    );
-    const dG_prime_std = albertyTransform(
-      s.dG0, STANDARD.pH, STANDARD.ionicStrength_M, stdT, s.nH, s.dz2,
-    );
+  return rawSteps.map((s) => {
+    const dG_prime_phys = albertyTransform(s.dG0, PHYSIOLOGICAL.pH, PHYSIOLOGICAL.ionicStrength_M, physT, s.nH, s.dz2);
+    const dG_prime_std = albertyTransform(s.dG0, STANDARD.pH, STANDARD.ionicStrength_M, stdT, s.nH, s.dz2);
     const uncertainty = Math.abs(dG_prime_phys) * 0.15;
 
     return {
@@ -228,7 +222,7 @@ function buildPrecomputedEntries(rawSteps: RawStep[]): PrecomputedDGEntry[] {
       nH: s.nH,
       dz2: s.dz2,
       keggFormula: s.keggFormula,
-      source: 'Lehninger/NIST + Alberty transform',
+      source: "Lehninger/NIST + Alberty transform",
     };
   });
 }
@@ -236,21 +230,21 @@ function buildPrecomputedEntries(rawSteps: RawStep[]): PrecomputedDGEntry[] {
 // ── Exported Pre-computed Datasets ──────────────────────────────────────
 
 export const GLYCOLYSIS_PRECOMPUTED: PrecomputedPathwayData = {
-  pathway: 'glycolysis',
+  pathway: "glycolysis",
   steps: buildPrecomputedEntries(GLYCOLYSIS_RAW),
   physiologicalConditions: PHYSIOLOGICAL,
   standardConditions: STANDARD,
 };
 
 export const TCA_PRECOMPUTED: PrecomputedPathwayData = {
-  pathway: 'tca',
+  pathway: "tca",
   steps: buildPrecomputedEntries(TCA_RAW),
   physiologicalConditions: PHYSIOLOGICAL,
   standardConditions: STANDARD,
 };
 
 export const PPP_PRECOMPUTED: PrecomputedPathwayData = {
-  pathway: 'ppp',
+  pathway: "ppp",
   steps: buildPrecomputedEntries(PPP_RAW),
   physiologicalConditions: PHYSIOLOGICAL,
   standardConditions: STANDARD,
@@ -272,11 +266,8 @@ export const PRECOMPUTED_DG: Record<PathwayKey, PrecomputedPathwayData> = {
  * @param stepName Step label (must match PATHWAY_STEPS keys)
  * @returns Pre-computed entry, or undefined if not found
  */
-export function lookupPrecomputedDG(
-  pathway: PathwayKey,
-  stepName: string,
-): PrecomputedDGEntry | undefined {
-  return PRECOMPUTED_DG[pathway]?.steps.find(s => s.stepName === stepName);
+export function lookupPrecomputedDG(pathway: PathwayKey, stepName: string): PrecomputedDGEntry | undefined {
+  return PRECOMPUTED_DG[pathway]?.steps.find((s) => s.stepName === stepName);
 }
 
 /**

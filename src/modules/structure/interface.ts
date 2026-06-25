@@ -11,26 +11,35 @@
  *   ALGORITHM: Cα distance-based interface detection + cosine similarity prediction
  */
 
-import type { InterfaceResidue, ProteinChain, InterfacePrediction } from './types';
+import type { InterfacePrediction, InterfaceResidue, ProteinChain } from "./types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 /** Charged amino acids (positive + negative at physiological pH) */
-const CHARGED_RESIDUES = new Set(['ASP', 'GLU', 'LYS', 'ARG', 'HIS']);
+const CHARGED_RESIDUES = new Set(["ASP", "GLU", "LYS", "ARG", "HIS"]);
 
 /** Hydrophobic amino acids (3-letter PDB codes) */
-const HYDROPHOBIC_RESIDUES = new Set(['ALA', 'VAL', 'LEU', 'ILE', 'PHE', 'TRP', 'MET', 'PRO']);
+const HYDROPHOBIC_RESIDUES = new Set(["ALA", "VAL", "LEU", "ILE", "PHE", "TRP", "MET", "PRO"]);
 
 /** Hydrophobic amino acids (1-letter codes for sequence iteration) */
-const HYDROPHOBIC_1LETTER = new Set(['A', 'V', 'L', 'I', 'F', 'W', 'M', 'P']);
+const HYDROPHOBIC_1LETTER = new Set(["A", "V", "L", "I", "F", "W", "M", "P"]);
 
 /** Charged amino acids (1-letter codes for sequence iteration) */
-const CHARGED_1LETTER = new Set(['D', 'E', 'K', 'R', 'H']);
+const CHARGED_1LETTER = new Set(["D", "E", "K", "R", "H"]);
 
 /** Residues capable of hydrogen bonding */
 const HBOND_RESIDUES = new Set([
-  'SER', 'THR', 'TYR', 'ASN', 'GLN', 'ASP', 'GLU', 'LYS', 'ARG', 'HIS',
-  'backbone', // backbone NH and C=O
+  "SER",
+  "THR",
+  "TYR",
+  "ASN",
+  "GLN",
+  "ASP",
+  "GLU",
+  "LYS",
+  "ARG",
+  "HIS",
+  "backbone", // backbone NH and C=O
 ]);
 
 /** Distance thresholds for contact classification (Å) */
@@ -63,23 +72,20 @@ interface ParsedAtom {
  * @param chainIds - Chain IDs to extract
  * @returns Map from chain ID to array of Cα atom positions
  */
-function parseCAlphaAtoms(
-  pdbText: string,
-  chainIds: string[],
-): Map<string, ParsedAtom[]> {
+function parseCAlphaAtoms(pdbText: string, chainIds: string[]): Map<string, ParsedAtom[]> {
   const chainSet = new Set(chainIds);
   const atoms = new Map<string, ParsedAtom[]>();
   for (const id of chainIds) atoms.set(id, []);
 
-  const lines = pdbText.split('\n');
+  const lines = pdbText.split("\n");
   for (const line of lines) {
-    if (!line.startsWith('ATOM')) continue;
+    if (!line.startsWith("ATOM")) continue;
 
     const chain = line.substring(21, 22).trim();
     if (!chainSet.has(chain)) continue;
 
     const atomName = line.substring(12, 16).trim();
-    if (atomName !== 'CA') continue;
+    if (atomName !== "CA") continue;
 
     atoms.get(chain)!.push({
       chain,
@@ -98,10 +104,7 @@ function parseCAlphaAtoms(
 /**
  * Compute Euclidean distance between two 3D points.
  */
-function distance3D(
-  a: { x: number; y: number; z: number },
-  b: { x: number; y: number; z: number },
-): number {
+function distance3D(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
 }
 
@@ -119,38 +122,34 @@ function distance3D(
  * @param resB - Residue name of chain B
  * @returns Contact type classification
  */
-function classifyContact(
-  dist: number,
-  resA: string,
-  resB: string,
-): InterfaceResidue['type'] {
+function classifyContact(dist: number, resA: string, resB: string): InterfaceResidue["type"] {
   // Salt bridge: charged pair at close range
   if (dist < DISTANCE_THRESHOLDS.salt_bridge) {
-    const aNeg = resA === 'ASP' || resA === 'GLU';
-    const bNeg = resB === 'ASP' || resB === 'GLU';
-    const aPos = resA === 'LYS' || resA === 'ARG' || resA === 'HIS';
-    const bPos = resB === 'LYS' || resB === 'ARG' || resB === 'HIS';
+    const aNeg = resA === "ASP" || resA === "GLU";
+    const bNeg = resB === "ASP" || resB === "GLU";
+    const aPos = resA === "LYS" || resA === "ARG" || resA === "HIS";
+    const bPos = resB === "LYS" || resB === "ARG" || resB === "HIS";
     if ((aNeg && bPos) || (aPos && bNeg)) {
-      return 'salt_bridge';
+      return "salt_bridge";
     }
   }
 
   // Hydrogen bond: close proximity and H-bond capable residues
   if (dist < DISTANCE_THRESHOLDS.hydrogen_bond) {
     if (HBOND_RESIDUES.has(resA) || HBOND_RESIDUES.has(resB)) {
-      return 'hydrogen_bond';
+      return "hydrogen_bond";
     }
   }
 
   // Hydrophobic: both residues nonpolar at moderate distance
   if (dist < DISTANCE_THRESHOLDS.hydrophobic) {
     if (HYDROPHOBIC_RESIDUES.has(resA) && HYDROPHOBIC_RESIDUES.has(resB)) {
-      return 'hydrophobic';
+      return "hydrophobic";
     }
   }
 
   // Default: van der Waals
-  return 'van_der_waals';
+  return "van_der_waals";
 }
 
 /**
@@ -327,7 +326,7 @@ export function predictInterfaceFromEmbeddings(
     return { chainPairs: [], overallConfidence: 0 };
   }
 
-  const chainPairs: InterfacePrediction['chainPairs'] = [];
+  const chainPairs: InterfacePrediction["chainPairs"] = [];
 
   for (let i = 0; i < chains.length; i++) {
     for (let j = i + 1; j < chains.length; j++) {
@@ -356,9 +355,7 @@ export function predictInterfaceFromEmbeddings(
 
   // Overall confidence is the mean of all pair similarities
   const totalSimilarity = chainPairs.reduce((sum, p) => sum + p.similarity, 0);
-  const overallConfidence = chainPairs.length > 0
-    ? Math.round((totalSimilarity / chainPairs.length) * 1000) / 1000
-    : 0;
+  const overallConfidence = chainPairs.length > 0 ? Math.round((totalSimilarity / chainPairs.length) * 1000) / 1000 : 0;
 
   return { chainPairs, overallConfidence };
 }
@@ -433,9 +430,6 @@ export function estimateContactProbability(
  * const saltBridges = classified.filter(r => r.type === 'salt_bridge');
  * ```
  */
-export function classifyInterfaceResidues(
-  pdbText: string,
-  chainIds: string[],
-): InterfaceResidue[] {
+export function classifyInterfaceResidues(pdbText: string, chainIds: string[]): InterfaceResidue[] {
   return detectGeometricInterfaces(pdbText, chainIds, { distanceThreshold: 8.0 });
 }

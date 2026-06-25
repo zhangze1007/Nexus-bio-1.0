@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { X } from 'lucide-react';
-import styles from './ScSpatialWorkbench.module.css';
+import { X } from "lucide-react";
+import styles from "./ScSpatialWorkbench.module.css";
 
 interface ScSpatialHelpDialogProps {
   onClose: () => void;
@@ -24,11 +24,27 @@ export default function ScSpatialHelpDialog({ onClose }: ScSpatialHelpDialogProp
           </button>
         </div>
         <div className={styles.dialogBody}>
-          <p><strong>1. Load a dataset.</strong> Upload a <code>.h5ad</code> file — the platform parses it into a standardized JSON artifact, then computes spatial statistics on the backend.</p>
-          <p><strong>2. Inspect the main viewport.</strong> The default view shows real spatial coordinates. If the data lacks spatial coordinates, the system honestly degrades to <code>partial</code> and disables the spatial view.</p>
-          <p><strong>3. Check the analysis strip.</strong> The bottom panel shows cluster context, marker heatmaps, and expression distributions — helping you judge whether a gene or region is truly spatially restricted.</p>
-          <p><strong>Moran&apos;s I</strong> measures whether neighboring spots have similar expression. Higher values indicate stronger spatial clustering.</p>
-          <p><strong>PAGA</strong> abstracts inter-cluster connectivity into a trajectory graph, revealing branching patterns and possible cell fate transitions.</p>
+          <p>
+            <strong>1. Load a dataset.</strong> Upload a <code>.h5ad</code> file — the platform parses it into a
+            standardized JSON artifact, then computes spatial statistics on the backend.
+          </p>
+          <p>
+            <strong>2. Inspect the main viewport.</strong> The default view shows real spatial coordinates. If the data
+            lacks spatial coordinates, the system honestly degrades to <code>partial</code> and disables the spatial
+            view.
+          </p>
+          <p>
+            <strong>3. Check the analysis strip.</strong> The bottom panel shows cluster context, marker heatmaps, and
+            expression distributions — helping you judge whether a gene or region is truly spatially restricted.
+          </p>
+          <p>
+            <strong>Moran&apos;s I</strong> measures whether neighboring spots have similar expression. Higher values
+            indicate stronger spatial clustering.
+          </p>
+          <p>
+            <strong>PAGA</strong> abstracts inter-cluster connectivity into a trajectory graph, revealing branching
+            patterns and possible cell fate transitions.
+          </p>
         </div>
       </div>
     </div>

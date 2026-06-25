@@ -1,19 +1,10 @@
-import type { DBTLLearnedMetrics } from './dbtlFeedback';
+import type { DBTLLearnedMetrics } from "./dbtlFeedback";
 
-export const LEARNED_DELTA_CLASSIFICATIONS = [
-  'restorative',
-  'conservative',
-  'exploratory',
-  'aggressive',
-] as const;
+export const LEARNED_DELTA_CLASSIFICATIONS = ["restorative", "conservative", "exploratory", "aggressive"] as const;
 
 export type LearnedDeltaClassification = (typeof LEARNED_DELTA_CLASSIFICATIONS)[number];
 
-export const LEARNED_DELTA_HUMAN_GATE_STATUSES = [
-  'pending',
-  'approved',
-  'rejected',
-] as const;
+export const LEARNED_DELTA_HUMAN_GATE_STATUSES = ["pending", "approved", "rejected"] as const;
 
 export type LearnedDeltaHumanGateStatus = (typeof LEARNED_DELTA_HUMAN_GATE_STATUSES)[number];
 
@@ -32,7 +23,7 @@ export interface BoundDelta {
 }
 
 export interface LearnedDeltaPack {
-  schemaVersion: 'learned-delta-pack-v1';
+  schemaVersion: "learned-delta-pack-v1";
   deltaPackId: string;
   iteration: number;
   sourceDbtlRunId: string;

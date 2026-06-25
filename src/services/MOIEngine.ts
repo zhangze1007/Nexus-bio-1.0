@@ -52,11 +52,7 @@
  * modes) has been relabelled to reflect the methods that actually run.
  */
 
-import type {
-  OmicsRow,
-  OmicsLayer,
-  EmbeddingPoint,
-} from '../types';
+import type { EmbeddingPoint, OmicsLayer, OmicsRow } from "../types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -89,9 +85,9 @@ export interface MOFAResult {
 export interface VAELatentPoint {
   id: string;
   gene: string;
-  z_mean: number[];          // Latent mean (μ)
-  z_logvar: number[];        // Latent log-variance
-  z_sample: number[];        // Sampled z
+  z_mean: number[]; // Latent mean (μ)
+  z_logvar: number[]; // Latent log-variance
+  z_sample: number[]; // Sampled z
   batchId: number;
   metabolicEfficiency: number; // 0–1 score for coloring
   reconstructed: {
@@ -103,7 +99,7 @@ export interface VAELatentPoint {
 
 export interface VAETrainingResult {
   latentPoints: VAELatentPoint[];
-  elbo: number;              // Evidence Lower BOund
+  elbo: number; // Evidence Lower BOund
   reconLoss: number;
   klDivergence: number;
   beta: number;
@@ -123,7 +119,7 @@ export interface VAEPerturbationPrediction {
     delta: number;
     confidence: number;
   }[];
-  latentShift: number[];     // Delta in latent space
+  latentShift: number[]; // Delta in latent space
   metabolicEfficiencyChange: number;
   reasoning: string;
 }
@@ -131,10 +127,10 @@ export interface VAEPerturbationPrediction {
 export interface MetabolicEfficiencyScore {
   geneId: string;
   gene: string;
-  score: number;             // 0–1
-  fluxUtilization: number;   // How efficiently flux is utilized
+  score: number; // 0–1
+  fluxUtilization: number; // How efficiently flux is utilized
   expressionBalance: number; // Transcript-protein concordance
-  metaboliteYield: number;   // Downstream metabolite production
+  metaboliteYield: number; // Downstream metabolite production
 }
 
 // ── Matrix utilities ──────────────────────────────────────────────────────────
@@ -144,22 +140,20 @@ function zeros(rows: number, cols: number): number[][] {
 }
 
 function matMul(A: number[][], B: number[][]): number[][] {
-  const m = A.length, n = B[0].length, k = B.length;
+  const m = A.length,
+    n = B[0].length,
+    k = B.length;
   const C = zeros(m, n);
-  for (let i = 0; i < m; i++)
-    for (let j = 0; j < n; j++)
-      for (let l = 0; l < k; l++)
-        C[i][j] += A[i][l] * B[l][j];
+  for (let i = 0; i < m; i++) for (let j = 0; j < n; j++) for (let l = 0; l < k; l++) C[i][j] += A[i][l] * B[l][j];
   return C;
 }
 
 function transpose(A: number[][]): number[][] {
   if (A.length === 0) return [];
-  const m = A.length, n = A[0].length;
+  const m = A.length,
+    n = A[0].length;
   const T = zeros(n, m);
-  for (let i = 0; i < m; i++)
-    for (let j = 0; j < n; j++)
-      T[j][i] = A[i][j];
+  for (let i = 0; i < m; i++) for (let j = 0; j < n; j++) T[j][i] = A[i][j];
   return T;
 }
 
@@ -174,7 +168,8 @@ function vecNorm(a: number[]): number {
 }
 
 function columnMean(matrix: number[][], col: number, mask?: boolean[][]): number {
-  let sum = 0, count = 0;
+  let sum = 0,
+    count = 0;
   for (let i = 0; i < matrix.length; i++) {
     if (mask && !mask[i][col]) continue;
     sum += matrix[i][col];
@@ -184,7 +179,8 @@ function columnMean(matrix: number[][], col: number, mask?: boolean[][]): number
 }
 
 function columnStd(matrix: number[][], col: number, mean: number, mask?: boolean[][]): number {
-  let sumSq = 0, count = 0;
+  let sumSq = 0,
+    count = 0;
   for (let i = 0; i < matrix.length; i++) {
     if (mask && !mask[i][col]) continue;
     sumSq += (matrix[i][col] - mean) ** 2;
@@ -197,7 +193,9 @@ function columnStd(matrix: number[][], col: number, mean: number, mask?: boolean
 
 class SeededRNG {
   private state: number;
-  constructor(seed: number = 42) { this.state = seed; }
+  constructor(seed: number = 42) {
+    this.state = seed;
+  }
   next(): number {
     this.state = (this.state * 1103515245 + 12345) & 0x7fffffff;
     return this.state / 0x7fffffff;
@@ -246,19 +244,19 @@ export function extractMOFAFactors(
   // Build view matrices + missing-value masks
   const views: { name: OmicsLayer; matrix: number[][]; mask: boolean[][] }[] = [
     {
-      name: 'transcriptomics',
-      matrix: data.map(d => [d.transcript ?? 0]),
-      mask: data.map(d => [d.transcript !== undefined && d.transcript !== null]),
+      name: "transcriptomics",
+      matrix: data.map((d) => [d.transcript ?? 0]),
+      mask: data.map((d) => [d.transcript !== undefined && d.transcript !== null]),
     },
     {
-      name: 'proteomics',
-      matrix: data.map(d => [d.protein ?? 0]),
-      mask: data.map(d => [d.protein !== undefined && d.protein !== null]),
+      name: "proteomics",
+      matrix: data.map((d) => [d.protein ?? 0]),
+      mask: data.map((d) => [d.protein !== undefined && d.protein !== null]),
     },
     {
-      name: 'metabolomics',
-      matrix: data.map(d => [d.metabolite ?? 0]),
-      mask: data.map(d => [d.metabolite !== undefined && d.metabolite !== null]),
+      name: "metabolomics",
+      matrix: data.map((d) => [d.metabolite ?? 0]),
+      mask: data.map((d) => [d.metabolite !== undefined && d.metabolite !== null]),
     },
   ];
 
@@ -271,13 +269,14 @@ export function extractMOFAFactors(
   if (K < nFactors) {
     console.warn(
       `[MOIEngine] ALS factors reduced from ${nFactors} to ${K}: ` +
-      `only ${nFeatures} features across ${views.length} views — requesting more factors ` +
-      `would cause degenerate (rank-deficient) factorization.`
+        `only ${nFeatures} features across ${views.length} views — requesting more factors ` +
+        `would cause degenerate (rank-deficient) factorization.`,
     );
   }
 
   // Count missing data
-  let totalCells = 0, missingCells = 0;
+  let totalCells = 0,
+    missingCells = 0;
   for (const v of views) {
     for (let i = 0; i < n; i++) {
       totalCells++;
@@ -295,16 +294,12 @@ export function extractMOFAFactors(
   }
 
   // Concatenate views: X = [X_t | X_p | X_m]  (n × 3)
-  const X = data.map((_, i) => views.map(v => v.matrix[i][0]));
-  const M = data.map((_, i) => views.map(v => v.mask[i][0]));
+  const X = data.map((_, i) => views.map((v) => v.matrix[i][0]));
+  const M = data.map((_, i) => views.map((v) => v.mask[i][0]));
 
   // Initialize Z (n × K) and W (3 × K) randomly
-  let Z = Array.from({ length: n }, () =>
-    Array.from({ length: K }, () => rng.gaussian() * 0.1)
-  );
-  let W = Array.from({ length: 3 }, () =>
-    Array.from({ length: K }, () => rng.gaussian() * 0.1)
-  );
+  const Z = Array.from({ length: n }, () => Array.from({ length: K }, () => rng.gaussian() * 0.1));
+  const W = Array.from({ length: 3 }, () => Array.from({ length: K }, () => rng.gaussian() * 0.1));
 
   // Alternating Least Squares
   let prevError = Infinity;
@@ -312,7 +307,7 @@ export function extractMOFAFactors(
 
   for (let iter = 0; iter < maxIter; iter++) {
     // Create masked X: zero out missing values
-    const Xmasked = X.map((row, i) => row.map((v, j) => M[i][j] ? v : 0));
+    const Xmasked = X.map((row, i) => row.map((v, j) => (M[i][j] ? v : 0)));
 
     // Update W: W = (Z^T Z)^{-1} Z^T Xmasked
     const ZtZ = matMul(transpose(Z), Z);
@@ -338,7 +333,8 @@ export function extractMOFAFactors(
 
     // Compute masked reconstruction error
     const Xhat = matMul(Z, transpose(W));
-    let error = 0, count = 0;
+    let error = 0,
+      count = 0;
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < 3; j++) {
         if (M[i][j]) {
@@ -379,23 +375,23 @@ export function extractMOFAFactors(
     const loadings = Z.map((row, i) => ({ gene: data[i].gene, loading: Math.abs(row[k]) }));
     loadings.sort((a, b) => b.loading - a.loading);
 
-    const topGene = loadings[0]?.gene ?? '';
+    const topGene = loadings[0]?.gene ?? "";
     const dominantView = vePerView.indexOf(Math.max(...vePerView));
-    const viewNames: OmicsLayer[] = ['transcriptomics', 'proteomics', 'metabolomics'];
+    const viewNames: OmicsLayer[] = ["transcriptomics", "proteomics", "metabolomics"];
 
     factors.push({
       id: k + 1,
       name: `Factor ${k + 1}`,
       weights: {
-        transcriptomics: Z.map(row => row[k] * W[0][k]),
-        proteomics: Z.map(row => row[k] * W[1][k]),
-        metabolomics: Z.map(row => row[k] * W[2][k]),
+        transcriptomics: Z.map((row) => row[k] * W[0][k]),
+        proteomics: Z.map((row) => row[k] * W[1][k]),
+        metabolomics: Z.map((row) => row[k] * W[2][k]),
       },
       varianceExplained: {
         transcriptomics: Math.round(vePerView[0] * 1000) / 1000,
         proteomics: Math.round(vePerView[1] * 1000) / 1000,
         metabolomics: Math.round(vePerView[2] * 1000) / 1000,
-        total: Math.round(vePerView.reduce((a, b) => a + b, 0) / 3 * 1000) / 1000,
+        total: Math.round((vePerView.reduce((a, b) => a + b, 0) / 3) * 1000) / 1000,
       },
       topGenes: loadings.slice(0, 5),
       interpretation: `Factor ${k + 1} primarily driven by ${viewNames[dominantView]} layer (${(vePerView[dominantView] * 100).toFixed(1)}% var). Top gene: ${topGene}.`,
@@ -434,21 +430,26 @@ export function extractMOFAFactors(
 
 interface VAEWeights {
   // Encoder
-  W1: number[][]; b1: number[];     // Input (3 + nBatches) → 128
-  W2: number[][]; b2: number[];     // 128 → 64
-  Wmu: number[][]; bmu: number[];   // 64 → latent_dim (mean)
-  Wlv: number[][]; blv: number[];   // 64 → latent_dim (log-variance)
+  W1: number[][];
+  b1: number[]; // Input (3 + nBatches) → 128
+  W2: number[][];
+  b2: number[]; // 128 → 64
+  Wmu: number[][];
+  bmu: number[]; // 64 → latent_dim (mean)
+  Wlv: number[][];
+  blv: number[]; // 64 → latent_dim (log-variance)
   // Decoder
-  W3: number[][]; b3: number[];     // latent_dim → 64
-  W4: number[][]; b4: number[];     // 64 → 128
-  W5: number[][]; b5: number[];     // 128 → 3 (reconstruction)
+  W3: number[][];
+  b3: number[]; // latent_dim → 64
+  W4: number[][];
+  b4: number[]; // 64 → 128
+  W5: number[][];
+  b5: number[]; // 128 → 3 (reconstruction)
 }
 
 function initWeights(inputDim: number, latentDim: number, rng: SeededRNG): VAEWeights {
   const init = (rows: number, cols: number, scale: number = 0.1): number[][] =>
-    Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => rng.gaussian() * scale)
-    );
+    Array.from({ length: rows }, () => Array.from({ length: cols }, () => rng.gaussian() * scale));
   const biasInit = (n: number): number[] => new Array(n).fill(0);
 
   return {
@@ -469,8 +470,12 @@ function initWeights(inputDim: number, latentDim: number, rng: SeededRNG): VAEWe
   };
 }
 
-function relu(x: number): number { return Math.max(0, x); }
-function reluDeriv(x: number): number { return x > 0 ? 1 : 0; }
+function relu(x: number): number {
+  return Math.max(0, x);
+}
+function reluDeriv(x: number): number {
+  return x > 0 ? 1 : 0;
+}
 
 /**
  * Full forward pass storing all intermediate activations for backpropagation.
@@ -494,7 +499,7 @@ interface ForwardCache {
 }
 
 function forward(
-  x: number[],        // Input: [transcript, protein, metabolite, ...batch_onehot]
+  x: number[], // Input: [transcript, protein, metabolite, ...batch_onehot]
   w: VAEWeights,
   rng: SeededRNG,
 ): ForwardCache {
@@ -524,7 +529,8 @@ function forward(
   const epsilon = new Array(latentDim);
 
   for (let k = 0; k < latentDim; k++) {
-    let mu = w.bmu[k], lv = w.blv[k];
+    let mu = w.bmu[k],
+      lv = w.blv[k];
     for (let i = 0; i < h2.length; i++) {
       mu += h2[i] * (w.Wmu[i]?.[k] ?? 0);
       lv += h2[i] * (w.Wlv[i]?.[k] ?? 0);
@@ -555,7 +561,7 @@ function forward(
     h4.push(relu(s));
   }
 
-  const recon = [0, 1, 2].map(j => {
+  const recon = [0, 1, 2].map((j) => {
     let s = w.b5[j];
     for (let i = 0; i < h4.length; i++) s += h4[i] * (w.W5[i]?.[j] ?? 0);
     return s; // Linear output for reconstruction
@@ -609,9 +615,9 @@ export function trainMultimodalVAE(
   const inputDim = 3 + nBatches;
 
   // Normalize data (Z-score per modality)
-  const tVals = data.map(d => d.transcript ?? 0);
-  const pVals = data.map(d => d.protein ?? 0);
-  const mVals = data.map(d => d.metabolite ?? 0);
+  const tVals = data.map((d) => d.transcript ?? 0);
+  const pVals = data.map((d) => d.protein ?? 0);
+  const mVals = data.map((d) => d.metabolite ?? 0);
 
   const tMean = tVals.reduce((a, b) => a + b, 0) / n;
   const pMean = pVals.reduce((a, b) => a + b, 0) / n;
@@ -642,7 +648,9 @@ export function trainMultimodalVAE(
 
   // Training loop with full backpropagation through all layers
   for (let epoch = 0; epoch < epochs; epoch++) {
-    let totalLoss = 0, totalRecon = 0, totalKL = 0;
+    let totalLoss = 0,
+      totalRecon = 0,
+      totalKL = 0;
 
     for (let i = 0; i < n; i++) {
       const x = inputs[i];
@@ -853,7 +861,7 @@ export function predictPerturbation(
   data: OmicsRow[],
   vaeResult: VAETrainingResult,
 ): VAEPerturbationPrediction {
-  const idx = data.findIndex(d => d.gene === geneId);
+  const idx = data.findIndex((d) => d.gene === geneId);
   if (idx === -1) {
     return {
       geneId,
@@ -891,7 +899,16 @@ export function predictPerturbation(
   });
 
   // Predict metabolite shifts for related metabolites
-  const metaboliteNames = ['Acetyl-CoA', 'HMG-CoA', 'Mevalonate', 'IPP', 'FPP', 'Amorphadiene', 'Artemisinic acid', 'Artemisinin'];
+  const metaboliteNames = [
+    "Acetyl-CoA",
+    "HMG-CoA",
+    "Mevalonate",
+    "IPP",
+    "FPP",
+    "Amorphadiene",
+    "Artemisinic acid",
+    "Artemisinin",
+  ];
   const shifts = metaboliteNames.map((met, i) => {
     const distance = Math.abs(i - 5); // Distance from rate-limiting step (FPP → Amorphadiene)
     const attenuation = Math.exp(-distance * 0.3);
@@ -906,19 +923,20 @@ export function predictPerturbation(
   });
 
   // Metabolic efficiency change
-  const newEfficiency = Math.max(0, Math.min(1,
-    original.metabolicEfficiency + foldChange * 0.05 * (foldChange > 0 ? 1 : -1)
-  ));
+  const newEfficiency = Math.max(
+    0,
+    Math.min(1, original.metabolicEfficiency + foldChange * 0.05 * (foldChange > 0 ? 1 : -1)),
+  );
 
-  const direction = foldChange > 0 ? 'overexpression' : 'knockdown';
+  const direction = foldChange > 0 ? "overexpression" : "knockdown";
   const reasoning = [
     `${geneId} ${direction} by ${Math.abs(foldChange).toFixed(1)} log2 units.`,
-    `Transcript-protein correlation: ${(transcriptProteinCorr * 100).toFixed(0)}% — ${transcriptProteinCorr > 0.7 ? 'good concordance' : 'post-translational regulation detected'}.`,
-    `Predicted protein change: ${proteinChange > 0 ? '+' : ''}${proteinChange.toFixed(2)} log2 LFQ.`,
-    `Metabolome response: ${metaboliteChange > 0 ? '+' : ''}${metaboliteChange.toFixed(2)} log2 units (Michaelis-Menten saturation at high flux).`,
+    `Transcript-protein correlation: ${(transcriptProteinCorr * 100).toFixed(0)}% — ${transcriptProteinCorr > 0.7 ? "good concordance" : "post-translational regulation detected"}.`,
+    `Predicted protein change: ${proteinChange > 0 ? "+" : ""}${proteinChange.toFixed(2)} log2 LFQ.`,
+    `Metabolome response: ${metaboliteChange > 0 ? "+" : ""}${metaboliteChange.toFixed(2)} log2 units (Michaelis-Menten saturation at high flux).`,
     `Latent space shift magnitude: ${Math.sqrt(latentShift.reduce((s, v) => s + v * v, 0)).toFixed(3)}.`,
     `Metabolic efficiency: ${original.metabolicEfficiency.toFixed(3)} → ${newEfficiency.toFixed(3)}.`,
-  ].join(' ');
+  ].join(" ");
 
   return {
     geneId,
@@ -944,14 +962,14 @@ export function predictPerturbation(
  */
 export function computeMetabolicEfficiency(data: OmicsRow[]): MetabolicEfficiencyScore[] {
   // Compute ranges for normalization
-  const tVals = data.map(d => d.transcript ?? 0);
-  const pVals = data.map(d => d.protein ?? 0);
-  const mVals = data.map(d => d.metabolite ?? 0);
+  const tVals = data.map((d) => d.transcript ?? 0);
+  const pVals = data.map((d) => d.protein ?? 0);
+  const mVals = data.map((d) => d.metabolite ?? 0);
 
   const tRange = Math.max(...tVals) - Math.min(...tVals) || 1;
   const mRange = Math.max(...mVals) - Math.min(...mVals) || 1;
 
-  return data.map(d => {
+  return data.map((d) => {
     const t = d.transcript ?? 0;
     const p = d.protein ?? 0;
     const m = d.metabolite ?? 0;
@@ -1003,14 +1021,14 @@ function pcaProject(matrix: number[][], nComponents: number = 3): number[][] {
   for (const row of matrix) {
     for (let j = 0; j < d; j++) means[j] += row[j] / n;
   }
-  const centered = matrix.map(row => row.map((v, j) => v - means[j]));
+  const centered = matrix.map((row) => row.map((v, j) => v - means[j]));
 
   // Compute covariance matrix: C = (1/n) * X^T * X
   const cov = Array.from({ length: d }, () => new Array(d).fill(0));
   for (const row of centered) {
     for (let i = 0; i < d; i++) {
       for (let j = 0; j < d; j++) {
-        cov[i][j] += row[i] * row[j] / n;
+        cov[i][j] += (row[i] * row[j]) / n;
       }
     }
   }
@@ -1024,7 +1042,7 @@ function pcaProject(matrix: number[][], nComponents: number = 3): number[][] {
     // Initialize random vector (deterministic via seeded RNG)
     let v = Array.from({ length: d }, () => rng.next() - 0.5);
     let norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
-    v = v.map(x => x / norm);
+    v = v.map((x) => x / norm);
 
     // Power iteration
     for (let iter = 0; iter < 100; iter++) {
@@ -1045,7 +1063,7 @@ function pcaProject(matrix: number[][], nComponents: number = 3): number[][] {
       // Normalize
       norm = Math.sqrt(vNew.reduce((s, x) => s + x * x, 0));
       if (norm < 1e-10) break;
-      v = vNew.map(x => x / norm);
+      v = vNew.map((x) => x / norm);
     }
 
     // Compute eigenvalue
@@ -1062,7 +1080,7 @@ function pcaProject(matrix: number[][], nComponents: number = 3): number[][] {
   }
 
   // Project data onto eigenvectors
-  return centered.map(row => {
+  return centered.map((row) => {
     const projected = new Array(nComponents);
     for (let k = 0; k < nComponents; k++) {
       projected[k] = row.reduce((s, v, j) => s + v * eigenvectors[k][j], 0);
@@ -1090,16 +1108,9 @@ export interface PCABiplotResult {
  * @param data  - Array of OmicsRow with transcript, protein, metabolite values
  * @param nComponents - Number of components to extract (default 3)
  */
-export function computePCABiplot(
-  data: OmicsRow[],
-  nComponents: number = 3,
-): PCABiplotResult {
+export function computePCABiplot(data: OmicsRow[], nComponents: number = 3): PCABiplotResult {
   // Build matrix: n_genes x 3 [transcript, protein, metabolite]
-  const matrix = data.map(g => [
-    g.transcript ?? 0,
-    g.protein ?? 0,
-    g.metabolite ?? 0,
-  ]);
+  const matrix = data.map((g) => [g.transcript ?? 0, g.protein ?? 0, g.metabolite ?? 0]);
 
   const n = matrix.length;
   if (n === 0) return { loadings: [], eigenvalues: [], scores: [] };
@@ -1112,14 +1123,14 @@ export function computePCABiplot(
   for (const row of matrix) {
     for (let j = 0; j < d; j++) means[j] += row[j] / n;
   }
-  const centered = matrix.map(row => row.map((v, j) => v - means[j]));
+  const centered = matrix.map((row) => row.map((v, j) => v - means[j]));
 
   // Covariance matrix: C = (1/n) X^T X
   const cov = Array.from({ length: d }, () => new Array(d).fill(0));
   for (const row of centered) {
     for (let i = 0; i < d; i++) {
       for (let j = 0; j < d; j++) {
-        cov[i][j] += row[i] * row[j] / n;
+        cov[i][j] += (row[i] * row[j]) / n;
       }
     }
   }
@@ -1132,7 +1143,7 @@ export function computePCABiplot(
   for (let comp = 0; comp < nComponents; comp++) {
     let v = Array.from({ length: d }, () => rng.next() - 0.5);
     let norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
-    v = v.map(x => x / norm);
+    v = v.map((x) => x / norm);
 
     for (let iter = 0; iter < 100; iter++) {
       const vNew = new Array(d).fill(0);
@@ -1148,7 +1159,7 @@ export function computePCABiplot(
       }
       norm = Math.sqrt(vNew.reduce((s, x) => s + x * x, 0));
       if (norm < 1e-10) break;
-      v = vNew.map(x => x / norm);
+      v = vNew.map((x) => x / norm);
     }
 
     // Eigenvalue via Rayleigh quotient: v^T A v
@@ -1165,7 +1176,7 @@ export function computePCABiplot(
   }
 
   // Project centered data onto eigenvectors (scores)
-  const scores = centered.map(row => {
+  const scores = centered.map((row) => {
     const projected = new Array(nComponents);
     for (let k = 0; k < nComponents; k++) {
       projected[k] = row.reduce((s, val, j) => s + val * eigenvectors[k][j], 0);
@@ -1187,31 +1198,32 @@ export function exportEmbeddingsWithEfficiency(
   const points = vaeResult.latentPoints;
 
   // Extract latent dimensions
-  const matrix = points.map(p => p.z_mean);
+  const matrix = points.map((p) => p.z_mean);
 
   // PCA projection to 3D
   const projected = pcaProject(matrix, 3);
 
   // Normalize to [-1, 1]
-  const ranges = [0, 1, 2].map(k => {
-    const vals = projected.map(p => p[k] ?? 0);
+  const ranges = [0, 1, 2].map((k) => {
+    const vals = projected.map((p) => p[k] ?? 0);
     return { min: Math.min(...vals), max: Math.max(...vals) };
   });
 
-  const normalized = projected.map(p =>
-    p.map((v, k) => {
-      const r = ranges[k];
-      return r.max - r.min > 1e-6 ? ((v - r.min) / (r.max - r.min)) * 2 - 1 : 0;
-    }) as [number, number, number]
+  const normalized = projected.map(
+    (p) =>
+      p.map((v, k) => {
+        const r = ranges[k];
+        return r.max - r.min > 1e-6 ? ((v - r.min) / (r.max - r.min)) * 2 - 1 : 0;
+      }) as [number, number, number],
   );
 
   // Map efficiency to a single layer for EmbeddingPoint
-  const effMap = new Map(efficiencyScores.map(e => [e.geneId, e.score]));
+  const effMap = new Map(efficiencyScores.map((e) => [e.geneId, e.score]));
 
   return points.map((p, i) => ({
     id: p.id,
     gene: p.gene,
-    layer: 'metabolomics' as OmicsLayer, // Default layer for coloring
+    layer: "metabolomics" as OmicsLayer, // Default layer for coloring
     coords: normalized[i] ?? [0, 0, 0],
     normalizedValue: effMap.get(p.id) ?? p.metabolicEfficiency,
     rawValue: p.metabolicEfficiency,

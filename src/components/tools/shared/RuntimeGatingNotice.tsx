@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
-import type { RuntimeGatingDecision } from '../../../utils/runtimeGating';
-import { THEME } from '../../../theme';
+import { AlertTriangle, CheckCircle2, ShieldAlert } from "lucide-react";
+import { THEME } from "../../../theme";
+import type { RuntimeGatingDecision } from "../../../utils/runtimeGating";
+
 interface RuntimeGatingNoticeProps {
   decision: RuntimeGatingDecision;
   sourceLabel?: string;
@@ -15,50 +16,51 @@ export default function RuntimeGatingNotice({
   compact = false,
 }: RuntimeGatingNoticeProps) {
   const tone = decision.severity;
-  const colors = tone === 'block'
-    ? {
-        border: 'rgba(250,128,114,0.32)',
-        background: 'rgba(250,128,114,0.10)',
-        icon: THEME.CORAL,
-        label: 'Blocked',
-      }
-    : tone === 'warn'
+  const colors =
+    tone === "block"
       ? {
-          border: THEME.CHIP_BORDER_WARM,
-          background: 'rgba(231,199,169,0.14)',
-          icon: THEME.APRICOT,
-          label: 'Caution',
+          border: "rgba(250,128,114,0.32)",
+          background: "rgba(250,128,114,0.10)",
+          icon: THEME.CORAL,
+          label: "Blocked",
         }
-      : {
-          border: 'rgba(191,220,205,0.30)',
-          background: 'rgba(191,220,205,0.10)',
-          icon: THEME.MINT,
-          label: 'Allowed',
-        };
-  const Icon = tone === 'block' ? ShieldAlert : tone === 'warn' ? AlertTriangle : CheckCircle2;
+      : tone === "warn"
+        ? {
+            border: THEME.CHIP_BORDER_WARM,
+            background: "rgba(231,199,169,0.14)",
+            icon: THEME.APRICOT,
+            label: "Caution",
+          }
+        : {
+            border: "rgba(191,220,205,0.30)",
+            background: "rgba(191,220,205,0.10)",
+            icon: THEME.MINT,
+            label: "Allowed",
+          };
+  const Icon = tone === "block" ? ShieldAlert : tone === "warn" ? AlertTriangle : CheckCircle2;
 
   return (
     <div
       style={{
-        borderRadius: compact ? '10px' : '12px',
+        borderRadius: compact ? "10px" : "12px",
         border: `1px solid ${colors.border}`,
         background: colors.background,
-        padding: compact ? '8px 9px' : '10px 12px',
-        display: 'grid',
-        gap: compact ? '6px' : '8px',
+        padding: compact ? "8px 9px" : "10px 12px",
+        display: "grid",
+        gap: compact ? "6px" : "8px",
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-        <Icon size={compact ? 14 : 16} color={colors.icon} style={{ flexShrink: 0, marginTop: '1px' }} />
-        <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+        <Icon size={compact ? 14 : 16} color={colors.icon} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: compact ? '10px' : '11px',
+                fontSize: compact ? "10px" : "11px",
                 color: colors.icon,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
               }}
             >
               Runtime gate · {colors.label}
@@ -66,25 +68,33 @@ export default function RuntimeGatingNotice({
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: compact ? '10px' : '11px',
+                fontSize: compact ? "10px" : "11px",
                 color: THEME.LABEL,
-                overflowWrap: 'anywhere',
+                overflowWrap: "anywhere",
               }}
             >
-              {(sourceLabel ?? decision.sourceToolId ?? 'source').toUpperCase()} {'->'} {(targetLabel ?? decision.targetToolId).toUpperCase()}
+              {(sourceLabel ?? decision.sourceToolId ?? "source").toUpperCase()} {"->"}{" "}
+              {(targetLabel ?? decision.targetToolId).toUpperCase()}
             </span>
           </div>
-          <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '10px' : '11px', color: THEME.LABEL, lineHeight: 1.45 }}>
+          <div
+            style={{
+              fontFamily: THEME.SANS,
+              fontSize: compact ? "10px" : "11px",
+              color: THEME.LABEL,
+              lineHeight: 1.45,
+            }}
+          >
             {decision.reason}
           </div>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
         <span style={pillStyle(compact)}>
-          {decision.sourceValidity} {'->'} {decision.targetValidity}
+          {decision.sourceValidity} {"->"} {decision.targetValidity}
         </span>
         {decision.blockingAssumptionIds.map((id) => (
-          <span key={id} style={{ ...pillStyle(compact), color: THEME.CORAL, borderColor: 'rgba(250,128,114,0.30)' }}>
+          <span key={id} style={{ ...pillStyle(compact), color: THEME.CORAL, borderColor: "rgba(250,128,114,0.30)" }}>
             {id}
           </span>
         ))}
@@ -95,14 +105,14 @@ export default function RuntimeGatingNotice({
 
 function pillStyle(compact: boolean): React.CSSProperties {
   return {
-    borderRadius: '999px',
+    borderRadius: "999px",
     border: `1px solid ${THEME.BORDER}`,
     background: THEME.CHIP_NEUTRAL,
     color: THEME.VALUE,
-    padding: compact ? '2px 6px' : '3px 7px',
+    padding: compact ? "2px 6px" : "3px 7px",
     fontFamily: THEME.MONO,
-    fontSize: compact ? '10px' : '11px',
+    fontSize: compact ? "10px" : "11px",
     lineHeight: 1.2,
-    overflowWrap: 'anywhere',
+    overflowWrap: "anywhere",
   };
 }

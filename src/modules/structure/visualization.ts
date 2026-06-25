@@ -11,11 +11,7 @@
  * Reference: Abramson et al. (2024) Nature 630:493 — ipTM scoring
  */
 
-import type {
-  ResidueConfidence,
-  ChainConfidence,
-  ConfidenceSummary,
-} from './types';
+import type { ChainConfidence, ConfidenceSummary, ResidueConfidence } from "./types";
 
 // ── Color Scales ──────────────────────────────────────────────────────────────
 
@@ -25,11 +21,11 @@ import type {
  */
 function plddtColorScale(t: number): string {
   const stops: Array<{ t: number; r: number; g: number; b: number }> = [
-    { t: 0.0, r: 255, g: 0, b: 0 },       // red
-    { t: 0.25, r: 255, g: 165, b: 0 },     // orange
-    { t: 0.5, r: 255, g: 255, b: 0 },      // yellow
-    { t: 0.75, r: 0, g: 255, b: 255 },     // cyan
-    { t: 1.0, r: 0, g: 0, b: 255 },        // blue
+    { t: 0.0, r: 255, g: 0, b: 0 }, // red
+    { t: 0.25, r: 255, g: 165, b: 0 }, // orange
+    { t: 0.5, r: 255, g: 255, b: 0 }, // yellow
+    { t: 0.75, r: 0, g: 255, b: 255 }, // cyan
+    { t: 1.0, r: 0, g: 0, b: 255 }, // blue
   ];
   return interpolateStops(stops, t);
 }
@@ -40,11 +36,11 @@ function plddtColorScale(t: number): string {
  */
 function rainbowColorScale(t: number): string {
   const stops: Array<{ t: number; r: number; g: number; b: number }> = [
-    { t: 0.0, r: 255, g: 0, b: 0 },       // red
-    { t: 0.25, r: 255, g: 255, b: 0 },     // yellow
-    { t: 0.5, r: 0, g: 255, b: 0 },        // green
-    { t: 0.75, r: 0, g: 255, b: 255 },     // cyan
-    { t: 1.0, r: 0, g: 0, b: 255 },        // blue
+    { t: 0.0, r: 255, g: 0, b: 0 }, // red
+    { t: 0.25, r: 255, g: 255, b: 0 }, // yellow
+    { t: 0.5, r: 0, g: 255, b: 0 }, // green
+    { t: 0.75, r: 0, g: 255, b: 255 }, // cyan
+    { t: 1.0, r: 0, g: 0, b: 255 }, // blue
   ];
   return interpolateStops(stops, t);
 }
@@ -55,17 +51,14 @@ function rainbowColorScale(t: number): string {
  */
 function grayscaleColorScale(t: number): string {
   const v = Math.round(Math.max(0, Math.min(1, t)) * 255);
-  const hex = v.toString(16).padStart(2, '0');
+  const hex = v.toString(16).padStart(2, "0");
   return `${hex}${hex}${hex}`;
 }
 
 /**
  * Interpolate between color stops using linear blending.
  */
-function interpolateStops(
-  stops: Array<{ t: number; r: number; g: number; b: number }>,
-  t: number,
-): string {
+function interpolateStops(stops: Array<{ t: number; r: number; g: number; b: number }>, t: number): string {
   const clamped = Math.max(0, Math.min(1, t));
 
   // Find the two bounding stops
@@ -86,7 +79,7 @@ function interpolateStops(
   const g = Math.round(lo.g + alpha * (hi.g - lo.g));
   const b = Math.round(lo.b + alpha * (hi.b - lo.b));
 
-  const toHex = (v: number) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0');
+  const toHex = (v: number) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0");
   return `${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -98,11 +91,11 @@ function interpolateStops(
  * Thresholds follow the AlphaFold convention:
  *   very_high > 90, high 70-90, low 50-70, very_low < 50
  */
-function classifyPLDDT(score: number): ResidueConfidence['confidence'] {
-  if (score > 90) return 'very_high';
-  if (score >= 70) return 'high';
-  if (score >= 50) return 'low';
-  return 'very_low';
+function classifyPLDDT(score: number): ResidueConfidence["confidence"] {
+  if (score > 90) return "very_high";
+  if (score >= 70) return "high";
+  if (score >= 50) return "low";
+  return "very_low";
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -114,10 +107,7 @@ function classifyPLDDT(score: number): ResidueConfidence['confidence'] {
  * @param residueIndices - Optional explicit residue indices (defaults to 0-based sequential)
  * @returns Array of ResidueConfidence objects with index, score, level, and color
  */
-export function mapPLDDT(
-  plddtScores: number[],
-  residueIndices?: number[],
-): ResidueConfidence[] {
+export function mapPLDDT(plddtScores: number[], residueIndices?: number[]): ResidueConfidence[] {
   if (plddtScores.length === 0) return [];
 
   return plddtScores.map((score, i) => {
@@ -126,7 +116,7 @@ export function mapPLDDT(
       residueIndex: residueIndices ? residueIndices[i] : i,
       score: normalizedScore,
       confidence: classifyPLDDT(normalizedScore),
-      color: confidenceToColor(normalizedScore / 100, 'plddt'),
+      color: confidenceToColor(normalizedScore / 100, "plddt"),
     };
   });
 }
@@ -140,10 +130,7 @@ export function mapPLDDT(
  * @param chainIds - Chain identifiers to map
  * @returns Array of ChainConfidence objects
  */
-export function mapIPTM(
-  iptmScore: number,
-  chainIds: string[],
-): ChainConfidence[] {
+export function mapIPTM(iptmScore: number, chainIds: string[]): ChainConfidence[] {
   if (chainIds.length === 0) return [];
 
   const clampedScore = Math.max(0, Math.min(1, iptmScore));
@@ -151,7 +138,7 @@ export function mapIPTM(
   return chainIds.map((chainId) => ({
     chainId,
     score: clampedScore,
-    color: confidenceToColor(clampedScore, 'plddt'),
+    color: confidenceToColor(clampedScore, "plddt"),
   }));
 }
 
@@ -162,21 +149,18 @@ export function mapIPTM(
  * @param colorScale - Color scale to use: 'plddt' (default), 'rainbow', or 'grayscale'
  * @returns Hex color string (e.g. '#0000ff')
  */
-export function confidenceToColor(
-  confidence: number,
-  colorScale: 'plddt' | 'rainbow' | 'grayscale' = 'plddt',
-): string {
+export function confidenceToColor(confidence: number, colorScale: "plddt" | "rainbow" | "grayscale" = "plddt"): string {
   const t = Math.max(0, Math.min(1, confidence));
 
   let hex: string;
   switch (colorScale) {
-    case 'rainbow':
+    case "rainbow":
       hex = rainbowColorScale(t);
       break;
-    case 'grayscale':
+    case "grayscale":
       hex = grayscaleColorScale(t);
       break;
-    case 'plddt':
+    case "plddt":
     default:
       hex = plddtColorScale(t);
       break;
@@ -192,10 +176,7 @@ export function confidenceToColor(
  * @param chains - Per-chain confidence array
  * @returns JSON string (2-space indented)
  */
-export function exportConfidenceJSON(
-  residues: ResidueConfidence[],
-  chains: ChainConfidence[],
-): string {
+export function exportConfidenceJSON(residues: ResidueConfidence[], chains: ChainConfidence[]): string {
   return JSON.stringify({ residues, chains }, null, 2);
 }
 
@@ -208,11 +189,9 @@ export function exportConfidenceJSON(
  * @returns CSV string with header row
  */
 export function exportConfidenceCSV(residues: ResidueConfidence[]): string {
-  const header = 'residueIndex,score,confidence,color';
-  const rows = residues.map(
-    (r) => `${r.residueIndex},${r.score},${r.confidence},${r.color}`,
-  );
-  return [header, ...rows].join('\n');
+  const header = "residueIndex,score,confidence,color";
+  const rows = residues.map((r) => `${r.residueIndex},${r.score},${r.confidence},${r.color}`);
+  return [header, ...rows].join("\n");
 }
 
 /**
@@ -222,19 +201,14 @@ export function exportConfidenceCSV(residues: ResidueConfidence[]): string {
  * @param chains - Per-chain confidence array (used for overallConfidence)
  * @returns ConfidenceSummary with mean, min, max, std, counts, and overall confidence
  */
-export function computeConfidenceSummary(
-  residues: ResidueConfidence[],
-  chains: ChainConfidence[],
-): ConfidenceSummary {
+export function computeConfidenceSummary(residues: ResidueConfidence[], chains: ChainConfidence[]): ConfidenceSummary {
   if (residues.length === 0) {
     return {
       residueMean: 0,
       residueMin: 0,
       residueMax: 0,
       residueStd: 0,
-      overallConfidence: chains.length > 0
-        ? chains.reduce((sum, c) => sum + c.score, 0) / chains.length
-        : 0,
+      overallConfidence: chains.length > 0 ? chains.reduce((sum, c) => sum + c.score, 0) / chains.length : 0,
       counts: { very_high: 0, high: 0, low: 0, very_low: 0 },
     };
   }
@@ -253,9 +227,7 @@ export function computeConfidenceSummary(
     counts[r.confidence]++;
   }
 
-  const overallConfidence = chains.length > 0
-    ? chains.reduce((sum, c) => sum + c.score, 0) / chains.length
-    : 0;
+  const overallConfidence = chains.length > 0 ? chains.reduce((sum, c) => sum + c.score, 0) / chains.length : 0;
 
   return {
     residueMean: mean,

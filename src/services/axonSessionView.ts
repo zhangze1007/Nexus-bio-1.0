@@ -25,55 +25,55 @@
  * a single "off-domain" advisory step and no plan execution.
  */
 
-import type { AxonTask, AxonTaskStatus } from './AxonOrchestrator';
-import type { AxonPlan, AxonPlanStep, AxonPlanStepStatus } from './axonPlanner';
-import type { AxonLogEntry, AxonLogPhase } from './axonExecutionLog';
-import type { AxonDomainClassification } from './axonDomainClassifier';
-import type { EvidenceAdapterRegistry } from './axonEvidenceAdapter';
+import type { AxonTask, AxonTaskStatus } from "./AxonOrchestrator";
+import type { AxonDomainClassification } from "./axonDomainClassifier";
+import type { EvidenceAdapterRegistry } from "./axonEvidenceAdapter";
+import type { AxonLogEntry, AxonLogPhase } from "./axonExecutionLog";
+import type { AxonPlan, AxonPlanStep, AxonPlanStepStatus } from "./axonPlanner";
 
 export type AxonSessionStatus =
-  | 'idle'
-  | 'planning'
-  | 'running'
-  | 'waiting'
-  | 'completed'
-  | 'partial'
-  | 'failed'
-  | 'cancelled'
-  | 'interrupted'
-  | 'off-domain'
-  | 'unsupported';
+  | "idle"
+  | "planning"
+  | "running"
+  | "waiting"
+  | "completed"
+  | "partial"
+  | "failed"
+  | "cancelled"
+  | "interrupted"
+  | "off-domain"
+  | "unsupported";
 
 export type AxonSessionStepKind =
-  | 'classification'
-  | 'planning'
-  | 'context-attached'
-  | 'evidence-check'
-  | 'plan-step'
-  | 'unsupported-step'
-  | 'off-domain-advisory'
-  | 'writeback'
-  | 'interrupted'
-  | 'blocked-dependency';
+  | "classification"
+  | "planning"
+  | "context-attached"
+  | "evidence-check"
+  | "plan-step"
+  | "unsupported-step"
+  | "off-domain-advisory"
+  | "writeback"
+  | "interrupted"
+  | "blocked-dependency";
 
 export type AxonSessionStepStatus =
-  | 'planned'
-  | 'running'
-  | 'waiting'
-  | 'done'
-  | 'failed'
-  | 'cancelled'
-  | 'unsupported'
-  | 'blocked'
-  | 'interrupted'
-  | 'info';
+  | "planned"
+  | "running"
+  | "waiting"
+  | "done"
+  | "failed"
+  | "cancelled"
+  | "unsupported"
+  | "blocked"
+  | "interrupted"
+  | "info";
 
 /**
  * Preview shapes. Each is `null`able. Renderers switch on `kind` and
  * gracefully handle missing fields.
  */
 export interface AxonPlannerPreview {
-  kind: 'planner';
+  kind: "planner";
   stepCount: number;
   toolChain: string;
   warnings: string[];
@@ -81,7 +81,7 @@ export interface AxonPlannerPreview {
 }
 
 export interface AxonEvidencePreview {
-  kind: 'evidence';
+  kind: "evidence";
   sourcesAvailable: string[];
   sourcesUnimplemented: string[];
   savedEvidenceCount: number;
@@ -89,7 +89,7 @@ export interface AxonEvidencePreview {
 }
 
 export interface AxonContextPreview {
-  kind: 'context';
+  kind: "context";
   targetProduct: string | null;
   evidenceSelected: number;
   evidenceTotal: number;
@@ -98,33 +98,33 @@ export interface AxonContextPreview {
 }
 
 export interface AxonMetadataPreview {
-  kind: 'metadata';
+  kind: "metadata";
   entries: Array<{ label: string; value: string }>;
 }
 
 export interface AxonResultPreview {
-  kind: 'result';
+  kind: "result";
   tool: string;
   summary: string;
   entries: Array<{ label: string; value: string }>;
 }
 
 export interface AxonWritebackPreview {
-  kind: 'writeback';
+  kind: "writeback";
   tool: string;
-  status: 'done' | 'error';
+  status: "done" | "error";
   summary: string;
 }
 
 export interface AxonOffDomainPreview {
-  kind: 'off-domain';
+  kind: "off-domain";
   reason: string;
   signals: string[];
-  category: AxonDomainClassification['category'];
+  category: AxonDomainClassification["category"];
 }
 
 export interface AxonUnavailablePreview {
-  kind: 'unavailable';
+  kind: "unavailable";
   reason: string;
 }
 
@@ -189,7 +189,7 @@ export interface BuildSessionInput {
   tasks: AxonTask[];
   logs: AxonLogEntry[];
   domain: AxonDomainClassification | null;
-  evidenceRegistry?: Pick<EvidenceAdapterRegistry, 'list'> | null;
+  evidenceRegistry?: Pick<EvidenceAdapterRegistry, "list"> | null;
   evidenceSavedCount?: number;
   currentToolId?: string | null;
   hadInterruptedTasks?: boolean;
@@ -206,21 +206,21 @@ export interface BuildSessionInput {
 // ── Small helpers ────────────────────────────────────────────────────
 
 const TASK_STATUS_TO_STEP: Record<AxonTaskStatus, AxonSessionStepStatus> = {
-  pending: 'waiting',
-  running: 'running',
-  done: 'done',
-  error: 'failed',
-  cancelled: 'cancelled',
+  pending: "waiting",
+  running: "running",
+  done: "done",
+  error: "failed",
+  cancelled: "cancelled",
 };
 
 const PLAN_STATUS_TO_STEP: Record<AxonPlanStepStatus, AxonSessionStepStatus> = {
-  planned: 'planned',
-  enqueued: 'waiting',
-  running: 'running',
-  done: 'done',
-  error: 'failed',
-  cancelled: 'cancelled',
-  unsupported: 'unsupported',
+  planned: "planned",
+  enqueued: "waiting",
+  running: "running",
+  done: "done",
+  error: "failed",
+  cancelled: "cancelled",
+  unsupported: "unsupported",
 };
 
 function logsForPlan(planId: string | null, logs: AxonLogEntry[]): AxonLogEntry[] {
@@ -234,82 +234,84 @@ function logsForTask(taskId: string | null | undefined, logs: AxonLogEntry[]): A
 }
 
 function buildResultPreview(task: AxonTask): AxonResultPreview | AxonUnavailablePreview {
-  if (task.status !== 'done' || !task.result || typeof task.result !== 'object') {
-    if (task.status === 'error') {
+  if (task.status !== "done" || !task.result || typeof task.result !== "object") {
+    if (task.status === "error") {
       return {
-        kind: 'unavailable',
-        reason: task.error ?? 'Task failed — no result available',
+        kind: "unavailable",
+        reason: task.error ?? "Task failed — no result available",
       };
     }
     return {
-      kind: 'unavailable',
-      reason: 'No result captured for this step yet',
+      kind: "unavailable",
+      reason: "No result captured for this step yet",
     };
   }
   const r = task.result as Record<string, unknown>;
   const entries: Array<{ label: string; value: string }> = [];
-  if (task.tool === 'pathd') {
-    if (typeof r.nodeCount === 'number') entries.push({ label: 'Nodes', value: String(r.nodeCount) });
-    if (typeof r.bottleneckCount === 'number') {
-      entries.push({ label: 'Bottlenecks', value: String(r.bottleneckCount) });
+  if (task.tool === "pathd") {
+    if (typeof r.nodeCount === "number") entries.push({ label: "Nodes", value: String(r.nodeCount) });
+    if (typeof r.bottleneckCount === "number") {
+      entries.push({ label: "Bottlenecks", value: String(r.bottleneckCount) });
     }
-    if (typeof r.provider === 'string') entries.push({ label: 'Provider', value: r.provider });
-  } else if (task.tool === 'fbasim') {
-    if (typeof r.species === 'string') entries.push({ label: 'Species', value: r.species });
-    if (typeof r.objective === 'string') entries.push({ label: 'Objective', value: r.objective });
-    if (typeof r.objectiveValue === 'number') {
-      entries.push({ label: 'Objective value', value: r.objectiveValue.toFixed(3) });
+    if (typeof r.provider === "string") entries.push({ label: "Provider", value: r.provider });
+  } else if (task.tool === "fbasim") {
+    if (typeof r.species === "string") entries.push({ label: "Species", value: r.species });
+    if (typeof r.objective === "string") entries.push({ label: "Objective", value: r.objective });
+    if (typeof r.objectiveValue === "number") {
+      entries.push({ label: "Objective value", value: r.objectiveValue.toFixed(3) });
     }
-    if (typeof r.fluxCount === 'number') entries.push({ label: 'Flux rows', value: String(r.fluxCount) });
+    if (typeof r.fluxCount === "number") entries.push({ label: "Flux rows", value: String(r.fluxCount) });
   } else {
     for (const [k, v] of Object.entries(r)) {
       if (entries.length >= 4) break;
-      if (typeof v === 'string' && v.length <= 60) entries.push({ label: k, value: v });
-      else if (typeof v === 'number') entries.push({ label: k, value: String(v) });
-      else if (typeof v === 'boolean') entries.push({ label: k, value: v ? 'yes' : 'no' });
+      if (typeof v === "string" && v.length <= 60) entries.push({ label: k, value: v });
+      else if (typeof v === "number") entries.push({ label: k, value: String(v) });
+      else if (typeof v === "boolean") entries.push({ label: k, value: v ? "yes" : "no" });
     }
   }
 
-  const summary = entries.length > 0
-    ? entries.slice(0, 3).map((e) => `${e.label}: ${e.value}`).join(' · ')
-    : `${task.tool.toUpperCase()} complete`;
-  return { kind: 'result', tool: task.tool, summary, entries };
+  const summary =
+    entries.length > 0
+      ? entries
+          .slice(0, 3)
+          .map((e) => `${e.label}: ${e.value}`)
+          .join(" · ")
+      : `${task.tool.toUpperCase()} complete`;
+  return { kind: "result", tool: task.tool, summary, entries };
 }
 
 function buildMetadataPreview(logs: AxonLogEntry[]): AxonMetadataPreview | AxonUnavailablePreview {
   const withMeta = logs.find((l) => l.metadata && Object.keys(l.metadata).length > 0);
   if (!withMeta || !withMeta.metadata) {
-    return { kind: 'unavailable', reason: 'No metadata recorded for this step' };
+    return { kind: "unavailable", reason: "No metadata recorded for this step" };
   }
   const entries: Array<{ label: string; value: string }> = [];
   for (const [k, v] of Object.entries(withMeta.metadata)) {
     if (entries.length >= 6) break;
-    entries.push({ label: k, value: typeof v === 'string' ? v : JSON.stringify(v) });
+    entries.push({ label: k, value: typeof v === "string" ? v : JSON.stringify(v) });
   }
-  return { kind: 'metadata', entries };
+  return { kind: "metadata", entries };
 }
 
-function evidencePreview(
-  registry: BuildSessionInput['evidenceRegistry'],
-  savedCount: number,
-): AxonEvidencePreview {
+function evidencePreview(registry: BuildSessionInput["evidenceRegistry"], savedCount: number): AxonEvidencePreview {
   const available: string[] = [];
   const unimplemented: string[] = [];
   if (registry) {
     for (const adapter of registry.list()) {
-      if (adapter.status === 'available') available.push(adapter.label);
+      if (adapter.status === "available") available.push(adapter.label);
       else unimplemented.push(adapter.label);
     }
   } else {
-    available.push('Workbench evidence ledger');
+    available.push("Workbench evidence ledger");
   }
-  const note = available.length === 0
-    ? 'No evidence adapters registered.'
-    : unimplemented.length === 0
-      ? 'All registered evidence adapters are wired.'
-      : `${available.length} adapter(s) wired, ${unimplemented.length} marked as extension seams.`;
+  const note =
+    available.length === 0
+      ? "No evidence adapters registered."
+      : unimplemented.length === 0
+        ? "All registered evidence adapters are wired."
+        : `${available.length} adapter(s) wired, ${unimplemented.length} marked as extension seams.`;
   return {
-    kind: 'evidence',
+    kind: "evidence",
     sourcesAvailable: available,
     sourcesUnimplemented: unimplemented,
     savedEvidenceCount: savedCount,
@@ -317,14 +319,14 @@ function evidencePreview(
   };
 }
 
-function contextPreview(ctx: BuildSessionInput['context'], currentTool: string | null): AxonContextPreview {
+function contextPreview(ctx: BuildSessionInput["context"], currentTool: string | null): AxonContextPreview {
   return {
-    kind: 'context',
+    kind: "context",
     targetProduct: ctx?.targetProduct ?? null,
     evidenceSelected: ctx?.evidenceSelected ?? 0,
     evidenceTotal: ctx?.evidenceTotal ?? 0,
     currentTool,
-    summary: ctx?.summary ?? 'No active workbench context',
+    summary: ctx?.summary ?? "No active workbench context",
   };
 }
 
@@ -336,20 +338,20 @@ function shortenRequest(request: string, max = 96): string {
 // ── Step builders ────────────────────────────────────────────────────
 
 function classificationStep(domain: AxonDomainClassification): AxonSessionStep {
-  const isOff = domain.category === 'off-domain';
-  const isAmbiguous = domain.category === 'ambiguous';
+  const isOff = domain.category === "off-domain";
+  const isAmbiguous = domain.category === "ambiguous";
   return {
-    id: 'step-classification',
-    kind: 'classification',
-    title: 'Classified request domain',
-    status: 'done',
+    id: "step-classification",
+    kind: "classification",
+    title: "Classified request domain",
+    status: "done",
     detail: domain.reason,
     preview: {
-      kind: 'metadata',
+      kind: "metadata",
       entries: [
-        { label: 'Category', value: domain.category },
-        { label: 'Signals', value: domain.signals.slice(0, 4).join(', ') || '—' },
-        { label: 'Plan', value: domain.shouldPlan ? 'eligible' : 'not eligible' },
+        { label: "Category", value: domain.category },
+        { label: "Signals", value: domain.signals.slice(0, 4).join(", ") || "—" },
+        { label: "Plan", value: domain.shouldPlan ? "eligible" : "not eligible" },
       ],
     },
     logs: [],
@@ -360,14 +362,14 @@ function classificationStep(domain: AxonDomainClassification): AxonSessionStep {
 
 function offDomainAdvisoryStep(domain: AxonDomainClassification): AxonSessionStep {
   return {
-    id: 'step-off-domain',
-    kind: 'off-domain-advisory',
-    title: 'Query routed outside Nexus-Bio scope',
-    status: 'info',
+    id: "step-off-domain",
+    kind: "off-domain-advisory",
+    title: "Query routed outside Nexus-Bio scope",
+    status: "info",
     detail:
-      'This request does not map to a Nexus-Bio scientific tool. The planner is not run and no biosynthesis prompt is invoked.',
+      "This request does not map to a Nexus-Bio scientific tool. The planner is not run and no biosynthesis prompt is invoked.",
     preview: {
-      kind: 'off-domain',
+      kind: "off-domain",
       reason: domain.reason,
       signals: domain.signals,
       category: domain.category,
@@ -380,99 +382,92 @@ function planningStep(plan: AxonPlan, logs: AxonLogEntry[]): AxonSessionStep {
   const planLogs = logsForPlan(plan.id, logs);
   return {
     id: `step-planning-${plan.id}`,
-    kind: 'planning',
-    title: 'Built deterministic plan',
-    status: 'done',
+    kind: "planning",
+    title: "Built deterministic plan",
+    status: "done",
     detail:
       plan.steps.length === 0
-        ? 'Planner returned no actionable steps — warning recorded.'
-        : `Planner proposed ${plan.steps.length} step(s): ${plan.steps.map((s) => s.tool).join(' → ')}`,
+        ? "Planner returned no actionable steps — warning recorded."
+        : `Planner proposed ${plan.steps.length} step(s): ${plan.steps.map((s) => s.tool).join(" → ")}`,
     planStepId: undefined,
     startedAt: plan.createdAt,
     preview: {
-      kind: 'planner',
+      kind: "planner",
       stepCount: plan.steps.length,
-      toolChain: plan.steps.map((s) => s.tool.toUpperCase()).join(' → ') || '—',
+      toolChain: plan.steps.map((s) => s.tool.toUpperCase()).join(" → ") || "—",
       warnings: plan.warnings,
       request: shortenRequest(plan.request),
     },
-    logs: planLogs.filter((l) => l.phase === 'plan-created' || l.phase === 'plan-warning'),
+    logs: planLogs.filter((l) => l.phase === "plan-created" || l.phase === "plan-warning"),
   };
 }
 
 function contextStep(
   plan: AxonPlan,
   logs: AxonLogEntry[],
-  ctx: BuildSessionInput['context'],
+  ctx: BuildSessionInput["context"],
   currentTool: string | null,
 ): AxonSessionStep {
   const planLogs = logsForPlan(plan.id, logs);
-  const contextLog = planLogs.find((l) => l.phase === 'context-attached');
+  const contextLog = planLogs.find((l) => l.phase === "context-attached");
   return {
     id: `step-context-${plan.id}`,
-    kind: 'context-attached',
-    title: 'Attached workbench context',
-    status: contextLog ? 'done' : 'planned',
-    detail: ctx?.summary ?? 'No active workbench context',
+    kind: "context-attached",
+    title: "Attached workbench context",
+    status: contextLog ? "done" : "planned",
+    detail: ctx?.summary ?? "No active workbench context",
     startedAt: contextLog?.timestamp,
     preview: contextPreview(ctx, currentTool),
     logs: contextLog ? [contextLog] : [],
   };
 }
 
-function evidenceStep(
-  registry: BuildSessionInput['evidenceRegistry'],
-  savedCount: number,
-): AxonSessionStep {
+function evidenceStep(registry: BuildSessionInput["evidenceRegistry"], savedCount: number): AxonSessionStep {
   return {
-    id: 'step-evidence-check',
-    kind: 'evidence-check',
-    title: 'Checked evidence adapters',
-    status: 'done',
+    id: "step-evidence-check",
+    kind: "evidence-check",
+    title: "Checked evidence adapters",
+    status: "done",
     detail: `Workbench evidence ledger holds ${savedCount} saved item(s); literature adapter seams listed as not wired.`,
     preview: evidencePreview(registry, savedCount),
     logs: [],
   };
 }
 
-function planStepCard(
-  step: AxonPlanStep,
-  plan: AxonPlan,
-  tasks: AxonTask[],
-  logs: AxonLogEntry[],
-): AxonSessionStep {
+function planStepCard(step: AxonPlanStep, plan: AxonPlan, tasks: AxonTask[], logs: AxonLogEntry[]): AxonSessionStep {
   const task = step.taskId ? tasks.find((t) => t.id === step.taskId) : undefined;
-  const status = step.status === 'unsupported'
-    ? 'unsupported'
-    : task
-      ? TASK_STATUS_TO_STEP[task.status]
-      : PLAN_STATUS_TO_STEP[step.status];
+  const status =
+    step.status === "unsupported"
+      ? "unsupported"
+      : task
+        ? TASK_STATUS_TO_STEP[task.status]
+        : PLAN_STATUS_TO_STEP[step.status];
   const tool = step.tool;
   const taskLogs = task ? logsForTask(task.id, logs) : logsForPlan(plan.id, logs).filter((l) => !l.taskId);
 
   let preview: AxonSessionPreview;
-  if (step.status === 'unsupported') {
+  if (step.status === "unsupported") {
     preview = {
-      kind: 'metadata',
+      kind: "metadata",
       entries: [
-        { label: 'Tool', value: step.tool },
-        { label: 'Reason', value: 'No adapter registered for this tool' },
-        { label: 'Objective', value: step.objective },
+        { label: "Tool", value: step.tool },
+        { label: "Reason", value: "No adapter registered for this tool" },
+        { label: "Objective", value: step.objective },
       ],
     };
-  } else if (task && task.status === 'done') {
+  } else if (task && task.status === "done") {
     preview = buildResultPreview(task);
-  } else if (task && task.status === 'error') {
-    preview = { kind: 'unavailable', reason: task.error ?? 'Task failed' };
-  } else if (task && task.status === 'cancelled') {
-    preview = { kind: 'unavailable', reason: 'Task cancelled before completion' };
+  } else if (task && task.status === "error") {
+    preview = { kind: "unavailable", reason: task.error ?? "Task failed" };
+  } else if (task && task.status === "cancelled") {
+    preview = { kind: "unavailable", reason: "Task cancelled before completion" };
   } else {
     preview = buildMetadataPreview(taskLogs);
   }
 
   return {
     id: `step-plan-${step.id}`,
-    kind: step.status === 'unsupported' ? 'unsupported-step' : 'plan-step',
+    kind: step.status === "unsupported" ? "unsupported-step" : "plan-step",
     title: step.title,
     status,
     detail: step.objective,
@@ -487,19 +482,19 @@ function planStepCard(
 }
 
 function interruptedStep(logs: AxonLogEntry[]): AxonSessionStep | null {
-  const interruptedLog = logs.find((l) => l.phase === 'interrupted');
+  const interruptedLog = logs.find((l) => l.phase === "interrupted");
   if (!interruptedLog) return null;
   return {
     id: `step-interrupted-${interruptedLog.id}`,
-    kind: 'interrupted',
-    title: 'Session interrupted',
-    status: 'interrupted',
+    kind: "interrupted",
+    title: "Session interrupted",
+    status: "interrupted",
     detail: interruptedLog.message,
     preview: {
-      kind: 'metadata',
-      entries: Object.entries(interruptedLog.metadata ?? { note: 'previous session ended mid-run' })
+      kind: "metadata",
+      entries: Object.entries(interruptedLog.metadata ?? { note: "previous session ended mid-run" })
         .slice(0, 4)
-        .map(([k, v]) => ({ label: k, value: typeof v === 'string' ? v : JSON.stringify(v) })),
+        .map(([k, v]) => ({ label: k, value: typeof v === "string" ? v : JSON.stringify(v) })),
     },
     logs: [interruptedLog],
     startedAt: interruptedLog.timestamp,
@@ -507,23 +502,23 @@ function interruptedStep(logs: AxonLogEntry[]): AxonSessionStep | null {
 }
 
 function blockedDependencyStep(logs: AxonLogEntry[], tasks: AxonTask[]): AxonSessionStep[] {
-  const blockedLogs = logs.filter((l) => l.phase === 'blocked-dependency');
+  const blockedLogs = logs.filter((l) => l.phase === "blocked-dependency");
   return blockedLogs.map((log) => {
     const task = log.taskId ? tasks.find((t) => t.id === log.taskId) : undefined;
     return {
       id: `step-blocked-${log.id}`,
-      kind: 'blocked-dependency',
-      title: 'Downstream step blocked',
-      status: 'blocked',
+      kind: "blocked-dependency",
+      title: "Downstream step blocked",
+      status: "blocked",
       detail: log.message,
       taskId: log.taskId,
       tool: log.tool,
       startedAt: log.timestamp,
       preview: {
-        kind: 'metadata',
+        kind: "metadata",
         entries: [
-          { label: 'Task', value: task?.label ?? log.taskId ?? '—' },
-          { label: 'Reason', value: 'Upstream step failed or was cancelled' },
+          { label: "Task", value: task?.label ?? log.taskId ?? "—" },
+          { label: "Reason", value: "Upstream step failed or was cancelled" },
         ],
       },
       logs: [log],
@@ -532,23 +527,23 @@ function blockedDependencyStep(logs: AxonLogEntry[], tasks: AxonTask[]): AxonSes
 }
 
 function writebackStep(logs: AxonLogEntry[], tasks: AxonTask[]): AxonSessionStep[] {
-  const writebackLogs = logs.filter((l) => l.phase === 'writeback-emitted');
+  const writebackLogs = logs.filter((l) => l.phase === "writeback-emitted");
   return writebackLogs.map((log) => {
     const task = log.taskId ? tasks.find((t) => t.id === log.taskId) : undefined;
     const meta = log.metadata ?? {};
-    const status = (typeof meta.status === 'string' && meta.status === 'error' ? 'error' : 'done') as 'done' | 'error';
+    const status = (typeof meta.status === "string" && meta.status === "error" ? "error" : "done") as "done" | "error";
     return {
       id: `step-writeback-${log.id}`,
-      kind: 'writeback',
-      title: `Writeback · ${log.tool?.toUpperCase() ?? 'AXON'}`,
-      status: status === 'done' ? 'done' : 'failed',
+      kind: "writeback",
+      title: `Writeback · ${log.tool?.toUpperCase() ?? "AXON"}`,
+      status: status === "done" ? "done" : "failed",
       detail: log.message,
       taskId: log.taskId,
       tool: log.tool,
       startedAt: log.timestamp,
       preview: {
-        kind: 'writeback',
-        tool: log.tool ?? 'axon',
+        kind: "writeback",
+        tool: log.tool ?? "axon",
         status,
         summary: task ? task.label : log.message,
       },
@@ -566,29 +561,27 @@ function deriveStatus(params: {
   interrupted: boolean;
 }): AxonSessionStatus {
   const { domain, plan, tasks, interrupted } = params;
-  if (interrupted) return 'interrupted';
-  if (domain && domain.category === 'off-domain') return 'off-domain';
-  if (!plan) return 'idle';
-  if (plan.steps.length === 0) return 'unsupported';
-  const supportedSteps = plan.steps.filter((s) => s.status !== 'unsupported');
-  if (supportedSteps.length === 0) return 'unsupported';
-  const planSupportedTaskIds = new Set(
-    supportedSteps.map((s) => s.taskId).filter((id): id is string => Boolean(id)),
-  );
+  if (interrupted) return "interrupted";
+  if (domain && domain.category === "off-domain") return "off-domain";
+  if (!plan) return "idle";
+  if (plan.steps.length === 0) return "unsupported";
+  const supportedSteps = plan.steps.filter((s) => s.status !== "unsupported");
+  if (supportedSteps.length === 0) return "unsupported";
+  const planSupportedTaskIds = new Set(supportedSteps.map((s) => s.taskId).filter((id): id is string => Boolean(id)));
   const planTasks = tasks.filter((t) => planSupportedTaskIds.has(t.id));
-  const anyRunning = planTasks.some((t) => t.status === 'running');
-  if (anyRunning) return 'running';
-  const anyPending = planTasks.some((t) => t.status === 'pending');
-  if (anyPending) return 'waiting';
-  if (planTasks.length === 0) return 'planning';
-  const anyError = planTasks.some((t) => t.status === 'error');
-  const anyCancelled = planTasks.some((t) => t.status === 'cancelled');
-  const allDone = planTasks.every((t) => t.status === 'done');
-  if (allDone) return 'completed';
-  if (anyError && planTasks.some((t) => t.status === 'done')) return 'partial';
-  if (anyError) return 'failed';
-  if (anyCancelled) return 'cancelled';
-  return 'waiting';
+  const anyRunning = planTasks.some((t) => t.status === "running");
+  if (anyRunning) return "running";
+  const anyPending = planTasks.some((t) => t.status === "pending");
+  if (anyPending) return "waiting";
+  if (planTasks.length === 0) return "planning";
+  const anyError = planTasks.some((t) => t.status === "error");
+  const anyCancelled = planTasks.some((t) => t.status === "cancelled");
+  const allDone = planTasks.every((t) => t.status === "done");
+  if (allDone) return "completed";
+  if (anyError && planTasks.some((t) => t.status === "done")) return "partial";
+  if (anyError) return "failed";
+  if (anyCancelled) return "cancelled";
+  return "waiting";
 }
 
 function deriveOutcome(steps: AxonSessionStep[]): AxonSessionOutcome {
@@ -600,16 +593,16 @@ function deriveOutcome(steps: AxonSessionStep[]): AxonSessionOutcome {
   let interrupted = 0;
   let writebackCount = 0;
   for (const step of steps) {
-    if (step.kind === 'plan-step' || step.kind === 'unsupported-step') {
-      if (step.status === 'done') completed += 1;
-      else if (step.status === 'failed') failed += 1;
-      else if (step.status === 'cancelled') cancelled += 1;
-      else if (step.status === 'unsupported') unsupported += 1;
-      else if (step.status === 'blocked') blocked += 1;
+    if (step.kind === "plan-step" || step.kind === "unsupported-step") {
+      if (step.status === "done") completed += 1;
+      else if (step.status === "failed") failed += 1;
+      else if (step.status === "cancelled") cancelled += 1;
+      else if (step.status === "unsupported") unsupported += 1;
+      else if (step.status === "blocked") blocked += 1;
     }
-    if (step.kind === 'blocked-dependency') blocked += 1;
-    if (step.kind === 'interrupted') interrupted += 1;
-    if (step.kind === 'writeback') writebackCount += 1;
+    if (step.kind === "blocked-dependency") blocked += 1;
+    if (step.kind === "interrupted") interrupted += 1;
+    if (step.kind === "writeback") writebackCount += 1;
   }
   const userActionNeeded = failed > 0 || cancelled > 0 || blocked > 0 || interrupted > 0;
   const parts: string[] = [];
@@ -620,7 +613,7 @@ function deriveOutcome(steps: AxonSessionStep[]): AxonSessionOutcome {
   if (blocked) parts.push(`${blocked} blocked`);
   if (interrupted) parts.push(`${interrupted} interrupted`);
   if (writebackCount) parts.push(`${writebackCount} writeback`);
-  const headline = parts.length === 0 ? 'No steps executed yet.' : parts.join(' · ');
+  const headline = parts.length === 0 ? "No steps executed yet." : parts.join(" · ");
   return {
     completed,
     failed,
@@ -635,28 +628,24 @@ function deriveOutcome(steps: AxonSessionStep[]): AxonSessionOutcome {
 }
 
 function deriveCurrentStepId(steps: AxonSessionStep[]): string | null {
-  const running = steps.find((s) => s.status === 'running');
+  const running = steps.find((s) => s.status === "running");
   if (running) return running.id;
-  const waiting = steps.find((s) => s.status === 'waiting');
+  const waiting = steps.find((s) => s.status === "waiting");
   if (waiting) return waiting.id;
-  const blocked = steps.find((s) => s.status === 'blocked');
+  const blocked = steps.find((s) => s.status === "blocked");
   if (blocked) return blocked.id;
   // Done — pick last step.
   return steps.length > 0 ? steps[steps.length - 1].id : null;
 }
 
-function buildTitle(
-  plan: AxonPlan | null,
-  domain: AxonDomainClassification | null,
-  request: string | null,
-): string {
-  if (domain && domain.category === 'off-domain') return 'Off-domain request · no plan';
+function buildTitle(plan: AxonPlan | null, domain: AxonDomainClassification | null, request: string | null): string {
+  if (domain && domain.category === "off-domain") return "Off-domain request · no plan";
   if (plan && plan.steps.length > 0) {
-    return `Session · ${plan.steps.map((s) => s.tool.toUpperCase()).join(' → ')}`;
+    return `Session · ${plan.steps.map((s) => s.tool.toUpperCase()).join(" → ")}`;
   }
-  if (plan) return 'Session · planner returned no steps';
-  if (request) return 'Session · awaiting plan';
-  return 'Session · idle';
+  if (plan) return "Session · planner returned no steps";
+  if (request) return "Session · awaiting plan";
+  return "Session · idle";
 }
 
 export function buildAxonSession(input: BuildSessionInput): AxonSession {
@@ -677,7 +666,7 @@ export function buildAxonSession(input: BuildSessionInput): AxonSession {
 
   if (domain) {
     steps.push(classificationStep(domain));
-    if (domain.category === 'off-domain') {
+    if (domain.category === "off-domain") {
       steps.push(offDomainAdvisoryStep(domain));
     }
   }
@@ -685,7 +674,7 @@ export function buildAxonSession(input: BuildSessionInput): AxonSession {
   const interruptedCard = hadInterruptedTasks ? interruptedStep(logs) : null;
   if (interruptedCard) steps.push(interruptedCard);
 
-  if (plan && (!domain || domain.category !== 'off-domain')) {
+  if (plan && (!domain || domain.category !== "off-domain")) {
     steps.push(planningStep(plan, logs));
     steps.push(contextStep(plan, logs, context, currentToolId));
     steps.push(evidenceStep(evidenceRegistry ?? null, evidenceSavedCount));
@@ -695,15 +684,19 @@ export function buildAxonSession(input: BuildSessionInput): AxonSession {
   }
 
   // Orphan tasks (no plan link) — surface them honestly, not hidden.
-  const linkedTaskIds = new Set(
-    plan?.steps.map((s) => s.taskId).filter((id): id is string => Boolean(id)) ?? [],
-  );
+  const linkedTaskIds = new Set(plan?.steps.map((s) => s.taskId).filter((id): id is string => Boolean(id)) ?? []);
   for (const task of tasks) {
     if (linkedTaskIds.has(task.id)) continue;
-    if (task.status === 'running' || task.status === 'pending' || task.status === 'done' || task.status === 'error' || task.status === 'cancelled') {
+    if (
+      task.status === "running" ||
+      task.status === "pending" ||
+      task.status === "done" ||
+      task.status === "error" ||
+      task.status === "cancelled"
+    ) {
       steps.push({
         id: `step-task-${task.id}`,
-        kind: 'plan-step',
+        kind: "plan-step",
         title: task.label,
         status: TASK_STATUS_TO_STEP[task.status],
         detail: `Ad-hoc ${task.tool.toUpperCase()} task`,
@@ -711,7 +704,7 @@ export function buildAxonSession(input: BuildSessionInput): AxonSession {
         tool: task.tool,
         startedAt: task.startedAt,
         finishedAt: task.finishedAt,
-        preview: task.status === 'done' ? buildResultPreview(task) : buildMetadataPreview(logsForTask(task.id, logs)),
+        preview: task.status === "done" ? buildResultPreview(task) : buildMetadataPreview(logsForTask(task.id, logs)),
         logs: logsForTask(task.id, logs).slice(0, 8),
       });
     }
@@ -727,11 +720,11 @@ export function buildAxonSession(input: BuildSessionInput): AxonSession {
     interrupted: hadInterruptedTasks,
   });
   const outcome = deriveOutcome(steps);
-  const startedAt = plan?.createdAt ?? (tasks[0]?.createdAt ?? null);
+  const startedAt = plan?.createdAt ?? tasks[0]?.createdAt ?? null;
   const lastActivityAt = logs[0]?.timestamp ?? startedAt ?? now();
 
   return {
-    id: plan?.id ?? (domain ? `session-domain-${domain.category}` : 'session-idle'),
+    id: plan?.id ?? (domain ? `session-domain-${domain.category}` : "session-idle"),
     title: buildTitle(plan, domain, input.context?.summary ?? null),
     status,
     request: plan?.request ?? null,
@@ -750,32 +743,53 @@ export function buildAxonSession(input: BuildSessionInput): AxonSession {
  */
 export function sessionStatusLabel(status: AxonSessionStatus): string {
   switch (status) {
-    case 'idle': return 'Idle';
-    case 'planning': return 'Planning';
-    case 'running': return 'Running';
-    case 'waiting': return 'Waiting';
-    case 'completed': return 'Completed';
-    case 'partial': return 'Partial';
-    case 'failed': return 'Failed';
-    case 'cancelled': return 'Cancelled';
-    case 'interrupted': return 'Interrupted';
-    case 'off-domain': return 'Off-domain';
-    case 'unsupported': return 'Unsupported';
+    case "idle":
+      return "Idle";
+    case "planning":
+      return "Planning";
+    case "running":
+      return "Running";
+    case "waiting":
+      return "Waiting";
+    case "completed":
+      return "Completed";
+    case "partial":
+      return "Partial";
+    case "failed":
+      return "Failed";
+    case "cancelled":
+      return "Cancelled";
+    case "interrupted":
+      return "Interrupted";
+    case "off-domain":
+      return "Off-domain";
+    case "unsupported":
+      return "Unsupported";
   }
 }
 
 export function sessionStepStatusLabel(status: AxonSessionStepStatus): string {
   switch (status) {
-    case 'planned': return 'Planned';
-    case 'running': return 'Running';
-    case 'waiting': return 'Waiting';
-    case 'done': return 'Done';
-    case 'failed': return 'Failed';
-    case 'cancelled': return 'Cancelled';
-    case 'unsupported': return 'Unsupported';
-    case 'blocked': return 'Blocked';
-    case 'interrupted': return 'Interrupted';
-    case 'info': return 'Info';
+    case "planned":
+      return "Planned";
+    case "running":
+      return "Running";
+    case "waiting":
+      return "Waiting";
+    case "done":
+      return "Done";
+    case "failed":
+      return "Failed";
+    case "cancelled":
+      return "Cancelled";
+    case "unsupported":
+      return "Unsupported";
+    case "blocked":
+      return "Blocked";
+    case "interrupted":
+      return "Interrupted";
+    case "info":
+      return "Info";
   }
 }
 

@@ -27,13 +27,7 @@
  * @param ki    Inhibition constant
  * @param i     Inhibitor concentration
  */
-export function competitiveInhibition(
-  vmax: number,
-  s: number,
-  km: number,
-  ki: number,
-  i: number,
-): number {
+export function competitiveInhibition(vmax: number, s: number, km: number, ki: number, i: number): number {
   const sSafe = Math.max(0, s);
   if (ki <= 0 || i <= 0) {
     // No effective inhibition — reduce to plain MM
@@ -58,13 +52,7 @@ export function competitiveInhibition(
  * @param kiu   Uncompetitive inhibition constant
  * @param i     Inhibitor concentration
  */
-export function uncompetitiveInhibition(
-  vmax: number,
-  s: number,
-  km: number,
-  kiu: number,
-  i: number,
-): number {
+export function uncompetitiveInhibition(vmax: number, s: number, km: number, kiu: number, i: number): number {
   const sSafe = Math.max(0, s);
   if (kiu <= 0 || i <= 0) {
     const denom = km + sSafe;
@@ -88,14 +76,7 @@ export function uncompetitiveInhibition(
  * @param kiu   Uncompetitive inhibition constant (binding to ES)
  * @param i     Inhibitor concentration
  */
-export function mixedInhibition(
-  vmax: number,
-  s: number,
-  km: number,
-  kic: number,
-  kiu: number,
-  i: number,
-): number {
+export function mixedInhibition(vmax: number, s: number, km: number, kic: number, kiu: number, i: number): number {
   const sSafe = Math.max(0, s);
   const hasCompetitive = kic > 0 && i > 0;
   const hasUncompetitive = kiu > 0 && i > 0;
@@ -123,12 +104,7 @@ export function mixedInhibition(
  * @param km    Michaelis constant
  * @param kis   Substrate inhibition constant
  */
-export function substrateInhibition(
-  vmax: number,
-  s: number,
-  km: number,
-  kis: number,
-): number {
+export function substrateInhibition(vmax: number, s: number, km: number, kis: number): number {
   const sSafe = Math.max(0, s);
   if (kis <= 0) {
     // No substrate inhibition — plain MM
@@ -143,7 +119,7 @@ export function substrateInhibition(
 // ─── Parameter Estimation (Levenberg-Marquardt) ────────────────
 
 /** Inhibition model types for parameter estimation. */
-export type InhibitionModel = 'competitive' | 'uncompetitive' | 'mixed';
+export type InhibitionModel = "competitive" | "uncompetitive" | "mixed";
 
 /** A single (substrate, velocity) observation. */
 export interface KineticDataPoint {
@@ -196,17 +172,12 @@ export interface ParameterEstimationResult {
  * @param s       Substrate concentration
  * @param i       Inhibitor concentration (0 or undefined = no inhibition)
  */
-function modelVelocity(
-  model: InhibitionModel,
-  params: number[],
-  s: number,
-  i: number,
-): number {
+function modelVelocity(model: InhibitionModel, params: number[], s: number, i: number): number {
   const sSafe = Math.max(0, s);
   const iVal = Math.max(0, i);
 
   switch (model) {
-    case 'competitive': {
+    case "competitive": {
       const [vmax, km, ki] = params;
       if (ki <= 0 || iVal <= 0) {
         const denom = km + sSafe;
@@ -215,7 +186,7 @@ function modelVelocity(
       const denom = km * (1 + iVal / ki) + sSafe;
       return denom <= 0 ? 0 : (vmax * sSafe) / denom;
     }
-    case 'uncompetitive': {
+    case "uncompetitive": {
       const [vmax, km, kiu] = params;
       if (kiu <= 0 || iVal <= 0) {
         const denom = km + sSafe;
@@ -224,7 +195,7 @@ function modelVelocity(
       const denom = km + sSafe * (1 + iVal / kiu);
       return denom <= 0 ? 0 : (vmax * sSafe) / denom;
     }
-    case 'mixed': {
+    case "mixed": {
       const [vmax, km, kic, kiu] = params;
       const hasComp = kic > 0 && iVal > 0;
       const hasUncomp = kiu > 0 && iVal > 0;
@@ -243,12 +214,8 @@ function modelVelocity(
 /**
  * Compute residuals: r_j = model(s_j, params) - v_obs_j
  */
-function computeResiduals(
-  model: InhibitionModel,
-  params: number[],
-  data: KineticDataPoint[],
-): number[] {
-  return data.map(d => {
+function computeResiduals(model: InhibitionModel, params: number[], data: KineticDataPoint[]): number[] {
+  return data.map((d) => {
     const vPred = modelVelocity(model, params, d.s, d.i ?? 0);
     return vPred - d.v;
   });
@@ -262,11 +229,7 @@ function computeResiduals(
  * This avoids the need for analytical derivatives for each model variant,
  * at the cost of 2*nParams function evaluations per iteration.
  */
-function computeJacobian(
-  model: InhibitionModel,
-  params: number[],
-  data: KineticDataPoint[],
-): number[][] {
+function computeJacobian(model: InhibitionModel, params: number[], data: KineticDataPoint[]): number[][] {
   const nParams = params.length;
   const nData = data.length;
   const J: number[][] = Array.from({ length: nData }, () => new Array(nParams));
@@ -332,7 +295,7 @@ export function estimateParameters(
 
   const nParams = initialGuess.length;
   const nData = experimentalData.length;
-  let params = initialGuess.map(p => Math.max(1e-12, p));
+  let params = initialGuess.map((p) => Math.max(1e-12, p));
   let residuals = computeResiduals(model, params, experimentalData);
   let rss = residuals.reduce((s, r) => s + r * r, 0);
 
@@ -377,10 +340,8 @@ export function estimateParameters(
     // The eps*I term ensures positive-definiteness for rank-deficient Jacobians
     // (e.g., when I=0 makes Ki unidentifiable in competitive inhibition).
     const eps = 1e-10;
-    const A: number[][] = JtJ.map((row, k) =>
-      row.map((val, l) => (k === l ? val + lambda * JtJ[k][k] + eps : val)),
-    );
-    const b: number[] = JtR.map(g => -g);
+    const A: number[][] = JtJ.map((row, k) => row.map((val, l) => (k === l ? val + lambda * JtJ[k][k] + eps : val)));
+    const b: number[] = JtR.map((g) => -g);
 
     // Solve via Gauss elimination with partial pivoting
     const delta = solveLinearSystem(A, b);
@@ -402,13 +363,9 @@ export function estimateParameters(
 
       if (actualReduction > 0) {
         // Step accepted — compute gain ratio
-        const gainRatio = predictedReduction > 0
-          ? actualReduction / predictedReduction
-          : 1.0; // If predicted is negative/zero, model is wrong — treat as okay step
+        const gainRatio = predictedReduction > 0 ? actualReduction / predictedReduction : 1.0; // If predicted is negative/zero, model is wrong — treat as okay step
 
-        const paramDelta = params.map((p, k) =>
-          Math.abs(pNew[k] - p) / Math.max(1e-12, Math.abs(p)),
-        );
+        const paramDelta = params.map((p, k) => Math.abs(pNew[k] - p) / Math.max(1e-12, Math.abs(p)));
         const maxParamDelta = Math.max(...paramDelta);
 
         params = pNew;
@@ -508,16 +465,11 @@ function solveLinearSystem(A: number[][], b: number[]): number[] | null {
  * @param k50   Substrate concentration at half-max velocity
  * @param n     Hill coefficient
  */
-export function hillEquation(
-  vmax: number,
-  s: number,
-  k50: number,
-  n: number,
-): number {
+export function hillEquation(vmax: number, s: number, k50: number, n: number): number {
   const sSafe = Math.max(0, s);
   if (k50 <= 0) return sSafe > 0 ? vmax : 0;
-  const sn = Math.pow(sSafe, n);
-  const k50n = Math.pow(k50, n);
+  const sn = sSafe ** n;
+  const k50n = k50 ** n;
   const denom = k50n + sn;
   if (denom <= 0) return 0;
   return (vmax * sn) / denom;
@@ -558,15 +510,7 @@ const DP_A: number[][] = [
 const DP_B5: number[] = [35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84, 0];
 
 /** 4th order weights (embedded solution for error estimation). */
-const DP_B4: number[] = [
-  5179 / 57600,
-  0,
-  7571 / 16695,
-  393 / 640,
-  -92097 / 339200,
-  187 / 2100,
-  1 / 40,
-];
+const DP_B4: number[] = [5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 / 2100, 1 / 40];
 
 /** Error weights: B5 - B4 per stage. */
 const DP_E: number[] = DP_B5.map((b5, i) => b5 - DP_B4[i]);
@@ -615,12 +559,7 @@ export interface AdaptiveSimMeta {
  * @param h      Step size to try
  * @returns      Step result with yNew, error estimate, and used step size
  */
-function dormandPrinceStep(
-  f: (t: number, y: number[]) => number[],
-  t: number,
-  y: number[],
-  h: number,
-): DPStepResult {
+function dormandPrinceStep(f: (t: number, y: number[]) => number[], t: number, y: number[], h: number): DPStepResult {
   const n = y.length;
 
   // Stage 1
@@ -650,9 +589,7 @@ function dormandPrinceStep(
   // Stage 5
   const y5 = new Array(n);
   for (let j = 0; j < n; j++) {
-    y5[j] =
-      y[j] +
-      h * (DP_A[4][0] * k1[j] + DP_A[4][1] * k2[j] + DP_A[4][2] * k3[j] + DP_A[4][3] * k4[j]);
+    y5[j] = y[j] + h * (DP_A[4][0] * k1[j] + DP_A[4][1] * k2[j] + DP_A[4][2] * k3[j] + DP_A[4][3] * k4[j]);
   }
   const k5 = f(t + h * (8 / 9), y5);
 
@@ -661,12 +598,7 @@ function dormandPrinceStep(
   for (let j = 0; j < n; j++) {
     y6[j] =
       y[j] +
-      h *
-        (DP_A[5][0] * k1[j] +
-          DP_A[5][1] * k2[j] +
-          DP_A[5][2] * k3[j] +
-          DP_A[5][3] * k4[j] +
-          DP_A[5][4] * k5[j]);
+      h * (DP_A[5][0] * k1[j] + DP_A[5][1] * k2[j] + DP_A[5][2] * k3[j] + DP_A[5][3] * k4[j] + DP_A[5][4] * k5[j]);
   }
   const k6 = f(t + h, y6);
 
@@ -731,12 +663,7 @@ function dormandPrinceStep(
  * Uses the algorithm from Hairer & Wanner: h0 = 0.01 * ||y0|| / ||f(t0, y0)||,
  * clamped to reasonable bounds.
  */
-function estimateInitialStep(
-  f: (t: number, y: number[]) => number[],
-  t0: number,
-  y0: number[],
-  tEnd: number,
-): number {
+function estimateInitialStep(f: (t: number, y: number[]) => number[], t0: number, y0: number[], tEnd: number): number {
   const d0 = Math.sqrt(y0.reduce((s, yi) => s + yi * yi, 0));
   const f0 = f(t0, y0);
   const f0Norm = Math.sqrt(f0.reduce((s, fi) => s + fi * fi, 0));
@@ -751,12 +678,7 @@ function estimateInitialStep(
  *
  * Uses weighted RMS: sqrt(1/n * sum((err_i / (atol + rtol * |y_i|))^2))
  */
-function errorNorm(
-  error: number[],
-  y: number[],
-  rtol: number,
-  atol: number,
-): number {
+function errorNorm(error: number[], y: number[], rtol: number, atol: number): number {
   const n = error.length;
   if (n === 0) return 0;
 
@@ -845,7 +767,7 @@ function simulateFixedRK4(
   const nEnzymes = enzymes.length;
 
   if (tEnd <= 0 || dt <= 0 || nSpecies === 0) {
-    const singlePoint = initialConcentrations.map(c => [c]);
+    const singlePoint = initialConcentrations.map((c) => [c]);
     const zeroVel = enzymes.map(() => [0]);
     return {
       time: [0],
@@ -859,10 +781,8 @@ function simulateFixedRK4(
 
   // Initialize storage
   const time: number[] = [0];
-  const species: number[][] = initialConcentrations.map(c => [c]);
-  const velocities: number[][] = enzymes.map(enz => [
-    computeEnzymeVelocity(enz, initialConcentrations),
-  ]);
+  const species: number[][] = initialConcentrations.map((c) => [c]);
+  const velocities: number[][] = enzymes.map((enz) => [computeEnzymeVelocity(enz, initialConcentrations)]);
 
   // Working arrays
   let concentrations = [...initialConcentrations];
@@ -899,9 +819,7 @@ function simulateFixedRK4(
       species[j].push(parseFloat(concentrations[j].toFixed(6)));
     }
     for (let e = 0; e < nEnzymes; e++) {
-      velocities[e].push(
-        parseFloat(computeEnzymeVelocity(enzymes[e], concentrations).toFixed(6)),
-      );
+      velocities[e].push(parseFloat(computeEnzymeVelocity(enzymes[e], concentrations).toFixed(6)));
     }
   }
 
@@ -936,7 +854,7 @@ function simulateAdaptive(
   const maxSteps = options.maxSteps ?? 1_000_000;
 
   if (tEnd <= 0 || nSpecies === 0) {
-    const singlePoint = initialConcentrations.map(c => [c]);
+    const singlePoint = initialConcentrations.map((c) => [c]);
     const zeroVel = enzymes.map(() => [0]);
     return {
       time: [0],
@@ -962,10 +880,8 @@ function simulateAdaptive(
 
   // Initialize output storage
   const time: number[] = [0];
-  const species: number[][] = initialConcentrations.map(c => [c]);
-  const velocities: number[][] = enzymes.map(enz => [
-    computeEnzymeVelocity(enz, initialConcentrations),
-  ]);
+  const species: number[][] = initialConcentrations.map((c) => [c]);
+  const velocities: number[][] = enzymes.map((enz) => [computeEnzymeVelocity(enz, initialConcentrations)]);
 
   // Working state
   let t = 0;
@@ -997,7 +913,7 @@ function simulateAdaptive(
     if (errNorm <= 1.0) {
       // Step accepted
       t += h;
-      y = stepResult.yNew.map(c => Math.max(0, c)); // enforce non-negative concentrations
+      y = stepResult.yNew.map((c) => Math.max(0, c)); // enforce non-negative concentrations
 
       // Track step sizes
       actualMinDt = Math.min(actualMinDt, h);
@@ -1020,9 +936,7 @@ function simulateAdaptive(
           species[j].push(parseFloat(y[j].toFixed(6)));
         }
         for (let e = 0; e < nEnzymes; e++) {
-          velocities[e].push(
-            parseFloat(computeEnzymeVelocity(enzymes[e], y).toFixed(6)),
-          );
+          velocities[e].push(parseFloat(computeEnzymeVelocity(enzymes[e], y).toFixed(6)));
         }
 
         nextSampleTime += sampleDt;
@@ -1031,7 +945,7 @@ function simulateAdaptive(
 
       // Compute new step size
       if (errNorm > 0) {
-        const scale = DP_SAFETY * Math.pow(1 / errNorm, 1 / 5);
+        const scale = DP_SAFETY * (1 / errNorm) ** (1 / 5);
         h = h * Math.min(DP_MAX_GROWTH, Math.max(DP_MIN_SHRINK, scale));
       } else {
         // Error is zero — grow aggressively
@@ -1044,7 +958,7 @@ function simulateAdaptive(
     } else {
       // Step rejected — shrink and retry
       rejectedSteps++;
-      const scale = DP_SAFETY * Math.pow(1 / errNorm, 1 / 5);
+      const scale = DP_SAFETY * (1 / errNorm) ** (1 / 5);
       h = h * Math.max(DP_MIN_SHRINK, scale);
       h = Math.max(h, minStepSize);
       totalSteps++;
@@ -1080,11 +994,7 @@ function computeEnzymeVelocity(enzyme: EnzymeKinetics, concentrations: number[])
 }
 
 /** Compute dX/dt for all species given current concentrations. */
-function computeDerivatives(
-  enzymes: EnzymeKinetics[],
-  concentrations: number[],
-  nSpecies: number,
-): number[] {
+function computeDerivatives(enzymes: EnzymeKinetics[], concentrations: number[], nSpecies: number): number[] {
   const dCdt = new Array(nSpecies).fill(0) as number[];
 
   for (const enz of enzymes) {

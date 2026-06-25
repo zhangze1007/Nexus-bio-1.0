@@ -29,7 +29,7 @@
  *     - Off-target search requires Cas-OFFinder + genome FASTA (not available locally)
  */
 
-import { computeOnTargetScore } from './grnaDesigner';
+import { computeOnTargetScore } from "./grnaDesigner";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -75,7 +75,7 @@ export interface EditingStrategy {
   /** Genes targeted for editing */
   targetGenes: string[];
   /** Editing type per gene */
-  editTypes: Record<string, 'knockout' | 'knockdown' | 'overexpression' | 'knockin'>;
+  editTypes: Record<string, "knockout" | "knockdown" | "overexpression" | "knockin">;
   /** Guide RNAs for each gene */
   guides: Record<string, GuideRNA[]>;
   /** Predicted fitness of this combinatorial variant */
@@ -94,7 +94,7 @@ export interface EpistasisInteraction {
   geneA: string;
   geneB: string;
   /** Interaction type */
-  type: 'synergistic' | 'antagonistic' | 'synthetic_lethal' | 'suppressive';
+  type: "synergistic" | "antagonistic" | "synthetic_lethal" | "suppressive";
   /** Interaction strength (|value| > 0.3 = significant) */
   strength: number;
   /** Evidence confidence (0-1) */
@@ -113,7 +113,7 @@ export interface MultiplexCRISPRInput {
   /** Minimum predicted fitness threshold */
   minFitness?: number;
   /** Editing approach */
-  approach?: 'arrayed' | 'pooled' | 'mage_cycling';
+  approach?: "arrayed" | "pooled" | "mage_cycling";
   /** Include overexpression targets? */
   includeOverexpression?: boolean;
   /** Number of top strategies to return */
@@ -152,10 +152,22 @@ export interface MultiplexCRISPRResult {
  * Reference: Freier et al. (1986) PNAS 83:9373-9377
  */
 const NN_RNA_STACK: Record<string, number> = {
-  'AA': -0.9, 'UU': -0.9, 'AU': -1.1, 'UA': -1.3,
-  'CA': -1.8, 'UG': -2.1, 'CU': -0.9, 'AG': -0.9,
-  'GA': -1.1, 'UC': -1.3, 'GU': -1.4, 'AC': -1.4,
-  'CG': -2.4, 'GC': -3.4, 'GG': -1.7, 'CC': -1.7,
+  AA: -0.9,
+  UU: -0.9,
+  AU: -1.1,
+  UA: -1.3,
+  CA: -1.8,
+  UG: -2.1,
+  CU: -0.9,
+  AG: -0.9,
+  GA: -1.1,
+  UC: -1.3,
+  GU: -1.4,
+  AC: -1.4,
+  CG: -2.4,
+  GC: -3.4,
+  GG: -1.7,
+  CC: -1.7,
 };
 
 /**
@@ -197,8 +209,8 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
 
       // Compute interaction strength based on biological rules
       let strength = 0;
-      let type: EpistasisInteraction['type'] = 'synergistic';
-      let mechanism = '';
+      let type: EpistasisInteraction["type"] = "synergistic";
+      let mechanism = "";
       let confidence = 0.5;
 
       if (sameSubsystem) {
@@ -209,13 +221,13 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
 
         if (fluxSimilarity > 0.7) {
           // |flux_A - flux_B| / max(flux) < 0.3 → similar flux → strong redundancy
-          type = 'antagonistic';
+          type = "antagonistic";
           strength = -0.3 - 0.4 * fluxSimilarity;
           mechanism = `Redundant flux through ${geneA.subsystem} pathway (Segre 2005: similar flux → negative epistasis)`;
           confidence = 0.7;
         } else {
           // Very different flux → weak interaction
-          type = 'antagonistic';
+          type = "antagonistic";
           strength = -0.1;
           mechanism = `Weak redundancy in ${geneA.subsystem}`;
           confidence = 0.4;
@@ -227,29 +239,29 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
         const bothSignificant = geneA.flux > 1.0 && geneB.flux > 1.0;
 
         if (bothSignificant) {
-          type = 'synergistic';
+          type = "synergistic";
           strength = 0.2 + 0.1 * Math.min((geneA.flux + geneB.flux) / 20.0, 1.0);
           mechanism = `Independent flux contributions to ${geneA.subsystem} and ${geneB.subsystem} (Segre 2005: independent pathways → positive epistasis)`;
           confidence = 0.6;
         } else {
           // Low flux → minimal interaction
-          type = 'synergistic';
+          type = "synergistic";
           strength = 0.05;
-          mechanism = 'Independent pathways with minimal interaction';
+          mechanism = "Independent pathways with minimal interaction";
           confidence = 0.3;
         }
       }
 
       // Essential gene check → synthetic lethal risk
       if (geneA.essentiality > 0.8 && geneB.essentiality > 0.8) {
-        type = 'synthetic_lethal';
+        type = "synthetic_lethal";
         strength = -0.8;
         mechanism = `Both genes highly essential — synthetic lethal risk`;
         confidence = 0.9;
       } else if (geneA.essentiality > 0.8 || geneB.essentiality > 0.8) {
         // One essential gene → suppressive interaction
-        if (type === 'synergistic') {
-          type = 'suppressive';
+        if (type === "synergistic") {
+          type = "suppressive";
           strength = -0.2;
           mechanism = `Essential gene ${geneA.essentiality > 0.8 ? geneA.geneId : geneB.geneId} limits combinatorial benefit`;
           confidence = 0.7;
@@ -257,10 +269,9 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
       }
 
       // Check for known epistatic partners
-      if (geneA.epistaticPartners?.includes(geneB.geneId) ||
-          geneB.epistaticPartners?.includes(geneA.geneId)) {
+      if (geneA.epistaticPartners?.includes(geneB.geneId) || geneB.epistaticPartners?.includes(geneA.geneId)) {
         confidence = Math.min(1.0, confidence + 0.3);
-        mechanism += ' (known interaction)';
+        mechanism += " (known interaction)";
       }
 
       interactions.push({
@@ -292,11 +303,11 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
  */
 function predictFitness(
   targetGenes: string[],
-  editTypes: Record<string, 'knockout' | 'knockdown' | 'overexpression' | 'knockin'>,
+  editTypes: Record<string, "knockout" | "knockdown" | "overexpression" | "knockin">,
   genes: GeneTarget[],
   epistasisMatrix: EpistasisInteraction[],
 ): { fitness: number; titerImprovement: number; epistasisScore: number; confidence: number } {
-  const geneMap = new Map(genes.map(g => [g.geneId, g]));
+  const geneMap = new Map(genes.map((g) => [g.geneId, g]));
 
   // 1. Additive fitness contributions
   let additiveFitness = 1.0; // baseline
@@ -308,16 +319,16 @@ function predictFitness(
 
     const editType = editTypes[geneId];
 
-    if (editType === 'knockout' || editType === 'knockdown') {
+    if (editType === "knockout" || editType === "knockdown") {
       // Knockout/knockdown redirects flux to product
-      const knockdownEfficiency = editType === 'knockout' ? 1.0 : gene.maxKnockdown;
+      const knockdownEfficiency = editType === "knockout" ? 1.0 : gene.maxKnockdown;
       const fluxRedirected = gene.flux * knockdownEfficiency;
       totalFluxEffect += fluxRedirected;
 
       // Fitness cost from losing this gene's function
       const fitnessCost = gene.essentiality * knockdownEfficiency * 0.5;
       additiveFitness -= fitnessCost;
-    } else if (editType === 'overexpression') {
+    } else if (editType === "overexpression") {
       // Overexpression increases flux through this node
       totalFluxEffect += gene.flux * 0.5;
 
@@ -344,9 +355,7 @@ function predictFitness(
   const avgEpistasis = epistasisCount > 0 ? epistasisCorrection / epistasisCount : 0;
 
   // 3. Final fitness
-  const fitness = Math.max(0, Math.min(2.0,
-    additiveFitness + epistasisCorrection * 0.5
-  ));
+  const fitness = Math.max(0, Math.min(2.0, additiveFitness + epistasisCorrection * 0.5));
 
   // 4. Titer improvement estimate
   const titerImprovement = 1.0 + totalFluxEffect * 0.1;
@@ -377,7 +386,7 @@ function predictFitness(
  * Reference: Freier et al. (1986) PNAS 83:9373-9377
  */
 function computeSelfFoldingDG(spacer: string): number {
-  const seq = spacer.toUpperCase().replace(/U/g, 'T'); // normalize to DNA for matching
+  const seq = spacer.toUpperCase().replace(/U/g, "T"); // normalize to DNA for matching
   const rcSeq = reverseComplement(seq);
 
   // Find the longest reverse-complement stretch (potential stem)
@@ -398,7 +407,7 @@ function computeSelfFoldingDG(spacer: string): number {
   let dg = RNA_INITIATION_DG; // initiation cost
 
   // Convert spacer to RNA for NN parameters (U instead of T)
-  const rnaSeq = seq.replace(/T/g, 'U');
+  const rnaSeq = seq.replace(/T/g, "U");
 
   // Sum stacking energies for the stem region
   const stemStart = 0;
@@ -411,7 +420,7 @@ function computeSelfFoldingDG(spacer: string): number {
   // AU/GU end penalty for terminal pairs
   if (stemEnd > 0) {
     const lastBase = rnaSeq[stemEnd - 1];
-    if (lastBase === 'A' || lastBase === 'U') {
+    if (lastBase === "A" || lastBase === "U") {
       dg += AU_END_PENALTY;
     }
   }
@@ -421,8 +430,16 @@ function computeSelfFoldingDG(spacer: string): number {
   if (loopSize >= 3 && loopSize <= 30) {
     // Hairpin loop penalty from Turner 2009
     const loopPenalty: Record<number, number> = {
-      3: 5.7, 4: 5.6, 5: 5.6, 6: 5.4, 7: 5.9,
-      8: 6.0, 9: 6.1, 10: 6.3, 11: 6.5, 12: 6.7,
+      3: 5.7,
+      4: 5.6,
+      5: 5.6,
+      6: 5.4,
+      7: 5.9,
+      8: 6.0,
+      9: 6.1,
+      10: 6.3,
+      11: 6.5,
+      12: 6.7,
     };
     dg += loopPenalty[Math.min(loopSize, 12)] || 6.7;
   }
@@ -434,8 +451,12 @@ function computeSelfFoldingDG(spacer: string): number {
  * Reverse complement of a DNA sequence.
  */
 function reverseComplement(seq: string): string {
-  const comp: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C', N: 'N' };
-  return seq.split('').reverse().map(b => comp[b] ?? 'N').join('');
+  const comp: Record<string, string> = { A: "T", T: "A", C: "G", G: "C", N: "N" };
+  return seq
+    .split("")
+    .reverse()
+    .map((b) => comp[b] ?? "N")
+    .join("");
 }
 
 /**
@@ -465,7 +486,7 @@ function generateGuides(
     };
   }
 
-  const seq = geneSequence.toUpperCase().replace(/[^ACGT]/g, '');
+  const seq = geneSequence.toUpperCase().replace(/[^ACGT]/g, "");
   if (seq.length < 23) {
     return {
       guides: [],
@@ -478,7 +499,7 @@ function generateGuides(
   // Scan forward strand for NGG PAM sites
   for (let i = 20; i < seq.length - 2; i++) {
     const pam = seq.substring(i, i + 3);
-    if (pam[1] === 'G' && pam[2] === 'G') {
+    if (pam[1] === "G" && pam[2] === "G") {
       // NGG PAM found — extract 20-nt spacer upstream
       const spacer = seq.substring(i - 20, i);
       candidates.push({ spacer, position: i - 20 });
@@ -489,7 +510,7 @@ function generateGuides(
   const rcSeq = reverseComplement(seq);
   for (let i = 20; i < rcSeq.length - 2; i++) {
     const pam = rcSeq.substring(i, i + 3);
-    if (pam[1] === 'G' && pam[2] === 'G') {
+    if (pam[1] === "G" && pam[2] === "G") {
       const spacer = reverseComplement(rcSeq.substring(i, i + 20));
       candidates.push({ spacer, position: seq.length - i - 2 });
     }
@@ -497,7 +518,7 @@ function generateGuides(
 
   // Score each candidate with Rule Set 2 and filter
   const scored = candidates
-    .map(c => {
+    .map((c) => {
       const { score: onTargetScore } = computeOnTargetScore(c.spacer);
       const gcCount = (c.spacer.match(/[GC]/g) || []).length;
       const gcContent = gcCount / 20;
@@ -508,14 +529,12 @@ function generateGuides(
       if (gcContent < 0.3 || gcContent > 0.8 || hasPolyT) return null;
 
       // Off-target sites: empty — genome-wide search requires Cas-OFFinder + FASTA
-      const offTargetSites: GuideRNA['offTargetSites'] = [];
+      const offTargetSites: GuideRNA["offTargetSites"] = [];
 
       // Composite quality score
       const gcScore = gcContent >= 0.4 && gcContent <= 0.6 ? 0.2 : 0.1;
-      const foldScore = Math.max(0, (1 + selfFoldDG / 10)) * 0.1;
-      const qualityScore = Math.max(0, Math.min(1,
-        onTargetScore * 0.6 + gcScore + foldScore
-      ));
+      const foldScore = Math.max(0, 1 + selfFoldDG / 10) * 0.1;
+      const qualityScore = Math.max(0, Math.min(1, onTargetScore * 0.6 + gcScore + foldScore));
 
       return {
         id: `${geneId}_guide_${c.position}`,
@@ -564,37 +583,40 @@ function combinatorialSearch(
   });
 
   // Generate edit type options
-  const editTypeOptions: Array<'knockout' | 'knockdown' | 'overexpression'> = includeOverexpression
-    ? ['knockout', 'knockdown', 'overexpression']
-    : ['knockout', 'knockdown'];
+  const editTypeOptions: Array<"knockout" | "knockdown" | "overexpression"> = includeOverexpression
+    ? ["knockout", "knockdown", "overexpression"]
+    : ["knockout", "knockdown"];
 
   // Greedy combination building
   function buildCombinations(
     currentGenes: string[],
-    currentEditTypes: Record<string, 'knockout' | 'knockdown' | 'overexpression' | 'knockin'>,
+    currentEditTypes: Record<string, "knockout" | "knockdown" | "overexpression" | "knockin">,
     startIndex: number,
   ) {
     if (currentGenes.length > 0) {
       const { fitness, titerImprovement, epistasisScore, confidence } = predictFitness(
-        currentGenes, currentEditTypes, genes, epistasisMatrix,
+        currentGenes,
+        currentEditTypes,
+        genes,
+        epistasisMatrix,
       );
 
       if (fitness >= minFitness) {
         const guides: Record<string, GuideRNA[]> = {};
         const warnings: string[] = [];
         for (const geneId of currentGenes) {
-          const gene = genes.find(g => g.geneId === geneId);
+          const gene = genes.find((g) => g.geneId === geneId);
           const result = generateGuides(geneId, gene?.geneSequence, 2);
           guides[geneId] = result.guides;
           if (result.warning) warnings.push(result.warning);
         }
 
         const notes: string[] = [...warnings];
-        if (epistasisScore < -0.3) notes.push('Warning: negative epistasis detected');
-        if (currentGenes.some(g => (genes.find(gg => gg.geneId === g)?.essentiality || 0) > 0.7)) {
-          notes.push('Warning: includes essential gene(s)');
+        if (epistasisScore < -0.3) notes.push("Warning: negative epistasis detected");
+        if (currentGenes.some((g) => (genes.find((gg) => gg.geneId === g)?.essentiality || 0) > 0.7)) {
+          notes.push("Warning: includes essential gene(s)");
         }
-        if (currentGenes.length > 5) notes.push('Note: high multiplexity reduces confidence');
+        if (currentGenes.length > 5) notes.push("Note: high multiplexity reduces confidence");
 
         strategies.push({
           id: `strategy_${strategies.length + 1}`,
@@ -620,13 +642,9 @@ function combinatorialSearch(
 
       for (const editType of editTypeOptions) {
         // Skip overexpression of essential genes
-        if (editType === 'overexpression' && gene.essentiality > 0.7) continue;
+        if (editType === "overexpression" && gene.essentiality > 0.7) continue;
 
-        buildCombinations(
-          [...currentGenes, gene.geneId],
-          { ...currentEditTypes, [gene.geneId]: editType },
-          i + 1,
-        );
+        buildCombinations([...currentGenes, gene.geneId], { ...currentEditTypes, [gene.geneId]: editType }, i + 1);
       }
     }
   }
@@ -648,14 +666,11 @@ function combinatorialSearch(
  *   2. Group by pathway to minimize metabolic disruption
  *   3. Interleave overexpression and knockdown steps
  */
-function computeMAGECyclingOrder(
-  strategies: EditingStrategy[],
-  genes: GeneTarget[],
-): string[] {
+function computeMAGECyclingOrder(strategies: EditingStrategy[], genes: GeneTarget[]): string[] {
   if (strategies.length === 0) return [];
 
   const bestStrategy = strategies[0];
-  const geneMap = new Map(genes.map(g => [g.geneId, g]));
+  const geneMap = new Map(genes.map((g) => [g.geneId, g]));
 
   // Sort by essentiality (least essential first) then by flux impact
   const ordered = [...bestStrategy.targetGenes].sort((a, b) => {
@@ -690,25 +705,27 @@ function rankGeneImportance(genes: GeneTarget[]): Array<{
   importance: number;
   reason: string;
 }> {
-  return genes.map(gene => {
-    const fluxScore = Math.min(1, gene.flux / 10); // normalize
-    const feasibilityScore = 1 - gene.essentiality; // non-essential = more feasible
-    const connectivityScore = gene.epistaticPartners ? Math.min(1, gene.epistaticPartners.length / 5) : 0.3;
+  return genes
+    .map((gene) => {
+      const fluxScore = Math.min(1, gene.flux / 10); // normalize
+      const feasibilityScore = 1 - gene.essentiality; // non-essential = more feasible
+      const connectivityScore = gene.epistaticPartners ? Math.min(1, gene.epistaticPartners.length / 5) : 0.3;
 
-    const importance = 0.4 * fluxScore + 0.3 * feasibilityScore + 0.3 * connectivityScore;
+      const importance = 0.4 * fluxScore + 0.3 * feasibilityScore + 0.3 * connectivityScore;
 
-    let reason = '';
-    if (fluxScore > 0.7) reason = 'High flux contribution';
-    else if (feasibilityScore > 0.7) reason = 'Non-essential, easy to edit';
-    else if (connectivityScore > 0.5) reason = 'Hub gene with many interactions';
-    else reason = 'Moderate impact target';
+      let reason = "";
+      if (fluxScore > 0.7) reason = "High flux contribution";
+      else if (feasibilityScore > 0.7) reason = "Non-essential, easy to edit";
+      else if (connectivityScore > 0.5) reason = "Hub gene with many interactions";
+      else reason = "Moderate impact target";
 
-    return {
-      geneId: gene.geneId,
-      importance: Math.round(importance * 100) / 100,
-      reason,
-    };
-  }).sort((a, b) => b.importance - a.importance);
+      return {
+        geneId: gene.geneId,
+        importance: Math.round(importance * 100) / 100,
+        reason,
+      };
+    })
+    .sort((a, b) => b.importance - a.importance);
 }
 
 // ── Main Entry Point ───────────────────────────────────────────────────────
@@ -721,26 +738,24 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
     genes,
     maxEdits = 5,
     minFitness = 0.3,
-    approach = 'arrayed',
+    approach = "arrayed",
     includeOverexpression = false,
     topN = 10,
   } = input;
 
   // Validate
   if (genes.length < 2) {
-    throw new Error('Multiplex CRISPR requires at least 2 target genes');
+    throw new Error("Multiplex CRISPR requires at least 2 target genes");
   }
   if (genes.length > 50) {
-    throw new Error('Maximum 50 genes supported');
+    throw new Error("Maximum 50 genes supported");
   }
 
   // 1. Compute epistasis matrix
   const epistasisMatrix = computeEpistasisMatrix(genes);
 
   // 2. Combinatorial search
-  const strategies = combinatorialSearch(
-    genes, epistasisMatrix, maxEdits, minFitness, topN, includeOverexpression,
-  );
+  const strategies = combinatorialSearch(genes, epistasisMatrix, maxEdits, minFitness, topN, includeOverexpression);
 
   // 3. Gene importance ranking
   const geneRanking = rankGeneImportance(genes);
@@ -756,19 +771,19 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
 
   const libraryStats = {
     totalGuides: allGuides.length,
-    avgOnTargetScore: allGuides.length > 0
-      ? Math.round(allGuides.reduce((sum, g) => sum + g.onTargetScore, 0) / allGuides.length * 100) / 100
-      : 0,
+    avgOnTargetScore:
+      allGuides.length > 0
+        ? Math.round((allGuides.reduce((sum, g) => sum + g.onTargetScore, 0) / allGuides.length) * 100) / 100
+        : 0,
     avgOffTargetRisk: 0, // no genome DB → no off-target data
-    diversityScore: allGuides.length > 0
-      ? Math.round((new Set(allGuides.map(g => g.sequence)).size / allGuides.length) * 100) / 100
-      : 0,
+    diversityScore:
+      allGuides.length > 0
+        ? Math.round((new Set(allGuides.map((g) => g.sequence)).size / allGuides.length) * 100) / 100
+        : 0,
   };
 
   // 5. MAGE cycling order
-  const mageCyclingOrder = approach === 'mage_cycling'
-    ? computeMAGECyclingOrder(strategies, genes)
-    : undefined;
+  const mageCyclingOrder = approach === "mage_cycling" ? computeMAGECyclingOrder(strategies, genes) : undefined;
 
   // 6. Design notes
   const designNotes: string[] = [
@@ -782,14 +797,16 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
   ];
 
   if (guideWarnings.length > 0) {
-    designNotes.push(`Guide warnings: ${guideWarnings.join('; ')}`);
+    designNotes.push(`Guide warnings: ${guideWarnings.join("; ")}`);
   }
 
   if (strategies.length > 0) {
-    designNotes.push(`Top strategy: ${strategies[0].targetGenes.join('+')} (fitness=${strategies[0].predictedFitness}, titer=${strategies[0].predictedTiterImprovement}x)`);
+    designNotes.push(
+      `Top strategy: ${strategies[0].targetGenes.join("+")} (fitness=${strategies[0].predictedFitness}, titer=${strategies[0].predictedTiterImprovement}x)`,
+    );
   }
 
-  const significantEpistasis = epistasisMatrix.filter(e => Math.abs(e.strength) > 0.3);
+  const significantEpistasis = epistasisMatrix.filter((e) => Math.abs(e.strength) > 0.3);
   if (significantEpistasis.length > 0) {
     designNotes.push(`${significantEpistasis.length} significant epistatic interactions detected`);
   }
@@ -812,16 +829,16 @@ export function predictCombinationFitness(
   genes: GeneTarget[],
 ): { fitness: number; titerImprovement: number; risk: string } {
   const epistasisMatrix = computeEpistasisMatrix(genes);
-  const editTypes: Record<string, 'knockdown'> = {};
-  geneIds.forEach(g => { editTypes[g] = 'knockdown'; });
+  const editTypes: Record<string, "knockdown"> = {};
+  geneIds.forEach((g) => {
+    editTypes[g] = "knockdown";
+  });
 
-  const { fitness, titerImprovement, confidence } = predictFitness(
-    geneIds, editTypes, genes, epistasisMatrix,
-  );
+  const { fitness, titerImprovement, confidence } = predictFitness(geneIds, editTypes, genes, epistasisMatrix);
 
-  let risk = 'low';
-  if (confidence < 0.4) risk = 'high';
-  else if (confidence < 0.6) risk = 'medium';
+  let risk = "low";
+  if (confidence < 0.4) risk = "high";
+  else if (confidence < 0.6) risk = "medium";
 
   return { fitness, titerImprovement, risk };
 }

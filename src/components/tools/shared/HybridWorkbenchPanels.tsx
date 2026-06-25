@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import { useId, useState } from 'react';
-import type { ReactNode } from 'react';
-import { THEME } from '../../../theme';
+import type { ReactNode } from "react";
+import { useId, useState } from "react";
+import { THEME } from "../../../theme";
+
 interface HybridWorkbenchPanelsProps {
   leftLabel: string;
   rightLabel: string;
   leftPanel: ReactNode;
   centerPanel: ReactNode;
   rightPanel: ReactNode;
-  defaultTabletPanel?: 'left' | 'right';
+  defaultTabletPanel?: "left" | "right";
   auxiliaryLabel?: string;
 }
 
@@ -19,10 +20,10 @@ export default function HybridWorkbenchPanels({
   leftPanel,
   centerPanel,
   rightPanel,
-  defaultTabletPanel = 'left',
-  auxiliaryLabel = 'Auxiliary workbench panels',
+  defaultTabletPanel = "left",
+  auxiliaryLabel = "Auxiliary workbench panels",
 }: HybridWorkbenchPanelsProps) {
-  const [activePanel, setActivePanel] = useState<'left' | 'right'>(defaultTabletPanel);
+  const [activePanel, setActivePanel] = useState<"left" | "right">(defaultTabletPanel);
   const id = useId();
 
   return (
@@ -37,10 +38,10 @@ export default function HybridWorkbenchPanels({
             className="nb-tool-panels__tablet-aux-label"
             style={{
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
+              fontSize: "var(--nb-fs-xs)",
               color: THEME.LABEL,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
             }}
           >
             Auxiliary panels
@@ -50,10 +51,10 @@ export default function HybridWorkbenchPanels({
               id={`${id}-tab-left`}
               type="button"
               role="tab"
-              aria-selected={activePanel === 'left'}
+              aria-selected={activePanel === "left"}
               aria-controls={`${id}-panel-left`}
-              onClick={() => setActivePanel('left')}
-              data-active={activePanel === 'left' ? 'true' : 'false'}
+              onClick={() => setActivePanel("left")}
+              data-active={activePanel === "left" ? "true" : "false"}
             >
               {leftLabel}
             </button>
@@ -61,10 +62,10 @@ export default function HybridWorkbenchPanels({
               id={`${id}-tab-right`}
               type="button"
               role="tab"
-              aria-selected={activePanel === 'right'}
+              aria-selected={activePanel === "right"}
               aria-controls={`${id}-panel-right`}
-              onClick={() => setActivePanel('right')}
-              data-active={activePanel === 'right' ? 'true' : 'false'}
+              onClick={() => setActivePanel("right")}
+              data-active={activePanel === "right" ? "true" : "false"}
             >
               {rightLabel}
             </button>
@@ -77,7 +78,7 @@ export default function HybridWorkbenchPanels({
             className="nb-tool-panels__tablet-pane"
             role="tabpanel"
             aria-labelledby={`${id}-tab-left`}
-            hidden={activePanel !== 'left'}
+            hidden={activePanel !== "left"}
           >
             {leftPanel}
           </div>
@@ -86,7 +87,7 @@ export default function HybridWorkbenchPanels({
             className="nb-tool-panels__tablet-pane"
             role="tabpanel"
             aria-labelledby={`${id}-tab-right`}
-            hidden={activePanel !== 'right'}
+            hidden={activePanel !== "right"}
           >
             {rightPanel}
           </div>

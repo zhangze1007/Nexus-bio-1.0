@@ -1,13 +1,9 @@
-'use client';
+"use client";
 
-import WorkbenchRangeSlider from '../shared/WorkbenchRangeSlider';
-import type { ProteinEvolutionCampaign } from '../../../services/ProEvolCampaignEngine';
-import {
-  PROEVOL_THEME,
-  StatusPill,
-  formatPercent,
-} from './shared';
-import { THEME } from '../../../theme';
+import type { ProteinEvolutionCampaign } from "../../../services/ProEvolCampaignEngine";
+import { THEME } from "../../../theme";
+import WorkbenchRangeSlider from "../shared/WorkbenchRangeSlider";
+import { formatPercent, PROEVOL_THEME, StatusPill } from "./shared";
 
 interface EvolutionCampaignContextCardProps {
   campaign: ProteinEvolutionCampaign;
@@ -33,18 +29,23 @@ export default function EvolutionCampaignContextCard({
   onSelectionStringencyChange,
 }: EvolutionCampaignContextCardProps) {
   return (
-    <div style={{ display: 'grid', gap: '8px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{
-          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-        }}>Parameters</span>
-        <StatusPill tone={campaign.provenance === 'simulated' ? 'warm' : 'cool'}>
-          {campaign.provenance}
-        </StatusPill>
+    <div style={{ display: "grid", gap: "8px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <span
+          style={{
+            fontFamily: THEME.MONO,
+            fontSize: "var(--nb-fs-xs)",
+            color: PROEVOL_THEME.label,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          Parameters
+        </span>
+        <StatusPill tone={campaign.provenance === "simulated" ? "warm" : "cool"}>{campaign.provenance}</StatusPill>
       </div>
 
-      <div style={{ display: 'grid', gap: '5px' }}>
+      <div style={{ display: "grid", gap: "5px" }}>
         <WorkbenchRangeSlider
           label="Selection rounds"
           value={totalRounds}
@@ -83,20 +84,37 @@ export default function EvolutionCampaignContextCard({
         />
       </div>
 
-      <div style={{
-        padding: '6px 8px', borderRadius: 'var(--nb-radius-sm)',
-        border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.inset,
-      }}>
-        <div style={{
-          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
-          textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px',
-        }}>
+      <div
+        style={{
+          padding: "6px 8px",
+          borderRadius: "var(--nb-radius-sm)",
+          border: `1px solid ${PROEVOL_THEME.border}`,
+          background: PROEVOL_THEME.inset,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: THEME.MONO,
+            fontSize: "var(--nb-fs-xs)",
+            color: PROEVOL_THEME.label,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            marginBottom: "4px",
+          }}
+        >
           Starting sequence
         </div>
-        <div style={{
-          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted,
-          lineHeight: 1.5, wordBreak: 'break-all', maxHeight: '60px', overflow: 'auto',
-        }}>
+        <div
+          style={{
+            fontFamily: THEME.MONO,
+            fontSize: "var(--nb-fs-xs)",
+            color: PROEVOL_THEME.muted,
+            lineHeight: 1.5,
+            wordBreak: "break-all",
+            maxHeight: "60px",
+            overflow: "auto",
+          }}
+        >
           {campaign.startingSequence}
         </div>
       </div>

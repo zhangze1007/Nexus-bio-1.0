@@ -1,4 +1,5 @@
-'use client';
+"use client";
+import { THEME } from "../../../theme";
 /**
  * ResultPanel — Primary reading surface for Axon answers.
  *
@@ -25,13 +26,12 @@
  * `meta.parseError.code === 'no-object'` is NEVER shown as an error — it
  * is the normal signal that the model answered in prose rather than JSON.
  */
-import type { NEXAIResult } from '../../../types';
-import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import ResearchAnswerRenderer from '../shared/ResearchAnswerRenderer';
-import SimErrorBanner from '../../ide/shared/SimErrorBanner';
-import { THEME } from '../../../theme';
+import type { NEXAIResult } from "../../../types";
+import SimErrorBanner from "../../ide/shared/SimErrorBanner";
+import ResearchAnswerRenderer from "../shared/ResearchAnswerRenderer";
+import { TOOL_TOKENS as T } from "../shared/ToolShell";
 
-export type ParseErrorCode = 'EMPTY' | 'NO_OBJECT' | 'INVALID_SYNTAX';
+export type ParseErrorCode = "EMPTY" | "NO_OBJECT" | "INVALID_SYNTAX";
 
 export interface ParseErrorInfo {
   code: ParseErrorCode;
@@ -54,17 +54,10 @@ function isMalformed(parseError?: ParseErrorInfo | null): boolean {
   // 'NO_OBJECT' is benign — model answered in prose. Only 'EMPTY' and
   // 'INVALID_SYNTAX' represent a real failure of the structured contract.
   if (!parseError) return false;
-  return parseError.code === 'EMPTY' || parseError.code === 'INVALID_SYNTAX';
+  return parseError.code === "EMPTY" || parseError.code === "INVALID_SYNTAX";
 }
 
-export default function ResultPanel({
-  result,
-  rawText,
-  parseError,
-  loading,
-  apiError,
-  onRetry,
-}: ResultPanelProps) {
+export default function ResultPanel({ result, rawText, parseError, loading, apiError, onRetry }: ResultPanelProps) {
   if (apiError) {
     return (
       <div data-testid="nexai-result-api-error">
@@ -78,22 +71,22 @@ export default function ResultPanel({
       <div
         data-testid="nexai-result-idle"
         style={{
-          display: 'grid',
-          placeItems: 'center',
-          minHeight: '220px',
-          borderRadius: 'var(--nb-radius-lg)',
+          display: "grid",
+          placeItems: "center",
+          minHeight: "220px",
+          borderRadius: "var(--nb-radius-lg)",
           border: `1px solid ${THEME.BORDER}`,
           background: THEME.PANEL_SURFACE,
-          padding: '28px',
-          textAlign: 'center',
+          padding: "28px",
+          textAlign: "center",
         }}
       >
-        <div style={{ display: 'grid', gap: '8px' }}>
-          <span style={{ fontFamily: THEME.MONO, fontSize: '26px', color: 'rgba(36,29,24,0.08)' }}>⬡</span>
-          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE }}>
+        <div style={{ display: "grid", gap: "8px" }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: "26px", color: "rgba(36,29,24,0.08)" }}>⬡</span>
+          <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-sm)", color: THEME.VALUE }}>
             Ask Axon about your research
           </span>
-          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-xs)", color: THEME.LABEL }}>
             Press <kbd>/</kbd> to focus
           </span>
         </div>
@@ -112,33 +105,26 @@ export default function ResultPanel({
     <div
       data-testid="nexai-result-panel"
       style={{
-        borderRadius: 'var(--nb-radius-lg)',
+        borderRadius: "var(--nb-radius-lg)",
         background: THEME.PANEL_GLASS_STRONG,
-        backdropFilter: 'blur(12px)',
+        backdropFilter: "blur(12px)",
         border: `1px solid ${THEME.BORDER}`,
-        padding: '16px 18px',
-        boxShadow: '0 16px 36px rgba(0,0,0,0.24)',
-        display: 'grid',
-        gap: '12px',
+        padding: "16px 18px",
+        boxShadow: "0 16px 36px rgba(0,0,0,0.24)",
+        display: "grid",
+        gap: "12px",
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>AXON</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-xs)", color: THEME.LABEL }}>AXON</span>
         <Chip
           tone="neutral"
           label={`QI ${(result.confidence * 100).toFixed(0)}`}
           title="Heuristic quality index (not calibrated)"
         />
-        <Chip
-          tone="neutral"
-          label={`${result.citations.length} citation${result.citations.length === 1 ? '' : 's'}`}
-        />
+        <Chip tone="neutral" label={`${result.citations.length} citation${result.citations.length === 1 ? "" : "s"}`} />
         {ungrounded && (
-          <Chip
-            tone="warn"
-            label="ungrounded"
-            title="No visible citation support attached to this answer yet"
-          />
+          <Chip tone="warn" label="ungrounded" title="No visible citation support attached to this answer yet" />
         )}
         {malformed && (
           <Chip
@@ -149,22 +135,21 @@ export default function ResultPanel({
         )}
       </div>
 
-      {malformed && (
-        <MalformedBanner parseError={parseError!} />
-      )}
+      {malformed && <MalformedBanner parseError={parseError!} />}
 
       {ungrounded && !malformed && (
         <p
           data-testid="nexai-result-ungrounded-note"
           style={{
             fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-sm)',
+            fontSize: "var(--nb-fs-sm)",
             color: THEME.LABEL,
             lineHeight: 1.6,
             margin: 0,
           }}
         >
-          This answer does not yet have visible citation support. Treat it as contextual synthesis until Research evidence is attached or a citation-backed rerun is completed.
+          This answer does not yet have visible citation support. Treat it as contextual synthesis until Research
+          evidence is attached or a citation-backed rerun is completed.
         </p>
       )}
 
@@ -173,18 +158,18 @@ export default function ResultPanel({
           data-testid="nexai-result-raw-fallback"
           style={{
             margin: 0,
-            padding: '12px 14px',
-            borderRadius: 'var(--nb-radius-md)',
-            background: 'rgba(10,14,22,0.65)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            padding: "12px 14px",
+            borderRadius: "var(--nb-radius-md)",
+            background: "rgba(10,14,22,0.65)",
+            border: "1px solid rgba(255,255,255,0.06)",
             fontFamily: THEME.MONO,
-            fontSize: 'var(--nb-fs-sm)',
+            fontSize: "var(--nb-fs-sm)",
             lineHeight: 1.55,
             color: THEME.VALUE,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            maxHeight: '420px',
-            overflow: 'auto',
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            maxHeight: "420px",
+            overflow: "auto",
           }}
         >
           {rawText ?? result.answer}
@@ -201,27 +186,19 @@ export default function ResultPanel({
   );
 }
 
-function Chip({
-  tone,
-  label,
-  title,
-}: {
-  tone: 'neutral' | 'warn' | 'alert';
-  label: string;
-  title?: string;
-}) {
+function Chip({ tone, label, title }: { tone: "neutral" | "warn" | "alert"; label: string; title?: string }) {
   const palette = {
     neutral: {
-      bg: 'rgba(175,195,214,0.14)',
-      border: 'rgba(175,195,214,0.26)',
+      bg: "rgba(175,195,214,0.14)",
+      border: "rgba(175,195,214,0.26)",
     },
     warn: {
-      bg: 'rgba(232,163,161,0.18)',
-      border: 'rgba(232,163,161,0.34)',
+      bg: "rgba(232,163,161,0.18)",
+      border: "rgba(232,163,161,0.34)",
     },
     alert: {
-      bg: 'rgba(250,128,114,0.18)',
-      border: 'rgba(250,128,114,0.42)',
+      bg: "rgba(250,128,114,0.18)",
+      border: "rgba(250,128,114,0.42)",
     },
   }[tone];
   return (
@@ -229,13 +206,13 @@ function Chip({
       title={title}
       style={{
         fontFamily: THEME.MONO,
-        fontSize: 'var(--nb-fs-xs)',
-        padding: '2px 6px',
+        fontSize: "var(--nb-fs-xs)",
+        padding: "2px 6px",
         background: palette.bg,
         border: `1px solid ${palette.border}`,
-        borderRadius: '6px',
+        borderRadius: "6px",
         color: THEME.VALUE,
-        letterSpacing: '0.04em',
+        letterSpacing: "0.04em",
       }}
     >
       {label}
@@ -249,22 +226,22 @@ function MalformedBanner({ parseError }: { parseError: ParseErrorInfo }) {
       data-testid="nexai-parse-error-banner"
       role="status"
       style={{
-        borderRadius: 'var(--nb-radius-md)',
-        border: '1px solid rgba(250,128,114,0.42)',
-        background: 'rgba(250,128,114,0.10)',
-        padding: '10px 12px',
-        display: 'grid',
-        gap: '4px',
+        borderRadius: "var(--nb-radius-md)",
+        border: "1px solid rgba(250,128,114,0.42)",
+        background: "rgba(250,128,114,0.10)",
+        padding: "10px 12px",
+        display: "grid",
+        gap: "4px",
       }}
     >
       <span
         style={{
           fontFamily: THEME.MONO,
-          fontSize: 'var(--nb-fs-xs)',
+          fontSize: "var(--nb-fs-xs)",
           fontWeight: 700,
-          color: '#FA8072',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          color: "#FA8072",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
         }}
       >
         Malformed structured output
@@ -272,14 +249,23 @@ function MalformedBanner({ parseError }: { parseError: ParseErrorInfo }) {
       <p
         style={{
           fontFamily: THEME.SANS,
-          fontSize: 'var(--nb-fs-sm)',
+          fontSize: "var(--nb-fs-sm)",
           color: THEME.VALUE,
           lineHeight: 1.55,
           margin: 0,
         }}
       >
-        Model returned malformed structured output; showing raw answer. Re-run the query or open the raw output drawer to inspect the full response.
-        <span style={{ display: 'block', color: THEME.LABEL, marginTop: '4px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+        Model returned malformed structured output; showing raw answer. Re-run the query or open the raw output drawer
+        to inspect the full response.
+        <span
+          style={{
+            display: "block",
+            color: THEME.LABEL,
+            marginTop: "4px",
+            fontFamily: THEME.MONO,
+            fontSize: "var(--nb-fs-xs)",
+          }}
+        >
           {parseError.code}: {parseError.message}
         </span>
       </p>

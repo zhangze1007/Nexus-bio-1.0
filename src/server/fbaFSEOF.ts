@@ -12,7 +12,7 @@
  *     improvement of lycopene production. BMC Bioinformatics, 11, 616.
  */
 
-import { solveLP, type LPModel } from './highsSolver';
+import { type LPModel, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                  */
@@ -43,7 +43,7 @@ export interface OverexpressionTarget {
   reactionId: string;
   fluxAtStep0: number;
   fluxAtStepN: number;
-  direction: 'up' | 'down' | 'unchanged';
+  direction: "up" | "down" | "unchanged";
   monotonicityScore: number; // 0-1
 }
 
@@ -111,14 +111,14 @@ function buildFSEOFLP(
     let lb = r.lb;
 
     // Enforce minimum growth rate on biomass reaction
-    if (r.id === 'BIOMASS' || r.id === 'BIOMASS_Ec_iML1515' || r.id === 'BIOMASS_HP_published') {
+    if (r.id === "BIOMASS" || r.id === "BIOMASS_Ec_iML1515" || r.id === "BIOMASS_HP_published") {
       lb = Math.max(lb, growthLB);
     }
 
     // Exchange reactions: set uptake limits
-    if (r.id.startsWith('EX_')) {
-      const isGlucose = r.id.includes('glc') || r.id.includes('glu');
-      const isOxygen = r.id.includes('o2') || r.id.includes('O2');
+    if (r.id.startsWith("EX_")) {
+      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
+      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
       if (isGlucose) lb = -Math.abs(glucoseUptake);
       if (isOxygen) lb = -Math.abs(oxygenUptake);
     }
@@ -131,8 +131,8 @@ function buildFSEOFLP(
   });
 
   return {
-    name: 'fseof',
-    sense: 'maximize',
+    name: "fseof",
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -155,10 +155,7 @@ function buildFSEOFLP(
  * 3. Identify reactions with monotonically increasing flux -> overexpression targets
  * 4. Identify reactions that go to zero -> knockout targets
  */
-export async function runFSEOF(
-  model: FSEOFModel,
-  options: FSEOFOptions = {},
-): Promise<FSEOFResult> {
+export async function runFSEOF(model: FSEOFModel, options: FSEOFOptions = {}): Promise<FSEOFResult> {
   const {
     numSteps = 10,
     reductionFactor = 0.5,
@@ -192,7 +189,7 @@ export async function runFSEOF(
   );
   const step0Result = await solveLP(step0LP);
 
-  if (step0Result.status !== 'optimal') {
+  if (step0Result.status !== "optimal") {
     return {
       overexpressionTargets: [],
       knockoutTargets: [],
@@ -229,7 +226,7 @@ export async function runFSEOF(
     );
     const stepResult = await solveLP(stepLP);
 
-    if (stepResult.status !== 'optimal') break;
+    if (stepResult.status !== "optimal") break;
 
     const fluxes: Record<string, number> = {};
     for (const r of model.reactions) {
@@ -244,14 +241,13 @@ export async function runFSEOF(
     });
   }
 
-  const maxProductFlux = steps.length > 1
-    ? round(Math.max(...steps.slice(1).map((s) => s.productFlux)))
-    : step0ProductFlux;
+  const maxProductFlux =
+    steps.length > 1 ? round(Math.max(...steps.slice(1).map((s) => s.productFlux))) : step0ProductFlux;
 
   // Identify candidate reactions (exclude exchange, biomass, and product reactions)
   const candidateIds = model.reactions
     .map((r) => r.id)
-    .filter((id) => !id.startsWith('EX_') && id !== model.objectiveId && id !== model.productReactionId);
+    .filter((id) => !id.startsWith("EX_") && id !== model.objectiveId && id !== model.productReactionId);
 
   // Classify candidates by flux trend across all steps
   const overexpressionTargets: OverexpressionTarget[] = [];
@@ -269,17 +265,15 @@ export async function runFSEOF(
         nonDecreasingCount++;
       }
     }
-    const monotonicityScore = fluxSeries.length > 1
-      ? nonDecreasingCount / (fluxSeries.length - 1)
-      : 0;
+    const monotonicityScore = fluxSeries.length > 1 ? nonDecreasingCount / (fluxSeries.length - 1) : 0;
 
     const diff = lastFlux - firstFlux;
-    let direction: 'up' | 'down' | 'unchanged' = 'unchanged';
-    if (diff > tolerance) direction = 'up';
-    else if (diff < -tolerance) direction = 'down';
+    let direction: "up" | "down" | "unchanged" = "unchanged";
+    if (diff > tolerance) direction = "up";
+    else if (diff < -tolerance) direction = "down";
 
     // Overexpression target: flux increases monotonically
-    if (direction === 'up' && monotonicityScore >= monotonicityThreshold) {
+    if (direction === "up" && monotonicityScore >= monotonicityThreshold) {
       overexpressionTargets.push({
         reactionId: rxnId,
         fluxAtStep0: round(firstFlux),

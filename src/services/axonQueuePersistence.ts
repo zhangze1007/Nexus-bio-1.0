@@ -20,9 +20,9 @@
  * rejected cleanly instead of crashing on parse.
  */
 
-import type { AxonTask } from './AxonOrchestrator';
+import type { AxonTask } from "./AxonOrchestrator";
 
-export const AXON_QUEUE_STORAGE_KEY = 'nexus-bio:axon-queue';
+export const AXON_QUEUE_STORAGE_KEY = "nexus-bio:axon-queue";
 export const AXON_QUEUE_SCHEMA_VERSION = 1;
 
 export interface PersistedAxonQueue {
@@ -36,10 +36,10 @@ export interface RestoreResult {
   interrupted: number;
 }
 
-type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 function getSessionStorage(): StorageLike | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
     return window.sessionStorage;
   } catch {
@@ -52,18 +52,15 @@ function getSessionStorage(): StorageLike | null {
  * no side effects — so the semantics can be unit-tested independently
  * from the storage layer.
  */
-export function reconstituteTasks(
-  persisted: PersistedAxonQueue,
-  now: number = Date.now(),
-): RestoreResult {
+export function reconstituteTasks(persisted: PersistedAxonQueue, now: number = Date.now()): RestoreResult {
   let interrupted = 0;
   const tasks = persisted.tasks.map((task) => {
-    if (task.status === 'running') {
+    if (task.status === "running") {
       interrupted += 1;
       return {
         ...task,
-        status: 'error' as const,
-        error: 'Interrupted by page reload',
+        status: "error" as const,
+        error: "Interrupted by page reload",
         finishedAt: now,
       };
     }

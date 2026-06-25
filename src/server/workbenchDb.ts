@@ -7,10 +7,9 @@
  * MIGRATION PATH (M11): Migrated from better-sqlite3 (synchronous) to
  * @libsql/client (async) via libsqlDb.ts helpers.
  */
-import { access, mkdir, readFile } from 'node:fs/promises';
-import path from 'node:path';
-import { sqlAll, sqlGet, sqlRun, sqlBatch } from './libsqlDb';
-import { sanitizeWorkbenchState } from '../store/workbenchValidation';
+import { access, mkdir, readFile } from "node:fs/promises";
+import path from "node:path";
+import type { InStatement } from "@libsql/client";
 import type {
   WorkbenchCanonicalState,
   WorkbenchCollaborator,
@@ -18,17 +17,18 @@ import type {
   WorkbenchHistoryEntry,
   WorkbenchRunArtifact,
   WorkbenchSyncAuditEntry,
-} from '../store/workbenchTypes';
-import type { InStatement } from '@libsql/client';
+} from "../store/workbenchTypes";
+import { sanitizeWorkbenchState } from "../store/workbenchValidation";
+import { sqlAll, sqlBatch, sqlGet, sqlRun } from "./libsqlDb";
 
 type ScopeResolveOptions = {
   forceExplicit?: boolean;
 };
 
-const DEFAULT_PROJECT_ID = 'default-workbench';
-const SYSTEM_ACTOR_ID = 'system';
-const LOCAL_STORE_DIR = path.join(process.cwd(), '.nexus');
-const SERVERLESS_STORE_DIR = path.join('/tmp', '.nexus');
+const DEFAULT_PROJECT_ID = "default-workbench";
+const SYSTEM_ACTOR_ID = "system";
+const LOCAL_STORE_DIR = path.join(process.cwd(), ".nexus");
+const SERVERLESS_STORE_DIR = path.join("/tmp", ".nexus");
 
 const EMPTY_STATE: WorkbenchCanonicalState = {
   schemaVersion: 1,
@@ -38,25 +38,25 @@ const EMPTY_STATE: WorkbenchCanonicalState = {
   project: null,
   evidenceItems: [],
   selectedEvidenceIds: [],
-  draftAnalyzeInput: '',
+  draftAnalyzeInput: "",
   workflowArtifact: null,
   analyzeArtifact: null,
   toolRuns: [],
   toolPayloads: {},
   payloadAdmissionDecisionsByToolId: {},
   runArtifacts: [],
-  checkpoints: ['stage-1', 'stage-2', 'stage-3', 'stage-4'].map((id) => ({
-    id: id as WorkbenchCanonicalState['checkpoints'][number]['id'],
-    status: 'pending' as const,
-    summary: 'Waiting for project context',
+  checkpoints: ["stage-1", "stage-2", "stage-3", "stage-4"].map((id) => ({
+    id: id as WorkbenchCanonicalState["checkpoints"][number]["id"],
+    status: "pending" as const,
+    summary: "Waiting for project context",
     updatedAt: 0,
   })),
   nextRecommendations: [],
   workflowControl: {
-    machineState: 'idle',
-    status: 'idle',
+    machineState: "idle",
+    status: "idle",
     currentToolId: null,
-    nextRecommendedNode: 'pathd',
+    nextRecommendedNode: "pathd",
     missingEvidence: { minRequired: 0, have: 0, kinds: [] },
     confidence: null,
     uncertainty: null,
@@ -66,8 +66,8 @@ const EMPTY_STATE: WorkbenchCanonicalState = {
     isDemoOnly: false,
     latestRunStatus: null,
     latestRunToolId: null,
-    reasonCodes: ['NO_TARGET'],
-    explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+    reasonCodes: ["NO_TARGET"],
+    explanation: "No target product set. Set a target via /research or /analyze, then run PATHD.",
     iteration: 0,
     updatedAt: 0,
   },
@@ -82,21 +82,23 @@ function resolveStoreDir() {
 }
 
 function resolveDbPath() {
-  return path.join(resolveStoreDir(), 'workbench.db');
+  return path.join(resolveStoreDir(), "workbench.db");
 }
 
 function resolveLegacyJsonPath() {
-  return path.join(resolveStoreDir(), 'workbench-state.json');
+  return path.join(resolveStoreDir(), "workbench-state.json");
 }
 
-function toPayloadRecord(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload && typeof payload === 'object'
-    ? payload as unknown as Record<string, unknown>
-    : {};
+function toPayloadRecord(payload: WorkbenchRunArtifact["payloadSnapshot"]) {
+  return payload && typeof payload === "object" ? (payload as unknown as Record<string, unknown>) : {};
 }
 
-function resolveProjectId(projectId?: string | null, state?: WorkbenchCanonicalState | null, options?: ScopeResolveOptions) {
-  const candidate = options?.forceExplicit ? projectId : state?.project?.id ?? projectId;
+function resolveProjectId(
+  projectId?: string | null,
+  state?: WorkbenchCanonicalState | null,
+  options?: ScopeResolveOptions,
+) {
+  const candidate = options?.forceExplicit ? projectId : (state?.project?.id ?? projectId);
   return candidate && candidate.trim().length > 0 ? candidate.trim() : DEFAULT_PROJECT_ID;
 }
 
@@ -105,62 +107,80 @@ function resolveActorId(actorId?: string | null) {
 }
 
 function inferProjectTitle(state: WorkbenchCanonicalState) {
-  return state.project?.title || state.analyzeArtifact?.title || state.workflowArtifact?.intake.targetMolecule || 'Synthetic Biology Program';
+  return (
+    state.project?.title ||
+    state.analyzeArtifact?.title ||
+    state.workflowArtifact?.intake.targetMolecule ||
+    "Synthetic Biology Program"
+  );
 }
 
 function inferTargetProduct(state: WorkbenchCanonicalState) {
-  return state.analyzeArtifact?.targetProduct || state.workflowArtifact?.intake.targetMolecule || state.project?.targetProduct || 'Target Product';
+  return (
+    state.analyzeArtifact?.targetProduct ||
+    state.workflowArtifact?.intake.targetMolecule ||
+    state.project?.targetProduct ||
+    "Target Product"
+  );
 }
 
 function inferProjectStatus(state: WorkbenchCanonicalState) {
-  return state.project?.status || (state.runArtifacts.length > 0 ? 'iterating' : 'draft');
+  return state.project?.status || (state.runArtifacts.length > 0 ? "iterating" : "draft");
 }
 
 function classifyAuthorityTier(artifact: WorkbenchRunArtifact) {
-  if (artifact.isSimulated) return 'simulated';
-  if (['cellfree', 'dbtlflow', 'multio', 'scspatial'].includes(artifact.toolId)) return 'experiment-backed';
-  if (artifact.sourceArtifactId || artifact.execution.analyzeRef) return 'evidence-linked';
-  return 'contextual';
+  if (artifact.isSimulated) return "simulated";
+  if (["cellfree", "dbtlflow", "multio", "scspatial"].includes(artifact.toolId)) return "experiment-backed";
+  if (artifact.sourceArtifactId || artifact.execution.analyzeRef) return "evidence-linked";
+  return "contextual";
 }
 
 function classifyExperimentStatus(artifact: WorkbenchRunArtifact) {
   const payload = toPayloadRecord(artifact.payloadSnapshot);
-  if (artifact.toolId === 'dbtlflow' && payload.feedbackSource === 'committed') return 'committed';
-  if (artifact.isSimulated) return 'simulated';
-  return 'recorded';
+  if (artifact.toolId === "dbtlflow" && payload.feedbackSource === "committed") return "committed";
+  if (artifact.isSimulated) return "simulated";
+  return "recorded";
 }
 
 function buildExperimentMetrics(artifact: WorkbenchRunArtifact) {
   const payload = toPayloadRecord(artifact.payloadSnapshot);
-  const result = payload.result && typeof payload.result === 'object' ? payload.result as Record<string, unknown> : null;
+  const result =
+    payload.result && typeof payload.result === "object" ? (payload.result as Record<string, unknown>) : null;
 
   switch (artifact.toolId) {
-    case 'cellfree':
+    case "cellfree":
       return [
-        typeof result?.totalProteinYield === 'number' ? `${result.totalProteinYield.toFixed(2)} total protein` : null,
-        typeof result?.energyDepletionTime === 'number' ? `${result.energyDepletionTime.toFixed(1)} min depletion` : null,
-        typeof result?.confidence === 'number' ? `${(result.confidence * 100).toFixed(0)}% confidence` : null,
+        typeof result?.totalProteinYield === "number" ? `${result.totalProteinYield.toFixed(2)} total protein` : null,
+        typeof result?.energyDepletionTime === "number"
+          ? `${result.energyDepletionTime.toFixed(1)} min depletion`
+          : null,
+        typeof result?.confidence === "number" ? `${(result.confidence * 100).toFixed(0)}% confidence` : null,
       ].filter(Boolean) as string[];
-    case 'dbtlflow':
+    case "dbtlflow":
       return [
-        typeof result?.passRate === 'number' ? `${result.passRate.toFixed(0)}% pass rate` : null,
-        typeof result?.improvementRate === 'number' ? `${result.improvementRate.toFixed(2)} improvement` : null,
-        typeof payload.proposedPhase === 'string' ? `${payload.proposedPhase} phase` : null,
+        typeof result?.passRate === "number" ? `${result.passRate.toFixed(0)}% pass rate` : null,
+        typeof result?.improvementRate === "number" ? `${result.improvementRate.toFixed(2)} improvement` : null,
+        typeof payload.proposedPhase === "string" ? `${payload.proposedPhase} phase` : null,
       ].filter(Boolean) as string[];
-    case 'fbasim':
+    case "fbasim":
       return [
-        typeof result?.growthRate === 'number' ? `growth ${result.growthRate.toFixed(3)}` : null,
-        typeof result?.carbonEfficiency === 'number' ? `${result.carbonEfficiency.toFixed(1)}% carbon efficiency` : null,
-        result?.feasible === true ? 'feasible' : result?.feasible === false ? 'infeasible' : null,
+        typeof result?.growthRate === "number" ? `growth ${result.growthRate.toFixed(3)}` : null,
+        typeof result?.carbonEfficiency === "number"
+          ? `${result.carbonEfficiency.toFixed(1)}% carbon efficiency`
+          : null,
+        result?.feasible === true ? "feasible" : result?.feasible === false ? "infeasible" : null,
       ].filter(Boolean) as string[];
-    case 'dyncon':
+    case "dyncon":
       return [
-        typeof result?.productTiter === 'number' ? `${result.productTiter.toFixed(2)} g/L titer` : null,
-        typeof result?.doRmse === 'number' ? `DO RMSE ${result.doRmse.toFixed(3)}` : null,
-        result?.stable === true ? 'stable controller' : result?.stable === false ? 'unstable controller' : null,
+        typeof result?.productTiter === "number" ? `${result.productTiter.toFixed(2)} g/L titer` : null,
+        typeof result?.doRmse === "number" ? `DO RMSE ${result.doRmse.toFixed(3)}` : null,
+        result?.stable === true ? "stable controller" : result?.stable === false ? "unstable controller" : null,
       ].filter(Boolean) as string[];
     default:
-      return artifact.summary.split('·').map((item) => item.trim()).slice(0, 3);
+      return artifact.summary
+        .split("·")
+        .map((item) => item.trim())
+        .slice(0, 3);
   }
 }
 
@@ -168,18 +188,24 @@ function buildExperimentMetrics(artifact: WorkbenchRunArtifact) {
 
 function buildEnsureActorStatements(actorId: string): InStatement[] {
   const timestamp = now();
-  return [{
-    sql: `
+  return [
+    {
+      sql: `
       INSERT INTO actors (actor_id, display_name, role, created_at, last_seen_at)
       VALUES (?, ?, 'researcher', ?, ?)
       ON CONFLICT(actor_id) DO UPDATE SET
         last_seen_at = excluded.last_seen_at
     `,
-    args: [actorId, actorId === SYSTEM_ACTOR_ID ? 'System' : `Researcher ${actorId.slice(-6)}`, timestamp, timestamp],
-  }];
+      args: [actorId, actorId === SYSTEM_ACTOR_ID ? "System" : `Researcher ${actorId.slice(-6)}`, timestamp, timestamp],
+    },
+  ];
 }
 
-function buildEnsureProjectStatements(projectId: string, actorId: string, state: WorkbenchCanonicalState): InStatement[] {
+function buildEnsureProjectStatements(
+  projectId: string,
+  actorId: string,
+  state: WorkbenchCanonicalState,
+): InStatement[] {
   const timestamp = now();
   return [
     {
@@ -213,7 +239,11 @@ function buildEnsureProjectStatements(projectId: string, actorId: string, state:
   ];
 }
 
-function buildInsertRunArtifactStatements(projectId: string, revision: number, runArtifacts: WorkbenchRunArtifact[]): InStatement[] {
+function buildInsertRunArtifactStatements(
+  projectId: string,
+  revision: number,
+  runArtifacts: WorkbenchRunArtifact[],
+): InStatement[] {
   return runArtifacts.map((artifact) => ({
     sql: `
       INSERT INTO project_run_artifact_index (
@@ -240,9 +270,16 @@ function buildInsertRunArtifactStatements(projectId: string, revision: number, r
   }));
 }
 
-function buildInsertExperimentRecordStatements(projectId: string, actorId: string, revision: number, runArtifacts: WorkbenchRunArtifact[]): InStatement[] {
+function buildInsertExperimentRecordStatements(
+  projectId: string,
+  actorId: string,
+  revision: number,
+  runArtifacts: WorkbenchRunArtifact[],
+): InStatement[] {
   return runArtifacts.map((artifact) => {
-    const category = ['cellfree', 'dbtlflow', 'multio', 'scspatial'].includes(artifact.toolId) ? 'experiment' : 'analysis';
+    const category = ["cellfree", "dbtlflow", "multio", "scspatial"].includes(artifact.toolId)
+      ? "experiment"
+      : "analysis";
     return {
       sql: `
         INSERT INTO experiment_records (
@@ -277,37 +314,45 @@ function buildInsertProjectHistoryStatements(
   state: WorkbenchCanonicalState,
   updatedAt: number,
 ): InStatement[] {
-  return [{
-    sql: `
+  return [
+    {
+      sql: `
       INSERT OR REPLACE INTO project_history (
         project_id, revision, actor_id, project_title, target_product,
         analyze_title, analyze_generated_at, run_artifact_count,
         mutation_at, updated_at, state_json
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-    args: [
-      projectId,
-      state.revision,
-      actorId,
-      inferProjectTitle(state),
-      inferTargetProduct(state),
-      state.analyzeArtifact?.title ?? null,
-      state.analyzeArtifact?.generatedAt ?? null,
-      state.runArtifacts.length,
-      state.lastMutationAt,
-      updatedAt,
-      JSON.stringify(state),
-    ],
-  }];
+      args: [
+        projectId,
+        state.revision,
+        actorId,
+        inferProjectTitle(state),
+        inferTargetProduct(state),
+        state.analyzeArtifact?.title ?? null,
+        state.analyzeArtifact?.generatedAt ?? null,
+        state.runArtifacts.length,
+        state.lastMutationAt,
+        updatedAt,
+        JSON.stringify(state),
+      ],
+    },
+  ];
 }
 
 // ─── Schema initialization ───────────────────────────────────────────────────
 
 /** Whitelist of valid table names — prevents latent SQL injection via PRAGMA. */
 const VALID_TABLE_NAMES = new Set([
-  'actors', 'projects', 'project_members', 'project_state',
-  'project_run_artifact_index', 'experiment_records', 'sync_audit',
-  'project_history', 'canonical_state',
+  "actors",
+  "projects",
+  "project_members",
+  "project_state",
+  "project_run_artifact_index",
+  "experiment_records",
+  "sync_audit",
+  "project_history",
+  "canonical_state",
 ]);
 
 async function hasColumn(tableName: string, columnName: string): Promise<boolean> {
@@ -321,13 +366,13 @@ async function hasColumn(tableName: string, columnName: string): Promise<boolean
 
 async function ensureLegacyColumns(): Promise<void> {
   const legacyColumns: Array<{ table: string; column: string; definition: string }> = [
-    { table: 'sync_audit', column: 'project_id', definition: `TEXT NOT NULL DEFAULT '${DEFAULT_PROJECT_ID}'` },
-    { table: 'sync_audit', column: 'actor_id', definition: `TEXT NOT NULL DEFAULT '${SYSTEM_ACTOR_ID}'` },
-    { table: 'sync_audit', column: 'revision', definition: 'INTEGER NOT NULL DEFAULT 0' },
-    { table: 'sync_audit', column: 'action', definition: "TEXT NOT NULL DEFAULT 'legacy-sync'" },
-    { table: 'sync_audit', column: 'status', definition: "TEXT NOT NULL DEFAULT 'ok'" },
-    { table: 'sync_audit', column: 'detail', definition: 'TEXT' },
-    { table: 'sync_audit', column: 'created_at', definition: 'INTEGER NOT NULL DEFAULT 0' },
+    { table: "sync_audit", column: "project_id", definition: `TEXT NOT NULL DEFAULT '${DEFAULT_PROJECT_ID}'` },
+    { table: "sync_audit", column: "actor_id", definition: `TEXT NOT NULL DEFAULT '${SYSTEM_ACTOR_ID}'` },
+    { table: "sync_audit", column: "revision", definition: "INTEGER NOT NULL DEFAULT 0" },
+    { table: "sync_audit", column: "action", definition: "TEXT NOT NULL DEFAULT 'legacy-sync'" },
+    { table: "sync_audit", column: "status", definition: "TEXT NOT NULL DEFAULT 'ok'" },
+    { table: "sync_audit", column: "detail", definition: "TEXT" },
+    { table: "sync_audit", column: "created_at", definition: "INTEGER NOT NULL DEFAULT 0" },
   ];
 
   for (const { table, column, definition } of legacyColumns) {
@@ -339,12 +384,13 @@ async function ensureLegacyColumns(): Promise<void> {
 
 async function initializeSchema(): Promise<void> {
   // PRAGMAs must be executed individually (not batched)
-  await sqlRun('PRAGMA journal_mode = WAL');
-  await sqlRun('PRAGMA synchronous = NORMAL');
-  await sqlRun('PRAGMA foreign_keys = ON');
+  await sqlRun("PRAGMA journal_mode = WAL");
+  await sqlRun("PRAGMA synchronous = NORMAL");
+  await sqlRun("PRAGMA foreign_keys = ON");
 
   const schemaStatements: InStatement[] = [
-    { sql: `
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS actors (
         actor_id TEXT PRIMARY KEY,
         display_name TEXT NOT NULL,
@@ -352,8 +398,10 @@ async function initializeSchema(): Promise<void> {
         created_at INTEGER NOT NULL,
         last_seen_at INTEGER NOT NULL
       )
-    ` },
-    { sql: `
+    `,
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS projects (
         project_id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
@@ -362,8 +410,10 @@ async function initializeSchema(): Promise<void> {
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
-    ` },
-    { sql: `
+    `,
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS project_members (
         project_id TEXT NOT NULL,
         actor_id TEXT NOT NULL,
@@ -374,8 +424,10 @@ async function initializeSchema(): Promise<void> {
         FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
         FOREIGN KEY (actor_id) REFERENCES actors(actor_id) ON DELETE CASCADE
       )
-    ` },
-    { sql: `
+    `,
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS project_state (
         project_id TEXT PRIMARY KEY,
         schema_version INTEGER NOT NULL,
@@ -387,8 +439,10 @@ async function initializeSchema(): Promise<void> {
         FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
         FOREIGN KEY (last_actor_id) REFERENCES actors(actor_id)
       )
-    ` },
-    { sql: `
+    `,
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS project_run_artifact_index (
         artifact_id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
@@ -405,10 +459,16 @@ async function initializeSchema(): Promise<void> {
         payload_json TEXT NOT NULL,
         FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
       )
-    ` },
-    { sql: 'CREATE INDEX IF NOT EXISTS idx_project_run_artifact_project_revision ON project_run_artifact_index (project_id, revision DESC)' },
-    { sql: 'CREATE INDEX IF NOT EXISTS idx_project_run_artifact_project_tool ON project_run_artifact_index (project_id, tool_id, created_at DESC)' },
-    { sql: `
+    `,
+    },
+    {
+      sql: "CREATE INDEX IF NOT EXISTS idx_project_run_artifact_project_revision ON project_run_artifact_index (project_id, revision DESC)",
+    },
+    {
+      sql: "CREATE INDEX IF NOT EXISTS idx_project_run_artifact_project_tool ON project_run_artifact_index (project_id, tool_id, created_at DESC)",
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS experiment_records (
         record_id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
@@ -427,9 +487,13 @@ async function initializeSchema(): Promise<void> {
         FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
         FOREIGN KEY (actor_id) REFERENCES actors(actor_id)
       )
-    ` },
-    { sql: 'CREATE INDEX IF NOT EXISTS idx_experiment_records_project_created ON experiment_records (project_id, created_at DESC)' },
-    { sql: `
+    `,
+    },
+    {
+      sql: "CREATE INDEX IF NOT EXISTS idx_experiment_records_project_created ON experiment_records (project_id, created_at DESC)",
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS sync_audit (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         project_id TEXT NOT NULL,
@@ -442,8 +506,10 @@ async function initializeSchema(): Promise<void> {
         FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
         FOREIGN KEY (actor_id) REFERENCES actors(actor_id)
       )
-    ` },
-    { sql: `
+    `,
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS project_history (
         project_id TEXT NOT NULL,
         revision INTEGER NOT NULL,
@@ -460,9 +526,13 @@ async function initializeSchema(): Promise<void> {
         FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
         FOREIGN KEY (actor_id) REFERENCES actors(actor_id)
       )
-    ` },
-    { sql: 'CREATE INDEX IF NOT EXISTS idx_project_history_project_updated ON project_history (project_id, updated_at DESC)' },
-    { sql: `
+    `,
+    },
+    {
+      sql: "CREATE INDEX IF NOT EXISTS idx_project_history_project_updated ON project_history (project_id, updated_at DESC)",
+    },
+    {
+      sql: `
       CREATE TABLE IF NOT EXISTS canonical_state (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         schema_version INTEGER NOT NULL,
@@ -471,7 +541,8 @@ async function initializeSchema(): Promise<void> {
         state_json TEXT NOT NULL,
         updated_at INTEGER NOT NULL
       )
-    ` },
+    `,
+    },
   ];
 
   await sqlBatch(schemaStatements);
@@ -481,23 +552,29 @@ async function initializeSchema(): Promise<void> {
 // ─── Legacy migrations ───────────────────────────────────────────────────────
 
 async function migrateLegacyCanonicalIfNeeded(): Promise<void> {
-  const hasProjectState = await sqlGet('SELECT COUNT(*) as count FROM project_state');
+  const hasProjectState = await sqlGet("SELECT COUNT(*) as count FROM project_state");
   if (hasProjectState && (hasProjectState.count as number) > 0) return;
-  const row = await sqlGet('SELECT state_json FROM canonical_state WHERE id = 1');
+  const row = await sqlGet("SELECT state_json FROM canonical_state WHERE id = 1");
   if (!row?.state_json) return;
   let parsed;
   try {
     parsed = sanitizeWorkbenchState(JSON.parse(row.state_json as string));
   } catch {
-    console.warn('[workbenchDb] Failed to parse legacy canonical state — skipping migration');
+    console.warn("[workbenchDb] Failed to parse legacy canonical state — skipping migration");
     return;
   }
   if (!parsed) return;
-  await writeProjectState(resolveProjectId(undefined, parsed), SYSTEM_ACTOR_ID, parsed, 'legacy-canonical-migration', 'migrated legacy canonical snapshot into project-scoped state');
+  await writeProjectState(
+    resolveProjectId(undefined, parsed),
+    SYSTEM_ACTOR_ID,
+    parsed,
+    "legacy-canonical-migration",
+    "migrated legacy canonical snapshot into project-scoped state",
+  );
 }
 
 async function migrateLegacyJsonIfNeeded(): Promise<void> {
-  const hasProjectState = await sqlGet('SELECT COUNT(*) as count FROM project_state');
+  const hasProjectState = await sqlGet("SELECT COUNT(*) as count FROM project_state");
   if (hasProjectState && (hasProjectState.count as number) > 0) return;
 
   try {
@@ -507,15 +584,29 @@ async function migrateLegacyJsonIfNeeded(): Promise<void> {
   }
 
   try {
-    const raw = await readFile(resolveLegacyJsonPath(), 'utf8');
+    const raw = await readFile(resolveLegacyJsonPath(), "utf8");
     const parsed = sanitizeWorkbenchState(JSON.parse(raw));
     if (!parsed) return;
-    await writeProjectState(resolveProjectId(undefined, parsed), SYSTEM_ACTOR_ID, parsed, 'legacy-json-migration', 'migrated legacy JSON snapshot into collaborative project state');
+    await writeProjectState(
+      resolveProjectId(undefined, parsed),
+      SYSTEM_ACTOR_ID,
+      parsed,
+      "legacy-json-migration",
+      "migrated legacy JSON snapshot into collaborative project state",
+    );
   } catch {
     await sqlRun(
       `INSERT INTO sync_audit (project_id, actor_id, revision, action, status, detail, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [DEFAULT_PROJECT_ID, SYSTEM_ACTOR_ID, 0, 'legacy-json-migration', 'failed', 'legacy JSON migration failed or contained invalid state', now()],
+      [
+        DEFAULT_PROJECT_ID,
+        SYSTEM_ACTOR_ID,
+        0,
+        "legacy-json-migration",
+        "failed",
+        "legacy JSON migration failed or contained invalid state",
+        now(),
+      ],
     );
   }
 }
@@ -537,13 +628,16 @@ export async function getWorkbenchDb(): Promise<void> {
 
 export async function projectStateExists(projectId?: string | null, options?: ScopeResolveOptions): Promise<boolean> {
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
-  const row = await sqlGet('SELECT 1 as present FROM project_state WHERE project_id = ?', [resolvedProjectId]);
+  const row = await sqlGet("SELECT 1 as present FROM project_state WHERE project_id = ?", [resolvedProjectId]);
   return Boolean(row?.present);
 }
 
-export async function readProjectState(projectId?: string | null, options?: ScopeResolveOptions): Promise<WorkbenchCanonicalState> {
+export async function readProjectState(
+  projectId?: string | null,
+  options?: ScopeResolveOptions,
+): Promise<WorkbenchCanonicalState> {
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
-  const row = await sqlGet('SELECT state_json FROM project_state WHERE project_id = ?', [resolvedProjectId]);
+  const row = await sqlGet("SELECT state_json FROM project_state WHERE project_id = ?", [resolvedProjectId]);
   if (!row?.state_json) return EMPTY_STATE;
   try {
     return sanitizeWorkbenchState(JSON.parse(row.state_json as string)) ?? EMPTY_STATE;
@@ -556,8 +650,8 @@ export async function writeProjectState(
   projectId: string,
   actorId: string,
   state: WorkbenchCanonicalState,
-  action = 'sync',
-  detail = 'project state updated',
+  action = "sync",
+  detail = "project state updated",
   options?: ScopeResolveOptions,
 ): Promise<void> {
   const resolvedProjectId = resolveProjectId(projectId, state, options);
@@ -590,8 +684,8 @@ export async function writeProjectState(
         timestamp,
       ],
     },
-    { sql: 'DELETE FROM project_run_artifact_index WHERE project_id = ?', args: [resolvedProjectId] },
-    { sql: 'DELETE FROM experiment_records WHERE project_id = ?', args: [resolvedProjectId] },
+    { sql: "DELETE FROM project_run_artifact_index WHERE project_id = ?", args: [resolvedProjectId] },
+    { sql: "DELETE FROM experiment_records WHERE project_id = ?", args: [resolvedProjectId] },
     ...buildInsertRunArtifactStatements(resolvedProjectId, state.revision, state.runArtifacts),
     ...buildInsertExperimentRecordStatements(resolvedProjectId, resolvedActorId, state.revision, state.runArtifacts),
     ...buildInsertProjectHistoryStatements(resolvedProjectId, resolvedActorId, state, timestamp),
@@ -600,30 +694,35 @@ export async function writeProjectState(
         INSERT INTO sync_audit (project_id, actor_id, revision, action, status, detail, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
-      args: [resolvedProjectId, resolvedActorId, state.revision, action, 'ok', detail, timestamp],
+      args: [resolvedProjectId, resolvedActorId, state.revision, action, "ok", detail, timestamp],
     },
   ];
 
   await sqlBatch(statements);
 }
 
-export async function getBackendMeta(projectId?: string | null, actorId?: string | null, options?: ScopeResolveOptions) {
+export async function getBackendMeta(
+  projectId?: string | null,
+  actorId?: string | null,
+  options?: ScopeResolveOptions,
+) {
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const resolvedActorId = resolveActorId(actorId);
-  const [projectState, runArtifactCount, auditCount, historyCount, experimentCount, memberCount, projectCount] = await Promise.all([
-    sqlGet('SELECT revision, updated_at FROM project_state WHERE project_id = ?', [resolvedProjectId]),
-    sqlGet('SELECT COUNT(*) as count FROM project_run_artifact_index WHERE project_id = ?', [resolvedProjectId]),
-    sqlGet('SELECT COUNT(*) as count FROM sync_audit WHERE project_id = ?', [resolvedProjectId]),
-    sqlGet('SELECT COUNT(*) as count FROM project_history WHERE project_id = ?', [resolvedProjectId]),
-    sqlGet('SELECT COUNT(*) as count FROM experiment_records WHERE project_id = ?', [resolvedProjectId]),
-    sqlGet('SELECT COUNT(*) as count FROM project_members WHERE project_id = ?', [resolvedProjectId]),
-    sqlGet('SELECT COUNT(*) as count FROM projects'),
-  ]);
+  const [projectState, runArtifactCount, auditCount, historyCount, experimentCount, memberCount, projectCount] =
+    await Promise.all([
+      sqlGet("SELECT revision, updated_at FROM project_state WHERE project_id = ?", [resolvedProjectId]),
+      sqlGet("SELECT COUNT(*) as count FROM project_run_artifact_index WHERE project_id = ?", [resolvedProjectId]),
+      sqlGet("SELECT COUNT(*) as count FROM sync_audit WHERE project_id = ?", [resolvedProjectId]),
+      sqlGet("SELECT COUNT(*) as count FROM project_history WHERE project_id = ?", [resolvedProjectId]),
+      sqlGet("SELECT COUNT(*) as count FROM experiment_records WHERE project_id = ?", [resolvedProjectId]),
+      sqlGet("SELECT COUNT(*) as count FROM project_members WHERE project_id = ?", [resolvedProjectId]),
+      sqlGet("SELECT COUNT(*) as count FROM projects"),
+    ]);
 
   return {
-    kind: 'sqlite' as const,
-    driver: 'libsql' as const,
-    scope: 'project' as const,
+    kind: "sqlite" as const,
+    driver: "libsql" as const,
+    scope: "project" as const,
     path: resolveDbPath(),
     projectId: resolvedProjectId,
     actorId: resolvedActorId,
@@ -638,16 +737,23 @@ export async function getBackendMeta(projectId?: string | null, actorId?: string
   };
 }
 
-export async function listSyncAudit(projectId?: string | null, limit = 12, options?: ScopeResolveOptions): Promise<WorkbenchSyncAuditEntry[]> {
+export async function listSyncAudit(
+  projectId?: string | null,
+  limit = 12,
+  options?: ScopeResolveOptions,
+): Promise<WorkbenchSyncAuditEntry[]> {
   const safeLimit = Math.max(1, Math.min(limit, 50));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
-  const rows = await sqlAll(`
+  const rows = await sqlAll(
+    `
     SELECT id, project_id, actor_id, revision, action, status, detail, created_at
     FROM sync_audit
     WHERE project_id = ?
     ORDER BY created_at DESC, id DESC
     LIMIT ?
-  `, [resolvedProjectId, safeLimit]);
+  `,
+    [resolvedProjectId, safeLimit],
+  );
 
   return rows.map((row) => ({
     id: row.id as number,
@@ -661,10 +767,15 @@ export async function listSyncAudit(projectId?: string | null, limit = 12, optio
   }));
 }
 
-export async function listCanonicalHistory(projectId?: string | null, limit = 16, options?: ScopeResolveOptions): Promise<WorkbenchHistoryEntry[]> {
+export async function listCanonicalHistory(
+  projectId?: string | null,
+  limit = 16,
+  options?: ScopeResolveOptions,
+): Promise<WorkbenchHistoryEntry[]> {
   const safeLimit = Math.max(1, Math.min(limit, 64));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
-  const rows = await sqlAll(`
+  const rows = await sqlAll(
+    `
     SELECT
       project_id, revision, actor_id, project_title, target_product,
       analyze_title, analyze_generated_at, run_artifact_count,
@@ -673,7 +784,9 @@ export async function listCanonicalHistory(projectId?: string | null, limit = 16
     WHERE project_id = ?
     ORDER BY revision DESC
     LIMIT ?
-  `, [resolvedProjectId, safeLimit]);
+  `,
+    [resolvedProjectId, safeLimit],
+  );
 
   return rows.map((row) => ({
     revision: row.revision as number,
@@ -689,17 +802,24 @@ export async function listCanonicalHistory(projectId?: string | null, limit = 16
   }));
 }
 
-export async function listProjectMembers(projectId?: string | null, limit = 24, options?: ScopeResolveOptions): Promise<WorkbenchCollaborator[]> {
+export async function listProjectMembers(
+  projectId?: string | null,
+  limit = 24,
+  options?: ScopeResolveOptions,
+): Promise<WorkbenchCollaborator[]> {
   const safeLimit = Math.max(1, Math.min(limit, 64));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
-  const rows = await sqlAll(`
+  const rows = await sqlAll(
+    `
     SELECT pm.actor_id, a.display_name, pm.role, pm.last_seen_at
     FROM project_members pm
     JOIN actors a ON a.actor_id = pm.actor_id
     WHERE pm.project_id = ?
     ORDER BY pm.last_seen_at DESC
     LIMIT ?
-  `, [resolvedProjectId, safeLimit]);
+  `,
+    [resolvedProjectId, safeLimit],
+  );
 
   return rows.map((row) => ({
     actorId: row.actor_id as string,
@@ -709,10 +829,15 @@ export async function listProjectMembers(projectId?: string | null, limit = 24, 
   }));
 }
 
-export async function listExperimentRecords(projectId?: string | null, limit = 24, options?: ScopeResolveOptions): Promise<WorkbenchExperimentRecord[]> {
+export async function listExperimentRecords(
+  projectId?: string | null,
+  limit = 24,
+  options?: ScopeResolveOptions,
+): Promise<WorkbenchExperimentRecord[]> {
   const safeLimit = Math.max(1, Math.min(limit, 64));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
-  const rows = await sqlAll(`
+  const rows = await sqlAll(
+    `
     SELECT
       record_id, project_id, actor_id, revision, tool_id, stage_id,
       category, title, summary, status, authority_tier, metrics_json,
@@ -721,7 +846,9 @@ export async function listExperimentRecords(projectId?: string | null, limit = 2
     WHERE project_id = ?
     ORDER BY created_at DESC, updated_at DESC
     LIMIT ?
-  `, [resolvedProjectId, safeLimit]);
+  `,
+    [resolvedProjectId, safeLimit],
+  );
 
   return rows.map((row) => ({
     recordId: row.record_id as string,
@@ -729,16 +856,16 @@ export async function listExperimentRecords(projectId?: string | null, limit = 2
     actorId: row.actor_id as string,
     revision: row.revision as number,
     toolId: row.tool_id as string,
-    stageId: row.stage_id as WorkbenchExperimentRecord['stageId'],
-    category: row.category === 'experiment' ? 'experiment' : 'analysis',
+    stageId: row.stage_id as WorkbenchExperimentRecord["stageId"],
+    category: row.category === "experiment" ? "experiment" : "analysis",
     title: row.title as string,
     summary: row.summary as string,
     status: row.status as string,
-    authorityTier: row.authority_tier as 'simulated' | 'contextual' | 'evidence-linked' | 'experiment-backed',
+    authorityTier: row.authority_tier as "simulated" | "contextual" | "evidence-linked" | "experiment-backed",
     metrics: (() => {
       try {
         const parsed = JSON.parse(row.metrics_json as string);
-        return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+        return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
       } catch {
         return [];
       }

@@ -35,7 +35,7 @@
  *   ALGORITHM: Quadratic MOMA (L2 norm) via HiGHS QP, L1 fallback
  */
 
-import { solveLP, type LPModel, type QPTerm } from './highsSolver';
+import { type LPModel, type QPTerm, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                  */
@@ -110,8 +110,8 @@ function buildFBAModel(model: MOMAModel, knockoutSet: Set<string>): LPModel {
   }));
 
   return {
-    name: 'moma_wt_fba',
-    sense: 'maximize',
+    name: "moma_wt_fba",
+    sense: "maximize",
     objective,
     constraints,
     bounds,
@@ -138,11 +138,7 @@ function buildFBAModel(model: MOMAModel, knockoutSet: Set<string>): LPModel {
  * Objective:
  *   minimise Σ (pos_i + neg_i)      (= L1 distance)
  */
-function buildMOMAModel(
-  model: MOMAModel,
-  knockoutSet: Set<string>,
-  wildtypeFluxes: Record<string, number>,
-): LPModel {
+function buildMOMAModel(model: MOMAModel, knockoutSet: Set<string>, wildtypeFluxes: Record<string, number>): LPModel {
   const metIds = collectMetabolites(model.reactions);
 
   // Objective: minimise sum of positive and negative deviations
@@ -151,7 +147,7 @@ function buildMOMAModel(
     ...model.reactions.map((r) => ({ name: `${r.id}__neg`, coef: 1 })),
   ];
 
-  const constraints: LPModel['constraints'] = [];
+  const constraints: LPModel["constraints"] = [];
 
   // 1. Stoichiometric balance: S · v = 0
   for (const metId of metIds) {
@@ -181,7 +177,7 @@ function buildMOMAModel(
   }
 
   // Bounds
-  const bounds: LPModel['bounds'] = [];
+  const bounds: LPModel["bounds"] = [];
 
   // Original variables
   for (const r of model.reactions) {
@@ -199,8 +195,8 @@ function buildMOMAModel(
   }
 
   return {
-    name: 'moma_l1',
-    sense: 'minimize',
+    name: "moma_l1",
+    sense: "minimize",
     objective,
     constraints,
     bounds,
@@ -220,11 +216,7 @@ function buildMOMAModel(
  *   Quadratic objective: v_i²      for each v_i (diagonal, no cross-terms)
  *   Constant Σ v_wt_i² is dropped (does not affect argmin).
  */
-function buildMOMAQPModel(
-  model: MOMAModel,
-  knockoutSet: Set<string>,
-  wildtypeFluxes: Record<string, number>,
-): LPModel {
+function buildMOMAQPModel(model: MOMAModel, knockoutSet: Set<string>, wildtypeFluxes: Record<string, number>): LPModel {
   const metIds = collectMetabolites(model.reactions);
 
   // Linear objective: -2 * v_wt_i * v_i
@@ -240,7 +232,7 @@ function buildMOMAQPModel(
     coef: 1,
   }));
 
-  const constraints: LPModel['constraints'] = [];
+  const constraints: LPModel["constraints"] = [];
 
   // Stoichiometric balance: S · v = 0
   for (const metId of metIds) {
@@ -255,15 +247,15 @@ function buildMOMAQPModel(
   }
 
   // Bounds
-  const bounds: LPModel['bounds'] = model.reactions.map((r) => ({
+  const bounds: LPModel["bounds"] = model.reactions.map((r) => ({
     name: r.id,
     lb: r.lb,
     ub: knockoutSet.has(r.id) ? 0 : r.ub,
   }));
 
   return {
-    name: 'moma_qp',
-    sense: 'minimize',
+    name: "moma_qp",
+    sense: "minimize",
     objective,
     constraints,
     bounds,
@@ -305,17 +297,11 @@ function euclideanDistance(
  * @param knockoutReactionIds Reaction IDs to knock out (flux fixed to 0)
  * @returns MOMA result with wild-type and mutant fluxes and distance
  */
-export async function runMOMA(
-  model: MOMAModel,
-  knockoutReactionIds: string[],
-): Promise<MOMAResult> {
+export async function runMOMA(model: MOMAModel, knockoutReactionIds: string[]): Promise<MOMAResult> {
   const knockoutSet = new Set(knockoutReactionIds);
 
   // Guard: empty model or missing objective
-  if (
-    model.reactions.length === 0 ||
-    !model.reactions.some((r) => r.id === model.objectiveId)
-  ) {
+  if (model.reactions.length === 0 || !model.reactions.some((r) => r.id === model.objectiveId)) {
     return {
       feasible: false,
       fluxes: {},
@@ -330,7 +316,7 @@ export async function runMOMA(
   const wtLP = buildFBAModel(model, new Set());
   const wtResult = await solveLP(wtLP);
 
-  if (wtResult.status !== 'optimal') {
+  if (wtResult.status !== "optimal") {
     return {
       feasible: false,
       fluxes: {},
@@ -363,7 +349,7 @@ export async function runMOMA(
   const mutLP = buildFBAModel(model, knockoutSet);
   const mutResult = await solveLP(mutLP);
 
-  if (mutResult.status !== 'optimal') {
+  if (mutResult.status !== "optimal") {
     // Mutant is infeasible — report distance from wild-type to origin
     return {
       feasible: false,
@@ -379,13 +365,13 @@ export async function runMOMA(
   const momaQP = buildMOMAQPModel(model, knockoutSet, wildtypeFluxes);
   let momaResult = await solveLP(momaQP);
 
-  if (momaResult.status === 'error') {
+  if (momaResult.status === "error") {
     // QP solve failed (e.g. WASM limitation) — fall back to L1 approximation
     const momaLP = buildMOMAModel(model, knockoutSet, wildtypeFluxes);
     momaResult = await solveLP(momaLP);
   }
 
-  if (momaResult.status !== 'optimal') {
+  if (momaResult.status !== "optimal") {
     // MOMA LP failed — fall back to regular mutant FBA fluxes
     const fallbackFluxes: Record<string, number> = {};
     for (const r of model.reactions) {
@@ -408,10 +394,7 @@ export async function runMOMA(
   }
 
   const growthRate = round(fluxes[model.objectiveId] ?? 0);
-  const distance = round(
-    euclideanDistance(model.reactions, fluxes, wildtypeFluxes),
-    6,
-  );
+  const distance = round(euclideanDistance(model.reactions, fluxes, wildtypeFluxes), 6);
 
   return {
     feasible: true,

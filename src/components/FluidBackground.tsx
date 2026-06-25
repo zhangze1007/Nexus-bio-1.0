@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * Nexus-Bio 2.0 — WebGL2 Navier-Stokes Fluid Background
  *
@@ -16,7 +16,7 @@
  *   ✗ No gl_PointSize anywhere in this file
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from "react";
 
 // ── Shader sources ────────────────────────────────────────────────────
 
@@ -186,9 +186,21 @@ interface FBO {
   height: number;
 }
 
-interface PingPong { read: FBO; write: FBO; swap: () => void }
+interface PingPong {
+  read: FBO;
+  write: FBO;
+  swap: () => void;
+}
 
-function createFBO(gl: WebGL2RenderingContext, w: number, h: number, internalFormat: number, format: number, type: number, linear: boolean): FBO {
+function createFBO(
+  gl: WebGL2RenderingContext,
+  w: number,
+  h: number,
+  internalFormat: number,
+  format: number,
+  type: number,
+  linear: boolean,
+): FBO {
   gl.activeTexture(gl.TEXTURE0);
   const tex = gl.createTexture()!;
   gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -204,12 +216,25 @@ function createFBO(gl: WebGL2RenderingContext, w: number, h: number, internalFor
   return { texture: tex, fbo, width: w, height: h };
 }
 
-function createDoubleFBO(gl: WebGL2RenderingContext, w: number, h: number, iFormat: number, fmt: number, type: number, linear: boolean): PingPong {
-  let a = createFBO(gl, w, h, iFormat, fmt, type, linear);
-  let b = createFBO(gl, w, h, iFormat, fmt, type, linear);
+function createDoubleFBO(
+  gl: WebGL2RenderingContext,
+  w: number,
+  h: number,
+  iFormat: number,
+  fmt: number,
+  type: number,
+  linear: boolean,
+): PingPong {
+  const a = createFBO(gl, w, h, iFormat, fmt, type, linear);
+  const b = createFBO(gl, w, h, iFormat, fmt, type, linear);
   return {
-    read: a, write: b,
-    swap() { const t = this.read; this.read = this.write; this.write = t; },
+    read: a,
+    write: b,
+    swap() {
+      const t = this.read;
+      this.read = this.write;
+      this.write = t;
+    },
   };
 }
 
@@ -227,7 +252,11 @@ function uniformLoc(gl: WebGL2RenderingContext, prog: WebGLProgram, name: string
 // ── Component ──────────────────────────────────────────────────────────
 
 interface FluidPointer {
-  x: number; y: number; dx: number; dy: number; moved: boolean;
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  moved: boolean;
 }
 
 export default function FluidBackground() {
@@ -247,8 +276,8 @@ export default function FluidBackground() {
     const last = lastPointerRef.current;
     const dt = Math.max(now - last.t, 1);
     // Velocity in NDC units/ms — clamp to prevent extreme splats
-    const dx = Math.min(Math.max((x - last.x) / dt * 14, -0.4), 0.4);
-    const dy = Math.min(Math.max((y - last.y) / dt * 14, -0.4), 0.4);
+    const dx = Math.min(Math.max(((x - last.x) / dt) * 14, -0.4), 0.4);
+    const dy = Math.min(Math.max(((y - last.y) / dt) * 14, -0.4), 0.4);
     pointerRef.current = { x, y, dx, dy, moved: true };
     lastPointerRef.current = { x, y, t: now };
     pendingSplatRef.current = true;
@@ -265,11 +294,11 @@ export default function FluidBackground() {
       if (t) handlePointer(t.clientX, t.clientY);
     };
     // Passive to not block scroll
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
 
     // ── WebGL2 context ─────────────────────────────────────────────────
-    const gl = canvas.getContext('webgl2', {
+    const gl = canvas.getContext("webgl2", {
       alpha: false,
       antialias: false,
       depth: false,
@@ -279,33 +308,38 @@ export default function FluidBackground() {
 
     if (!gl) {
       // Graceful degradation — CSS gradient fallback handled in parent
-      console.warn('[FluidBackground] WebGL2 unavailable, falling back to CSS.');
+      console.warn("[FluidBackground] WebGL2 unavailable, falling back to CSS.");
       return () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('touchmove', onTouchMove);
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("touchmove", onTouchMove);
       };
     }
 
     // ── Simulation resolution (decoupled from display res for perf) ────
-    const SIM_W = 256, SIM_H = 256;
-    const DYE_W = 512, DYE_H = 512;
+    const SIM_W = 256,
+      SIM_H = 256;
+    const DYE_W = 512,
+      DYE_H = 512;
 
     // ── Compile programs ───────────────────────────────────────────────
-    let advectProg: WebGLProgram, divergeProg: WebGLProgram,
-        jacobiProg: WebGLProgram, gradientProg: WebGLProgram,
-        splatProg: WebGLProgram, displayProg: WebGLProgram;
+    let advectProg: WebGLProgram,
+      divergeProg: WebGLProgram,
+      jacobiProg: WebGLProgram,
+      gradientProg: WebGLProgram,
+      splatProg: WebGLProgram,
+      displayProg: WebGLProgram;
     try {
-      advectProg   = createProgram(gl, VERT, ADVECT_FRAG);
-      divergeProg  = createProgram(gl, VERT, DIVERGENCE_FRAG);
-      jacobiProg   = createProgram(gl, VERT, JACOBI_FRAG);
+      advectProg = createProgram(gl, VERT, ADVECT_FRAG);
+      divergeProg = createProgram(gl, VERT, DIVERGENCE_FRAG);
+      jacobiProg = createProgram(gl, VERT, JACOBI_FRAG);
       gradientProg = createProgram(gl, VERT, GRADIENT_FRAG);
-      splatProg    = createProgram(gl, VERT, SPLAT_FRAG);
-      displayProg  = createProgram(gl, VERT, DISPLAY_FRAG);
+      splatProg = createProgram(gl, VERT, SPLAT_FRAG);
+      displayProg = createProgram(gl, VERT, DISPLAY_FRAG);
     } catch (err) {
-      console.error('[FluidBackground] Shader compile failed:', err);
+      console.error("[FluidBackground] Shader compile failed:", err);
       return () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('touchmove', onTouchMove);
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("touchmove", onTouchMove);
       };
     }
 
@@ -314,24 +348,38 @@ export default function FluidBackground() {
     gl.bindVertexArray(vao);
     const buf = gl.createBuffer()!;
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      -1,-1, 1,-1, -1,1,  // triangle 1
-       1,-1, 1, 1, -1,1,  // triangle 2
-    ]), gl.STATIC_DRAW);
-    const aPos = gl.getAttribLocation(advectProg, 'a_position');
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        1, // triangle 1
+        1,
+        -1,
+        1,
+        1,
+        -1,
+        1, // triangle 2
+      ]),
+      gl.STATIC_DRAW,
+    );
+    const aPos = gl.getAttribLocation(advectProg, "a_position");
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
 
     // ── FBOs ───────────────────────────────────────────────────────────
-    const RG16F = gl.getExtension('EXT_color_buffer_float') ? gl.RG16F : gl.RGBA;
-    const RGBA16F = gl.getExtension('EXT_color_buffer_float') ? gl.RGBA16F : gl.RGBA;
+    const RG16F = gl.getExtension("EXT_color_buffer_float") ? gl.RG16F : gl.RGBA;
+    const RGBA16F = gl.getExtension("EXT_color_buffer_float") ? gl.RGBA16F : gl.RGBA;
     const HALF = gl.HALF_FLOAT;
     const FLOAT = gl.FLOAT;
 
-    const velocity  = createDoubleFBO(gl, SIM_W, SIM_H, RG16F,   gl.RG,   HALF, true);
-    const pressure  = createDoubleFBO(gl, SIM_W, SIM_H, gl.R16F ?? gl.R8, gl.RED, HALF, false);
-    const dye       = createDoubleFBO(gl, DYE_W, DYE_H, RGBA16F, gl.RGBA, HALF, true);
+    const velocity = createDoubleFBO(gl, SIM_W, SIM_H, RG16F, gl.RG, HALF, true);
+    const pressure = createDoubleFBO(gl, SIM_W, SIM_H, gl.R16F ?? gl.R8, gl.RED, HALF, false);
+    const dye = createDoubleFBO(gl, DYE_W, DYE_H, RGBA16F, gl.RGBA, HALF, true);
     const divergeFBO = createFBO(gl, SIM_W, SIM_H, gl.R16F ?? gl.R8, gl.RED, HALF, false);
 
     // ── Simulation helpers ─────────────────────────────────────────────
@@ -348,12 +396,12 @@ export default function FluidBackground() {
       const w = isDye ? DYE_W : SIM_W;
       const h = isDye ? DYE_H : SIM_H;
       gl.useProgram(advectProg);
-      gl.uniform1i(uniformLoc(gl, advectProg, 'u_velocity'), 0);
-      gl.uniform1i(uniformLoc(gl, advectProg, 'u_source'),   1);
-      gl.uniform1f(uniformLoc(gl, advectProg, 'u_dt'),          0.016);
-      gl.uniform1f(uniformLoc(gl, advectProg, 'u_dissipation'), dissipation);
-      gl.uniform1f(uniformLoc(gl, advectProg, 'u_time'),        time);
-      gl.uniform2fv(uniformLoc(gl, advectProg, 'u_texelSize'), txl);
+      gl.uniform1i(uniformLoc(gl, advectProg, "u_velocity"), 0);
+      gl.uniform1i(uniformLoc(gl, advectProg, "u_source"), 1);
+      gl.uniform1f(uniformLoc(gl, advectProg, "u_dt"), 0.016);
+      gl.uniform1f(uniformLoc(gl, advectProg, "u_dissipation"), dissipation);
+      gl.uniform1f(uniformLoc(gl, advectProg, "u_time"), time);
+      gl.uniform2fv(uniformLoc(gl, advectProg, "u_texelSize"), txl);
       bindTexture(0, velFBO.texture);
       bindTexture(1, srcFBO.texture);
       gl.viewport(0, 0, w, h);
@@ -363,8 +411,8 @@ export default function FluidBackground() {
 
     function computeDivergence() {
       gl.useProgram(divergeProg);
-      gl.uniform1i(uniformLoc(gl, divergeProg, 'u_velocity'), 0);
-      gl.uniform2fv(uniformLoc(gl, divergeProg, 'u_texelSize'), texelSim);
+      gl.uniform1i(uniformLoc(gl, divergeProg, "u_velocity"), 0);
+      gl.uniform2fv(uniformLoc(gl, divergeProg, "u_texelSize"), texelSim);
       bindTexture(0, velocity.read.texture);
       gl.viewport(0, 0, SIM_W, SIM_H);
       blit(gl, divergeFBO.fbo, vao);
@@ -372,9 +420,9 @@ export default function FluidBackground() {
 
     function jacobiSolve(iterations: number) {
       gl.useProgram(jacobiProg);
-      gl.uniform1i(uniformLoc(gl, jacobiProg, 'u_pressure'),   0);
-      gl.uniform1i(uniformLoc(gl, jacobiProg, 'u_divergence'), 1);
-      gl.uniform2fv(uniformLoc(gl, jacobiProg, 'u_texelSize'), texelSim);
+      gl.uniform1i(uniformLoc(gl, jacobiProg, "u_pressure"), 0);
+      gl.uniform1i(uniformLoc(gl, jacobiProg, "u_divergence"), 1);
+      gl.uniform2fv(uniformLoc(gl, jacobiProg, "u_texelSize"), texelSim);
       bindTexture(1, divergeFBO.texture);
       gl.viewport(0, 0, SIM_W, SIM_H);
       for (let i = 0; i < iterations; i++) {
@@ -386,9 +434,9 @@ export default function FluidBackground() {
 
     function subtractGradient() {
       gl.useProgram(gradientProg);
-      gl.uniform1i(uniformLoc(gl, gradientProg, 'u_pressure'), 0);
-      gl.uniform1i(uniformLoc(gl, gradientProg, 'u_velocity'), 1);
-      gl.uniform2fv(uniformLoc(gl, gradientProg, 'u_texelSize'), texelSim);
+      gl.uniform1i(uniformLoc(gl, gradientProg, "u_pressure"), 0);
+      gl.uniform1i(uniformLoc(gl, gradientProg, "u_velocity"), 1);
+      gl.uniform2fv(uniformLoc(gl, gradientProg, "u_texelSize"), texelSim);
       bindTexture(0, pressure.read.texture);
       bindTexture(1, velocity.read.texture);
       gl.viewport(0, 0, SIM_W, SIM_H);
@@ -398,10 +446,10 @@ export default function FluidBackground() {
 
     // Palette — cyber cyan, deep magenta, amber (low saturation, high contrast)
     const PALETTE: [number, number, number][] = [
-      [0.0, 0.65, 0.75],   // cyan
-      [0.55, 0.03, 0.70],  // magenta
-      [0.72, 0.42, 0.02],  // amber
-      [0.02, 0.60, 0.38],  // emerald (subtle)
+      [0.0, 0.65, 0.75], // cyan
+      [0.55, 0.03, 0.7], // magenta
+      [0.72, 0.42, 0.02], // amber
+      [0.02, 0.6, 0.38], // emerald (subtle)
     ];
     let colorIdx = 0;
 
@@ -410,19 +458,19 @@ export default function FluidBackground() {
 
       // Velocity splat
       gl.useProgram(splatProg);
-      gl.uniform1i(uniformLoc(gl, splatProg, 'u_source'), 0);
-      gl.uniform2f(uniformLoc(gl, splatProg, 'u_point'), x, y);
-      gl.uniform3f(uniformLoc(gl, splatProg, 'u_color'), dx * 8.0, dy * 8.0, 0.0);
-      gl.uniform1f(uniformLoc(gl, splatProg, 'u_radius'), 0.0004);
-      gl.uniform1f(uniformLoc(gl, splatProg, 'u_aspectRatio'), aspect);
+      gl.uniform1i(uniformLoc(gl, splatProg, "u_source"), 0);
+      gl.uniform2f(uniformLoc(gl, splatProg, "u_point"), x, y);
+      gl.uniform3f(uniformLoc(gl, splatProg, "u_color"), dx * 8.0, dy * 8.0, 0.0);
+      gl.uniform1f(uniformLoc(gl, splatProg, "u_radius"), 0.0004);
+      gl.uniform1f(uniformLoc(gl, splatProg, "u_aspectRatio"), aspect);
       bindTexture(0, velocity.read.texture);
       gl.viewport(0, 0, SIM_W, SIM_H);
       blit(gl, velocity.write.fbo, vao);
       velocity.swap();
 
       // Dye splat
-      gl.uniform3f(uniformLoc(gl, splatProg, 'u_color'), ...color);
-      gl.uniform1f(uniformLoc(gl, splatProg, 'u_radius'), 0.0006);
+      gl.uniform3f(uniformLoc(gl, splatProg, "u_color"), ...color);
+      gl.uniform1f(uniformLoc(gl, splatProg, "u_radius"), 0.0006);
       bindTexture(0, dye.read.texture);
       gl.viewport(0, 0, DYE_W, DYE_H);
       blit(gl, dye.write.fbo, vao);
@@ -434,13 +482,11 @@ export default function FluidBackground() {
       for (let i = 0; i < 4; i++) {
         const c = PALETTE[i % PALETTE.length];
         const angle = Math.random() * Math.PI * 2;
-        splat(
-          0.2 + Math.random() * 0.6,
-          0.2 + Math.random() * 0.6,
-          Math.cos(angle) * 0.04,
-          Math.sin(angle) * 0.04,
-          [c[0] * 0.7, c[1] * 0.7, c[2] * 0.7],
-        );
+        splat(0.2 + Math.random() * 0.6, 0.2 + Math.random() * 0.6, Math.cos(angle) * 0.04, Math.sin(angle) * 0.04, [
+          c[0] * 0.7,
+          c[1] * 0.7,
+          c[2] * 0.7,
+        ]);
       }
     };
     seed();
@@ -453,7 +499,7 @@ export default function FluidBackground() {
       canvas.height = h;
     };
     resize();
-    window.addEventListener('resize', resize, { passive: true });
+    window.addEventListener("resize", resize, { passive: true });
 
     // ── Autonomous ambient splat — keeps fluid alive without user input ─
     let ambientT = 0;
@@ -473,7 +519,7 @@ export default function FluidBackground() {
     };
 
     // ── Render loop ────────────────────────────────────────────────────
-    let startTime = performance.now();
+    const startTime = performance.now();
     const loop = (now: number) => {
       rafRef.current = requestAnimationFrame(loop);
       const elapsed = (now - startTime) * 0.001;
@@ -501,7 +547,7 @@ export default function FluidBackground() {
 
       // Composite to screen
       gl.useProgram(displayProg);
-      gl.uniform1i(uniformLoc(gl, displayProg, 'u_dye'), 0);
+      gl.uniform1i(uniformLoc(gl, displayProg, "u_dye"), 0);
       bindTexture(0, dye.read.texture);
       gl.viewport(0, 0, canvas.width, canvas.height);
       blit(gl, null, vao);
@@ -510,9 +556,9 @@ export default function FluidBackground() {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('resize', resize);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("resize", resize);
     };
   }, [handlePointer]);
 
@@ -521,17 +567,17 @@ export default function FluidBackground() {
       ref={canvasRef}
       aria-hidden="true"
       style={{
-        position: 'fixed',
+        position: "fixed",
         inset: 0,
-        width: '100%',
-        height: '100%',
-        display: 'block',
-        pointerEvents: 'none',
+        width: "100%",
+        height: "100%",
+        display: "block",
+        pointerEvents: "none",
         zIndex: 0,
         // 30% opacity — preserves WCAG 2.2 AA 4.5:1 text contrast on #0A0D14 bg
-        opacity: 0.30,
+        opacity: 0.3,
         // Mix multiply so fluid colours blend into dark bg without washing text
-        mixBlendMode: 'screen',
+        mixBlendMode: "screen",
       }}
     />
   );

@@ -1,10 +1,10 @@
-import type { PathwayKey } from '../data/mockCETHX';
-import type { DBTLPhase } from '../types';
-import type { ProvenanceEntry } from '../types/assumptions';
-import type { DBTLLearnedFeedback } from '../types/dbtlFeedback';
-import type { LearnedDeltaPack } from '../types/learnedDelta';
-import type { ScSpatialDatasetMeta, ScSpatialViewMode } from '../types/scspatial';
-import type { BRENDAOverrides } from '../services/CellFreeEngine';
+import type { PathwayKey } from "../data/mockCETHX";
+import type { BRENDAOverrides } from "../services/CellFreeEngine";
+import type { DBTLPhase } from "../types";
+import type { ProvenanceEntry } from "../types/assumptions";
+import type { DBTLLearnedFeedback } from "../types/dbtlFeedback";
+import type { LearnedDeltaPack } from "../types/learnedDelta";
+import type { ScSpatialDatasetMeta, ScSpatialViewMode } from "../types/scspatial";
 
 /**
  * Validity tag attached to every workbench payload (P0.4 from REVIEW_REPORT.md).
@@ -19,7 +19,7 @@ import type { BRENDAOverrides } from '../services/CellFreeEngine';
  * (e.g. when a tool successfully fetches live data and upgrades from 'demo'
  * to 'partial').
  */
-export type PayloadValidity = 'real' | 'partial' | 'demo';
+export type PayloadValidity = "real" | "partial" | "demo";
 
 export interface WorkbenchPayloadBase {
   validity: PayloadValidity;
@@ -27,7 +27,7 @@ export interface WorkbenchPayloadBase {
 }
 
 export interface PathDWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'pathd';
+  toolId: "pathd";
   targetProduct: string;
   sourceArtifactId?: string;
   activeRouteLabel: string;
@@ -47,12 +47,12 @@ export interface PathDWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface FBAWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'fbasim';
+  toolId: "fbasim";
   targetProduct: string;
   pathwayFocus: string;
   sourceArtifactId?: string;
-  mode: 'single' | 'community';
-  objective: 'biomass' | 'atp' | 'product';
+  mode: "single" | "community";
+  objective: "biomass" | "atp" | "product";
   glucoseUptake: number;
   oxygenUptake: number;
   knockouts: string[];
@@ -76,7 +76,7 @@ export interface FBAWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface CETHXWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'cethx';
+  toolId: "cethx";
   targetProduct: string;
   sourceArtifactId?: string;
   pathway: PathwayKey;
@@ -94,7 +94,7 @@ export interface CETHXWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface CatalystWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'catdes';
+  toolId: "catdes";
   targetProduct: string;
   sourceArtifactId?: string;
   selectedEnzymeId: string;
@@ -118,7 +118,7 @@ export interface CatalystWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface DynConWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'dyncon';
+  toolId: "dyncon";
   targetProduct: string;
   sourceArtifactId?: string;
   controller: {
@@ -146,7 +146,7 @@ export interface DynConWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface CellFreeWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'cellfree';
+  toolId: "cellfree";
   targetProduct: string;
   sourceArtifactId?: string;
   targetConstruct: string;
@@ -166,7 +166,7 @@ export interface CellFreeWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface DBTLWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'dbtlflow';
+  toolId: "dbtlflow";
   targetProduct: string;
   sourceArtifactId?: string;
   proposedPhase: DBTLPhase;
@@ -174,7 +174,7 @@ export interface DBTLWorkbenchPayload extends WorkbenchPayloadBase {
   measuredResult: number;
   unit: string;
   passed: boolean;
-  feedbackSource: 'draft' | 'committed';
+  feedbackSource: "draft" | "committed";
   feedbackIterationId: number | null;
   result: {
     bestIteration: number;
@@ -193,7 +193,7 @@ export interface DBTLWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface ProEvolWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'proevol';
+  toolId: "proevol";
   targetProduct: string;
   sourceArtifactId?: string;
   campaignName: string;
@@ -204,7 +204,7 @@ export interface ProEvolWorkbenchPayload extends WorkbenchPayloadBase {
   librarySize: number;
   survivorCount: number;
   selectionStringency: number;
-  provenance: 'simulated' | 'inferred' | 'literature-backed' | 'user-supplied';
+  provenance: "simulated" | "inferred" | "literature-backed" | "user-supplied";
   result: {
     leadVariantName: string;
     leadVariantScore: number;
@@ -219,10 +219,10 @@ export interface ProEvolWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface GECAIRWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'gecair';
+  toolId: "gecair";
   targetProduct: string;
   sourceArtifactId?: string;
-  gateType: 'NOT' | 'AND' | 'OR' | 'NAND';
+  gateType: "NOT" | "AND" | "OR" | "NAND";
   inputA: number;
   inputB: number;
   result: {
@@ -236,7 +236,7 @@ export interface GECAIRWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface GenMIMWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'genmim';
+  toolId: "genmim";
   targetProduct: string;
   sourceArtifactId?: string;
   efficiencyThreshold: number;
@@ -253,7 +253,7 @@ export interface GenMIMWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface MultiOWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'multio';
+  toolId: "multio";
   targetProduct: string;
   sourceArtifactId?: string;
   selectedGene: string;
@@ -276,17 +276,17 @@ export interface MultiOWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface ScSpatialWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'scspatial';
+  toolId: "scspatial";
   artifactId: string;
   targetProduct: string;
   sourceArtifactId?: string;
-  source: 'upload' | 'bundled-demo';
+  source: "upload" | "bundled-demo";
   datasetMeta: ScSpatialDatasetMeta;
   selectedCluster: string | null;
   selectedCellId: string | null;
   highlightGene: string;
   activeView: ScSpatialViewMode;
-  exportableArtifacts: Array<'cluster-annotations-csv' | 'hotspots-csv' | 'viewport-png'>;
+  exportableArtifacts: Array<"cluster-annotations-csv" | "hotspots-csv" | "viewport-png">;
   result: {
     totalCells: number;
     passedCells: number;
@@ -299,7 +299,7 @@ export interface ScSpatialWorkbenchPayload extends WorkbenchPayloadBase {
       clusterLabel: string;
       cellCount: number;
       meanExpression: number;
-      fate: 'productive' | 'stressed' | 'quiescent';
+      fate: "productive" | "stressed" | "quiescent";
       topGenes: string[];
     }>;
   };
@@ -307,7 +307,7 @@ export interface ScSpatialWorkbenchPayload extends WorkbenchPayloadBase {
 }
 
 export interface NEXAIWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'nexai';
+  toolId: "nexai";
   targetProduct: string;
   sourceArtifactId?: string;
   query: string;
@@ -315,13 +315,13 @@ export interface NEXAIWorkbenchPayload extends WorkbenchPayloadBase {
     confidence: number;
     citations: number;
     answerPreview: string;
-    mode: 'pathway' | 'text' | 'mock' | 'idle';
+    mode: "pathway" | "text" | "mock" | "idle";
   };
   updatedAt: number;
 }
 
 export interface KineticsWorkbenchPayload extends WorkbenchPayloadBase {
-  toolId: 'kinetics';
+  toolId: "kinetics";
   targetProduct: string;
   sourceArtifactId?: string;
   enzymeLabel: string;

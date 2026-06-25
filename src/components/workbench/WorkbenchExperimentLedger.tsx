@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import { useMemo, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { ClipboardList, FlaskConical, Microscope } from 'lucide-react';
-import { useWorkbenchStore, type WorkbenchRunArtifact } from '../../store/workbenchStore';
-import { buildExperimentLedger, getAuthorityTier } from './workbenchTrust';
-import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
+import { motion } from "framer-motion";
+import { ClipboardList, FlaskConical, Microscope } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { useWorkbenchStore, type WorkbenchRunArtifact } from "../../store/workbenchStore";
+import { THEME } from "../../theme";
+import { TOOL_BY_ID } from "../tools/shared/toolRegistry";
 import {
+  accentLeftBorder,
+  cardVariants,
+  chipRow,
+  chipVariants,
+  getChipStyle,
   glassPanel,
   glassPanelInset,
-  typography,
   iconContainer,
-  statusChip,
-  cardVariants,
-  staggerContainer,
-  chipVariants,
   sectionHeaderRow,
-  chipRow,
-  accentLeftBorder,
+  staggerContainer,
   statusAccent,
-  getChipStyle,
-} from './workbenchDesignSystem';
-import { THEME } from '../../theme';
+  statusChip,
+  typography,
+} from "./workbenchDesignSystem";
+import { buildExperimentLedger, getAuthorityTier } from "./workbenchTrust";
 
 interface WorkbenchExperimentLedgerProps {
   title?: string;
@@ -30,30 +30,27 @@ interface WorkbenchExperimentLedgerProps {
 
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleString([], {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 export default function WorkbenchExperimentLedger({
-  title = 'Experiment Ledger',
+  title = "Experiment Ledger",
   limit = 5,
 }: WorkbenchExperimentLedgerProps) {
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const entries = useMemo(() => buildExperimentLedger(runArtifacts, limit), [limit, runArtifacts]);
-  const artifactById = useMemo(
-    () => new Map(runArtifacts.map((artifact) => [artifact.id, artifact])),
-    [runArtifacts],
-  );
+  const artifactById = useMemo(() => new Map(runArtifacts.map((artifact) => [artifact.id, artifact])), [runArtifacts]);
 
   return (
     <motion.section
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      style={{ display: 'grid', gap: '12px' }}
+      style={{ display: "grid", gap: "12px" }}
     >
       {/* Section Header */}
       <motion.div variants={cardVariants} style={sectionHeaderRow}>
@@ -65,12 +62,17 @@ export default function WorkbenchExperimentLedger({
 
       {/* Entries */}
       {entries.length ? (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '12px' }}>
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          style={{ display: "grid", gap: "12px" }}
+        >
           {entries.map((entry) => {
             const tool = TOOL_BY_ID[entry.toolId];
             const accent = statusAccent(entry.status);
             const chipStyle = getChipStyle(entry.status);
-            const Icon = entry.toolId === 'cellfree' || entry.toolId === 'dbtlflow' ? FlaskConical : Microscope;
+            const Icon = entry.toolId === "cellfree" || entry.toolId === "dbtlflow" ? FlaskConical : Microscope;
             const artifact = artifactById.get(entry.id);
             return (
               <ExperimentCard
@@ -92,14 +94,14 @@ export default function WorkbenchExperimentLedger({
           style={{
             ...glassPanel,
             ...glassPanelInset,
-            padding: '24px',
-            textAlign: 'center',
+            padding: "24px",
+            textAlign: "center",
           }}
         >
-          <div style={{ ...typography.body, maxWidth: '280px', margin: '0 auto' }}>
+          <div style={{ ...typography.body, maxWidth: "280px", margin: "0 auto" }}>
             No experimental ledger entries yet.
           </div>
-          <div style={{ ...typography.caption, maxWidth: '280px', margin: '0 auto', opacity: 0.6 }}>
+          <div style={{ ...typography.caption, maxWidth: "280px", margin: "0 auto", opacity: 0.6 }}>
             Execute Cell-free, DBTL, or downstream omics tools to populate the recorded test trail.
           </div>
         </motion.div>
@@ -117,7 +119,15 @@ function ExperimentCard({
   artifact,
   formatTime,
 }: {
-  entry: { id: string; toolId: string; title: string; summary: string; status: string; createdAt: number; metrics: string[] };
+  entry: {
+    id: string;
+    toolId: string;
+    title: string;
+    summary: string;
+    status: string;
+    createdAt: number;
+    metrics: string[];
+  };
   tool: { shortLabel?: string } | undefined;
   accent: string;
   chipStyle: React.CSSProperties;
@@ -138,16 +148,22 @@ function ExperimentCard({
       style={{
         ...glassPanel,
         ...accentLeftBorder(accent),
-        borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
-        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
-        boxShadow: hovered
-          ? '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)'
-          : 'none',
+        borderColor: hovered ? "rgba(255, 255, 255, 0.12)" : glassPanel.borderColor,
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+        boxShadow: hovered ? "0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)" : "none",
       }}
     >
       {/* Top row: icon + title + status chip */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "10px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
           <span style={iconContainer(accent)}>
             <Icon size={12} color={accent} />
           </span>
@@ -158,13 +174,11 @@ function ExperimentCard({
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <motion.span variants={chipVariants} style={chipStyle}>
             {entry.status}
           </motion.span>
-          <span style={typography.caption}>
-            {artifact ? getAuthorityTier(artifact) : 'unknown'}
-          </span>
+          <span style={typography.caption}>{artifact ? getAuthorityTier(artifact) : "unknown"}</span>
         </div>
       </div>
 
@@ -175,11 +189,7 @@ function ExperimentCard({
       {entry.metrics.length > 0 && (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={chipRow}>
           {entry.metrics.map((metric) => (
-            <motion.span
-              key={metric}
-              variants={chipVariants}
-              style={statusChip.neutral}
-            >
+            <motion.span key={metric} variants={chipVariants} style={statusChip.neutral}>
               {metric}
             </motion.span>
           ))}

@@ -5,11 +5,9 @@
  * All charts render on dark backgrounds with pastel accent colors.
  */
 
-export { LineChart } from './LineChart';
-export type { LineChartProps, DataSeries, DataPoint } from './LineChart';
-
-export { BarChart } from './BarChart';
-export type { BarChartProps, BarSeries, BarDatum } from './BarChart';
-
-export { ScatterChart } from './ScatterChart';
-export type { ScatterChartProps, ScatterSeries, ScatterPoint } from './ScatterChart';
+export type { BarChartProps, BarDatum, BarSeries } from "./BarChart";
+export { BarChart } from "./BarChart";
+export type { DataPoint, DataSeries, LineChartProps } from "./LineChart";
+export { LineChart } from "./LineChart";
+export type { ScatterChartProps, ScatterPoint, ScatterSeries } from "./ScatterChart";
+export { ScatterChart } from "./ScatterChart";

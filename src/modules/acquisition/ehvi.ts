@@ -13,10 +13,10 @@
  *   ALGORITHM: Monte Carlo EHVI approximation
  */
 
-import { BaseAcquisition, createRNG, normalSample, type AcquisitionInput } from './base';
+import { type AcquisitionInput, BaseAcquisition, createRNG, normalSample } from "./base";
 
 export class EHVI extends BaseAcquisition {
-  name = 'EHVI';
+  name = "EHVI";
 
   private nSamples: number;
 
@@ -26,13 +26,7 @@ export class EHVI extends BaseAcquisition {
   }
 
   score(input: AcquisitionInput): number[] {
-    const {
-      candidates,
-      multiObjectivePredictions,
-      paretoFront = [],
-      referencePoint,
-      seed = 42,
-    } = input;
+    const { candidates, multiObjectivePredictions, paretoFront = [], referencePoint, seed = 42 } = input;
 
     if (!multiObjectivePredictions || multiObjectivePredictions.length === 0) {
       // Fallback: use single-objective EI
@@ -48,26 +42,23 @@ export class EHVI extends BaseAcquisition {
     // Sort Pareto front for efficient hypervolume computation
     const sortedPareto = [...paretoFront].sort((a, b) => a[0] - b[0]);
 
-    return multiObjectivePredictions.map(pred => {
+    return multiObjectivePredictions.map((pred) => {
       let totalImprovement = 0;
 
       for (let s = 0; s < this.nSamples; s++) {
         // Sample from each objective's posterior
-        const sampledPoint = pred.objectives.map(obj =>
-          obj.mu + normalSample(rng) * Math.max(0, obj.sigma)
-        );
+        const sampledPoint = pred.objectives.map((obj) => obj.mu + normalSample(rng) * Math.max(0, obj.sigma));
 
         // Check if sampled point dominates any Pareto point
-        const dominated = sortedPareto.some(p =>
-          sampledPoint.every((v, j) => v >= p[j]) &&
-          sampledPoint.some((v, j) => v > p[j])
+        const dominated = sortedPareto.some(
+          (p) => sampledPoint.every((v, j) => v >= p[j]) && sampledPoint.some((v, j) => v > p[j]),
         );
 
         if (dominated) {
           // Compute hypervolume improvement
           const newFront = [...sortedPareto, sampledPoint]
-            .filter((p, _, arr) =>
-              !arr.some(q => q !== p && q.every((v, j) => v >= p[j]) && q.some((v, j) => v > p[j]))
+            .filter(
+              (p, _, arr) => !arr.some((q) => q !== p && q.every((v, j) => v >= p[j]) && q.some((v, j) => v > p[j])),
             )
             .sort((a, b) => a[0] - b[0]);
 
@@ -76,9 +67,8 @@ export class EHVI extends BaseAcquisition {
           totalImprovement += hvNew - hvOld;
         } else {
           // Check if point is dominated by Pareto front
-          const isDominated = sortedPareto.some(p =>
-            p.every((v, j) => v >= sampledPoint[j]) &&
-            p.some((v, j) => v > sampledPoint[j])
+          const isDominated = sortedPareto.some(
+            (p) => p.every((v, j) => v >= sampledPoint[j]) && p.some((v, j) => v > sampledPoint[j]),
           );
           if (!isDominated) {
             // Non-dominated, non-dominating: small improvement

@@ -8,7 +8,7 @@
  * @module streaming/pipeline
  */
 
-import type { PipelineStage, PipelineOptions } from './types';
+import type { PipelineOptions, PipelineStage } from "./types";
 
 // ── BufferQueue ──────────────────────────────────────────────────────────────
 
@@ -277,7 +277,7 @@ export class StreamingPipeline {
  */
 export function composeStages(...stages: PipelineStage[]): PipelineStage {
   return {
-    name: 'composed',
+    name: "composed",
     process: async (data: any): Promise<any> => {
       let result = data;
       for (const stage of stages) {

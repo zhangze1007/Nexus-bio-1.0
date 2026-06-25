@@ -1,18 +1,12 @@
-import type {
-  AxonInteraction,
-  BottleneckEnzyme,
-  DeNovoDesignStrategy,
-  PathwayEdge,
-  PathwayNode,
-} from '../types';
-import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
-import type { WorkbenchStageId } from '../components/tools/shared/workbenchConfig';
-import type { WorkflowArtifact } from '../domain/workflowArtifact';
-import type { ToolId, ValidityFloor } from '../domain/workflowContract';
-import type { GateDecision } from '../protocol/nexusTrustRuntime';
-import type { WorkflowStateValue } from '../services/workflowStateMachine';
+import type { WorkbenchStageId } from "../components/tools/shared/workbenchConfig";
+import type { WorkflowArtifact } from "../domain/workflowArtifact";
+import type { ToolId, ValidityFloor } from "../domain/workflowContract";
+import type { GateDecision } from "../protocol/nexusTrustRuntime";
+import type { WorkflowStateValue } from "../services/workflowStateMachine";
+import type { AxonInteraction, BottleneckEnzyme, DeNovoDesignStrategy, PathwayEdge, PathwayNode } from "../types";
+import type { WorkbenchToolPayloadMap } from "./workbenchPayloads";
 
-export type EvidenceSourceKind = 'literature' | 'analysis' | 'tool' | 'system';
+export type EvidenceSourceKind = "literature" | "analysis" | "tool" | "system";
 
 export interface WorkbenchProjectBrief {
   id: string;
@@ -20,7 +14,7 @@ export interface WorkbenchProjectBrief {
   summary: string;
   targetProduct: string;
   sourceQuery?: string;
-  status: 'draft' | 'active' | 'iterating';
+  status: "draft" | "active" | "iterating";
   isDemo: boolean;
   createdAt: number;
   updatedAt: number;
@@ -91,7 +85,7 @@ export interface WorkbenchToolRun {
 
 export interface StageCheckpoint {
   id: WorkbenchStageId;
-  status: 'pending' | 'active' | 'complete';
+  status: "pending" | "active" | "complete";
   summary: string;
   updatedAt: number;
 }
@@ -99,7 +93,7 @@ export interface StageCheckpoint {
 export interface NextStepRecommendation {
   id: string;
   toolId: string;
-  source: 'analysis' | 'flow' | 'tool';
+  source: "analysis" | "flow" | "tool";
   reason: string;
 }
 
@@ -123,15 +117,9 @@ export interface StructuredAnalysisPayload {
  * Field is optional so older serialized projects (no status field) read
  * as `undefined` — call sites treat undefined as `'ok'` for back-compat.
  */
-export type WorkbenchRunStatus = 'ok' | 'simulated' | 'blocked' | 'gated' | 'demoOnly';
+export type WorkbenchRunStatus = "ok" | "simulated" | "blocked" | "gated" | "demoOnly";
 
-export type WorkbenchWorkflowStatus =
-  | 'idle'
-  | 'ready'
-  | 'blocked'
-  | 'gated'
-  | 'demoOnly'
-  | 'complete';
+export type WorkbenchWorkflowStatus = "idle" | "ready" | "blocked" | "gated" | "demoOnly" | "complete";
 
 export interface WorkbenchWorkflowControlSnapshot {
   machineState: WorkflowStateValue;
@@ -167,7 +155,7 @@ export interface WorkbenchRunEvidenceSnapshot {
   selectedCount: number;
   evidenceItemIds: string[];
   selectedEvidenceIds: string[];
-  status: 'not-required' | 'satisfied' | 'missing';
+  status: "not-required" | "satisfied" | "missing";
   missingEvidence: {
     minRequired: number;
     have: number;
@@ -220,9 +208,9 @@ export interface WorkbenchRunArtifact {
 }
 
 export interface WorkbenchBackendMeta {
-  kind: 'sqlite';
-  driver: 'better-sqlite3';
-  scope: 'project';
+  kind: "sqlite";
+  driver: "better-sqlite3";
+  scope: "project";
   path: string;
   projectId: string;
   actorId: string;
@@ -276,7 +264,7 @@ export interface WorkbenchCollaborator {
 export interface AxonRunRecord {
   taskId: string;
   tool: ToolId;
-  status: 'done' | 'error';
+  status: "done" | "error";
   label: string;
   summary: string;
   timestamp: number;
@@ -302,14 +290,7 @@ export interface WorkbenchAxonPlanStepRecord {
   inputSummary: string;
   expectedOutput: string;
   dependsOn: string[];
-  status:
-    | 'planned'
-    | 'enqueued'
-    | 'running'
-    | 'done'
-    | 'error'
-    | 'cancelled'
-    | 'unsupported';
+  status: "planned" | "enqueued" | "running" | "done" | "error" | "cancelled" | "unsupported";
   reason: string;
   taskId?: string;
 }
@@ -317,7 +298,7 @@ export interface WorkbenchAxonPlanStepRecord {
 export interface WorkbenchAxonPlanRecord {
   id: string;
   createdAt: number;
-  origin: 'user' | 'auto';
+  origin: "user" | "auto";
   request: string;
   steps: WorkbenchAxonPlanStepRecord[];
   warnings: string[];
@@ -347,11 +328,11 @@ export interface WorkbenchExperimentRecord {
   revision: number;
   toolId: string;
   stageId: WorkbenchStageId | null;
-  category: 'analysis' | 'experiment';
+  category: "analysis" | "experiment";
   title: string;
   summary: string;
   status: string;
-  authorityTier: 'simulated' | 'contextual' | 'evidence-linked' | 'experiment-backed';
+  authorityTier: "simulated" | "contextual" | "evidence-linked" | "experiment-backed";
   metrics: string[];
   createdAt: number;
   updatedAt: number;

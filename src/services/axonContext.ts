@@ -22,34 +22,34 @@ import type {
   WorkbenchEvidenceItem,
   WorkbenchProjectBrief,
   WorkbenchWorkflowControlSnapshot,
-} from '../store/workbenchTypes';
+} from "../store/workbenchTypes";
 
 export interface WorkbenchContextSnapshot {
   targetProduct: string | null;
-  project: Pick<WorkbenchProjectBrief, 'title' | 'targetProduct'> | null;
+  project: Pick<WorkbenchProjectBrief, "title" | "targetProduct"> | null;
   analyzeArtifact: Pick<
     WorkbenchAnalyzeArtifact,
-    'targetProduct' | 'bottleneckAssumptions' | 'thermodynamicConcerns' | 'pathwayCandidates'
+    "targetProduct" | "bottleneckAssumptions" | "thermodynamicConcerns" | "pathwayCandidates"
   > | null;
-  evidenceItems: Pick<WorkbenchEvidenceItem, 'title' | 'id' | 'year'>[];
+  evidenceItems: Pick<WorkbenchEvidenceItem, "title" | "id" | "year">[];
   selectedEvidenceIds: string[];
-  nextRecommendations: Pick<NextStepRecommendation, 'toolId' | 'reason'>[];
+  nextRecommendations: Pick<NextStepRecommendation, "toolId" | "reason">[];
   currentToolId: string | null;
   workflowControl?: Pick<
     WorkbenchWorkflowControlSnapshot,
-    | 'machineState'
-    | 'status'
-    | 'currentToolId'
-    | 'nextRecommendedNode'
-    | 'missingEvidence'
-    | 'confidence'
-    | 'uncertainty'
-    | 'humanGateRequired'
-    | 'isDemoOnly'
-    | 'latestRunStatus'
-    | 'latestRunToolId'
-    | 'reasonCodes'
-    | 'explanation'
+    | "machineState"
+    | "status"
+    | "currentToolId"
+    | "nextRecommendedNode"
+    | "missingEvidence"
+    | "confidence"
+    | "uncertainty"
+    | "humanGateRequired"
+    | "isDemoOnly"
+    | "latestRunStatus"
+    | "latestRunToolId"
+    | "reasonCodes"
+    | "explanation"
   > | null;
 }
 
@@ -85,26 +85,15 @@ function truncate(input: string, max: number): string {
   return `${input.slice(0, max - 1).trimEnd()}…`;
 }
 
-export function buildWorkbenchCopilotContext(
-  snapshot: WorkbenchContextSnapshot,
-): WorkbenchCopilotContext {
-  const target =
-    snapshot.analyzeArtifact?.targetProduct ??
-    snapshot.project?.targetProduct ??
-    null;
+export function buildWorkbenchCopilotContext(snapshot: WorkbenchContextSnapshot): WorkbenchCopilotContext {
+  const target = snapshot.analyzeArtifact?.targetProduct ?? snapshot.project?.targetProduct ?? null;
 
   const evidenceTotal = snapshot.evidenceItems.length;
   const evidenceSelected = snapshot.selectedEvidenceIds.length;
-  const nextToolIds = snapshot.nextRecommendations
-    .slice(0, MAX_RECOMMENDATIONS)
-    .map((r) => r.toolId);
+  const nextToolIds = snapshot.nextRecommendations.slice(0, MAX_RECOMMENDATIONS).map((r) => r.toolId);
 
   const hasContext = Boolean(
-    target ||
-      evidenceTotal > 0 ||
-      nextToolIds.length > 0 ||
-      snapshot.currentToolId ||
-      snapshot.workflowControl,
+    target || evidenceTotal > 0 || nextToolIds.length > 0 || snapshot.currentToolId || snapshot.workflowControl,
   );
 
   const summaryParts: string[] = [];
@@ -114,69 +103,59 @@ export function buildWorkbenchCopilotContext(
   }
   if (snapshot.currentToolId) summaryParts.push(`on ${snapshot.currentToolId}`);
   if (snapshot.workflowControl) summaryParts.push(`workflow ${snapshot.workflowControl.status}`);
-  const summaryOneLine = summaryParts.join(' · ') || 'No active workbench context';
+  const summaryOneLine = summaryParts.join(" · ") || "No active workbench context";
 
   const augmentationLines: string[] = [];
   if (hasContext) {
-    augmentationLines.push('Workbench context (read-only):');
+    augmentationLines.push("Workbench context (read-only):");
     if (target) augmentationLines.push(`- Target product: ${target}`);
     if (snapshot.currentToolId) {
       augmentationLines.push(`- Active tool: ${snapshot.currentToolId}`);
     }
     if (evidenceTotal > 0) {
-      augmentationLines.push(
-        `- Evidence bundle: ${evidenceSelected} selected of ${evidenceTotal} saved`,
-      );
-      const titles = snapshot.evidenceItems
-        .slice(0, MAX_EVIDENCE_TITLES)
-        .map((item) => {
-          const year = item.year ? ` (${item.year})` : '';
-          return `  • ${truncate(item.title, MAX_TITLE_CHARS)}${year}`;
-        });
+      augmentationLines.push(`- Evidence bundle: ${evidenceSelected} selected of ${evidenceTotal} saved`);
+      const titles = snapshot.evidenceItems.slice(0, MAX_EVIDENCE_TITLES).map((item) => {
+        const year = item.year ? ` (${item.year})` : "";
+        return `  • ${truncate(item.title, MAX_TITLE_CHARS)}${year}`;
+      });
       augmentationLines.push(...titles);
     }
     const bottleneck = snapshot.analyzeArtifact?.bottleneckAssumptions?.[0];
     if (bottleneck) {
-      augmentationLines.push(
-        `- Top bottleneck: ${truncate(bottleneck.label, MAX_BOTTLENECK_CHARS)}`,
-      );
+      augmentationLines.push(`- Top bottleneck: ${truncate(bottleneck.label, MAX_BOTTLENECK_CHARS)}`);
     }
     const thermo = snapshot.analyzeArtifact?.thermodynamicConcerns?.[0];
     if (thermo) {
-      augmentationLines.push(
-        `- Thermodynamic concern: ${truncate(thermo, MAX_BOTTLENECK_CHARS)}`,
-      );
+      augmentationLines.push(`- Thermodynamic concern: ${truncate(thermo, MAX_BOTTLENECK_CHARS)}`);
     }
     if (nextToolIds.length > 0) {
-      augmentationLines.push(
-        `- Queued next steps: ${nextToolIds.join(', ')}`,
-      );
+      augmentationLines.push(`- Queued next steps: ${nextToolIds.join(", ")}`);
     }
     if (snapshot.workflowControl) {
       const workflow = snapshot.workflowControl;
       augmentationLines.push(`- Workflow state: ${workflow.status} (${workflow.machineState})`);
       if (workflow.currentToolId || workflow.nextRecommendedNode) {
         augmentationLines.push(
-          `- Workflow route: current ${workflow.currentToolId ?? 'none'}; next ${workflow.nextRecommendedNode ?? 'none'}`,
+          `- Workflow route: current ${workflow.currentToolId ?? "none"}; next ${workflow.nextRecommendedNode ?? "none"}`,
         );
       }
       if (workflow.missingEvidence.minRequired > 0) {
         augmentationLines.push(
-          `- Missing evidence: ${workflow.missingEvidence.have}/${workflow.missingEvidence.minRequired}${workflow.missingEvidence.kinds.length ? `; kinds ${workflow.missingEvidence.kinds.join(', ')}` : ''}`,
+          `- Missing evidence: ${workflow.missingEvidence.have}/${workflow.missingEvidence.minRequired}${workflow.missingEvidence.kinds.length ? `; kinds ${workflow.missingEvidence.kinds.join(", ")}` : ""}`,
         );
       }
-      const confidence = workflow.confidence === null ? 'unknown' : workflow.confidence.toFixed(2);
-      const uncertainty = workflow.uncertainty === null ? 'unknown' : workflow.uncertainty.toFixed(2);
+      const confidence = workflow.confidence === null ? "unknown" : workflow.confidence.toFixed(2);
+      const uncertainty = workflow.uncertainty === null ? "unknown" : workflow.uncertainty.toFixed(2);
       augmentationLines.push(`- Confidence/uncertainty: ${confidence}/${uncertainty}`);
       augmentationLines.push(
-        `- Gates: human ${workflow.humanGateRequired ? 'required' : 'not required'}; demo/simulated ${workflow.isDemoOnly ? 'yes' : 'no'}; latest run ${workflow.latestRunToolId ?? 'none'}:${workflow.latestRunStatus ?? 'none'}`,
+        `- Gates: human ${workflow.humanGateRequired ? "required" : "not required"}; demo/simulated ${workflow.isDemoOnly ? "yes" : "no"}; latest run ${workflow.latestRunToolId ?? "none"}:${workflow.latestRunStatus ?? "none"}`,
       );
       if (workflow.explanation) {
         augmentationLines.push(`- Workflow supervisor note: ${truncate(workflow.explanation, MAX_BOTTLENECK_CHARS)}`);
       }
     }
     augmentationLines.push(
-      'Act as workflow supervisor, evidence critic, uncertainty explainer, and next-step router; do not invent additional workbench state.',
+      "Act as workflow supervisor, evidence critic, uncertainty explainer, and next-step router; do not invent additional workbench state.",
     );
   }
 
@@ -193,7 +172,7 @@ export function buildWorkbenchCopilotContext(
     workflowHumanGateRequired: Boolean(snapshot.workflowControl?.humanGateRequired),
     workflowIsDemoOnly: Boolean(snapshot.workflowControl?.isDemoOnly),
     summaryOneLine,
-    promptAugmentation: augmentationLines.join('\n'),
+    promptAugmentation: augmentationLines.join("\n"),
   };
 }
 
@@ -201,7 +180,7 @@ export function buildWorkbenchCopilotContext(
  * Conversation turn for multi-turn context.
  */
 export interface ConversationTurn {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -229,14 +208,12 @@ export function composeCopilotQuery(
   // This is deliberately terse to stay within token budgets.
   if (conversationHistory && conversationHistory.length > 0) {
     const historyLines = conversationHistory.map((turn) => {
-      const label = turn.role === 'user' ? 'Researcher' : 'Axon';
+      const label = turn.role === "user" ? "Researcher" : "Axon";
       // Cap each history line to 200 chars for the preamble.
-      const snippet = turn.content.length > 200
-        ? `${turn.content.slice(0, 197).trimEnd()}…`
-        : turn.content;
+      const snippet = turn.content.length > 200 ? `${turn.content.slice(0, 197).trimEnd()}…` : turn.content;
       return `[${label}]: ${snippet}`;
     });
-    result = `Conversation so far:\n${historyLines.join('\n')}\n\nCurrent question: ${trimmed}`;
+    result = `Conversation so far:\n${historyLines.join("\n")}\n\nCurrent question: ${trimmed}`;
   }
 
   if (!context.hasContext || !context.promptAugmentation) return result;

@@ -25,17 +25,18 @@
  *     <ModuleCard area="metrics"> ... </ModuleCard>
  *   </ToolShell>
  */
-'use client';
-import type { CSSProperties, ReactNode } from 'react';
-import { useMemo, useCallback } from 'react';
-import { LayoutGrid, ChevronLeft, SlidersHorizontal, Minimize2 } from 'lucide-react';
-import { usePersistedState } from '../../ide/shared/usePersistedState';
-import { getToolDefinition } from './toolRegistry';
-import { getToolValidity, type ValidityLevel } from '../../../config/toolValidity';
-import { useNavigation } from '../../../contexts/NavigationContext';
-import ToolTabBar, { type ToolTab } from './ToolTabBar';
-import { ErrorBoundary } from '../../shared/ErrorBoundary';
-import { THEME } from '../../../theme';
+"use client";
+import { ChevronLeft, LayoutGrid, Minimize2, SlidersHorizontal } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
+import { useCallback, useMemo } from "react";
+import { getToolValidity, type ValidityLevel } from "../../../config/toolValidity";
+import { useNavigation } from "../../../contexts/NavigationContext";
+import { THEME } from "../../../theme";
+import { usePersistedState } from "../../ide/shared/usePersistedState";
+import { ErrorBoundary } from "../../shared/ErrorBoundary";
+import ToolTabBar, { type ToolTab } from "./ToolTabBar";
+import { getToolDefinition } from "./toolRegistry";
+
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 export interface ToolReference {
@@ -75,9 +76,16 @@ export interface ToolShellProps {
 }
 
 export default function ToolShell({
-  moduleId, title, description, formula,
-  grid, columns, rows, gap = 6,
-  children, footer,
+  moduleId,
+  title,
+  description,
+  formula,
+  grid,
+  columns,
+  rows,
+  gap = 6,
+  children,
+  footer,
   hero,
   tabs,
   activeTab,
@@ -90,167 +98,216 @@ export default function ToolShell({
   const { handleBack } = useNavigation();
 
   const validityStyles: Record<ValidityLevel, { bg: string; border: string; color: string; label: string }> = {
-    real:    { bg: 'rgba(147, 203, 82, 0.16)',  border: 'rgba(147, 203, 82, 0.45)',  color: '#5d8a2f', label: 'REAL' },
-    partial: { bg: 'rgba(232, 220, 200, 0.32)', border: 'rgba(180, 150, 100, 0.50)', color: '#8a6a30', label: 'PARTIAL' },
-    demo:    { bg: 'rgba(250, 128, 114, 0.16)', border: 'rgba(250, 128, 114, 0.50)', color: '#a8453a', label: 'DEMO' },
+    real: { bg: "rgba(147, 203, 82, 0.16)", border: "rgba(147, 203, 82, 0.45)", color: "#5d8a2f", label: "REAL" },
+    partial: {
+      bg: "rgba(232, 220, 200, 0.32)",
+      border: "rgba(180, 150, 100, 0.50)",
+      color: "#8a6a30",
+      label: "PARTIAL",
+    },
+    demo: { bg: "rgba(250, 128, 114, 0.16)", border: "rgba(250, 128, 114, 0.50)", color: "#a8453a", label: "DEMO" },
   };
 
   // ── Progressive Disclosure: simple/advanced mode ──
-  const [mode, setMode] = usePersistedState<'simple' | 'advanced'>(
-    `nexus-bio:tool-mode:${moduleId}`,
-    'simple',
+  const [mode, setMode] = usePersistedState<"simple" | "advanced">(`nexus-bio:tool-mode:${moduleId}`, "simple");
+
+  const hasAdvancedTabs = Boolean(
+    advancedTabIds && advancedTabIds.length > 0 && tabs && tabs.length > advancedTabIds.length,
   );
 
-  const hasAdvancedTabs = Boolean(advancedTabIds && advancedTabIds.length > 0 && tabs && tabs.length > advancedTabIds.length);
-
   const visibleTabs = useMemo(() => {
-    if (!tabs || !hasAdvancedTabs || mode === 'advanced') return tabs;
-    return tabs.filter(t => !advancedTabIds!.includes(t.id));
+    if (!tabs || !hasAdvancedTabs || mode === "advanced") return tabs;
+    return tabs.filter((t) => !advancedTabIds!.includes(t.id));
   }, [tabs, hasAdvancedTabs, mode, advancedTabIds]);
 
   const toggleMode = useCallback(() => {
-    const next = mode === 'simple' ? 'advanced' : 'simple';
+    const next = mode === "simple" ? "advanced" : "simple";
     setMode(next);
-    if (next === 'simple' && activeTab && onTabChange && advancedTabIds?.includes(activeTab)) {
-      const firstSimple = tabs?.find(t => !advancedTabIds.includes(t.id));
+    if (next === "simple" && activeTab && onTabChange && advancedTabIds?.includes(activeTab)) {
+      const firstSimple = tabs?.find((t) => !advancedTabIds.includes(t.id));
       if (firstSimple) onTabChange(firstSimple.id);
     }
   }, [mode, setMode, activeTab, onTabChange, advancedTabIds, tabs]);
 
   return (
-    <div className="nb-tool-shell" style={{
-      position: 'relative',
-      display: 'flex', flexDirection: 'column',
-      background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
-      fontFamily: THEME.SANS,
-      flex: 1,
-      minHeight: '100%',
-    }}>
+    <div
+      className="nb-tool-shell"
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
+        fontFamily: THEME.SANS,
+        flex: 1,
+        minHeight: "100%",
+      }}
+    >
       {/* ── Module Info Bar ──────────────────────────────────── */}
       <header
         className="nb-tool-shell__header nb-slide-up"
         style={{
-          padding: '8px 16px',
-          display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+          padding: "8px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          flexWrap: "wrap",
           flexShrink: 0,
           borderBottom: `1px solid ${THEME.BORDER}`,
           background: THEME.PANEL_MUTED,
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-          boxShadow: 'var(--nb-shadow-low), inset 0 1px 0 rgba(255,255,255,0.28)',
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          boxShadow: "var(--nb-shadow-low), inset 0 1px 0 rgba(255,255,255,0.28)",
         }}
       >
         <button
           type="button"
           onClick={handleBack}
           className="nb-ui-control"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            minHeight: '28px',
-            padding: '0 7px',
-            borderRadius: 'var(--nb-radius-md)',
-            border: '1px solid var(--nb-control-border)',
-            background: 'var(--nb-control-bg)',
-            color: 'var(--nb-control-color)',
-            cursor: 'pointer',
-            fontFamily: THEME.SANS,
-            fontSize: 'var(--nb-fs-xs)',
-            flexShrink: 0,
-            ['--nb-control-bg' as const]: THEME.PANEL_GLASS_STRONG,
-            ['--nb-control-border' as const]: THEME.BORDER,
-            ['--nb-control-color' as const]: THEME.LABEL,
-            ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.08)',
-            ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.12)',
-            ['--nb-control-hover-color' as const]: THEME.INK,
-            ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.12)',
-            ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.16)',
-            ['--nb-control-active-color' as const]: THEME.INK,
-          } as ControlVarsStyle}
+          style={
+            {
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              minHeight: "28px",
+              padding: "0 7px",
+              borderRadius: "var(--nb-radius-md)",
+              border: "1px solid var(--nb-control-border)",
+              background: "var(--nb-control-bg)",
+              color: "var(--nb-control-color)",
+              cursor: "pointer",
+              fontFamily: THEME.SANS,
+              fontSize: "var(--nb-fs-xs)",
+              flexShrink: 0,
+              ["--nb-control-bg" as const]: THEME.PANEL_GLASS_STRONG,
+              ["--nb-control-border" as const]: THEME.BORDER,
+              ["--nb-control-color" as const]: THEME.LABEL,
+              ["--nb-control-hover-bg" as const]: "rgba(255,255,255,0.08)",
+              ["--nb-control-hover-border" as const]: "rgba(255,255,255,0.12)",
+              ["--nb-control-hover-color" as const]: THEME.INK,
+              ["--nb-control-active-bg" as const]: "rgba(255,255,255,0.12)",
+              ["--nb-control-active-border" as const]: "rgba(255,255,255,0.16)",
+              ["--nb-control-active-color" as const]: THEME.INK,
+            } as ControlVarsStyle
+          }
           title="Back to Tools"
         >
           <ChevronLeft size={12} />
           Tools
         </button>
 
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-            minHeight: '28px',
-            padding: '0 8px',
-            borderRadius: 'var(--nb-radius-md)',
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            minHeight: "28px",
+            padding: "0 8px",
+            borderRadius: "var(--nb-radius-md)",
             border: `1px solid ${THEME.BORDER}`,
-            background: 'rgba(231, 199, 169, 0.24)',
+            background: "rgba(231, 199, 169, 0.24)",
             color: THEME.VALUE,
             fontFamily: THEME.MONO,
-            fontSize: 'var(--nb-fs-xs)',
+            fontSize: "var(--nb-fs-xs)",
             fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-        }}>
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
           <LayoutGrid size={13} />
           {tool?.shortLabel ?? moduleId}
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{
-            fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
-            color: THEME.VALUE,
-            letterSpacing: '-0.01em',
-            margin: 0,
-          }}>
+          <h1
+            style={{
+              fontFamily: THEME.SANS,
+              fontSize: "var(--nb-fs-sm)",
+              fontWeight: 700,
+              color: THEME.VALUE,
+              letterSpacing: "-0.01em",
+              margin: 0,
+            }}
+          >
             {tool?.name ?? title}
           </h1>
           {description && (
-            <div style={{
-              fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
-              color: THEME.LABEL,
-              marginTop: '2px',
-            }}>
+            <div
+              style={{
+                fontFamily: THEME.SANS,
+                fontSize: "var(--nb-fs-xs)",
+                color: THEME.LABEL,
+                marginTop: "2px",
+              }}
+            >
               {description}
             </div>
           )}
           {(tool?.focus || tool?.glossary) && (
-            <details style={{ marginTop: '4px' }}>
-              <summary style={{
-                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL,
-                cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase',
-                opacity: 0.7,
-              }}>
+            <details style={{ marginTop: "4px" }}>
+              <summary
+                style={{
+                  fontFamily: THEME.MONO,
+                  fontSize: "var(--nb-fs-xs)",
+                  color: THEME.LABEL,
+                  cursor: "pointer",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  opacity: 0.7,
+                }}
+              >
                 What does this tool do?
               </summary>
               {tool.glossary && (
-                <p style={{
-                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL,
-                  marginTop: '4px', lineHeight: 1.6, maxWidth: '520px',
-                }}>
+                <p
+                  style={{
+                    fontFamily: THEME.SANS,
+                    fontSize: "var(--nb-fs-sm)",
+                    color: THEME.LABEL,
+                    marginTop: "4px",
+                    lineHeight: 1.6,
+                    maxWidth: "520px",
+                  }}
+                >
                   {tool.glossary}
                 </p>
               )}
               {!tool.glossary && tool.focus && (
-                <p style={{
-                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL,
-                  marginTop: '4px', lineHeight: 1.55, maxWidth: '480px',
-                }}>
+                <p
+                  style={{
+                    fontFamily: THEME.SANS,
+                    fontSize: "var(--nb-fs-sm)",
+                    color: THEME.LABEL,
+                    marginTop: "4px",
+                    lineHeight: 1.55,
+                    maxWidth: "480px",
+                  }}
+                >
                   {tool.focus}
                 </p>
               )}
               {tool.keyConcepts && tool.keyConcepts.length > 0 && (
-                <div style={{ display: 'grid', gap: '4px', marginTop: '8px', maxWidth: '520px' }}>
+                <div style={{ display: "grid", gap: "4px", marginTop: "8px", maxWidth: "520px" }}>
                   {tool.keyConcepts.map(({ term, definition }) => (
-                    <div key={term} style={{ display: 'flex', gap: '8px' }}>
-                      <span style={{
-                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                        color: THEME.SKY, fontWeight: 600, flexShrink: 0,
-                      }}>
+                    <div key={term} style={{ display: "flex", gap: "8px" }}>
+                      <span
+                        style={{
+                          fontFamily: THEME.MONO,
+                          fontSize: "var(--nb-fs-xs)",
+                          color: THEME.SKY,
+                          fontWeight: 600,
+                          flexShrink: 0,
+                        }}
+                      >
                         {term}
                       </span>
-                      <span style={{
-                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
-                        color: THEME.LABEL, lineHeight: 1.5,
-                      }}>
+                      <span
+                        style={{
+                          fontFamily: THEME.SANS,
+                          fontSize: "var(--nb-fs-xs)",
+                          color: THEME.LABEL,
+                          lineHeight: 1.5,
+                        }}
+                      >
                         {definition}
                       </span>
                     </div>
@@ -266,15 +323,15 @@ export default function ToolShell({
             title={validity.caption}
             style={{
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
+              fontSize: "var(--nb-fs-xs)",
               fontWeight: 700,
-              letterSpacing: '0.10em',
-              padding: '5px 9px',
-              borderRadius: 'var(--nb-radius-md)',
+              letterSpacing: "0.10em",
+              padding: "5px 9px",
+              borderRadius: "var(--nb-radius-md)",
               background: validityStyles[validity.level].bg,
               border: `1px solid ${validityStyles[validity.level].border}`,
               color: validityStyles[validity.level].color,
-              cursor: 'help',
+              cursor: "help",
               flexShrink: 0,
             }}
           >
@@ -283,14 +340,17 @@ export default function ToolShell({
         )}
 
         {formula && (
-          <div style={{
-            fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-            color: THEME.VALUE,
-          padding: '5px 8px',
-            background: THEME.PANEL_GLASS_STRONG,
-            border: `1px solid ${THEME.BORDER}`,
-            borderRadius: 'var(--nb-radius-md)',
-          }}>
+          <div
+            style={{
+              fontFamily: THEME.MONO,
+              fontSize: "var(--nb-fs-xs)",
+              color: THEME.VALUE,
+              padding: "5px 8px",
+              background: THEME.PANEL_GLASS_STRONG,
+              border: `1px solid ${THEME.BORDER}`,
+              borderRadius: "var(--nb-radius-md)",
+            }}
+          >
             {formula}
           </div>
         )}
@@ -301,38 +361,44 @@ export default function ToolShell({
             type="button"
             onClick={toggleMode}
             className="nb-ui-control"
-            title={mode === 'simple' ? 'Show advanced tabs' : 'Show simple view'}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              minHeight: '28px',
-              padding: '0 7px',
-              borderRadius: 'var(--nb-radius-md)',
-              border: '1px solid var(--nb-control-border)',
-              background: mode === 'advanced' ? 'rgba(175, 195, 214, 0.15)' : 'var(--nb-control-bg)',
-              color: mode === 'advanced' ? THEME.SKY : 'var(--nb-control-color)',
-              cursor: 'pointer',
-              fontFamily: THEME.SANS,
-              fontSize: 'var(--nb-fs-xs)',
-              fontWeight: mode === 'advanced' ? 600 : 400,
-              flexShrink: 0,
-              transition: 'all 0.2s ease',
-              ['--nb-control-bg' as const]: 'rgba(16,19,26,0.8)',
-              ['--nb-control-border' as const]: 'rgba(255,255,255,0.08)',
-              ['--nb-control-color' as const]: THEME.LABEL,
-              ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.08)',
-              ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.12)',
-              ['--nb-control-hover-color' as const]: THEME.VALUE,
-              ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.12)',
-              ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.16)',
-              ['--nb-control-active-color' as const]: THEME.VALUE,
-            } as ControlVarsStyle}
+            title={mode === "simple" ? "Show advanced tabs" : "Show simple view"}
+            style={
+              {
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                minHeight: "28px",
+                padding: "0 7px",
+                borderRadius: "var(--nb-radius-md)",
+                border: "1px solid var(--nb-control-border)",
+                background: mode === "advanced" ? "rgba(175, 195, 214, 0.15)" : "var(--nb-control-bg)",
+                color: mode === "advanced" ? THEME.SKY : "var(--nb-control-color)",
+                cursor: "pointer",
+                fontFamily: THEME.SANS,
+                fontSize: "var(--nb-fs-xs)",
+                fontWeight: mode === "advanced" ? 600 : 400,
+                flexShrink: 0,
+                transition: "all 0.2s ease",
+                ["--nb-control-bg" as const]: "rgba(16,19,26,0.8)",
+                ["--nb-control-border" as const]: "rgba(255,255,255,0.08)",
+                ["--nb-control-color" as const]: THEME.LABEL,
+                ["--nb-control-hover-bg" as const]: "rgba(255,255,255,0.08)",
+                ["--nb-control-hover-border" as const]: "rgba(255,255,255,0.12)",
+                ["--nb-control-hover-color" as const]: THEME.VALUE,
+                ["--nb-control-active-bg" as const]: "rgba(255,255,255,0.12)",
+                ["--nb-control-active-border" as const]: "rgba(255,255,255,0.16)",
+                ["--nb-control-active-color" as const]: THEME.VALUE,
+              } as ControlVarsStyle
+            }
           >
-            {mode === 'simple' ? (
-              <><SlidersHorizontal size={12} /> Advanced</>
+            {mode === "simple" ? (
+              <>
+                <SlidersHorizontal size={12} /> Advanced
+              </>
             ) : (
-              <><Minimize2 size={12} /> Simple</>
+              <>
+                <Minimize2 size={12} /> Simple
+              </>
             )}
           </button>
         )}
@@ -345,55 +411,71 @@ export default function ToolShell({
 
       {/* ── BentoGrid ──────────────────────────────────────── */}
       {/* P3.4: fixed token padding (SP_SM=8, SP_MD=16) instead of dynamic Math.max */}
-      <div className="nb-tool-shell__body" style={{
-        flex: 1, minHeight: 0, padding: '8px 16px 16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-      }}>
+      <div
+        className="nb-tool-shell__body"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          padding: "8px 16px 16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
         {hero}
         <div
           className="nb-tool-shell__grid"
           style={{
             flex: 1,
             minHeight: 0,
-            display: 'grid',
+            display: "grid",
             gridTemplateAreas: grid,
-            gridTemplateColumns: columns ?? '1fr',
-            gridTemplateRows: rows ?? '1fr',
-            gap: '8px',
+            gridTemplateColumns: columns ?? "1fr",
+            gridTemplateRows: rows ?? "1fr",
+            gap: "8px",
           }}
         >
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
+          <ErrorBoundary>{children}</ErrorBoundary>
         </div>
       </div>
 
       {/* ── References ──────────────────────────────────────── */}
       {references && references.length > 0 && (
-        <div style={{
-          padding: '6px 16px',
-          borderTop: `1px solid ${THEME.BORDER}`,
-          background: THEME.PANEL_MUTED,
-          flexShrink: 0,
-        }}>
+        <div
+          style={{
+            padding: "6px 16px",
+            borderTop: `1px solid ${THEME.BORDER}`,
+            background: THEME.PANEL_MUTED,
+            flexShrink: 0,
+          }}
+        >
           <details>
-            <summary style={{
-              fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL,
-              cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase',
-              listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px',
-            }}>
-              <span style={{ fontSize: '11px', transition: 'transform 0.15s' }}>▸</span>
+            <summary
+              style={{
+                fontFamily: THEME.MONO,
+                fontSize: "var(--nb-fs-xs)",
+                color: THEME.LABEL,
+                cursor: "pointer",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                listStyle: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span style={{ fontSize: "11px", transition: "transform 0.15s" }}>▸</span>
               References ({references.length})
             </summary>
-            <div style={{ paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div style={{ paddingTop: "6px", display: "flex", flexDirection: "column", gap: "3px" }}>
               {references.map((ref, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, flexShrink: 0 }}>
+                <div key={i} style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+                  <span
+                    style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-xs)", color: THEME.LABEL, flexShrink: 0 }}
+                  >
                     [{i + 1}]
                   </span>
-                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-xs)", color: THEME.VALUE }}>
                     {ref.citation}
                   </span>
                   {ref.doi && (
@@ -402,8 +484,10 @@ export default function ToolShell({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                        color: THEME.SKY, textDecoration: 'none',
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        color: THEME.SKY,
+                        textDecoration: "none",
                       }}
                     >
                       DOI: {ref.doi}
@@ -415,8 +499,10 @@ export default function ToolShell({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                        color: THEME.SKY, textDecoration: 'none',
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        color: THEME.SKY,
+                        textDecoration: "none",
                       }}
                     >
                       Link
@@ -430,15 +516,20 @@ export default function ToolShell({
       )}
 
       {/* ── Footer ─────────────────────────────────────────── */}
-        {footer && (
-        <div className="nb-tool-shell__footer" style={{
-          padding: '8px 16px',
-          display: 'flex', gap: '8px', flexShrink: 0,
-          borderTop: `1px solid ${THEME.BORDER}`,
-          background: THEME.PANEL_MUTED,
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-        }}>
+      {footer && (
+        <div
+          className="nb-tool-shell__footer"
+          style={{
+            padding: "8px 16px",
+            display: "flex",
+            gap: "8px",
+            flexShrink: 0,
+            borderTop: `1px solid ${THEME.BORDER}`,
+            background: THEME.PANEL_MUTED,
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+          }}
+        >
           {footer}
         </div>
       )}

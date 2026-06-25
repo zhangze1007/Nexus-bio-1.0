@@ -39,9 +39,9 @@
  *       this is not calibrated to specific tissue types or assay platforms.
  */
 
-import ligandReceptorDB from '../data/ligandReceptorDB.json';
-import { EXPANDED_LR_DB, type LRPairExpanded } from '../data/ligandReceptorDBExpanded';
-import { SeededRNG } from '../utils/seededRng';
+import ligandReceptorDB from "../data/ligandReceptorDB.json";
+import { EXPANDED_LR_DB, type LRPairExpanded } from "../data/ligandReceptorDBExpanded";
+import { SeededRNG } from "../utils/seededRng";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -76,7 +76,7 @@ export interface ClusterCentrality {
   outgoingStrength: number;
   incomingStrength: number;
   totalStrength: number;
-  dominantRole: 'sender' | 'receiver' | 'mediator';
+  dominantRole: "sender" | "receiver" | "mediator";
 }
 
 export interface PathwaySummary {
@@ -100,7 +100,7 @@ export interface CommunicationResult {
 /** Hill function: x^n / (K^n + x^n) with K=1 for cell-count scaling */
 function hill(x: number, n: number): number {
   if (x <= 0) return 0;
-  return Math.pow(x, n) / (1 + Math.pow(x, n));
+  return x ** n / (1 + x ** n);
 }
 
 /** Clamp a value to [0, 1] */
@@ -110,19 +110,23 @@ function clamp01(x: number): number {
 
 /** Pathway names that indicate inhibitory interactions */
 const INHIBIT_PATHWAYS = new Set([
-  'Wnt-inhibitor', 'BMP-inhibitor', 'TGF-beta-inhibitor',
-  'Notch-inhibitor', 'Hedgehog-inhibitor', 'FGF-inhibitor',
+  "Wnt-inhibitor",
+  "BMP-inhibitor",
+  "TGF-beta-inhibitor",
+  "Notch-inhibitor",
+  "Hedgehog-inhibitor",
+  "FGF-inhibitor",
 ]);
 
 /**
  * Determine interaction type from a pathway name.
  * Returns 'inhibition' for known inhibitory pathways, 'signaling' otherwise.
  */
-function interactionTypeForPathway(pathway: string): 'signaling' | 'inhibition' {
-  if (INHIBIT_PATHWAYS.has(pathway)) return 'inhibition';
-  if (pathway.toLowerCase().includes('inhibitor')) return 'inhibition';
-  if (pathway.toLowerCase().includes('antagonist')) return 'inhibition';
-  return 'signaling';
+function interactionTypeForPathway(pathway: string): "signaling" | "inhibition" {
+  if (INHIBIT_PATHWAYS.has(pathway)) return "inhibition";
+  if (pathway.toLowerCase().includes("inhibitor")) return "inhibition";
+  if (pathway.toLowerCase().includes("antagonist")) return "inhibition";
+  return "signaling";
 }
 
 /**
@@ -152,8 +156,12 @@ export function computeSpatialWeights(
     if (!positions || positions.length === 0) {
       centroids.push({ x: 0, y: 0 });
     } else {
-      let sx = 0, sy = 0;
-      for (const p of positions) { sx += p.x; sy += p.y; }
+      let sx = 0,
+        sy = 0;
+      for (const p of positions) {
+        sx += p.x;
+        sy += p.y;
+      }
       centroids.push({ x: sx / positions.length, y: sy / positions.length });
     }
   }
@@ -173,9 +181,7 @@ export function computeSpatialWeights(
   if (distances.length > 0) {
     const sorted = [...distances].sort((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
-    medianDistance = sorted.length % 2 === 0
-      ? (sorted[mid - 1] + sorted[mid]) / 2
-      : sorted[mid];
+    medianDistance = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
     if (medianDistance <= 0) medianDistance = 1;
   }
 
@@ -202,11 +208,11 @@ export function computeSpatialWeights(
  * This preserves relative ordering while making values comparable.
  */
 function normalizeProbabilities(probs: number[]): number[] {
-  const nonzero = probs.filter(p => p > 0);
+  const nonzero = probs.filter((p) => p > 0);
   if (nonzero.length === 0) return probs;
   const maxVal = Math.max(...nonzero);
   if (maxVal === 0) return probs;
-  return probs.map(p => p > 0 ? p / maxVal : 0);
+  return probs.map((p) => (p > 0 ? p / maxVal : 0));
 }
 
 /**
@@ -214,7 +220,7 @@ function normalizeProbabilities(probs: number[]): number[] {
  * less than or equal to the given probability. Returns value in [0,1].
  */
 function computeSignificance(prob: number, allProbs: number[]): number {
-  const nonzero = allProbs.filter(p => p > 0);
+  const nonzero = allProbs.filter((p) => p > 0);
   if (nonzero.length === 0) return 0;
   let count = 0;
   for (const p of nonzero) {
@@ -309,14 +315,14 @@ export function analyzeCommunication(input: CommunicationInput): CommunicationRe
     }
 
     const total = outgoing + incoming;
-    let dominantRole: 'sender' | 'receiver' | 'mediator';
+    let dominantRole: "sender" | "receiver" | "mediator";
     if (total === 0) {
-      dominantRole = 'mediator';
+      dominantRole = "mediator";
     } else {
       const ratio = outgoing / total;
-      if (ratio > 0.6) dominantRole = 'sender';
-      else if (ratio < 0.4) dominantRole = 'receiver';
-      else dominantRole = 'mediator';
+      if (ratio > 0.6) dominantRole = "sender";
+      else if (ratio < 0.4) dominantRole = "receiver";
+      else dominantRole = "mediator";
     }
 
     centrality[cluster] = {
@@ -328,7 +334,10 @@ export function analyzeCommunication(input: CommunicationInput): CommunicationRe
   }
 
   // Step 5: Aggregate by pathway
-  const pathwayAgg: Record<string, { total: number; count: number; senders: Record<string, number>; receivers: Record<string, number> }> = {};
+  const pathwayAgg: Record<
+    string,
+    { total: number; count: number; senders: Record<string, number>; receivers: Record<string, number> }
+  > = {};
   for (const inter of interactions) {
     if (!pathwayAgg[inter.pathway]) {
       pathwayAgg[inter.pathway] = { total: 0, count: 0, senders: {}, receivers: {} };
@@ -347,10 +356,8 @@ export function analyzeCommunication(input: CommunicationInput): CommunicationRe
   for (const [pathway, agg] of Object.entries(pathwayAgg)) {
     pathwaySummary[pathway] = round(agg.total);
 
-    const topSender = Object.entries(agg.senders)
-      .sort(([, a], [, b]) => b - a)[0]?.[0] ?? '';
-    const topReceiver = Object.entries(agg.receivers)
-      .sort(([, a], [, b]) => b - a)[0]?.[0] ?? '';
+    const topSender = Object.entries(agg.senders).sort(([, a], [, b]) => b - a)[0]?.[0] ?? "";
+    const topReceiver = Object.entries(agg.receivers).sort(([, a], [, b]) => b - a)[0]?.[0] ?? "";
 
     pathwayDetails.push({
       pathway,
@@ -448,7 +455,7 @@ export interface ExpandedCommunicationResult {
       target: string;
       weight: number;
       significant: boolean;
-      interactionType: 'signaling' | 'inhibition';
+      interactionType: "signaling" | "inhibition";
     }>;
   };
   stats: {
@@ -477,7 +484,7 @@ function benjaminiHochberg(pValues: number[]): number[] {
   // Apply BH correction from largest to smallest
   for (let k = n - 1; k >= 0; k--) {
     const rank = k + 1;
-    const adj = Math.min(1, indexed[k].p * n / rank);
+    const adj = Math.min(1, (indexed[k].p * n) / rank);
     adjusted[indexed[k].i] = Math.min(adj, prevAdj);
     prevAdj = adjusted[indexed[k].i];
   }
@@ -508,14 +515,16 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
   } = input;
 
   // Compute spatial weights from cell positions if not provided directly
-  const spatialWeightMatrix = inputSpatialWeights
-    ?? (cellPositions ? computeSpatialWeights(cellPositions, clusters) : undefined);
+  const spatialWeightMatrix =
+    inputSpatialWeights ?? (cellPositions ? computeSpatialWeights(cellPositions, clusters) : undefined);
 
   const rng = new SeededRNG(seed);
-  const db: LRPairExpanded[] = useExpandedDB ? EXPANDED_LR_DB : (ligandReceptorDB as LRPair[]).map(lr => ({
-    ...lr,
-    category: 'other',
-  }));
+  const db: LRPairExpanded[] = useExpandedDB
+    ? EXPANDED_LR_DB
+    : (ligandReceptorDB as LRPair[]).map((lr) => ({
+        ...lr,
+        category: "other",
+      }));
 
   const rawInteractions: ExpandedLRInteraction[] = [];
   const rawProbs: number[] = [];
@@ -644,14 +653,14 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
     }
 
     const total = outgoing + incoming;
-    let dominantRole: 'sender' | 'receiver' | 'mediator';
+    let dominantRole: "sender" | "receiver" | "mediator";
     if (total === 0) {
-      dominantRole = 'mediator';
+      dominantRole = "mediator";
     } else {
       const ratio = outgoing / total;
-      if (ratio > 0.6) dominantRole = 'sender';
-      else if (ratio < 0.4) dominantRole = 'receiver';
-      else dominantRole = 'mediator';
+      if (ratio > 0.6) dominantRole = "sender";
+      else if (ratio < 0.4) dominantRole = "receiver";
+      else dominantRole = "mediator";
     }
 
     centrality[cluster] = {
@@ -663,7 +672,10 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
   }
 
   // Step 8: Pathway summary
-  const pathwayAgg: Record<string, { total: number; count: number; senders: Record<string, number>; receivers: Record<string, number> }> = {};
+  const pathwayAgg: Record<
+    string,
+    { total: number; count: number; senders: Record<string, number>; receivers: Record<string, number> }
+  > = {};
   for (const inter of interactions) {
     if (!pathwayAgg[inter.pathway]) {
       pathwayAgg[inter.pathway] = { total: 0, count: 0, senders: {}, receivers: {} };
@@ -681,8 +693,8 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
 
   for (const [pathway, agg] of Object.entries(pathwayAgg)) {
     pathwaySummary[pathway] = round(agg.total);
-    const topSender = Object.entries(agg.senders).sort(([, a], [, b]) => b - a)[0]?.[0] ?? '';
-    const topReceiver = Object.entries(agg.receivers).sort(([, a], [, b]) => b - a)[0]?.[0] ?? '';
+    const topSender = Object.entries(agg.senders).sort(([, a], [, b]) => b - a)[0]?.[0] ?? "";
+    const topReceiver = Object.entries(agg.receivers).sort(([, a], [, b]) => b - a)[0]?.[0] ?? "";
     pathwayDetails.push({
       pathway,
       totalStrength: round(agg.total),
@@ -694,7 +706,7 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
   pathwayDetails.sort((a, b) => b.totalStrength - a.totalStrength);
 
   // Step 9: Build network
-  const networkNodes = clusters.map(c => ({
+  const networkNodes = clusters.map((c) => ({
     id: c,
     cellType: c,
     nCells: cellCounts?.[c] ?? 0,
@@ -708,21 +720,21 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
     if (existing) {
       existing.weight += inter.probability;
       existing.significant = existing.significant || inter.significant;
-      if (iType === 'inhibition') existing.inhibition += inter.probability;
+      if (iType === "inhibition") existing.inhibition += inter.probability;
       else existing.signaling += inter.probability;
     } else {
       edgeMap.set(key, {
         weight: inter.probability,
         significant: inter.significant,
-        signaling: iType === 'signaling' ? inter.probability : 0,
-        inhibition: iType === 'inhibition' ? inter.probability : 0,
+        signaling: iType === "signaling" ? inter.probability : 0,
+        inhibition: iType === "inhibition" ? inter.probability : 0,
       });
     }
   }
 
   const networkEdges = Array.from(edgeMap.entries()).map(([key, val]) => {
-    const [source, target] = key.split('->');
-    const interactionType = val.inhibition > val.signaling ? 'inhibition' as const : 'signaling' as const;
+    const [source, target] = key.split("->");
+    const interactionType = val.inhibition > val.signaling ? ("inhibition" as const) : ("signaling" as const);
     return { source, target, weight: round(val.weight), significant: val.significant, interactionType };
   });
 
@@ -737,7 +749,7 @@ export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput):
     network: { nodes: networkNodes, edges: networkEdges },
     stats: {
       totalInteractions: interactions.length,
-      significantInteractions: interactions.filter(i => i.significant).length,
+      significantInteractions: interactions.filter((i) => i.significant).length,
       nCellTypes: clusters.length,
       nPermutations,
       nLRPairs: db.length,

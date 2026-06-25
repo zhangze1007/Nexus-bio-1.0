@@ -1,4 +1,4 @@
-'use client';
+"use client";
 /**
  * RawJsonDrawer — Power-user escape hatch for the raw model response.
  *
@@ -18,10 +18,10 @@
  * be able to open it, run a new query, and keep inspecting without it
  * collapsing on them.
  */
-import { useState } from 'react';
-import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import type { ParseErrorInfo } from './ResultPanel';
-import { THEME } from '../../../theme';
+import { useState } from "react";
+import { THEME } from "../../../theme";
+import { TOOL_TOKENS as T } from "../shared/ToolShell";
+import type { ParseErrorInfo } from "./ResultPanel";
 
 export interface RawJsonDrawerProps {
   open: boolean;
@@ -35,7 +35,7 @@ export interface RawJsonDrawerProps {
 }
 
 function prettyPrint(raw: string | null): { body: string; isJson: boolean } {
-  if (!raw) return { body: '', isJson: false };
+  if (!raw) return { body: "", isJson: false };
   try {
     const parsed = JSON.parse(raw);
     return { body: JSON.stringify(parsed, null, 2), isJson: true };
@@ -44,14 +44,7 @@ function prettyPrint(raw: string | null): { body: string; isJson: boolean } {
   }
 }
 
-export default function RawJsonDrawer({
-  open,
-  onToggle,
-  rawText,
-  provider,
-  parseError,
-  isProse,
-}: RawJsonDrawerProps) {
+export default function RawJsonDrawer({ open, onToggle, rawText, provider, parseError, isProse }: RawJsonDrawerProps) {
   const [copied, setCopied] = useState(false);
   const { body, isJson } = prettyPrint(rawText);
 
@@ -66,16 +59,16 @@ export default function RawJsonDrawer({
     }
   }
 
-  const label = isJson ? 'Raw structured response' : isProse ? 'Raw text response' : 'Raw model response';
+  const label = isJson ? "Raw structured response" : isProse ? "Raw text response" : "Raw model response";
 
   return (
     <div
       data-testid="nexai-raw-json-drawer"
       style={{
-        borderRadius: 'var(--nb-radius-md)',
+        borderRadius: "var(--nb-radius-md)",
         border: `1px solid ${THEME.BORDER}`,
         background: THEME.PANEL_INSET,
-        overflow: 'hidden',
+        overflow: "hidden",
       }}
     >
       <button
@@ -85,31 +78,31 @@ export default function RawJsonDrawer({
         aria-controls="nexai-raw-json-body"
         data-testid="nexai-raw-json-toggle"
         style={{
-          width: '100%',
-          padding: '10px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '10px',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
+          width: "100%",
+          padding: "10px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "10px",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
           fontFamily: THEME.MONO,
-          fontSize: 'var(--nb-fs-xs)',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          fontSize: "var(--nb-fs-xs)",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
           color: THEME.LABEL,
         }}
       >
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
           <span
             aria-hidden
             style={{
-              display: 'inline-block',
-              transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.15s ease',
+              display: "inline-block",
+              transform: open ? "rotate(90deg)" : "rotate(0deg)",
+              transition: "transform 0.15s ease",
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-xs)',
+              fontSize: "var(--nb-fs-xs)",
               color: THEME.LABEL,
             }}
           >
@@ -117,36 +110,36 @@ export default function RawJsonDrawer({
           </span>
           <span>{label}</span>
         </span>
-        <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+        <span style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
           {provider && (
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: 'var(--nb-fs-xs)',
-                padding: '2px 6px',
-                borderRadius: '6px',
-                background: 'rgba(175,195,214,0.12)',
-                border: '1px solid rgba(175,195,214,0.24)',
+                fontSize: "var(--nb-fs-xs)",
+                padding: "2px 6px",
+                borderRadius: "6px",
+                background: "rgba(175,195,214,0.12)",
+                border: "1px solid rgba(175,195,214,0.24)",
                 color: THEME.VALUE,
-                letterSpacing: '0.04em',
-                textTransform: 'none',
+                letterSpacing: "0.04em",
+                textTransform: "none",
               }}
             >
               {provider}
             </span>
           )}
-          {parseError && parseError.code !== 'NO_OBJECT' && (
+          {parseError && parseError.code !== "NO_OBJECT" && (
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: 'var(--nb-fs-xs)',
-                padding: '2px 6px',
-                borderRadius: '6px',
-                background: 'rgba(250,128,114,0.16)',
-                border: '1px solid rgba(250,128,114,0.34)',
-                color: '#FA8072',
-                letterSpacing: '0.04em',
-                textTransform: 'none',
+                fontSize: "var(--nb-fs-xs)",
+                padding: "2px 6px",
+                borderRadius: "6px",
+                background: "rgba(250,128,114,0.16)",
+                border: "1px solid rgba(250,128,114,0.34)",
+                color: "#FA8072",
+                letterSpacing: "0.04em",
+                textTransform: "none",
               }}
             >
               {parseError.code}
@@ -161,21 +154,23 @@ export default function RawJsonDrawer({
           data-testid="nexai-raw-json-body"
           style={{
             borderTop: `1px solid ${THEME.BORDER}`,
-            padding: '10px 14px 14px',
-            display: 'grid',
-            gap: '8px',
+            padding: "10px 14px 14px",
+            display: "grid",
+            gap: "8px",
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: 'var(--nb-fs-xs)',
+                fontSize: "var(--nb-fs-xs)",
                 color: THEME.LABEL,
-                letterSpacing: '0.06em',
+                letterSpacing: "0.06em",
               }}
             >
-              {rawText ? `${rawText.length.toLocaleString()} chars · ${isJson ? 'parsed as JSON' : 'plain text'}` : 'no response captured yet'}
+              {rawText
+                ? `${rawText.length.toLocaleString()} chars · ${isJson ? "parsed as JSON" : "plain text"}`
+                : "no response captured yet"}
             </span>
             {rawText && (
               <button
@@ -183,25 +178,25 @@ export default function RawJsonDrawer({
                 onClick={handleCopy}
                 style={{
                   fontFamily: THEME.MONO,
-                  fontSize: 'var(--nb-fs-xs)',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--nb-radius-sm)',
+                  fontSize: "var(--nb-fs-xs)",
+                  padding: "4px 10px",
+                  borderRadius: "var(--nb-radius-sm)",
                   border: `1px solid ${THEME.BORDER}`,
-                  background: 'transparent',
-                  cursor: 'pointer',
+                  background: "transparent",
+                  cursor: "pointer",
                   color: THEME.VALUE,
                 }}
               >
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? "Copied" : "Copy"}
               </button>
             )}
           </div>
-          {parseError && parseError.code !== 'NO_OBJECT' && (
+          {parseError && parseError.code !== "NO_OBJECT" && (
             <p
               style={{
                 margin: 0,
                 fontFamily: THEME.SANS,
-                fontSize: 'var(--nb-fs-sm)',
+                fontSize: "var(--nb-fs-sm)",
                 color: THEME.LABEL,
                 lineHeight: 1.55,
               }}
@@ -212,21 +207,21 @@ export default function RawJsonDrawer({
           <pre
             style={{
               margin: 0,
-              padding: '10px 12px',
-              borderRadius: 'var(--nb-radius-md)',
-              background: 'rgba(10,14,22,0.7)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              padding: "10px 12px",
+              borderRadius: "var(--nb-radius-md)",
+              background: "rgba(10,14,22,0.7)",
+              border: "1px solid rgba(255,255,255,0.06)",
               fontFamily: THEME.MONO,
-              fontSize: 'var(--nb-fs-sm)',
+              fontSize: "var(--nb-fs-sm)",
               lineHeight: 1.5,
               color: THEME.VALUE,
-              maxHeight: '340px',
-              overflow: 'auto',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
+              maxHeight: "340px",
+              overflow: "auto",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
             }}
           >
-            {body || 'No raw response captured yet. Run a query to populate this drawer.'}
+            {body || "No raw response captured yet. Run a query to populate this drawer."}
           </pre>
         </div>
       )}

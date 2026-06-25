@@ -15,7 +15,7 @@
  *   ALGORITHM: Thermodynamic folding + off-target scoring + activity prediction
  */
 
-import type { RNADesignInput, RNADesignResult, RibozymeType } from './types';
+import type { RibozymeType, RNADesignInput, RNADesignResult } from "./types";
 
 // ── RNA Thermodynamic Parameters ───────────────────────────────────────────
 
@@ -24,19 +24,36 @@ import type { RNADesignInput, RNADesignResult, RibozymeType } from './types';
  * Reference: Turner & Mathews (2010) Nucleic Acids Res 38:D280-D282
  */
 const NN_RNA: Record<string, number> = {
-  'AA': -0.9, 'UU': -0.9, 'AU': -1.1, 'UA': -1.3,
-  'CA': -1.8, 'UG': -2.1, 'CU': -0.9, 'AG': -0.9,
-  'GA': -1.1, 'UC': -1.3, 'GU': -1.4, 'AC': -1.4,
-  'CG': -2.4, 'GC': -3.4, 'GG': -1.7, 'CC': -1.7,
+  AA: -0.9,
+  UU: -0.9,
+  AU: -1.1,
+  UA: -1.3,
+  CA: -1.8,
+  UG: -2.1,
+  CU: -0.9,
+  AG: -0.9,
+  GA: -1.1,
+  UC: -1.3,
+  GU: -1.4,
+  AC: -1.4,
+  CG: -2.4,
+  GC: -3.4,
+  GG: -1.7,
+  CC: -1.7,
 };
 
 /**
  * RNA complementarity check (Watson-Crick + wobble).
  */
 function isComplementary(a: string, b: string): boolean {
-  return (a === 'A' && b === 'U') || (a === 'U' && b === 'A') ||
-         (a === 'G' && b === 'C') || (a === 'C' && b === 'G') ||
-         (a === 'G' && b === 'U') || (a === 'U' && b === 'G');
+  return (
+    (a === "A" && b === "U") ||
+    (a === "U" && b === "A") ||
+    (a === "G" && b === "C") ||
+    (a === "C" && b === "G") ||
+    (a === "G" && b === "U") ||
+    (a === "U" && b === "G")
+  );
 }
 
 /**
@@ -70,11 +87,11 @@ function computeFoldingEnergy(seq: string): number {
  * Reference: de la Pena et al. (2003) RNA 9:574-582
  */
 const HAMMERHEAD_CONSENSUS = {
-  core: 'CUGAUGAGUCGUGAGGACGAAACAGCGACG',
+  core: "CUGAUGAGUCGUGAGGACGAAACAGCGACG",
   stemI: { minLength: 3, maxLength: 8 },
   stemII: { minLength: 2, maxLength: 6 },
   stemIII: { minLength: 3, maxLength: 8 },
-  cleavageSite: 'NUH', // N=any, U=uridine, H=A/C/U
+  cleavageSite: "NUH", // N=any, U=uridine, H=A/C/U
 };
 
 function designHammerhead(targetSequence: string): RNADesignResult {
@@ -83,15 +100,20 @@ function designHammerhead(targetSequence: string): RNADesignResult {
   // Find cleavage sites (NUH pattern)
   const cleavageSites: number[] = [];
   for (let i = 0; i < seq.length - 2; i++) {
-    if (seq[i + 1] === 'U' && seq[i + 2] !== 'G') {
+    if (seq[i + 1] === "U" && seq[i + 2] !== "G") {
       cleavageSites.push(i);
     }
   }
 
   if (cleavageSites.length === 0) {
     return {
-      type: 'ribozyme', sequence: '', predictedActivity: 0, offTargetScore: 0,
-      deltaG: 0, evidence: [], designNotes: ['No valid cleavage sites found (NUH pattern)'],
+      type: "ribozyme",
+      sequence: "",
+      predictedActivity: 0,
+      offTargetScore: 0,
+      deltaG: 0,
+      evidence: [],
+      designNotes: ["No valid cleavage sites found (NUH pattern)"],
     };
   }
 
@@ -111,15 +133,15 @@ function designHammerhead(targetSequence: string): RNADesignResult {
   const predictedActivity = Math.min(1, stemPairs / 6);
 
   return {
-    type: 'ribozyme',
+    type: "ribozyme",
     sequence: ribozyme,
     predictedActivity: Math.round(predictedActivity * 100) / 100,
     offTargetScore: 0.2, // ribozymes are generally specific
     deltaG: Math.round(computeFoldingEnergy(ribozyme) * 100) / 100,
     targetPosition: bestSite,
     evidence: [
-      { source: 'Scott et al. 2013', type: 'literature', title: 'Nature 500:310' },
-      { source: 'Rfam', type: 'database', title: 'Hammerhead ribozyme family' },
+      { source: "Scott et al. 2013", type: "literature", title: "Nature 500:310" },
+      { source: "Rfam", type: "database", title: "Hammerhead ribozyme family" },
     ],
     designNotes: [
       `Hammerhead ribozyme targeting position ${bestSite}`,
@@ -152,7 +174,7 @@ function designSiRNA(targetSequence: string): RNADesignResult {
 
   // Scan for AA dinucleotide sites (siRNA starts with AA)
   for (let i = 0; i < seq.length - 22; i++) {
-    if (seq[i] === 'A' && seq[i + 1] === 'A') {
+    if (seq[i] === "A" && seq[i + 1] === "A") {
       const sense = seq.substring(i, i + 21);
 
       // Score based on Reynolds 2004 rules
@@ -164,13 +186,13 @@ function designSiRNA(targetSequence: string): RNADesignResult {
       else if (gc >= 0.2 && gc <= 0.6) score += 1;
 
       // A/U at position 1
-      if (sense[0] === 'A' || sense[0] === 'U') score += 1;
+      if (sense[0] === "A" || sense[0] === "U") score += 1;
 
       // G/C at position 19
-      if (sense[18] === 'G' || sense[18] === 'C') score += 1;
+      if (sense[18] === "G" || sense[18] === "C") score += 1;
 
       // Avoid runs of 4+
-      if (!(/([AUGC])\1{3}/.test(sense))) score += 1;
+      if (!/([AUGC])\1{3}/.test(sense)) score += 1;
 
       // Low internal structure (simple heuristic)
       const folding = computeFoldingEnergy(sense);
@@ -182,8 +204,13 @@ function designSiRNA(targetSequence: string): RNADesignResult {
 
   if (candidates.length === 0) {
     return {
-      type: 'sirna', sequence: '', predictedActivity: 0, offTargetScore: 0,
-      deltaG: 0, evidence: [], designNotes: ['No valid siRNA sites found'],
+      type: "sirna",
+      sequence: "",
+      predictedActivity: 0,
+      offTargetScore: 0,
+      deltaG: 0,
+      evidence: [],
+      designNotes: ["No valid siRNA sites found"],
     };
   }
 
@@ -195,19 +222,19 @@ function designSiRNA(targetSequence: string): RNADesignResult {
   const offTargetScore = computeSiRNAOffTarget(best.sequence);
 
   return {
-    type: 'sirna',
+    type: "sirna",
     sequence: best.sequence,
-    predictedActivity: Math.round(best.score / 6 * 100) / 100,
+    predictedActivity: Math.round((best.score / 6) * 100) / 100,
     offTargetScore: Math.round(offTargetScore * 100) / 100,
     deltaG: Math.round(computeFoldingEnergy(best.sequence) * 100) / 100,
     targetPosition: best.position,
     evidence: [
-      { source: 'Elbashir et al. 2001', type: 'literature', title: 'Nature 411:494-498' },
-      { source: 'Reynolds et al. 2004', type: 'literature', title: 'Nat Biotechnol 22:326-330' },
+      { source: "Elbashir et al. 2001", type: "literature", title: "Nature 411:494-498" },
+      { source: "Reynolds et al. 2004", type: "literature", title: "Nat Biotechnol 22:326-330" },
     ],
     designNotes: [
       `siRNA targeting position ${best.position}`,
-      `GC content: ${((best.sequence.match(/[GC]/g) || []).length / best.sequence.length * 100).toFixed(0)}%`,
+      `GC content: ${(((best.sequence.match(/[GC]/g) || []).length / best.sequence.length) * 100).toFixed(0)}%`,
       `Score: ${best.score}/6`,
       `Off-target risk: ${offTargetScore.toFixed(2)}`,
     ],
@@ -216,7 +243,7 @@ function designSiRNA(targetSequence: string): RNADesignResult {
 
 function computeSiRNAOffTarget(sequence: string): number {
   // Simplified: check for common off-target motifs
-  const offTargetMotifs = ['AAAA', 'CCCC', 'GGGG', 'UUUU'];
+  const offTargetMotifs = ["AAAA", "CCCC", "GGGG", "UUUU"];
   let risk = 0;
   for (const motif of offTargetMotifs) {
     if (sequence.includes(motif)) risk += 0.2;
@@ -231,18 +258,18 @@ function computeSiRNAOffTarget(sequence: string): number {
  */
 export function designRNA(input: RNADesignInput): RNADesignResult {
   switch (input.type) {
-    case 'ribozyme':
+    case "ribozyme":
       return designHammerhead(input.targetSequence);
-    case 'sirna':
+    case "sirna":
       return designSiRNA(input.targetSequence);
-    case 'toehold':
+    case "toehold":
       return designToeholdSwitch(input.targetSequence);
-    case 'aptamer':
+    case "aptamer":
       return designAptamer(input.targetSequence);
     default:
       return {
         type: input.type,
-        sequence: '',
+        sequence: "",
         predictedActivity: 0,
         offTargetScore: 0,
         deltaG: 0,
@@ -265,28 +292,26 @@ function designToeholdSwitch(triggerSequence: string): RNADesignResult {
   const toehold = trigger.substring(0, toeholdLength);
 
   // Loop domain: stable tetra-loop
-  const loop = 'GAAA';
+  const loop = "GAAA";
 
   // RBS sequestered in stem
-  const rbs = 'AAGGAGG';
-  const stem = 'CCCCCUU'; // complement to RBS
+  const rbs = "AAGGAGG";
+  const stem = "CCCCCUU"; // complement to RBS
 
   // Switch RNA: toehold + loop + stem-RBS
-  const switchRNA = toehold + loop + stem + rbs + 'AUG';
+  const switchRNA = toehold + loop + stem + rbs + "AUG";
 
   // Predicted activity based on toehold length and GC content
   const gcContent = (toehold.match(/[GC]/g) || []).length / toehold.length;
   const predictedActivity = Math.min(1, 0.5 + 0.1 * toeholdLength + 0.2 * gcContent);
 
   return {
-    type: 'toehold',
+    type: "toehold",
     sequence: switchRNA,
     predictedActivity: Math.round(predictedActivity * 100) / 100,
     offTargetScore: 0.1, // toehold switches are highly specific
     deltaG: Math.round(computeFoldingEnergy(switchRNA) * 100) / 100,
-    evidence: [
-      { source: 'Green et al. 2014', type: 'literature', title: 'Cell 159:925-939' },
-    ],
+    evidence: [{ source: "Green et al. 2014", type: "literature", title: "Cell 159:925-939" }],
     designNotes: [
       `Toehold switch for trigger: ${trigger.substring(0, 20)}...`,
       `Toehold domain: ${toehold} (${toeholdLength} nt)`,
@@ -305,8 +330,8 @@ function designAptamer(targetLigand: string): RNADesignResult {
   // Generate a random RNA sequence as starting point
   // Real SELEX would iteratively select for binding
   const length = 80;
-  const bases = ['A', 'U', 'G', 'C'];
-  let sequence = '';
+  const bases = ["A", "U", "G", "C"];
+  let sequence = "";
   for (let i = 0; i < length; i++) {
     sequence += bases[Math.floor(Math.random() * 4)];
   }
@@ -316,14 +341,12 @@ function designAptamer(targetLigand: string): RNADesignResult {
   const predictedActivity = Math.min(1, 0.3 + 0.4 * gcContent);
 
   return {
-    type: 'aptamer',
+    type: "aptamer",
     sequence,
     predictedActivity: Math.round(predictedActivity * 100) / 100,
     offTargetScore: 0.3, // aptamers can have off-target binding
     deltaG: Math.round(computeFoldingEnergy(sequence) * 100) / 100,
-    evidence: [
-      { source: 'Tuerk & Gold 1990', type: 'literature', title: 'Science 249:505-510' },
-    ],
+    evidence: [{ source: "Tuerk & Gold 1990", type: "literature", title: "Science 249:505-510" }],
     designNotes: [
       `Aptamer design for: ${targetLigand}`,
       `Length: ${length} nt, GC: ${(gcContent * 100).toFixed(0)}%`,

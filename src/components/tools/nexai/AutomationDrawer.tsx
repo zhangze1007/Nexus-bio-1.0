@@ -1,4 +1,5 @@
-'use client';
+"use client";
+import { motion } from "framer-motion";
 /**
  * AutomationDrawer — PR-2b read-only surface over the Axon orchestrator.
  *
@@ -18,11 +19,10 @@
  * deferred to PR-3 on purpose. The UI shows what the orchestrator can
  * honestly report today.
  */
-import type { CSSProperties } from 'react';
-import { motion } from 'framer-motion';
-import type { AxonTask, AxonTaskStatus } from '../../../services/AxonOrchestrator';
-import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import { THEME } from '../../../theme';
+import type { CSSProperties } from "react";
+import type { AxonTask, AxonTaskStatus } from "../../../services/AxonOrchestrator";
+import { THEME } from "../../../theme";
+import { TOOL_TOKENS as T } from "../shared/ToolShell";
 export interface AutomationDrawerProps {
   tasks: AxonTask[];
   /** When false the drawer does not render. This is the feature flag. */
@@ -37,64 +37,64 @@ export interface AutomationDrawerProps {
 function controlBtn(disabled: boolean): CSSProperties {
   return {
     fontFamily: THEME.MONO,
-    fontSize: 'var(--nb-fs-xs)',
-    padding: '2px 6px',
-    borderRadius: '5px',
+    fontSize: "var(--nb-fs-xs)",
+    padding: "2px 6px",
+    borderRadius: "5px",
     border: `1px solid ${THEME.BORDER}`,
-    background: disabled ? 'transparent' : 'rgba(10,14,22,0.35)',
+    background: disabled ? "transparent" : "rgba(10,14,22,0.35)",
     color: disabled ? THEME.LABEL : THEME.VALUE,
-    cursor: disabled ? 'not-allowed' : 'pointer',
+    cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.5 : 1,
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-    minWidth: '20px',
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    minWidth: "20px",
   };
 }
 
 function statusTone(status: AxonTaskStatus): { bg: string; border: string; fg: string; label: string } {
   switch (status) {
-    case 'pending':
-      return { bg: 'rgba(175,195,214,0.14)', border: 'rgba(175,195,214,0.26)', fg: THEME.LABEL, label: 'Pending' };
-    case 'running':
-      return { bg: 'rgba(200,224,208,0.18)', border: 'rgba(200,224,208,0.34)', fg: THEME.VALUE, label: 'Running' };
-    case 'done':
-      return { bg: 'rgba(147,203,82,0.16)', border: 'rgba(147,203,82,0.34)', fg: THEME.VALUE, label: 'Done' };
-    case 'error':
-      return { bg: 'rgba(250,128,114,0.16)', border: 'rgba(250,128,114,0.42)', fg: '#FA8072', label: 'Error' };
-    case 'cancelled':
-      return { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.16)', fg: THEME.LABEL, label: 'Cancelled' };
+    case "pending":
+      return { bg: "rgba(175,195,214,0.14)", border: "rgba(175,195,214,0.26)", fg: THEME.LABEL, label: "Pending" };
+    case "running":
+      return { bg: "rgba(200,224,208,0.18)", border: "rgba(200,224,208,0.34)", fg: THEME.VALUE, label: "Running" };
+    case "done":
+      return { bg: "rgba(147,203,82,0.16)", border: "rgba(147,203,82,0.34)", fg: THEME.VALUE, label: "Done" };
+    case "error":
+      return { bg: "rgba(250,128,114,0.16)", border: "rgba(250,128,114,0.42)", fg: "#FA8072", label: "Error" };
+    case "cancelled":
+      return { bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.16)", fg: THEME.LABEL, label: "Cancelled" };
   }
 }
 
 function formatMillis(ms?: number): string {
-  if (typeof ms !== 'number' || !Number.isFinite(ms)) return '—';
+  if (typeof ms !== "number" || !Number.isFinite(ms)) return "—";
   const d = new Date(ms);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 function summariseResult(task: AxonTask): string | null {
-  if (task.status === 'error') return task.error ?? 'Unknown error';
-  if (task.status === 'done' && task.result && typeof task.result === 'object') {
+  if (task.status === "error") return task.error ?? "Unknown error";
+  if (task.status === "done" && task.result && typeof task.result === "object") {
     const r = task.result as Record<string, unknown>;
-    if (task.tool === 'pathd') {
-      const nodes = typeof r.nodeCount === 'number' ? r.nodeCount : null;
-      const bottle = typeof r.bottleneckCount === 'number' ? r.bottleneckCount : null;
-      const provider = typeof r.provider === 'string' ? r.provider : null;
+    if (task.tool === "pathd") {
+      const nodes = typeof r.nodeCount === "number" ? r.nodeCount : null;
+      const bottle = typeof r.bottleneckCount === "number" ? r.bottleneckCount : null;
+      const provider = typeof r.provider === "string" ? r.provider : null;
       const parts: string[] = [];
-      if (nodes !== null) parts.push(`${nodes} node${nodes === 1 ? '' : 's'}`);
-      if (bottle !== null) parts.push(`${bottle} bottleneck${bottle === 1 ? '' : 's'}`);
+      if (nodes !== null) parts.push(`${nodes} node${nodes === 1 ? "" : "s"}`);
+      if (bottle !== null) parts.push(`${bottle} bottleneck${bottle === 1 ? "" : "s"}`);
       if (provider) parts.push(provider);
-      return parts.join(' · ') || null;
+      return parts.join(" · ") || null;
     }
-    if (task.tool === 'fbasim') {
-      const obj = typeof r.objectiveValue === 'number' ? r.objectiveValue.toFixed(3) : null;
-      const flux = typeof r.fluxCount === 'number' ? r.fluxCount : null;
-      const species = typeof r.species === 'string' ? r.species : null;
+    if (task.tool === "fbasim") {
+      const obj = typeof r.objectiveValue === "number" ? r.objectiveValue.toFixed(3) : null;
+      const flux = typeof r.fluxCount === "number" ? r.fluxCount : null;
+      const species = typeof r.species === "string" ? r.species : null;
       const parts: string[] = [];
       if (species) parts.push(species);
       if (obj) parts.push(`obj=${obj}`);
       if (flux !== null) parts.push(`${flux} flux`);
-      return parts.join(' · ') || null;
+      return parts.join(" · ") || null;
     }
   }
   return null;
@@ -112,40 +112,58 @@ export default function AutomationDrawer({
 
   // Pending-order indexes used for reorder button guards. Computed once
   // per render so each row can find its own position without scanning.
-  const pendingIds = tasks.filter((t) => t.status === 'pending').map((t) => t.id);
+  const pendingIds = tasks.filter((t) => t.status === "pending").map((t) => t.id);
 
-  const pending = tasks.filter((t) => t.status === 'pending').length;
-  const running = tasks.filter((t) => t.status === 'running').length;
-  const done = tasks.filter((t) => t.status === 'done').length;
-  const errored = tasks.filter((t) => t.status === 'error').length;
+  const pending = tasks.filter((t) => t.status === "pending").length;
+  const running = tasks.filter((t) => t.status === "running").length;
+  const done = tasks.filter((t) => t.status === "done").length;
+  const errored = tasks.filter((t) => t.status === "error").length;
   const terminalCount = done + errored;
 
   return (
     <div
       data-testid="nexai-automation-drawer"
       style={{
-        borderRadius: 'var(--nb-radius-md)',
+        borderRadius: "var(--nb-radius-md)",
         border: `1px solid ${THEME.BORDER}`,
         background: THEME.PANEL_INSET,
-        padding: '12px 14px',
-        display: 'grid',
-        gap: '10px',
+        padding: "12px 14px",
+        display: "grid",
+        gap: "10px",
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "10px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span
             aria-hidden
             style={{
-              width: '8px', height: '8px', borderRadius: '50%',
-              background: running > 0 ? '#93CB52' : THEME.LABEL,
-              boxShadow: running > 0 ? '0 0 0 3px rgba(147,203,82,0.22)' : 'none',
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: running > 0 ? "#93CB52" : THEME.LABEL,
+              boxShadow: running > 0 ? "0 0 0 3px rgba(147,203,82,0.22)" : "none",
             }}
           />
-          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: THEME.LABEL }}>
+          <span
+            style={{
+              fontFamily: THEME.MONO,
+              fontSize: "var(--nb-fs-xs)",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: THEME.LABEL,
+            }}
+          >
             Automation queue
           </span>
-          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: "var(--nb-fs-xs)", color: THEME.LABEL }}>
             {pending} pending · {running} running · {done} done · {errored} error
           </span>
         </div>
@@ -155,12 +173,16 @@ export default function AutomationDrawer({
             onClick={onClear}
             data-testid="nexai-automation-clear"
             style={{
-              fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-              padding: '3px 8px', borderRadius: '6px',
+              fontFamily: THEME.MONO,
+              fontSize: "var(--nb-fs-xs)",
+              padding: "3px 8px",
+              borderRadius: "6px",
               border: `1px solid ${THEME.BORDER}`,
-              background: 'transparent', cursor: 'pointer',
-              color: THEME.LABEL, letterSpacing: '0.06em',
-              textTransform: 'uppercase',
+              background: "transparent",
+              cursor: "pointer",
+              color: THEME.LABEL,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
             }}
           >
             Clear terminal
@@ -172,16 +194,19 @@ export default function AutomationDrawer({
         <div
           data-testid="nexai-automation-empty"
           style={{
-            padding: '14px', borderRadius: 'var(--nb-radius-md)',
+            padding: "14px",
+            borderRadius: "var(--nb-radius-md)",
             border: `1px dashed ${THEME.BORDER}`,
-            color: THEME.LABEL, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
+            color: THEME.LABEL,
+            fontFamily: THEME.SANS,
+            fontSize: "var(--nb-fs-sm)",
             lineHeight: 1.55,
           }}
         >
           No automated tasks yet. Enable agentic mode and ask Axon to design a pathway or run a flux-balance simulation.
         </div>
       ) : (
-        <div data-testid="nexai-automation-task-list" style={{ display: 'grid', gap: '6px' }}>
+        <div data-testid="nexai-automation-task-list" style={{ display: "grid", gap: "6px" }}>
           {tasks.map((task) => {
             const tone = statusTone(task.status);
             const summary = summariseResult(task);
@@ -191,51 +216,70 @@ export default function AutomationDrawer({
                 data-testid={`nexai-automation-task-${task.id}`}
                 data-status={task.status}
                 data-tool={task.tool}
-                animate={task.status === 'running' ? { opacity: [0.72, 1, 0.72] } : { opacity: 1 }}
-                transition={task.status === 'running' ? { duration: 1.6, repeat: Infinity } : { duration: 0.2 }}
+                animate={task.status === "running" ? { opacity: [0.72, 1, 0.72] } : { opacity: 1 }}
+                transition={task.status === "running" ? { duration: 1.6, repeat: Infinity } : { duration: 0.2 }}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(0, 1fr) auto',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '8px 10px',
-                  borderRadius: 'var(--nb-radius-md)',
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) auto",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "8px 10px",
+                  borderRadius: "var(--nb-radius-md)",
                   border: `1px solid ${tone.border}`,
                   background: tone.bg,
                 }}
               >
-                <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    <span style={{
-                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                      padding: '1px 5px', borderRadius: '4px',
-                      background: 'rgba(10,14,22,0.45)',
-                      color: THEME.VALUE, letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                    }}>
+                <div style={{ display: "grid", gap: "3px", minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        fontFamily: THEME.MONO,
+                        fontSize: "var(--nb-fs-xs)",
+                        padding: "1px 5px",
+                        borderRadius: "4px",
+                        background: "rgba(10,14,22,0.45)",
+                        color: THEME.VALUE,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       {task.tool}
                     </span>
-                    <span style={{
-                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
+                    <span
+                      style={{
+                        fontFamily: THEME.SANS,
+                        fontSize: "var(--nb-fs-sm)",
+                        color: THEME.VALUE,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {task.label}
                     </span>
                   </div>
-                  <div style={{
-                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
+                  <div
+                    style={{
+                      fontFamily: THEME.MONO,
+                      fontSize: "var(--nb-fs-xs)",
+                      color: THEME.LABEL,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     queued {formatMillis(task.createdAt)}
-                    {task.startedAt ? ` · started ${formatMillis(task.startedAt)}` : ''}
-                    {task.finishedAt ? ` · finished ${formatMillis(task.finishedAt)}` : ''}
-                    {task.retryCount > 0 ? ` · retry ${task.retryCount}/${task.maxRetries}` : ''}
+                    {task.startedAt ? ` · started ${formatMillis(task.startedAt)}` : ""}
+                    {task.finishedAt ? ` · finished ${formatMillis(task.finishedAt)}` : ""}
+                    {task.retryCount > 0 ? ` · retry ${task.retryCount}/${task.maxRetries}` : ""}
                   </div>
                   {summary && (
                     <div
                       data-testid={`nexai-automation-task-summary-${task.id}`}
                       style={{
-                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: tone.fg,
+                        fontFamily: THEME.SANS,
+                        fontSize: "var(--nb-fs-sm)",
+                        color: tone.fg,
                         lineHeight: 1.5,
                       }}
                     >
@@ -243,19 +287,23 @@ export default function AutomationDrawer({
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
                   <span
                     style={{
-                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                      padding: '3px 8px', borderRadius: '6px',
-                      background: 'rgba(10,14,22,0.35)', color: tone.fg,
-                      letterSpacing: '0.08em', textTransform: 'uppercase',
+                      fontFamily: THEME.MONO,
+                      fontSize: "var(--nb-fs-xs)",
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(10,14,22,0.35)",
+                      color: tone.fg,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
                     }}
                   >
                     {tone.label}
                   </span>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    {task.status === 'pending' && onReorder && pendingIds.length > 1 && (
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    {task.status === "pending" && onReorder && pendingIds.length > 1 && (
                       <>
                         <button
                           type="button"
@@ -287,7 +335,7 @@ export default function AutomationDrawer({
                         </button>
                       </>
                     )}
-                    {(task.status === 'pending' || task.status === 'running') && onCancel && (
+                    {(task.status === "pending" || task.status === "running") && onCancel && (
                       <button
                         type="button"
                         data-testid={`nexai-automation-cancel-${task.id}`}
@@ -299,7 +347,7 @@ export default function AutomationDrawer({
                         Cancel
                       </button>
                     )}
-                    {(task.status === 'error' || task.status === 'cancelled') && onRetry && (
+                    {(task.status === "error" || task.status === "cancelled") && onRetry && (
                       <button
                         type="button"
                         data-testid={`nexai-automation-retry-${task.id}`}
