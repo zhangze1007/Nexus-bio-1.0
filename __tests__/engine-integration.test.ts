@@ -211,8 +211,8 @@ describe('Engine Integration Tests', () => {
     expect(result.sequences[0].sequence.length).toBe(20);
   });
 
-  test('9. multiplexCRISPREngine.runMultiplexCRISPR', () => {
-    const result = runMultiplexCRISPR({
+  test('9. multiplexCRISPREngine.runMultiplexCRISPR', async () => {
+    const result = await runMultiplexCRISPR({
       genes: [
         { geneId: 'geneA', geneName: 'Gene A', essentiality: 0.3, flux: 5.0, subsystem: 'glycolysis', maxKnockdown: 0.8 },
         { geneId: 'geneB', geneName: 'Gene B', essentiality: 0.5, flux: 3.0, subsystem: 'TCA', maxKnockdown: 0.7 },

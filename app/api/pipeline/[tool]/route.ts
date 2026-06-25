@@ -104,7 +104,7 @@ const PIPELINE_MAP: Record<string, () => Promise<(input: unknown) => unknown | P
   },
   multiplexcrispr: async () => {
     const { runMultiplexCRISPR } = await import('../../../../src/server/multiplexCRISPREngine');
-    return (input: unknown) => runMultiplexCRISPR(input as Parameters<typeof runMultiplexCRISPR>[0]);
+    return async (input: unknown) => runMultiplexCRISPR(input as Parameters<typeof runMultiplexCRISPR>[0]);
   },
   pathwaydiscovery: async () => {
     const { runPathwayDiscovery } = await import('../../../../src/server/pathwayDiscoveryEngine');

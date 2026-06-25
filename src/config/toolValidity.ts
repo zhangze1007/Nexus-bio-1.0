@@ -60,7 +60,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   genmim: {
     level: "real",
     caption:
-      "CRISPRi ranker is real: greedy sort by KD_eff + (1+GI)×0.3 with FBA flux-boost (+0.08 proportional to flux fraction). sgRNA design uses full Doench 2016 Rule Set 2 (31-feature logistic regression, published weights). Limitations: 20-gene static target table (E. coli K-12, Rousset et al. 2018); growth impact pre-assigned, not computed from live FBA; off-target scoring is GC+homopolymer proxy (no genome-wide alignment).",
+      "CRISPRi ranker is real: greedy sort by KD_eff + (1+GI)×0.3 with FBA flux-boost (+0.08 proportional to flux fraction). sgRNA design uses full Doench 2016 Rule Set 2 (31-feature logistic regression, published weights). MultiplexCRISPR sub-panel: BLAST-based off-target search against E. coli K-12 genome (blastn-short, seed region mismatch analysis) when Python backend available; proxy fallback otherwise. Limitations: 20-gene static target table (E. coli K-12, Rousset et al. 2018); growth impact pre-assigned, not computed from live FBA.",
   },
   gecair: {
     level: "real",

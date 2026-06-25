@@ -11,6 +11,7 @@
  *   3. Flux-based fitness prediction (standard FBA coupling)
  *   4. Guide RNA diversity scoring (avoid off-target clustering)
  *   5. MAGE-style cycling order optimization
+ *   6. BLAST-based off-target search against E. coli K-12 genome (when backend available)
  *
  * Reference: Zhou et al. (2021) Nature Communications 12:637
  * Reference: Garst et al. (2017) Nature Communications 8:13860
@@ -26,7 +27,6 @@
  *     - Fitness prediction is proxy-based (not full FBA)
  *     - No chromatin accessibility modeling
  *     - No repair pathway modeling (NHEJ vs HDR)
- *     - Off-target search requires Cas-OFFinder + genome FASTA (not available locally)
  */
 
 import { computeOnTargetScore } from "./grnaDesigner";
@@ -732,12 +732,108 @@ function rankGeneImportance(genes: GeneTarget[]): Array<{
     .sort((a, b) => b.importance - a.importance);
 }
 
+// ── BLAST Off-Target Search ───────────────────────────────────────────────
+
+/** BLAST backend hit from /blast/offtarget endpoint */
+interface BlastOffTargetHit {
+  subject_id: string;
+  subject_title: string;
+  mismatches: number;
+  seed_mismatches: number;
+  alignment_length: number;
+  percent_identity: number;
+  query_start: number;
+  query_end: number;
+  hit_start: number;
+  hit_end: number;
+  mismatch_positions: number[];
+  offtarget_risk: number;
+}
+
+/**
+ * Search for off-target sites using the BLAST Python backend.
+ *
+ * Calls the /blast/offtarget endpoint on the Railway-hosted BLAST service
+ * which aligns the guide against the E. coli K-12 genome using blastn-short.
+ *
+ * Falls back to proxy scoring when the backend is unavailable.
+ *
+ * @param guideSequence - 20-nt guide RNA spacer
+ * @returns Array of off-target sites with mismatch info
+ */
+async function searchOffTargets(
+  guideSequence: string,
+): Promise<Array<{ gene: string; mismatches: number; position: string }>> {
+  const BLAST_BACKEND = process.env.BLAST_PYTHON_BACKEND;
+
+  if (BLAST_BACKEND) {
+    try {
+      const backendUrl = BLAST_BACKEND.replace(/\/+$/, "");
+      const res = await fetch(`${backendUrl}/blast/offtarget`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sequence: guideSequence,
+          maxMismatches: 3,
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.hits)) {
+          return data.hits.map((hit: BlastOffTargetHit) => ({
+            gene: hit.subject_id || hit.subject_title || "ecoli_genome",
+            mismatches: hit.mismatches,
+            position: `pos${hit.hit_start}-${hit.hit_end}|seed:${hit.seed_mismatches}mm|risk:${hit.offtarget_risk}`,
+          }));
+        }
+      }
+    } catch (err) {
+      // BLAST backend unavailable — fall through to proxy scoring
+      console.warn("[MultiplexCRISPR] BLAST backend unavailable, using proxy off-target scoring:", err);
+    }
+  }
+
+  // Fallback: proxy off-target scoring based on GC content and homopolymers
+  return proxyOffTargetScore(guideSequence);
+}
+
+/**
+ * Proxy off-target score based on sequence composition heuristics.
+ *
+ * Used as fallback when the BLAST backend is not available.
+ * High GC or homopolymers increase off-target risk.
+ */
+function proxyOffTargetScore(
+  guideSequence: string,
+): Array<{ gene: string; mismatches: number; position: string }> {
+  const gcContent = (guideSequence.match(/[GC]/g) || []).length / guideSequence.length;
+  const hasHomopolymer = /(.)\1{3,}/.test(guideSequence);
+  const proxyRisk = gcContent > 0.7 || gcContent < 0.3 || hasHomopolymer ? 0.8 : 0.2;
+
+  if (proxyRisk > 0.5) {
+    return [
+      {
+        gene: "proxy_risk",
+        mismatches: 0,
+        position: `GC=${(gcContent * 100).toFixed(0)}%${hasHomopolymer ? ", homopolymer" : ""}`,
+      },
+    ];
+  }
+  return [];
+}
+
 // ── Main Entry Point ───────────────────────────────────────────────────────
 
 /**
  * Run multiplex CRISPR strategy design.
+ *
+ * When BLAST_PYTHON_BACKEND env var is set, performs real BLAST-based off-target
+ * search against the E. coli K-12 genome for each guide RNA. Falls back to
+ * proxy scoring when the backend is unavailable.
  */
-export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPRResult {
+export async function runMultiplexCRISPR(input: MultiplexCRISPRInput): Promise<MultiplexCRISPRResult> {
   const {
     genes,
     maxEdits = 5,
@@ -773,6 +869,42 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
     if (result.warning) guideWarnings.push(result.warning);
   }
 
+  // 5. BLAST off-target search for all guides (when backend available)
+  let offTargetSource = "proxy";
+  let totalBlastHits = 0;
+
+  for (const guide of allGuides) {
+    const offTargets = await searchOffTargets(guide.sequence);
+    guide.offTargetSites = offTargets;
+    if (offTargets.length > 0 && offTargets[0].gene !== "proxy_risk") {
+      offTargetSource = "blast_ecoli_k12";
+      totalBlastHits += offTargets.length;
+    }
+  }
+
+  // Update off-target scores based on real search results
+  for (const guide of allGuides) {
+    const realHits = guide.offTargetSites.filter((s) => s.gene !== "proxy_risk");
+    if (realHits.length > 0) {
+      // Off-target score: lower with more off-targets, especially seed mismatches
+      const seedHits = realHits.filter((s) => s.position.includes("seed:1") || s.position.includes("seed:2") || s.position.includes("seed:3"));
+      guide.qualityScore = Math.max(0, guide.qualityScore - realHits.length * 0.05 - seedHits.length * 0.1);
+    }
+  }
+
+  // Propagate BLAST off-target data to strategy guides
+  const offTargetMap = new Map(allGuides.map((g) => [g.sequence, g.offTargetSites]));
+  for (const strategy of strategies) {
+    for (const geneGuides of Object.values(strategy.guides)) {
+      for (const guide of geneGuides) {
+        const blastHits = offTargetMap.get(guide.sequence);
+        if (blastHits) {
+          guide.offTargetSites = blastHits;
+        }
+      }
+    }
+  }
+
   const libraryStats = {
     totalGuides: allGuides.length,
     avgOnTargetScore:
@@ -788,10 +920,10 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
         : 0,
   };
 
-  // 5. MAGE cycling order
+  // 6. MAGE cycling order
   const mageCyclingOrder = approach === "mage_cycling" ? computeMAGECyclingOrder(strategies, genes) : undefined;
 
-  // 6. Design notes
+  // 7. Design notes
   const designNotes: string[] = [
     `Designed ${strategies.length} combinatorial strategies for ${genes.length} target genes`,
     `Approach: ${approach}, max ${maxEdits} simultaneous edits`,
@@ -799,8 +931,18 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
     `Library: ${libraryStats.totalGuides} guides, avg on-target ${libraryStats.avgOnTargetScore}`,
     `Epistasis thresholds: Segre et al. (2005) Nat Genet 37:77-83`,
     `Guide scoring: Rule Set 2 (Doench et al. 2016) — 31-feature logistic regression`,
-    `Off-target search: NOT performed (requires Cas-OFFinder + genome FASTA)`,
   ];
+
+  // Off-target search note
+  if (offTargetSource === "blast_ecoli_k12") {
+    designNotes.push(
+      `Off-target search: BLAST (E. coli K-12 genome) — ${totalBlastHits} off-target sites found across ${allGuides.length} guides`,
+    );
+  } else {
+    designNotes.push(
+      `Off-target search: proxy scoring (set BLAST_PYTHON_BACKEND env for real genome alignment)`,
+    );
+  }
 
   if (guideWarnings.length > 0) {
     designNotes.push(`Guide warnings: ${guideWarnings.join("; ")}`);

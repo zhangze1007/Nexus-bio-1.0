@@ -36,11 +36,11 @@ describe('multiplexCRISPREngine', () => {
   };
 
   describe('generateGuides (via runMultiplexCRISPR)', () => {
-    it('should find real spacer sequences from gene with PAM sites', () => {
+    it('should find real spacer sequences from gene with PAM sites', async () => {
       const geneA = { ...baseGeneTarget, geneId: 'geneA', geneSequence: GENE_SEQUENCE_WITH_PAMS };
       const geneB = { ...baseGeneTarget, geneId: 'geneB', geneSequence: GENE_SEQUENCE_WITH_PAMS, subsystem: 'tca_cycle' };
 
-      const result = runMultiplexCRISPR({
+      const result = await runMultiplexCRISPR({
         genes: [geneA, geneB],
         maxEdits: 2,
         topN: 1,
@@ -62,11 +62,11 @@ describe('multiplexCRISPREngine', () => {
       }
     });
 
-    it('should return empty guides when no gene sequence is provided', () => {
+    it('should return empty guides when no gene sequence is provided', async () => {
       const geneA = { ...baseGeneTarget, geneId: 'geneA', geneSequence: undefined };
       const geneB = { ...baseGeneTarget, geneId: 'geneB', geneSequence: undefined, subsystem: 'tca_cycle' };
 
-      const result = runMultiplexCRISPR({
+      const result = await runMultiplexCRISPR({
         genes: [geneA, geneB],
         maxEdits: 2,
         topN: 1,
@@ -84,7 +84,7 @@ describe('multiplexCRISPREngine', () => {
       expect(hasWarning).toBe(true);
     });
 
-    it('should use Rule Set 2 scoring — on-target score > 0.5 for well-designed guide', () => {
+    it('should use Rule Set 2 scoring — on-target score > 0.5 for well-designed guide', async () => {
       // A sequence with good GC content and no homopolymers
       const goodSequence =
         'ATGGCTAGCGAATTCGATATCAAGCTTGGATCCACTAGTAACGGCCGCCAGTGTGCTGGAATTC' +
@@ -95,7 +95,7 @@ describe('multiplexCRISPREngine', () => {
       const geneA = { ...baseGeneTarget, geneId: 'geneA', geneSequence: goodSequence };
       const geneB = { ...baseGeneTarget, geneId: 'geneB', geneSequence: goodSequence, subsystem: 'tca_cycle' };
 
-      const result = runMultiplexCRISPR({
+      const result = await runMultiplexCRISPR({
         genes: [geneA, geneB],
         maxEdits: 2,
         topN: 1,
@@ -109,36 +109,24 @@ describe('multiplexCRISPREngine', () => {
       }
     });
 
-    it('should return empty off-target sites when no genome DB is available', () => {
+    it('should use proxy off-target scoring when no BLAST backend is available', async () => {
       const geneA = { ...baseGeneTarget, geneId: 'geneA', geneSequence: GENE_SEQUENCE_WITH_PAMS };
       const geneB = { ...baseGeneTarget, geneId: 'geneB', geneSequence: GENE_SEQUENCE_WITH_PAMS, subsystem: 'tca_cycle' };
 
-      const result = runMultiplexCRISPR({
+      const result = await runMultiplexCRISPR({
         genes: [geneA, geneB],
         maxEdits: 2,
         topN: 1,
       });
 
-      // All off-target arrays should be empty (no genome DB)
-      for (const strategy of result.strategies) {
-        for (const guides of Object.values(strategy.guides)) {
-          for (const guide of guides) {
-            expect(guide.offTargetSites).toEqual([]);
-          }
-        }
-      }
-
-      // Library stats should show 0 off-target risk
-      expect(result.libraryStats.avgOffTargetRisk).toBe(0);
-
-      // Design notes should mention no off-target search
-      const hasNote = result.designNotes.some(n => n.includes('NOT performed'));
-      expect(hasNote).toBe(true);
+      // Design notes should mention proxy scoring (no BLAST_PYTHON_BACKEND in test env)
+      const hasProxyNote = result.designNotes.some(n => n.includes('proxy scoring'));
+      expect(hasProxyNote).toBe(true);
     });
   });
 
   describe('epistasis thresholds (Segre et al. 2005)', () => {
-    it('should detect negative epistasis for same-subsystem genes with similar flux', () => {
+    it('should detect negative epistasis for same-subsystem genes with similar flux', async () => {
       const geneA: GeneTarget = {
         ...baseGeneTarget,
         geneId: 'geneA',
@@ -152,7 +140,7 @@ describe('multiplexCRISPREngine', () => {
         subsystem: 'glycolysis',
       };
 
-      const result = runMultiplexCRISPR({
+      const result = await runMultiplexCRISPR({
         genes: [geneA, geneB],
         maxEdits: 2,
         topN: 5,
@@ -168,7 +156,7 @@ describe('multiplexCRISPREngine', () => {
       expect(interaction!.strength).toBeLessThan(0);
     });
 
-    it('should detect positive epistasis for different-subsystem genes with significant flux', () => {
+    it('should detect positive epistasis for different-subsystem genes with significant flux', async () => {
       const geneA: GeneTarget = {
         ...baseGeneTarget,
         geneId: 'geneA',
@@ -182,7 +170,7 @@ describe('multiplexCRISPREngine', () => {
         subsystem: 'tca_cycle', // different subsystem
       };
 
-      const result = runMultiplexCRISPR({
+      const result = await runMultiplexCRISPR({
         genes: [geneA, geneB],
         maxEdits: 2,
         topN: 5,
@@ -197,7 +185,7 @@ describe('multiplexCRISPREngine', () => {
       expect(interaction!.strength).toBeGreaterThan(0);
     });
 
-    it('should detect synthetic lethal for both highly essential genes', () => {
+    it('should detect synthetic lethal for both highly essential genes', async () => {
       const geneA: GeneTarget = {
         ...baseGeneTarget,
         geneId: 'geneA',
@@ -211,7 +199,7 @@ describe('multiplexCRISPREngine', () => {
         subsystem: 'tca_cycle',
       };
 
-      const result = runMultiplexCRISPR({
+      const result = await runMultiplexCRISPR({
         genes: [geneA, geneB],
         maxEdits: 2,
         topN: 5,
@@ -243,22 +231,22 @@ describe('multiplexCRISPREngine', () => {
   });
 
   describe('runMultiplexCRISPR validation', () => {
-    it('should throw for fewer than 2 genes', () => {
-      expect(() => runMultiplexCRISPR({
+    it('should throw for fewer than 2 genes', async () => {
+      await expect(runMultiplexCRISPR({
         genes: [baseGeneTarget],
         maxEdits: 2,
-      })).toThrow('at least 2 target genes');
+      })).rejects.toThrow('at least 2 target genes');
     });
 
-    it('should throw for more than 50 genes', () => {
+    it('should throw for more than 50 genes', async () => {
       const genes = Array.from({ length: 51 }, (_, i) => ({
         ...baseGeneTarget,
         geneId: `gene_${i}`,
       }));
-      expect(() => runMultiplexCRISPR({
+      await expect(runMultiplexCRISPR({
         genes,
         maxEdits: 2,
-      })).toThrow('Maximum 50 genes');
+      })).rejects.toThrow('Maximum 50 genes');
     });
   });
 });

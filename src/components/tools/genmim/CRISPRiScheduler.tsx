@@ -306,7 +306,7 @@ export function MultiplexCRISPRPanel() {
         subsystem: "central_metabolism",
         maxKnockdown: t.knockdown_efficiency,
       }));
-      const res = runMultiplexCRISPR({ genes, maxEdits, minFitness: 0.2, topN: 5 });
+      const res = await runMultiplexCRISPR({ genes, maxEdits, minFitness: 0.2, topN: 5 });
       setResult(res);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Simulation failed";
