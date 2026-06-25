@@ -35,15 +35,20 @@ def run_mofa_analysis(
 
     ent = entry_point()
 
-    # Set data matrices for each view
-    for view_name, data_matrix in views.items():
-        ent.set_data_matrix(
-            data=[data_matrix.tolist()],
-            views_names=[view_name],
-            samples_names=[sample_names],
-            features_names=[feature_names.get(view_name, [])],
-            likelihoods=["gaussian"],
-        )
+    # Prepare data in mofapy2 format: list of matrices per view
+    view_names = list(views.keys())
+    data_matrices = [views[v].tolist() for v in view_names]
+    features = [feature_names.get(v, [f"f{j}" for j in range(views[v].shape[1])]) for v in view_names]
+    likelihoods = ["gaussian"] * len(view_names)
+
+    # Set data matrices
+    ent.set_data_matrix(
+        data=data_matrices,
+        views_names=view_names,
+        samples_names=[sample_names],
+        features_names=features,
+        likelihoods=likelihoods,
+    )
 
     # Set model options
     ent.set_model_options(factors=n_factors)
