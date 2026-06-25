@@ -7,7 +7,7 @@ import { buildScSpatialQueryResponse } from '../../../../src/server/scspatialAna
 import { writeScSpatialArtifact } from '../../../../src/server/scspatialArtifactStore';
 import { createDemoScSpatialArtifact } from '../../../../src/server/scspatialDemo';
 import { runScSpatialSidecar } from '../../../../src/server/scspatialSidecar';
-import type { ScSpatialIngestConfig, ScSpatialQueryRequest, ScSpatialViewMode } from '../../../../src/types/scspatial';
+import type { ScSpatialIngestConfig, ScSpatialNormalizedArtifact, ScSpatialQueryRequest, ScSpatialViewMode } from '../../../../src/types/scspatial';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
