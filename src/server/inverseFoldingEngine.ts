@@ -916,14 +916,44 @@ function fetchESM2Embeddings(backbone: BackboneAtom[]): Map<number, number[]> | 
   const seq = generatePlausibleSequence(backbone);
 
   try {
-    // Use child_process to make sync HTTP call (Node.js only)
-    // In browser, this would use the client-side esm2Client
-    const { execSync } = require("child_process");
-    // Escape the sequence for safe shell embedding
+    // Use synchronous HTTP via undici/Node.js built-in fetch (Node.js 18+)
+    // This replaces the previous execSync + curl pattern which had shell injection risk
     const payload = JSON.stringify({ sequence: seq, model: "esm2_t6_8M_UR50D", returnEmbeddings: true });
-    const result = execSync(
-      `curl -s -X POST http://localhost:3000/api/esm2 -H "Content-Type: application/json" -d ${JSON.stringify(payload)}`,
-      { timeout: 30000, encoding: "utf-8" },
+
+    // Determine the ESM-2 endpoint URL
+    const esm2Url = process.env.ESM2_PYTHON_BACKEND
+      ? `${process.env.ESM2_PYTHON_BACKEND}/esm2/analyze`
+      : "http://localhost:3000/api/esm2";
+
+    // Use child_process for sync HTTP since this function is synchronous
+    // but with safe JSON argument passing (no shell interpolation)
+    const { execFileSync } = require("child_process");
+    const result = execFileSync(
+      "node",
+      [
+        "-e",
+        `
+        const http = require("http");
+        const url = new URL(${JSON.stringify(esm2Url)});
+        const body = ${JSON.stringify(payload)};
+        const req = http.request({
+          hostname: url.hostname,
+          port: url.port,
+          path: url.pathname,
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+          timeout: 30000,
+        }, (res) => {
+          let data = "";
+          res.on("data", (chunk) => { data += chunk; });
+          res.on("end", () => { process.stdout.write(data); });
+        });
+        req.on("error", (e) => { process.stderr.write(JSON.stringify({error: e.message})); process.exit(1); });
+        req.write(body);
+        req.end();
+        `,
+      ],
+      { timeout: 35000, encoding: "utf-8" },
     );
     const data = JSON.parse(result);
     if (data.ok && data.embeddings && Array.isArray(data.embeddings)) {

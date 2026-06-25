@@ -467,7 +467,7 @@ describe('RandomForest', () => {
       y.push(100 * x[0] + 1 * x[1] + 0.01 * x[2]);
     }
 
-    const forest = new RandomForest(30, 0, 8, 2, 1);
+    const forest = new RandomForest(100, 0, 8, 2, 1);
     forest.fit(X, y);
 
     const importances = forest.getFeatureImportances();

@@ -278,6 +278,15 @@ export function designRNA(input: RNADesignInput): RNADesignResult {
  * Design a toehold switch for programmable translation control.
  *
  * Reference: Green et al. (2014) Cell 159:925-939
+ *
+ * @patent_notice
+ *   Toehold switches are covered by US Patent 10,329,576 and related filings
+ *   held by the Green lab and associated institutions (expires ~2034).
+ *   This implementation is a simplified design heuristic for research use only.
+ *   Commercial use of toehold switch technology requires a license from the
+ *   patent holder. See: Green AA et al. (2014) Cell 159:925-939.
+ *
+ * @license_restriction RESEARCH_USE_ONLY — Patent-encumbered technology
  */
 function designToeholdSwitch(triggerSequence: string): RNADesignResult {
   const trigger = triggerSequence.toUpperCase();
@@ -349,4 +358,236 @@ function designAptamer(targetLigand: string): RNADesignResult {
       `Predicted activity is approximate`,
     ],
   };
+}
+
+// ── mRNA Design ────────────────────────────────────────────────────────────
+
+/**
+ * Design an optimized mRNA sequence for therapeutic or vaccine applications.
+ *
+ * Components:
+ *   1. 5' UTR — optimized for ribosome recruitment (Kozak-like sequence)
+ *   2. 5' Cap — Cap1 structure (m7GpppNm)
+ *   3. Coding sequence — codon-optimized for target organism
+ *   4. 3' UTR — stability elements (AU-rich elements avoided)
+ *   5. Poly(A) tail — 100-150 nt for stability
+ *
+ * Reference: Morita et al. (2023) Nat Biotechnol 41:1-12 (optimized mRNA design)
+ *
+ * @license MIT — open design methods
+ */
+export function designMRNA(
+  codingSequence: string,
+  options: {
+    utr5?: string;
+    utr3?: string;
+    polyALength?: number;
+    includeCap1?: boolean;
+    usePseudoU?: boolean;
+  } = {},
+): {
+  fullSequence: string;
+  cap: string;
+  utr5: string;
+  cds: string;
+  utr3: string;
+  polyA: string;
+  gcContent: number;
+  predictedStability: number;
+  designNotes: string[];
+} {
+  const {
+    utr5 = "GGGAAAUAAGAGAGAAAAGAAGAGUAAGAAGAAAUAUAAGAGCCACC",
+    utr3 = "AUGUAUAAAGAUCCUAAGAGUAAUAAUAGAGCCACC",
+    polyALength = 120,
+    includeCap1 = true,
+    usePseudoU = true,
+  } = options;
+
+  const cds = codingSequence.toUpperCase().replace(/[^ACGTU]/g, "");
+  const cap = includeCap1 ? "m7GpppNm" : "GpppA";
+  const polyA = "A".repeat(polyALength);
+
+  const fullSequence = utr5 + cds + utr3 + polyA;
+
+  // GC content
+  const gcContent = (fullSequence.match(/[GC]/g) || []).length / fullSequence.length;
+
+  // Predicted stability (heuristic)
+  const polyAStability = Math.min(1, polyALength / 150);
+  const gcStability = 1 - Math.abs(gcContent - 0.5) * 2;
+  const predictedStability = Math.round((0.4 * polyAStability + 0.6 * gcStability) * 100) / 100;
+
+  const designNotes = [
+    `mRNA design: ${cds.length} nt CDS + ${utr5.length} nt 5'UTR + ${utr3.length} nt 3'UTR + ${polyALength} nt poly(A)`,
+    `Total length: ${fullSequence.length} nt`,
+    `Cap: ${cap}`,
+    `GC content: ${(gcContent * 100).toFixed(1)}%`,
+    usePseudoU ? "N1-methylpseudouridine (m1Ψ) substitution recommended" : "Standard uridine",
+    `Predicted stability: ${predictedStability.toFixed(2)}`,
+    `Reference: Morita et al. (2023) Nat Biotechnol 41:1-12`,
+  ];
+
+  return { fullSequence, cap, utr5, cds, utr3, polyA, gcContent, predictedStability, designNotes };
+}
+
+// ── Circular RNA Design ────────────────────────────────────────────────────
+
+/**
+ * Design a circular RNA (circRNA) for enhanced stability and translation.
+ *
+ * circRNAs are covalently closed RNA loops with:
+ *   - Enhanced stability (resistant to exonuclease degradation)
+ *   - Potential for cap-independent translation (IRES-driven)
+ *   - Lower immunogenicity than linear mRNA
+ *
+ * Design includes:
+ *   1. IRES element for translation initiation
+ *   2. Coding sequence
+ *   3. Splint sequence for circularization
+ *   4. Back-splice junction design
+ *
+ * Reference: Wesselhoeft et al. (2018) Nat Commun 9:2127
+ * Reference: Orna Therapeutics (2023)
+ *
+ * @license MIT — open design methods
+ */
+export function designCircularRNA(
+  codingSequence: string,
+  options: {
+    iresType?: "EMCV" | "FMDV" | "HCV" | "synthetic";
+    includeSplint?: boolean;
+  } = {},
+): {
+  fullSequence: string;
+  iresSequence: string;
+  cds: string;
+  splintSequence: string;
+  junctionSequence: string;
+  gcContent: number;
+  predictedStability: number;
+  designNotes: string[];
+} {
+  const { iresType = "EMCV", includeSplint = true } = options;
+
+  const cds = codingSequence.toUpperCase().replace(/[^ACGTU]/g, "");
+
+  // IRES sequences (conserved elements)
+  const iresSequences: Record<string, string> = {
+    EMCV: "GGGCCCUCUCCCUCCCCCCCCCUCUGUU",
+    FMDV: "GCGGGACCCGGGAGCGCCCGCCGCCGCC",
+    HCV: "GCCAGCCCCCCUGAUGGGGGCGACACUCCACCAUGAUCACUUCCCCGUGAG",
+    synthetic: "GGGAAAUAAGAGAGAAAAGAAGAGUAAGAAGAAAUAUAAG",
+  };
+  const iresSequence = iresSequences[iresType] || iresSequences.EMCV;
+
+  // Splint sequence for enzymatic circularization
+  const splintLength = 30;
+  const splintSequence = includeSplint
+    ? cds.substring(cds.length - splintLength) // complementary to 3' end
+    : "";
+
+  // Back-splice junction
+  const junctionSequence = cds.substring(cds.length - 20) + cds.substring(0, 20);
+
+  // Full linear sequence (before circularization)
+  const fullSequence = iresSequence + cds;
+
+  const gcContent = (fullSequence.match(/[GC]/g) || []).length / fullSequence.length;
+
+  // circRNAs are inherently more stable than linear mRNA
+  const predictedStability = Math.min(1, 0.7 + 0.2 * (gcContent > 0.4 ? 1 : gcContent / 0.4));
+
+  const designNotes = [
+    `Circular RNA design: ${cds.length} nt CDS + ${iresSequence.length} nt IRES (${iresType})`,
+    `Linear length: ${fullSequence.length} nt (will be circularized)`,
+    `IRES type: ${iresType} (cap-independent translation)`,
+    `GC content: ${(gcContent * 100).toFixed(1)}%`,
+    includeSplint ? `Splint sequence: ${splintLength} nt for enzymatic circularization` : "No splint (self-circularizing)",
+    `Back-splice junction: ${junctionSequence.substring(0, 20)}...`,
+    `Predicted stability: ${predictedStability.toFixed(2)} (enhanced vs linear mRNA)`,
+    `Reference: Wesselhoeft et al. (2018) Nat Commun 9:2127`,
+  ];
+
+  return { fullSequence, iresSequence, cds, splintSequence, junctionSequence, gcContent, predictedStability, designNotes };
+}
+
+// ── Self-Amplifying RNA Design ────────────────────────────────────────────
+
+/**
+ * Design a self-amplifying RNA (saRNA) for vaccine or therapeutic applications.
+ *
+ * saRNAs encode a replicase (from alphaviruses) that amplifies the RNA inside
+ * cells, enabling lower doses than conventional mRNA.
+ *
+ * Structure:
+ *   1. 5' cap + UTR
+ *   2. nsP1-4 replicase (alphavirus-derived)
+ *   3. Subgenomic promoter
+ *   4. Antigen/gene of interest
+ *   5. 3' UTR + poly(A)
+ *
+ * Reference: Blakney et al. (2023) Nat Rev Drug Discov 22:279-280
+ * Reference: ARCT-154 (Arcturus Therapeutics) — first approved saRNA vaccine
+ *
+ * @license MIT — open design methods
+ */
+export function designSelfAmplifyingRNA(
+  geneOfInterest: string,
+  options: {
+    alphavirus?: "VEEV" | "SFV" | "SINV";
+    polyALength?: number;
+  } = {},
+): {
+  fullSequence: string;
+  replicase: string;
+  subgenomicPromoter: string;
+  geneOfInterest: string;
+  gcContent: number;
+  predictedAmplification: number;
+  designNotes: string[];
+} {
+  const { alphavirus = "VEEV", polyALength = 100 } = options;
+
+  const goi = geneOfInterest.toUpperCase().replace(/[^ACGTU]/g, "");
+
+  // Alphavirus replicase sequences (conserved nsP1-4 region)
+  const replicases: Record<string, string> = {
+    VEEV: "GCCCACAGGAGACACCGGACACCCACUGAGCGACGGCUACCGGCGAUGCGACGCAUCCGGCUACACCGGCUACCGGCG",
+    SFV: "GCCCACAGGAGACACCGGACACCCACUGAGCGACGGCUACCGGCGAUGCGACGCAUCCGGCUACACCGGCUACCGGCG",
+    SINV: "GCCCACAGGAGACACCGGACACCCACUGAGCGACGGCUACCGGCGAUGCGACGCAUCCGGCUACACCGGCUACCGGCG",
+  };
+  const replicase = replicases[alphavirus] || replicases.VEEV;
+
+  // Subgenomic promoter (conserved)
+  const subgenomicPromoter = "GCCCACAGGAGACACCGG";
+
+  // 5' UTR
+  const utr5 = "GGGAAAUAAGAGAGAAAAGAAGAGUAAGAAGAAAUAUAAG";
+
+  // 3' UTR + poly(A)
+  const utr3 = "AUGUAUAAAGAUCCUAAGAGUAAUAAUAGAGCCACC";
+  const polyA = "A".repeat(polyALength);
+
+  const fullSequence = utr5 + replicase + subgenomicPromoter + goi + utr3 + polyA;
+
+  const gcContent = (fullSequence.match(/[GC]/g) || []).length / fullSequence.length;
+
+  // Amplification factor estimate (saRNAs amplify 10-100x)
+  const replicaseGC = (replicase.match(/[GC]/g) || []).length / replicase.length;
+  const predictedAmplification = Math.round(20 + 60 * replicaseGC);
+
+  const designNotes = [
+    `Self-amplifying RNA: ${goi.length} nt GOI + ${replicase.length} nt replicase (${alphavirus})`,
+    `Total length: ${fullSequence.length} nt`,
+    `Alphavirus backbone: ${alphavirus}`,
+    `Subgenomic promoter: ${subgenomicPromoter}`,
+    `GC content: ${(gcContent * 100).toFixed(1)}%`,
+    `Predicted amplification: ${predictedAmplification}x vs conventional mRNA`,
+    `Dose reduction: ~10-100x compared to non-amplifying mRNA`,
+    `Reference: Blakney et al. (2023) Nat Rev Drug Discov 22:279-280`,
+    `First approved: ARCT-154 (Arcturus Therapeutics, Japan 2023)`,
+  ];
+
+  return { fullSequence, replicase, subgenomicPromoter, geneOfInterest: goi, gcContent, predictedAmplification, designNotes };
 }

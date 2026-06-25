@@ -11,7 +11,12 @@ export const runtime = 'edge';
  *   ?pathway=<cpd_id>  — get pathways linked to a KEGG compound ID (e.g. C00024)
  *   ?reaction=<rxn_id> — get reaction details (e.g. R00238)
  *
- * KEGG REST API is public and free for academic use.
+ * @license
+ *   KEGG REST API is public and free for academic use.
+ *   Commercial use requires a paid license from Kanehisa Laboratories.
+ *   See: https://www.kegg.jp/kegg/legal.html
+ *   Citation: Kanehisa & Goto (2000) Nucleic Acids Res 28:27-30
+ *
  * See: https://rest.kegg.jp/
  */
 

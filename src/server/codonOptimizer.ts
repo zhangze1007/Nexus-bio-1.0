@@ -33,7 +33,7 @@ import codonTables from "../data/codonUsageTables.json";
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export type Organism = "ecoli" | "scerevisiae";
+export type Organism = "ecoli" | "scerevisiae" | "human" | "mouse" | "arabidopsis";
 
 export interface CodonOptimizationConfig {
   /** Target organism for codon usage optimization. */
@@ -222,4 +222,61 @@ export function optimizeCodons(aminoAcidSequence: string, config: CodonOptimizat
     gcContent: Math.round(gcFraction(dna) * 10000) / 10000,
     restrictionSitesFound: sitesFound,
   };
+}
+
+/**
+ * Compute Codon Adaptation Index (CAI) for an existing DNA sequence.
+ *
+ * CAI measures how well a sequence uses codons preferred by the host organism.
+ * CAI = 1.0 means all codons are the most preferred; CAI → 0 means many rare codons.
+ *
+ * Reference: Sharp & Li (1987) Nucleic Acids Res 15:1281-1295
+ *
+ * @param dnaSequence  DNA sequence (must be multiple of 3)
+ * @param organism     Target organism
+ * @returns CAI value (0–1)
+ */
+export function computeCAI(dnaSequence: string, organism: Organism = "ecoli"): number {
+  const table = loadTable(organism);
+  const wMap = buildRelativeAdaptiveness(table);
+  const upper = dnaSequence.toUpperCase().replace(/[^ACGT]/g, "");
+
+  let logSum = 0;
+  let count = 0;
+
+  for (let i = 0; i < upper.length - 2; i += 3) {
+    const codon = upper.substring(i, i + 3);
+    const wi = wMap.get(codon) ?? 0;
+    if (wi > 0) {
+      logSum += Math.log(wi);
+      count++;
+    }
+  }
+
+  return count > 0 ? Math.round(Math.exp(logSum / count) * 10000) / 10000 : 0;
+}
+
+/**
+ * Back-translate an amino acid sequence to DNA using the most common codons.
+ *
+ * @param aaSequence  Amino acid sequence (one-letter codes)
+ * @param organism    Target organism for codon selection
+ * @returns DNA sequence using the most frequently used codons
+ */
+export function backTranslate(aaSequence: string, organism: Organism = "ecoli"): string {
+  const table = loadTable(organism);
+  let dna = "";
+
+  for (const aa of aaSequence.toUpperCase()) {
+    const codons = table[aa];
+    if (!codons || codons.length === 0) {
+      dna += "NNN";
+      continue;
+    }
+    // Select the most frequent codon
+    const sorted = [...codons].sort((a, b) => b[1] - a[1]);
+    dna += sorted[0][0].toUpperCase();
+  }
+
+  return dna;
 }

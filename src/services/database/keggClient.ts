@@ -1,3 +1,12 @@
+/**
+ * KEGG Database Client
+ *
+ * @license
+ *   KEGG data: free for academic use.
+ *   Commercial use requires a paid license from Kanehisa Laboratories.
+ *   See: https://www.kegg.jp/kegg/legal.html
+ *   Citation: Kanehisa & Goto (2000) Nucleic Acids Res 28:27-30
+ */
 import { type FallbackResult, fetchWithFallback } from "./fetchWithFallback";
 
 export interface KEGGPathwayResult {

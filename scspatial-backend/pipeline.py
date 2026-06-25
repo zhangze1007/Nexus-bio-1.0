@@ -138,9 +138,16 @@ def run_full_pipeline(
     sc.tl.umap(adata, min_dist=0.5)
 
     # ── Step 8: Leiden Clustering ───────────────────────────────────
+    # Uses leidenalg (GPL-3.0) by default; falls back to igraph (MIT) Louvain if unavailable
     on_progress(0.50, "cluster", f"Leiden clustering (resolution={config.clustering.resolution})")
 
-    sc.tl.leiden(adata, resolution=config.clustering.resolution, flavor="leidenalg")
+    try:
+        sc.tl.leiden(adata, resolution=config.clustering.resolution, flavor="leidenalg")
+    except ImportError:
+        # Fallback: use igraph Louvain (MIT license) if leidenalg (GPL-3.0) not installed
+        logger.warning("leidenalg not available, falling back to igraph Louvain clustering")
+        sc.tl.louvain(adata, resolution=config.clustering.resolution)
+        adata.obs["leiden"] = adata.obs["louvain"]
 
     n_clusters = adata.obs["leiden"].nunique()
     on_progress(0.55, "cluster", f"Found {n_clusters} clusters")

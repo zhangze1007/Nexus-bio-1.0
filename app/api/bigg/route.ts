@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
-const BIGG_BASE = 'http://bigg.ucsd.edu/api/v3';
+const BIGG_BASE = 'https://bigg.ucsd.edu/api/v3';
 
 export async function OPTIONS(req: Request) {
   return handleOptions(req);

@@ -20,6 +20,33 @@ export default function CatDesRNAEngineeringPanel({ result }: { result: RNADesig
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Patent Notice for toehold switches */}
+      {result.type === "toehold" && (
+        <div
+          style={{
+            ...GLASS,
+            borderRadius: 12,
+            padding: "10px 14px",
+            border: `1px solid rgba(250,128,114,0.3)`,
+            background: "rgba(250,128,114,0.06)",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: THEME.SANS,
+              fontSize: "var(--nb-fs-xs)",
+              color: THEME.CORAL,
+              margin: 0,
+              lineHeight: 1.5,
+            }}
+          >
+            ⚠️ <strong>Patent Notice:</strong> Toehold switches are covered by US Patent 10,329,576 (Green et al.,
+            expires ~2034). This design tool is for <strong>research use only</strong>. Commercial use requires a
+            license from the patent holder.
+          </p>
+        </div>
+      )}
+
       {/* Summary metrics */}
       <ResultSummaryPanel
         metrics={[

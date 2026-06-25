@@ -9,6 +9,11 @@
  * Sources:
  *   - SABIO-RK: Wittig et al. (2012) Nucleic Acids Res. 40:D790-D796
  *   - BRENDA:   Chang et al. (2021) Nucleic Acids Res. 49:D498-D508
+ *
+ * @license
+ *   BRENDA: free for academic use. Commercial use requires a license.
+ *   See: https://www.brenda-enzymes.org/license.php
+ *   SABIO-RK: free for all uses.
  */
 
 import { type FallbackResult, fetchWithFallback } from "./fetchWithFallback";

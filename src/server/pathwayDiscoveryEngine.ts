@@ -16,6 +16,15 @@
  * Reference: Campodonico et al. (2014) Metabolic Engineering 22:96-107
  * Reference: Cho et al. (2018) Nature Communications 9:4433
  *
+ * @license
+ *   This module contains reaction data derived from the KEGG database.
+ *   KEGG: free for academic use; commercial use requires a paid license
+ *   from Kanehisa Laboratories. See: https://www.kegg.jp/kegg/legal.html
+ *   Citation: Kanehisa & Goto (2000) Nucleic Acids Res 28:27-30
+ *
+ *   Delta-G values sourced from eQuilibrator (CC-BY):
+ *   Flamholz et al. (2013) PNAS 110:4498-4503
+ *
  * @scientific_provenance
  *   ALGORITHM: A* graph search + thermodynamic scoring + enzyme matching
  *   KNOWN_LIMITATIONS:

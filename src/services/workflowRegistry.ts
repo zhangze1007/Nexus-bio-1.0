@@ -754,6 +754,7 @@ export const WORKFLOW_CONTRACTS: Record<ToolId, ToolContract> = {
   multiplexcrispr: MULTIPLEX_CRISPR_CONTRACT,
   pathwaydiscovery: PATHWAY_DISCOVERY_CONTRACT,
   digitaltwin: DIGITAL_TWIN_CONTRACT,
+  sequence: SEQUENCE_CONTRACT,
 };
 
 export function getToolContract(id: ToolId): ToolContract {

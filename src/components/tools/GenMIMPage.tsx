@@ -9,6 +9,7 @@ import SimErrorBanner from "../ide/shared/SimErrorBanner";
 import NextStepButton from "../NextStepButton";
 import { BiosafetyPanel } from "./genmim/BiosafetyPanel";
 import { MultiplexCRISPRPanel, SchedulePanel, SyntheticGenomicsPanel, TargetsPanel } from "./genmim/CRISPRiScheduler";
+import { BaseEditingPanel, EpigenomeEditingPanel, PASTEPanel, PrimeEditingPanel } from "./genmim/CRISPREDITingPanels";
 import { EfficiencyHeatmap } from "./genmim/EfficiencyHeatmap";
 import { GEMReconstructionPanel } from "./genmim/GEMReconstructionPanel";
 import { GenomeMapView } from "./genmim/GenomeMap";
@@ -261,6 +262,26 @@ export default React.memo(function GenMIMPage() {
       {/* ── Multiplex Strategy Tab ────────────────────────────────────── */}
       <ToolTabPanel tabId="multiplex" activeId={activeTab}>
         <MultiplexCRISPRPanel />
+      </ToolTabPanel>
+
+      {/* ── Prime Editing Tab ────────────────────────────────────────────────── */}
+      <ToolTabPanel tabId="prime" activeId={activeTab}>
+        <PrimeEditingPanel />
+      </ToolTabPanel>
+
+      {/* ── Base Editing Tab ─────────────────────────────────────────────────── */}
+      <ToolTabPanel tabId="base" activeId={activeTab}>
+        <BaseEditingPanel />
+      </ToolTabPanel>
+
+      {/* ── Epigenome Editing Tab ────────────────────────────────────────────── */}
+      <ToolTabPanel tabId="epigenome" activeId={activeTab}>
+        <EpigenomeEditingPanel />
+      </ToolTabPanel>
+
+      {/* ── PASTE Tab ────────────────────────────────────────────────────────── */}
+      <ToolTabPanel tabId="paste" activeId={activeTab}>
+        <PASTEPanel />
       </ToolTabPanel>
 
       {/* ── Synthetic Genomics Tab ──────────────────────────────────────────── */}
