@@ -19,7 +19,7 @@
  * @scientific_provenance
  *   ALGORITHM: A* graph search + thermodynamic scoring + enzyme matching
  *   KNOWN_LIMITATIONS:
- *     - Reaction database is curated subset (not full KEGG/Rhea)
+ *     - Curated DB is primary; KEGG and Rhea are live fallbacks for missing reactions
  *     - No atom mapping (uses reaction-type-based stoichiometry)
  *     - Thermodynamic estimates are group-contribution approximations
  *     - No regulatory constraint modeling
@@ -143,7 +143,8 @@ export interface PathwayDiscoveryResult {
 
 /**
  * Core reaction database covering major biosynthetic pathways.
- * In production, this would be loaded from KEGG/Rhea/BRENDA.
+ * This curated subset is the primary source. KEGG and Rhea APIs serve as
+ * live fallbacks when reactions are not found here.
  *
  * enzymeAvailability scoring:
  *   0.9-1.0: Universal enzymes found in all domains of life (glycolysis, TCA)
@@ -7151,6 +7152,132 @@ async function lookupReactionsFromKEGG(metaboliteId: string): Promise<Reaction[]
   }
 }
 
+// ── Rhea API Fallback ──────────────────────────────────────────────────────
+
+/**
+ * Cache for Rhea API lookups to avoid repeated network calls for the same
+ * compound during a single discovery run.
+ */
+const rheaCache = new Map<string, Reaction[]>();
+
+/**
+ * Parse a Rhea reaction result into the internal Reaction type.
+ *
+ * Rhea reactions come from the proxy route with ChEBI-based substrates/products.
+ * Since ChEBI IDs don't map directly to our internal metabolite IDs, we use
+ * the reaction name to extract EC numbers and the search query to identify
+ * relevant metabolites.
+ *
+ * @param rheaResult - Raw Rhea reaction data from the proxy
+ * @param queryMetabolite - The metabolite we were searching for (used to tag products)
+ * @returns Parsed Reaction or null if unparseable
+ */
+function parseRheaReactionToInternal(
+  rheaResult: { id?: string; name?: string; ecNumbers?: string[]; direction?: string },
+  queryMetabolite: string,
+): Reaction | null {
+  if (!rheaResult || !rheaResult.name) return null;
+
+  const rheaId = rheaResult.id ? `RHEA:${rheaResult.id}` : "RHEA_unknown";
+  const ecNumber = rheaResult.ecNumbers?.[0] || undefined;
+
+  // Rhea reactions are typically bidirectional (direction: "BI")
+  // or directional ("LR" = left-to-right, "RL" = right-to-left)
+  const direction = rheaResult.direction ?? "BI";
+  const reversible = direction === "BI" || direction === "UN";
+
+  // We can't fully parse substrate/product ChEBI IDs to internal names without
+  // a complete ChEBI-to-internal mapping, so we tag the query metabolite as a
+  // product and leave substrates as placeholders. The engine will still use this
+  // reaction for graph expansion.
+  return {
+    id: rheaId,
+    name: rheaResult.name,
+    substrates: [`rhea_substrate_of_${queryMetabolite}`],
+    products: [queryMetabolite],
+    ecNumber,
+    deltaG: 0, // Rhea does not provide thermodynamic data
+    reversible,
+    enzymeAvailability: 0.45, // Slightly higher than KEGG (curated, enzyme-specific)
+    organisms: [],
+    cofactors: [],
+    type: ecToReactionType(ecNumber),
+  };
+}
+
+/**
+ * Look up reactions that involve a given metabolite from the Rhea API.
+ *
+ * Searches Rhea by metabolite name, then fetches details for top hits.
+ * Returns parsed Reaction objects compatible with the pathway discovery engine.
+ *
+ * @param metaboliteId - Internal metabolite ID (e.g. "pyruvate")
+ * @returns Array of reactions involving this compound, or empty array on failure
+ */
+async function lookupReactionsFromRhea(metaboliteId: string): Promise<Reaction[]> {
+  // Check cache first
+  if (rheaCache.has(metaboliteId)) {
+    return rheaCache.get(metaboliteId)!;
+  }
+
+  try {
+    // Search Rhea for reactions involving this metabolite
+    const searchRes = await fetch(
+      `/api/rhea?query=${encodeURIComponent(metaboliteId)}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+
+    if (!searchRes.ok) {
+      rheaCache.set(metaboliteId, []);
+      return [];
+    }
+
+    const searchData = await searchRes.json();
+    const results: Array<{ id?: string; name?: string; ecNumbers?: string[] }> = searchData.results ?? [];
+
+    if (results.length === 0) {
+      rheaCache.set(metaboliteId, []);
+      return [];
+    }
+
+    // Parse top results into internal Reaction type (limit to 3 to avoid overload)
+    const reactions: Reaction[] = [];
+    const toProcess = results.slice(0, 3);
+
+    for (const result of toProcess) {
+      try {
+        // Fetch full reaction details for EC numbers and direction
+        if (result.id) {
+          const detailRes = await fetch(
+            `/api/rhea?id=${encodeURIComponent(result.id)}`,
+            { signal: AbortSignal.timeout(10000) },
+          );
+          if (detailRes.ok) {
+            const detailData = await detailRes.json();
+            const parsed = parseRheaReactionToInternal(
+              { ...result, ...detailData },
+              metaboliteId,
+            );
+            if (parsed) reactions.push(parsed);
+            continue;
+          }
+        }
+        // Fallback: parse from search result alone
+        const parsed = parseRheaReactionToInternal(result, metaboliteId);
+        if (parsed) reactions.push(parsed);
+      } catch {
+        // Skip failed individual reaction fetches
+      }
+    }
+
+    rheaCache.set(metaboliteId, reactions);
+    return reactions;
+  } catch {
+    rheaCache.set(metaboliteId, []);
+    return [];
+  }
+}
+
 // ── Functional Group Analysis ──────────────────────────────────────────────
 
 /**
@@ -7910,6 +8037,21 @@ async function aStarPathwaySearch(
       }
     }
 
+    // Rhea API fallback: when KEGG also misses, query Rhea for enzyme-specific reactions
+    if (producingReactions.length === 0) {
+      const rheaReactions = await lookupReactionsFromRhea(current.metabolite);
+      if (rheaReactions.length > 0) {
+        // Index the new reactions for future lookups
+        for (const rxn of rheaReactions) {
+          for (const product of rxn.products) {
+            if (!productToReactions.has(product)) productToReactions.set(product, []);
+            productToReactions.get(product)!.push(rxn);
+          }
+        }
+        producingReactions = rheaReactions;
+      }
+    }
+
     for (const rxn of producingReactions) {
       // Check if we have all substrates (or they can be traced to precursors)
       for (const substrate of rxn.substrates) {
@@ -8018,8 +8160,8 @@ async function aStarPathwaySearch(
 /**
  * Run pathway discovery from target to precursors.
  *
- * Falls back to the KEGG API when reactions are not in the curated database.
- * @async because the KEGG fallback issues network requests.
+ * Falls back to KEGG and then Rhea APIs when reactions are not in the curated database.
+ * @async because the KEGG/Rhea fallbacks issue network requests.
  */
 export async function runPathwayDiscovery(input: PathwayDiscoveryInput): Promise<PathwayDiscoveryResult> {
   const { target, precursors, maxLength = 8, topN = 5, preferredOrganism, includeNovel = false } = input;
@@ -8028,8 +8170,9 @@ export async function runPathwayDiscovery(input: PathwayDiscoveryInput): Promise
   if (!target.id) throw new Error("Target molecule must have an ID");
   if (precursors.length === 0) throw new Error("At least one precursor is required");
 
-  // Clear KEGG cache for this discovery run
+  // Clear KEGG and Rhea caches for this discovery run
   keggCache.clear();
+  rheaCache.clear();
 
   // Filter reactions by organism preference
   let reactionDB = [...REACTION_DB];
@@ -8083,7 +8226,7 @@ export async function runPathwayDiscovery(input: PathwayDiscoveryInput): Promise
 /**
  * Quick pathway feasibility check.
  *
- * @async because it delegates to runPathwayDiscovery which may query KEGG.
+ * @async because it delegates to runPathwayDiscovery which may query KEGG/Rhea.
  */
 export async function checkPathwayFeasibility(
   targetId: string,
