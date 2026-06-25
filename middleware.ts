@@ -11,9 +11,10 @@ import { checkRateLimit, getRateLimitConfig } from '@/src/utils/rateLimit';
  *   - Public routes (no key needed): /api/health, /api/alphafold, /api/pubchem, /api/kegg
  *   - Protected routes: /api/analyze, /api/fba, /api/workbench, /api/scspatial/*
  *   - Auth methods (checked in order):
- *     1. X-API-Key header
- *     2. Authorization: Bearer <token>
- *     3. Same-origin requests (Sec-Fetch-Site: same-origin) are allowed
+ *     1. Same-origin requests (Sec-Fetch-Site: same-origin) are allowed
+ *     2. X-API-Key header with nxb_ prefix → DB-backed key validation (hash + lookup)
+ *     3. X-API-Key header → legacy NEXUS_API_KEY env var comparison
+ *     4. Authorization: Bearer <token> → legacy NEXUS_API_KEY env var comparison
  *
  * Rate limiting:
  *   - Upstash Redis sliding window when configured, in-memory fallback otherwise
@@ -46,15 +47,92 @@ const PUBLIC_ROUTES = [
   '/api/gemini', // legacy alias for analyze
 ];
 
+// ── Edge-compatible SHA-256 ───────────────────────────────────────────
+/**
+ * Compute SHA-256 hex digest using the Web Crypto API.
+ * Produces the same output as hashApiKey() from src/utils/apiKeys.ts
+ * but uses the Edge-compatible crypto.subtle API instead of Node.js crypto.createHash.
+ */
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// ── DB-backed API key validation ──────────────────────────────────────
+/**
+ * Validate an nxb_ prefixed API key against the database.
+ * Hashes the key with SHA-256, looks up in api_keys table,
+ * checks expiry, and updates last_used_at.
+ *
+ * Requires TURSO_DATABASE_URL to be set. Returns false if DB is unavailable.
+ */
+async function validateNxbKey(providedKey: string): Promise<boolean> {
+  const tursoUrl = process.env.TURSO_DATABASE_URL;
+  if (!tursoUrl) return false;
+
+  try {
+    const { createClient } = await import('@libsql/client');
+    const client = createClient({
+      url: tursoUrl,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+
+    const hash = await sha256Hex(providedKey);
+
+    const result = await client.execute({
+      sql: 'SELECT id, expires_at FROM api_keys WHERE key_hash = ?',
+      args: [hash],
+    });
+
+    if (result.rows.length === 0) return false;
+
+    const row = result.rows[0];
+
+    // Check expiry
+    if (row.expires_at) {
+      const expiresAt = new Date(row.expires_at as string);
+      if (expiresAt < new Date()) return false;
+    }
+
+    // Update last_used_at (fire-and-forget, non-blocking)
+    client.execute({
+      sql: 'UPDATE api_keys SET last_used_at = ? WHERE id = ?',
+      args: [new Date().toISOString(), row.id as string],
+    }).catch(() => { /* swallow — auth already succeeded */ });
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ── Auth Check ────────────────────────────────────────────────────────
 function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some(route => pathname.startsWith(route));
 }
 
-function isAuthenticated(req: NextRequest): boolean {
+/**
+ * Check if the request is authenticated.
+ *
+ * Supports three auth methods:
+ *   1. Same-origin (Sec-Fetch-Site: same-origin) — trusted browser requests
+ *   2. nxb_ prefixed API keys — SHA-256 hashed and validated against DB
+ *   3. Legacy NEXUS_API_KEY env var — direct string comparison via X-API-Key or Bearer
+ */
+async function isAuthenticated(req: NextRequest): Promise<boolean> {
   // Same-origin requests are trusted (browser-initiated from the app)
   const secFetchSite = req.headers.get('sec-fetch-site');
   if (secFetchSite === 'same-origin') return true;
+
+  const providedKey = req.headers.get('x-api-key');
+
+  // nxb_ prefixed keys: hash and look up in database
+  if (providedKey && providedKey.startsWith('nxb_')) {
+    return validateNxbKey(providedKey);
+  }
 
   const apiKey = getApiKey();
 
@@ -62,8 +140,7 @@ function isAuthenticated(req: NextRequest): boolean {
   // External callers must provide a key — never silently bypass auth.
   if (!apiKey) return false;
 
-  // Check X-API-Key header
-  const providedKey = req.headers.get('x-api-key');
+  // Check X-API-Key header (legacy direct comparison)
   if (providedKey === apiKey) return true;
 
   // Check Authorization: Bearer <token>
@@ -119,7 +196,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // ── Authentication ──
-  if (isProtectedRoute(pathname) && !isAuthenticated(req)) {
+  if (isProtectedRoute(pathname) && !(await isAuthenticated(req))) {
     return NextResponse.json(
       {
         error: 'Authentication required',
