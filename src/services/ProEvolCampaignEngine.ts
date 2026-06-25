@@ -1920,10 +1920,30 @@ export function designSequences(input: {
     mutations: Array<{ position: number; wt: string; mut: string }>;
     scores: { stability: number; plausibility: number; compatibility: number; composite: number };
   }>;
+  esm2Used: boolean;
 } {
-  const { sequence, pdbText, fixedPositions = [], numDesigns = 10 } = input;
+  const { sequence, pdbText, fixedPositions = [], numDesigns = 10, esm2Embeddings } = input;
   const fixedSet = new Set(fixedPositions);
   const AA_CODES = "ACDEFGHIKLMNPQRSTVWY";
+  const esm2Used = Array.isArray(esm2Embeddings) && esm2Embeddings.length > 0;
+
+  // Pre-compute per-position ESM-2 embedding magnitudes for scoring adjustment
+  const esm2Magnitudes: number[] = [];
+  if (esm2Used) {
+    for (let i = 0; i < esm2Embeddings!.length; i++) {
+      const emb = esm2Embeddings![i];
+      if (emb && emb.length > 0) {
+        const mag = Math.sqrt(emb.reduce((s, v) => s + v * v, 0) / emb.length);
+        esm2Magnitudes.push(mag);
+      } else {
+        esm2Magnitudes.push(0);
+      }
+    }
+    const maxMag = Math.max(...esm2Magnitudes, 0.01);
+    for (let i = 0; i < esm2Magnitudes.length; i++) {
+      esm2Magnitudes[i] = esm2Magnitudes[i] / maxMag;
+    }
+  }
 
   // Pre-compute structural features
   const burialMap: Map<number, number> = new Map();
@@ -2024,7 +2044,11 @@ export function designSequences(input: {
         };
         const ssProp = ss === "H" ? (HELIX_P[aa] ?? 1.0) / 1.5 : ss === "E" ? (SHEET_P[aa] ?? 1.0) / 1.7 : 0.5;
 
-        const composite = 0.4 * plausibility + 0.3 * hydroMatch + 0.3 * ssProp;
+        const esm2Conf = esm2Used ? (esm2Magnitudes[i] ?? 0) : 0;
+        const plausWeight = esm2Used ? 0.4 + 0.2 * esm2Conf : 0.4;
+        const hydroWeight = esm2Used ? 0.3 - 0.1 * esm2Conf : 0.3;
+        const ssWeight = esm2Used ? 0.3 - 0.1 * esm2Conf : 0.3;
+        const composite = plausWeight * plausibility + hydroWeight * hydroMatch + ssWeight * ssProp;
         scores.push({ aa, score: composite });
       }
 
@@ -2074,7 +2098,7 @@ export function designSequences(input: {
 
   // Sort by composite score (best first)
   designs.sort((a, b) => b.scores.composite - a.scores.composite);
-  return { designs };
+  return { designs, esm2Used };
 }
 
 function estimateDesignStability(

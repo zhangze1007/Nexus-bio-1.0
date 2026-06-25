@@ -106,7 +106,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   inversefolding: {
     level: "partial",
     caption:
-      "k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 protein language model endpoint available via Python backend (embeddings, fitness scoring via log-likelihood ratios). Limitations: BLOSUM62 declared but unused (uniform prior); all weights hand-tuned, not learned; ESM-2 requires separate torch installation.",
+      "k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 protein language model accessible via toggle (embeddings from ESM Atlas API, with Atchley-factor local fallback). When enabled, ESM-2 confidence weights adjust plausibility scoring per position. Limitations: BLOSUM62 declared but unused (uniform prior); all weights hand-tuned, not learned; ESM-2 embedding fetch adds 5-10 s latency.",
   },
   multiplexcrispr: {
     level: "partial",
