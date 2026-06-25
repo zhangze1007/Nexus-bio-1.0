@@ -10,6 +10,7 @@ out/
 # Production build
 build/
 dist/
+storybook-static/
 
 # Test coverage
 coverage/

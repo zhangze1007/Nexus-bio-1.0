@@ -23,7 +23,9 @@
     "proof:replay": "node scripts/replayProofPackage.mjs",
     "reference:py:validate": "python3 reference_impl_py/run_reference_benchmark.py validate",
     "reference:py:run": "python3 reference_impl_py/run_reference_benchmark.py run",
-    "reference:py:compare": "python3 reference_impl_py/run_reference_benchmark.py compare"
+    "reference:py:compare": "python3 reference_impl_py/run_reference_benchmark.py compare",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1075.0",
@@ -59,6 +61,9 @@
     "@biomejs/biome": "^2.5.1",
     "@next/bundle-analyzer": "^16.2.7",
     "@playwright/test": "^1.60.0",
+    "@storybook/addon-a11y": "^10.4.6",
+    "@storybook/nextjs-vite": "^10.4.6",
+    "@storybook/react": "^10.4.6",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/jest": "^30.0.0",
@@ -72,6 +77,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
+    "storybook": "^10.4.6",
     "tailwindcss": "^3.4.0",
     "ts-jest": "^29.4.6",
     "tsx": "^4.21.0",
