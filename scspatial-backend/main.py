@@ -35,6 +35,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from artifact_builder import build_artifact
+from blast_service import blast_screen_sequence, get_available_databases
 from mofa_service import run_mofa_analysis
 from models import AnalysisConfig, IngestResponse, JobStatus, QueryRequest
 from pipeline import run_full_pipeline
@@ -537,6 +538,40 @@ async def mofa_endpoint(request: Request):
     except Exception as e:
         logger.exception("MOFA+ analysis failed")
         raise HTTPException(500, f"MOFA+ analysis failed: {str(e)}")
+
+
+# ── BLAST sequence screening (biosafety) ───────────────────────────
+
+@app.get("/blast/databases")
+async def blast_databases():
+    """List available BLAST databases."""
+    return get_available_databases()
+
+
+@app.post("/blast/screen")
+async def blast_screen(request: Request):
+    """Screen a DNA sequence against biosafety databases."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    sequence = body.get("sequence", "").strip()
+    if not sequence:
+        raise HTTPException(400, "sequence is required")
+
+    databases = body.get("databases", None)
+    evalue_cutoff = body.get("evalueCutoff", 1e-5)
+    max_hits = body.get("maxHits", 50)
+
+    result = blast_screen_sequence(
+        sequence=sequence,
+        databases=databases,
+        evalue_cutoff=evalue_cutoff,
+        max_hits=max_hits,
+    )
+
+    return {"ok": True, **result}
 
 
 # ── Demo mode: create artifact without Python analysis ──────────────
