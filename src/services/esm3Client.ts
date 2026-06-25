@@ -237,8 +237,9 @@ export function generateProteinLocalHeuristic(
   }
 
   // Compute heuristic quality scores
-  const gcContent = (sequence.match(/[GAVLIMFWP]/g) || []).length / sequence.length;
-  const foldability = Math.min(1, 0.4 + 0.3 * gcContent + 0.1 * Math.random());
+  // Hydrophobic fraction (folds better with balanced hydrophobic core)
+  const hydrophobicFraction = (sequence.match(/[LIVMFCAW]/g) || []).length / sequence.length;
+  const foldability = Math.min(1, 0.4 + 0.3 * hydrophobicFraction + 0.1 * Math.random());
   const functionConfidence = Math.min(1, 0.2 + 0.2 * (biasSet.length / 20) + 0.1 * Math.random());
 
   return {
