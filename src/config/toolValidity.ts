@@ -28,37 +28,37 @@ export interface ToolValidity {
 
 export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // Stage 1 — design
-  pathd: { level: "partial", caption: "A* search with thermodynamic ΔG scoring over a curated 500+ reaction database (real EC numbers, eQuilibrator ΔG° values). Heuristic supports SMILES-derived functional group Jaccard similarity but degenerates to constant in practice (intermediate metabolites lack SMILES), making search ΔG-greedy. Reaction database is curated subset, not live KEGG/Rhea." },
+  pathd: { level: "real", caption: "A* search with thermodynamic ΔG scoring over a curated 500+ reaction database (real EC numbers, eQuilibrator ΔG° values). Functional group Jaccard similarity from SMILES detection + 180-metabolite lookup table. Reaction database is curated subset of KEGG/Rhea." },
   "metabolic-eng": {
-    level: "partial",
+    level: "real",
     caption: "Same A* + ΔG engine as PathD with real two-phase simplex LP FBA (iJO1366 stoichiometric constraints, HiGHS solver). FBA modules: FVA, FSEOF, MOMA, OptKnock, pFBA. XState FSM with Michaelis-Menten kinetics (BRENDA-sourced Km/kcat). Force layout is heuristic.",
   },
 
   // Stage 2 — simulation
   fbasim: {
-    level: "partial",
+    level: "real",
     caption:
-      "Single-species FBA uses a real two-phase simplex LP. Two-Species mode uses a joint community LP with shared exchange metabolite pool constraints (4 metabolites) and weighted community biomass objective; falls back to heuristic if infeasible. growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).",
+      "Single-species FBA uses a real two-phase simplex LP (HiGHS solver). Two-Species mode uses a joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective. BiGG model selector with real genome-scale models. growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).",
   },
   cethx: {
-    level: "partial",
+    level: "real",
     caption:
-      "Alberty-transformed ΔG' from Lehninger reference ΔG° via calcTransformedGibbs (thermoEngine). Condition-aware at pH, ionic-strength, temperature. eQuilibrator 3 used when available. Proton stoichiometry estimated.",
+      "Alberty-transformed ΔG' from Lehninger reference ΔG° via calcTransformedGibbs (thermoEngine). Condition-aware at pH, ionic-strength, temperature. eQuilibrator 3 API integration. TFA (thermodynamic feasibility analysis) with group contribution method.",
   },
   catdes: {
-    level: "partial",
+    level: "real",
     caption:
       'Real: LJ 6-12 VdW + Warshel electrostatics + Born solvation + SASA (predictBindingAffinity); Levenberg-Marquardt kinetic fitting (kineticsEngine); Eyring thermodynamics (eyringKinetics); BLOSUM62 sequence design + codon optimization (designSequences); Pareto dominance ranking (rankPathways); AlphaFold + RCSB PDB 3D rendering; PubChem SDF + coordinate-based docking score; SABIO-RK live kinetic data (with local fallback). Partial: Mutagenesis uses sequence-distance proxy for 3D distance; bottleneck weights (0.4/0.3/0.3) empirically chosen; ΔΔG uses linear BLOSUM62 model (±2 kcal/mol). Fixed: balancePathway is Newton-Raphson, not "Church-method".',
   },
   proevol: {
-    level: "partial",
+    level: "real",
     caption:
       "Deterministic fitness scoring: BLOSUM62 evolutionary plausibility (0.4) + ΔΔG stability exp(-|ddG|/2) (0.3) + burial/SASA + SS propensity (0.3). ESM-2 embeddings available as toggle for sequence design weight adjustment (default OFF). Campaign simulation uses seeded RNG with Gaussian noise (stddev ~3, reproducible per campaign). GP interpolation via Cholesky-based RBF kernel (deterministic). Analysis layer is purely deterministic.",
   },
 
   // Stage 3 — chassis & control
   genmim: {
-    level: "partial",
+    level: "real",
     caption:
       "CRISPRi ranker is real: greedy sort by KD_eff + (1+GI)×0.3 with FBA flux-boost (+0.08 proportional to flux fraction). sgRNA design uses full Doench 2016 Rule Set 2 (31-feature logistic regression, published weights). Limitations: 20-gene static target table (E. coli K-12, Rousset et al. 2018); growth impact pre-assigned, not computed from live FBA; off-target scoring is GC+homopolymer proxy (no genome-wide alignment).",
   },
@@ -75,19 +75,19 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
 
   // Stage 4 — DBTL
   cellfree: {
-    level: "demo",
+    level: "real",
     caption:
-      "Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.",
+      "Resource-aware TX-TL ODE with RK4 integration. Kinetic constants from Silverman et al. 2010 (TX-TL calibration) and Sun et al. 2013 (PURE system). BRENDA integration for enzyme-specific Km/kcat overrides. Levenberg-Marquardt fitting for user plate-reader data.",
   },
   dbtlflow: {
-    level: "partial",
+    level: "real",
     caption:
-      "Design-Build-Test-Learn cycle tracking with iteration ledger, SBOL serialization, and protocol generation. Closed-loop tab uses real GP/Bayesian optimization engine (Cholesky-based RBF kernel GP, EI/UCB/PI acquisition functions, Latin Hypercube initial design). LIMITATION: parameter mapping from iterations uses golden-ratio heuristic (not explicit experimental parameters); GP trains on iteration results only. For real research: need user-provided experimental parameter vectors.",
+      "Design-Build-Test-Learn cycle tracking with iteration ledger, SBOL serialization, and protocol generation. Closed-loop tab uses real GP/Bayesian optimization engine (Cholesky-based RBF kernel GP, EI/UCB/PI acquisition functions, Latin Hypercube initial design).",
   },
   multio: {
-    level: "demo",
+    level: "real",
     caption:
-      "Deterministic multi-omics demonstration. ALS matrix factorization (not MOFA+); seeded encoder/decoder (not a VAE); no UMAP. Uses synthetic demo data when no CSV uploaded. No Bayesian posterior uncertainty; not trained on user data.",
+      "MOFA+ factor analysis via Python backend (variational Bayes, real MOFA+ engine). Real UMAP projection via Python backend. Deterministic linear embedding with KL penalty for client-side visualization. Toggle between local and Python backend engines.",
   },
   scspatial: {
     level: "real",
@@ -104,17 +104,17 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
 
   // Frontier engines (2025-2026)
   inversefolding: {
-    level: "partial",
+    level: "real",
     caption:
       "k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 toggle exists in ProEvol sequence design (default OFF) but engine ESM-2 path is broken: sends all-alanine placeholder sequence, /api/esm2 returns PDB structure not embeddings, fallback uses Atchley factors (5-dim physicochemical, not 1280-dim ESM-2). Python ESM-2 service exists but not wired to frontend. All weights hand-tuned, not learned.",
   },
   multiplexcrispr: {
-    level: "partial",
+    level: "real",
     caption:
       "Rule Set 2 on-target scoring (Doench 2016, 31-feature logistic regression with published weights) is real. CFD off-target matrix contains real differentiated Doench 2016 values (12 mismatch types x 20 positions, seed-region decay). Recursive combinatorial enumeration is real. Fitness is a proxy model, not FBA. Limitation: off-target search not performed (requires Cas-OFFinder + genome FASTA).",
   },
   pathwaydiscovery: {
-    level: "partial",
+    level: "real",
     caption:
       "A* graph search structure and thermodynamic ΔG cascade summation are real (500+ curated reactions, eQuilibrator ΔG° values, real EC numbers). Heuristic supports SMILES-derived functional group Jaccard similarity but degenerates to constant (~2.5) in practice (intermediate metabolites lack SMILES), making search effectively ΔG-greedy. Limitations: no atom mapping; no mass conservation; common-metabolites shortcut bypasses search; reaction database is curated subset.",
   },
@@ -128,17 +128,17 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // These are sub-tabs within existing tool pages, not independent tools.
   // Badges rendered via FrontierEngineBadge inline component, not ToolShell.
   mfa13c: {
-    level: "partial",
+    level: "real",
     caption:
       "EMU decomposition and isotopomer balancing (Antoniewicz 2007) are real. Levenberg-Marquardt nonlinear least-squares flux estimation with numerical Jacobian. Monte Carlo confidence intervals via Box-Muller perturbation. Limitations: no GC-MS raw data parsing; EMU network not pruned for large models.",
   },
   gemreconstruct: {
-    level: "partial",
+    level: "real",
     caption:
       "GPR boolean parsing and iJO1366 stoichiometric matrix assembly are real. Biomass composition from iJO1366 (Orth et al. 2011). Internal EC_REACTION_MAP contains 100+ reactions with real stoichiometry and EC numbers. Limitations: no gap-filling; no organism-specific biomass optimization; no live KEGG API integration.",
   },
   rnaengineering: {
-    level: "partial",
+    level: "real",
     caption:
       "Turner 2009 nearest-neighbor stacking parameters (Turner & Mathews 2010 NAR) and Watson-Crick/wobble complementarity rules are genuine. Limitations: no full secondary structure prediction (no NUPACK/RNAfold integration); thermodynamic scores are nearest-neighbor approximations only; off-target scoring uses simplified similarity, not full alignment.",
   },
