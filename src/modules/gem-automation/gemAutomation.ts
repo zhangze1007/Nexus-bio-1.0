@@ -28,9 +28,9 @@ import type { GEMInput, GEMOutput } from "./types";
  *   4. Detect and fill gaps
  *   5. Identify essential genes
  */
-export function automateGEM(input: GEMInput): GEMOutput {
-  // Step 1: Reconstruct model using existing engine
-  const gem = reconstructGEM(input.annotations);
+export async function automateGEM(input: GEMInput): Promise<GEMOutput> {
+  // Step 1: Reconstruct model using existing engine (async — may query KEGG API)
+  const gem = await reconstructGEM(input.annotations);
 
   // Step 2: Detect gaps
   const gaps = detectGaps(gem);

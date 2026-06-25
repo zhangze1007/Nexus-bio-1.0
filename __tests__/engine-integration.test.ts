@@ -575,8 +575,8 @@ describe('Engine Integration Tests', () => {
     expect(Array.isArray(result.matches)).toBe(true);
   });
 
-  test('30. gemAutomation.automateGEM', () => {
-    const result = automateGEM({
+  test('30. gemAutomation.automateGEM', async () => {
+    const result = await automateGEM({
       annotations: [
         { geneId: 'b0001', ecNumber: '2.7.1.1', geneName: 'hexokinase', organism: 'ecoli' },
         { geneId: 'b0002', ecNumber: '5.3.1.9', geneName: 'pgi', organism: 'ecoli' },

@@ -1237,9 +1237,187 @@ const EC_REACTION_MAP: Record<
 // ── Gene → Reaction Mapping ────────────────────────────────────────────────
 
 /**
- * Map gene annotations to metabolic reactions.
+ * Map KEGG compound IDs to BiGG-compatible internal metabolite IDs.
+ *
+ * Covers the most common metabolites from glycolysis, TCA, PPP,
+ * amino acid biosynthesis, nucleotide biosynthesis, and cofactor pools.
+ * Unknown compounds fall back to a `kegg_CXXXXX_c` convention.
+ *
+ * Reference: BiGG Models database (bigg.ucsd.edu)
  */
-export function mapGenesToReactions(annotations: GeneAnnotation[]): Reaction[] {
+const KEGG_TO_BIGG_METABOLITE: Record<string, string> = {
+  // ── Core carbon ──
+  C00022: "pyr_c",
+  C00024: "accoa_c",
+  C00036: "oaa_c",
+  C00026: "akg_c",
+  C00042: "succ_c",
+  C00122: "fum_c",
+  C00149: "mal__L_c",
+  C00033: "ac_c",
+  C00074: "pep_c",
+  C00158: "cit_c",
+  C00051: "icit_c",
+  C00091: "succoa_c",
+  C00010: "coa_c",
+  C00083: "malcoa_c",
+  C00668: "g6p_c",
+  C00085: "f6p_c",
+  C00354: "fdp_c",
+  C00118: "g3p_c",
+  C00111: "dhap_c",
+  C00236: "13dpg_c",
+  C00197: "3pg_c",
+  C00631: "2pg_c",
+  C00031: "glc__D_c",
+  C00084: "acald_c",
+  C00469: "etoh_c",
+  C00156: "for_c",
+  C00186: "lac__D_c",
+  C00041: "ala__L_c",
+  C00025: "glu__L_c",
+  C00064: "gln__L_c",
+  C00049: "asp__L_c",
+  C00037: "gly_c",
+  C00065: "ser__L_c",
+  C00183: "val__L_c",
+  C00123: "leu__L_c",
+  C00407: "ile__L_c",
+  C00079: "phe__L_c",
+  C00082: "tyr__L_c",
+  C00078: "trp__L_c",
+  C00134: "his__L_c",
+  C00047: "lys__L_c",
+  C00073: "met__L_c",
+  C00062: "arg__L_c",
+  C00148: "pro__L_c",
+  C00089: "thr__L_c",
+  C00152: "asn__L_c",
+  C00097: "cys__L_c",
+  // ── Cofactors / redox carriers ──
+  C00002: "atp_c",
+  C00008: "adp_c",
+  C00020: "amp_c",
+  C00003: "nad_c",
+  C00004: "nadh_c",
+  C00005: "nadph_c",
+  C00006: "nadp_c",
+  C00009: "pi_c",
+  C00001: "h2o_c",
+  C00011: "co2_c",
+  C00007: "o2_c",
+  C00288: "h_c",
+  C00014: "nh4_c",
+  C00016: "fad_c",
+  C00018: "pydx5p_c",
+  C00120: "btn_c",
+  // ── Pentose phosphate ──
+  C00199: "ru5p__D_c",
+  C00117: "r5p_c",
+  C00279: "e4p_c",
+  C00231: "s7p_c",
+  C05382: "xu5p__D_c",
+  // ── Mevalonate / terpenoid ──
+  C01144: "mev__R_c",
+  C00353: "frdp_c",
+  C00235: "dmpp_c",
+  C00129: "ipdp_c",
+  C00448: "grdp_c",
+  // ── Nucleotides ──
+  C00035: "gtp_c",
+  C00063: "ctp_c",
+  C00060: "utp_c",
+  C00044: "gtp_c",
+  C00054: "gdp_c",
+};
+
+/**
+ * Parse a KEGG reaction flat-file entry into the internal Reaction format.
+ *
+ * KEGG equations use KEGG compound IDs (e.g. C00022) and arrows:
+ *   <=> (reversible), => (forward), <= (backward)
+ *
+ * Metabolite IDs are mapped to BiGG-compatible names via KEGG_TO_BIGG_METABOLITE.
+ * Unknown compounds use a `kegg_CXXXXX_c` fallback.
+ *
+ * Reference: https://www.kegg.jp/kegg/rest/weblink.html
+ */
+function parseKEGGReaction(
+  keggEntry: { entry: string; name: string; definition: string; equation: string; enzymes: string },
+  gene: GeneAnnotation,
+): Reaction | null {
+  if (!keggEntry.equation) return null;
+
+  const eq = keggEntry.equation;
+
+  // Determine reversibility from arrow type
+  let reversible = true;
+  let arrow = "<=>";
+  if (eq.includes("<=>")) {
+    reversible = true;
+    arrow = "<=>";
+  } else if (eq.includes("=>")) {
+    reversible = false;
+    arrow = "=>";
+  } else if (eq.includes("<=")) {
+    reversible = false;
+    arrow = "<=";
+  }
+
+  const sides = eq.split(arrow);
+  if (sides.length !== 2) return null;
+
+  const stoichiometry: Record<string, number> = {};
+
+  /**
+   * Parse one side of a KEGG equation into { metaboliteId → coefficient }.
+   * Examples: "2 C00022", "C00001", "n C00002"
+   */
+  function parseSide(compounds: string, sign: number): void {
+    const parts = compounds.split("+").map((s) => s.trim()).filter(Boolean);
+    for (const part of parts) {
+      const match = part.match(/^(?:(\d+|n)\s+)?(C\d{5})$/);
+      if (!match) continue;
+      const coeffStr = match[1];
+      const keggId = match[2];
+      // "n" or missing coefficient → 1
+      const coeff = coeffStr && coeffStr !== "n" ? parseInt(coeffStr, 10) : 1;
+      const metId = KEGG_TO_BIGG_METABOLITE[keggId] ?? `kegg_${keggId.toLowerCase()}_c`;
+      stoichiometry[metId] = (stoichiometry[metId] ?? 0) + sign * coeff;
+    }
+  }
+
+  // Left side = reactants (consumed → negative)
+  parseSide(sides[0], -1);
+  // Right side = products (produced → positive)
+  parseSide(sides[1], +1);
+
+  if (Object.keys(stoichiometry).length === 0) return null;
+
+  const reactionId = keggEntry.entry || `KEGG_${gene.ecNumber?.replace(/\./g, "_") ?? "unknown"}`;
+
+  return {
+    id: reactionId,
+    name: keggEntry.name || keggEntry.definition || reactionId,
+    ecNumber: gene.ecNumber ?? "",
+    stoichiometry,
+    lb: reversible ? -1000 : arrow === "<=" ? -1000 : 0,
+    ub: reversible ? 1000 : arrow === "<=" ? 0 : 1000,
+    subsystem: "KEGG",
+    gpr: gene.geneId,
+  };
+}
+
+/**
+ * Map gene annotations to metabolic reactions.
+ *
+ * First attempts to match against the static EC_REACTION_MAP (~100 reactions).
+ * When an EC number is not found, falls back to the KEGG API to resolve the
+ * reaction equation and build an internal Reaction entry.
+ *
+ * @async because the KEGG fallback issues network requests.
+ */
+export async function mapGenesToReactions(annotations: GeneAnnotation[]): Promise<Reaction[]> {
   const reactions: Reaction[] = [];
   const seen = new Set<string>();
 
@@ -1247,22 +1425,42 @@ export function mapGenesToReactions(annotations: GeneAnnotation[]): Reaction[] {
     if (!gene.ecNumber) continue;
 
     const mappedReactions = EC_REACTION_MAP[gene.ecNumber];
-    if (!mappedReactions) continue;
 
-    for (const rxn of mappedReactions) {
-      if (seen.has(rxn.reactionId)) continue;
-      seen.add(rxn.reactionId);
+    if (mappedReactions) {
+      // Static map hit — use directly
+      for (const rxn of mappedReactions) {
+        if (seen.has(rxn.reactionId)) continue;
+        seen.add(rxn.reactionId);
 
-      reactions.push({
-        id: rxn.reactionId,
-        name: rxn.name,
-        ecNumber: gene.ecNumber,
-        stoichiometry: rxn.stoichiometry,
-        lb: rxn.lb,
-        ub: rxn.ub,
-        subsystem: rxn.subsystem,
-        gpr: gene.geneId,
-      });
+        reactions.push({
+          id: rxn.reactionId,
+          name: rxn.name,
+          ecNumber: gene.ecNumber,
+          stoichiometry: rxn.stoichiometry,
+          lb: rxn.lb,
+          ub: rxn.ub,
+          subsystem: rxn.subsystem,
+          gpr: gene.geneId,
+        });
+      }
+    } else {
+      // KEGG API fallback for unknown EC numbers
+      try {
+        const res = await fetch(`/api/kegg?reaction=${encodeURIComponent(gene.ecNumber)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.data && data.data.length > 0) {
+            const keggEntry = data.data[0];
+            const reaction = parseKEGGReaction(keggEntry, gene);
+            if (reaction && !seen.has(reaction.id)) {
+              seen.add(reaction.id);
+              reactions.push(reaction);
+            }
+          }
+        }
+      } catch {
+        // Network failure — silently skip (will show as gap in model)
+      }
     }
   }
 
@@ -1575,9 +1773,9 @@ function generateExchangeReactions(): Reaction[] {
 /**
  * Reconstruct a genome-scale model from gene annotations.
  */
-export function reconstructGEM(annotations: GeneAnnotation[]): GEMReconstruction {
-  // Step 1: Map genes to reactions
-  const geneReactions = mapGenesToReactions(annotations);
+export async function reconstructGEM(annotations: GeneAnnotation[]): Promise<GEMReconstruction> {
+  // Step 1: Map genes to reactions (async — may query KEGG API for unknown EC numbers)
+  const geneReactions = await mapGenesToReactions(annotations);
 
   // Step 2: Add exchange reactions
   const exchangeReactions = generateExchangeReactions();

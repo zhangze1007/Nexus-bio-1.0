@@ -63,7 +63,7 @@ export function GEMReconstructionPanel() {
     setError(null);
     try {
       const { automateGEM } = await import("../../../modules/gem-automation");
-      const res = automateGEM({ annotations: DEFAULT_ANNOTATIONS, organism, gapFill, includeBiomass });
+      const res = await automateGEM({ annotations: DEFAULT_ANNOTATIONS, organism, gapFill, includeBiomass });
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "GEM reconstruction failed");

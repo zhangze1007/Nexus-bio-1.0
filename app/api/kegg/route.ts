@@ -71,17 +71,58 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ compound: pathway, pathways }, { headers: corsHeaders(req) });
     }
 
-    // Mode 3: Get reaction details
+    // Mode 3: Get reaction details (accepts R##### or EC number)
     if (reaction) {
-      if (!/^R\d{5}$/.test(reaction)) {
-        return NextResponse.json({ error: 'Invalid KEGG reaction ID (expected R#####)' }, { status: 400, headers: corsHeaders(req) });
+      let reactionId = reaction;
+
+      // If it's an EC number (e.g. "2.7.1.1"), resolve to a KEGG reaction ID first
+      if (/^\d+\.\d+\.\d+\.\d+(-)?$/.test(reaction)) {
+        const linkRes = await fetch(`${KEGG_BASE}/link/reaction/ec:${reaction}`);
+        if (!linkRes.ok) {
+          return NextResponse.json({ error: 'KEGG EC→reaction link failed', status: linkRes.status }, { status: 502, headers: corsHeaders(req) });
+        }
+        const linkText = await linkRes.text();
+        const ids = linkText
+          .trim()
+          .split('\n')
+          .filter(Boolean)
+          .map(line => {
+            const parts = line.split('\t');
+            return parts[1]?.replace('rn:', '') ?? '';
+          })
+          .filter(id => /^R\d{5}$/.test(id));
+        if (ids.length === 0) {
+          return NextResponse.json({ ec: reaction, data: [] }, { headers: corsHeaders(req) });
+        }
+        reactionId = ids[0];
+      } else if (!/^R\d{5}$/.test(reaction)) {
+        return NextResponse.json({ error: 'Invalid KEGG reaction ID (expected R##### or EC number)' }, { status: 400, headers: corsHeaders(req) });
       }
-      const res = await fetch(`${KEGG_BASE}/get/${reaction}`);
+
+      const res = await fetch(`${KEGG_BASE}/get/${reactionId}`);
       if (!res.ok) {
         return NextResponse.json({ error: 'KEGG reaction fetch failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
       }
       const text = await res.text();
-      return NextResponse.json({ reaction, data: text }, { headers: corsHeaders(req) });
+
+      // Parse the KEGG flat-file into structured fields
+      const getField = (field: string): string => {
+        const regex = new RegExp(`^${field}\\s+(.+)$`, 'm');
+        const match = text.match(regex);
+        return match ? match[1].trim() : '';
+      };
+
+      const entry = getField('ENTRY').split(/\s+/)[0] ?? '';
+      const name = getField('NAME');
+      const definition = getField('DEFINITION');
+      const equation = getField('EQUATION');
+      const enzymes = getField('ENZYME');
+
+      return NextResponse.json({
+        reaction: reactionId,
+        ec: reaction !== reactionId ? reaction : undefined,
+        data: [{ entry, name, definition, equation, enzymes }],
+      }, { headers: corsHeaders(req) });
     }
 
     return NextResponse.json(

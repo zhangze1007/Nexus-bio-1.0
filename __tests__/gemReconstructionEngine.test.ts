@@ -2,19 +2,21 @@ import { reconstructGEM, mapGenesToReactions, generateBiomassReaction, parseGPR,
 
 describe('gemReconstructionEngine', () => {
   describe('mapGenesToReactions', () => {
-    it('maps EC 2.7.1.1 to hexokinase reaction', () => {
-      const reactions = mapGenesToReactions([{ geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' }]);
+    it('maps EC 2.7.1.1 to hexokinase reaction', async () => {
+      const reactions = await mapGenesToReactions([{ geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' }]);
       expect(reactions.length).toBeGreaterThan(0);
       expect(reactions[0].id).toBe('HEX1');
     });
 
-    it('returns empty array for unknown EC number', () => {
-      const reactions = mapGenesToReactions([{ geneId: 'b9999', geneName: 'unknown', organism: 'ecoli', ecNumber: '99.99.99.99' }]);
+    it('returns empty array for unknown EC number (KEGG fallback fails in test)', async () => {
+      // In test environment the KEGG proxy is not available, so unknown EC
+      // numbers return empty (network error is swallowed).
+      const reactions = await mapGenesToReactions([{ geneId: 'b9999', geneName: 'unknown', organism: 'ecoli', ecNumber: '99.99.99.99' }]);
       expect(reactions).toEqual([]);
     });
 
-    it('maps multiple genes to multiple reactions', () => {
-      const reactions = mapGenesToReactions([
+    it('maps multiple genes to multiple reactions', async () => {
+      const reactions = await mapGenesToReactions([
         { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
         { geneId: 'b0002', geneName: 'pgi', organism: 'ecoli', ecNumber: '5.3.1.9' },
       ]);
@@ -40,12 +42,12 @@ describe('gemReconstructionEngine', () => {
   });
 
   describe('reconstructGEM', () => {
-    it('builds a complete model from E. coli annotations', () => {
+    it('builds a complete model from E. coli annotations', async () => {
       const annotations = [
         { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
         { geneId: 'b0002', geneName: 'pgi', organism: 'ecoli', ecNumber: '5.3.1.9' },
       ];
-      const gem = reconstructGEM(annotations);
+      const gem = await reconstructGEM(annotations);
       expect(gem.reactions.length).toBeGreaterThan(0);
       expect(gem.metabolites.length).toBeGreaterThan(0);
       expect(gem.genes.length).toBe(2);
@@ -53,8 +55,8 @@ describe('gemReconstructionEngine', () => {
       expect(gem.stats.nReactions).toBe(gem.reactions.length);
     });
 
-    it('handles empty annotations gracefully', () => {
-      const gem = reconstructGEM([]);
+    it('handles empty annotations gracefully', async () => {
+      const gem = await reconstructGEM([]);
       // Empty annotations still produce exchange + biomass reactions
       expect(gem.genes.length).toBe(0);
       expect(gem.reactions.length).toBeGreaterThan(0); // exchange + biomass
@@ -123,16 +125,16 @@ describe('gemReconstructionEngine', () => {
   });
 
   describe('gap detection', () => {
-    it('detects orphan metabolites in incomplete model', () => {
+    it('detects orphan metabolites in incomplete model', async () => {
       const annotations = [
         { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
       ];
-      const gem = reconstructGEM(annotations);
+      const gem = await reconstructGEM(annotations);
       const gaps = detectGaps(gem);
       expect(gaps.orphanProducers.length).toBeGreaterThan(0);
     });
 
-    it('returns empty gaps for complete model', () => {
+    it('returns empty gaps for complete model', async () => {
       // A model with many reactions should have fewer gaps
       const annotations = [
         { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
@@ -140,7 +142,7 @@ describe('gemReconstructionEngine', () => {
         { geneId: 'b0003', geneName: 'pfk', organism: 'ecoli', ecNumber: '2.7.1.11' },
         { geneId: 'b0004', geneName: 'fba', organism: 'ecoli', ecNumber: '4.1.2.13' },
       ];
-      const gem = reconstructGEM(annotations);
+      const gem = await reconstructGEM(annotations);
       const gaps = detectGaps(gem);
       // With more reactions, fewer orphans
       expect(gaps.orphanProducers.length).toBeLessThan(5);
@@ -148,12 +150,12 @@ describe('gemReconstructionEngine', () => {
   });
 
   describe('essential gene analysis', () => {
-    it('identifies essential genes', () => {
+    it('identifies essential genes', async () => {
       const annotations = [
         { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
         { geneId: 'b0002', geneName: 'pgi', organism: 'ecoli', ecNumber: '5.3.1.9' },
       ];
-      const gem = reconstructGEM(annotations);
+      const gem = await reconstructGEM(annotations);
       const essential = findEssentialGenes(gem);
       expect(essential.length).toBe(2);
       expect(essential[0]).toHaveProperty('geneId');
@@ -162,12 +164,12 @@ describe('gemReconstructionEngine', () => {
       expect(essential[0]).toHaveProperty('affectedReactions');
     });
 
-    it('computes epistasis for gene pairs', () => {
+    it('computes epistasis for gene pairs', async () => {
       const annotations = [
         { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
         { geneId: 'b0002', geneName: 'pgi', organism: 'ecoli', ecNumber: '5.3.1.9' },
       ];
-      const gem = reconstructGEM(annotations);
+      const gem = await reconstructGEM(annotations);
       const epistasis = computeEpistasis(gem, [['b0001', 'b0002']]);
       expect(epistasis.length).toBe(1);
       expect(epistasis[0]).toHaveProperty('epistasis');

@@ -12,8 +12,8 @@ describe('gemAutomation', () => {
   ];
 
   describe('automateGEM', () => {
-    it('reconstructs a model from annotations', () => {
-      const result = automateGEM({
+    it('reconstructs a model from annotations', async () => {
+      const result = await automateGEM({
         annotations: sampleAnnotations,
         organism: 'ecoli',
       });
@@ -22,8 +22,8 @@ describe('gemAutomation', () => {
       expect(result.model.biomassReaction).toBe('BIOMASS');
     });
 
-    it('performs gap-filling', () => {
-      const result = automateGEM({
+    it('performs gap-filling', async () => {
+      const result = await automateGEM({
         annotations: sampleAnnotations,
         organism: 'ecoli',
         gapFill: true,
@@ -32,16 +32,16 @@ describe('gemAutomation', () => {
       expect(Array.isArray(result.gapFilling.addedReactions)).toBe(true);
     });
 
-    it('identifies essential genes', () => {
-      const result = automateGEM({
+    it('identifies essential genes', async () => {
+      const result = await automateGEM({
         annotations: sampleAnnotations,
         organism: 'ecoli',
       });
       expect(Array.isArray(result.essentialGenes)).toBe(true);
     });
 
-    it('computes statistics', () => {
-      const result = automateGEM({
+    it('computes statistics', async () => {
+      const result = await automateGEM({
         annotations: sampleAnnotations,
         organism: 'ecoli',
       });
@@ -50,8 +50,8 @@ describe('gemAutomation', () => {
       expect(result.stats.nGenes).toBe(3);
     });
 
-    it('generates design notes', () => {
-      const result = automateGEM({
+    it('generates design notes', async () => {
+      const result = await automateGEM({
         annotations: sampleAnnotations,
         organism: 'ecoli',
       });
@@ -59,8 +59,8 @@ describe('gemAutomation', () => {
       expect(result.designNotes[0]).toContain('Reconstructed');
     });
 
-    it('handles empty annotations', () => {
-      const result = automateGEM({
+    it('handles empty annotations', async () => {
+      const result = await automateGEM({
         annotations: [],
         organism: 'ecoli',
       });
