@@ -21,6 +21,11 @@ VFDB_URLS = [
     "https://ccb-microbe.cs.uni-saarland.de/vfdb/VFDB_setA_nt.fasta.gz",
 ]
 
+# CARD download URLs
+CARD_URLS = [
+    "https://card.mcmaster.ca/latest/data",
+]
+
 
 def ensure_vfdb_database() -> bool:
     """Download and format VFDB database if not already present."""
@@ -73,6 +78,106 @@ def ensure_vfdb_database() -> bool:
         logger.error(f"Failed to format VFDB: {e}")
         return False
 
+
+def ensure_card_database() -> bool:
+    """Download and format CARD (Comprehensive Antibiotic Resistance Database) if not already present.
+
+    The CARD download is a tar.gz archive containing multiple files. We look for
+    the nucleotide FASTA file (``nucleotide_fasta_protein_homolog_model.fasta``
+    or similar) and format it with ``makeblastdb``.
+
+    If the download fails (e.g. due to authentication requirements or URL changes),
+    a warning is logged and the function returns False without blocking the service.
+    """
+    db_path = os.path.join(BLAST_DB_DIR, "CARD")
+    if os.path.exists(f"{db_path}.nin") or os.path.exists(f"{db_path}.nsq"):
+        return True
+
+    os.makedirs(BLAST_DB_DIR, exist_ok=True)
+
+    # Download the CARD data archive
+    import tarfile
+
+    archive_path = os.path.join(BLAST_DB_DIR, "CARD_data.tar.gz")
+    downloaded = False
+
+    for url in CARD_URLS:
+        try:
+            logger.info(f"Downloading CARD from {url}")
+            urllib.request.urlretrieve(url, archive_path)
+            downloaded = True
+            break
+        except Exception as e:
+            logger.warning(f"Failed to download CARD from {url}: {e}")
+            continue
+
+    if not downloaded:
+        logger.warning(
+            "Could not download CARD database. "
+            "CARD may require authentication or the URL may have changed. "
+            "Continuing without CARD — BioSafety screening will use VFDB only."
+        )
+        return False
+
+    # Extract the nucleotide FASTA file from the archive
+    fasta_path = None
+    target_names = {
+        "nucleotide_fasta_protein_homolog_model.fasta",
+        "nucleotide_fasta_protein_overexpression_model.fasta",
+        "nucleotide_fasta_protein_variant_model.fasta",
+    }
+
+    try:
+        with tarfile.open(archive_path, "r:gz") as tar:
+            # Look for any of the known nucleotide FASTA files
+            for member in tar.getmembers():
+                basename = os.path.basename(member.name)
+                if basename in target_names:
+                    # Use the first match (homolog model preferred)
+                    if fasta_path is None or "homolog" in basename:
+                        tar.extract(member, BLAST_DB_DIR)
+                        fasta_path = os.path.join(BLAST_DB_DIR, member.name)
+                        if "homolog" in basename:
+                            break  # Prefer homolog model
+
+            # If none of the specific names matched, search more broadly
+            if fasta_path is None:
+                for member in tar.getmembers():
+                    basename = os.path.basename(member.name)
+                    if basename.endswith(".fasta") and "nucleotide" in basename:
+                        tar.extract(member, BLAST_DB_DIR)
+                        fasta_path = os.path.join(BLAST_DB_DIR, member.name)
+                        break
+
+        os.unlink(archive_path)
+    except Exception as e:
+        logger.error(f"Failed to extract CARD archive: {e}")
+        if os.path.exists(archive_path):
+            os.unlink(archive_path)
+        return False
+
+    if fasta_path is None or not os.path.exists(fasta_path):
+        logger.error(
+            "CARD archive did not contain a nucleotide FASTA file. "
+            "The archive format may have changed."
+        )
+        return False
+
+    # Format for BLAST
+    try:
+        subprocess.run(
+            ["makeblastdb", "-in", fasta_path, "-dbtype", "nucl",
+             "-out", db_path, "-title", "CARD Antibiotic Resistance"],
+            capture_output=True, text=True, timeout=300,
+        )
+        os.unlink(fasta_path)
+        logger.info("CARD database formatted successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to format CARD database: {e}")
+        return False
+
+
 def blast_screen_sequence(
     sequence: str,
     databases: Optional[List[str]] = None,
@@ -90,8 +195,9 @@ def blast_screen_sequence(
     Returns:
         Dict with query_length, total_hits, hits list, databases_searched
     """
-    # Auto-download VFDB if not present
+    # Auto-download biosafety databases if not present
     ensure_vfdb_database()
+    ensure_card_database()
 
     if databases is None:
         databases = _discover_databases()
