@@ -224,6 +224,14 @@ export function useFBASimState(): FBASimState {
     };
   }, []);
 
+  // Auto-load default BiGG model on mount instead of falling back to toy network
+  useEffect(() => {
+    if (selectedModel && !loadedReactions && !modelLoading && biggModels.length > 0) {
+      handleLoadModel();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedModel, biggModels.length]);
+
   useEffect(() => {
     if (lastAppliedSeedRef.current === seedSignature) return;
 
