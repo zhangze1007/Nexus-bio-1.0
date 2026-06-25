@@ -28,10 +28,10 @@ export interface ToolValidity {
 
 export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // Stage 1 — design
-  pathd: { level: "partial", caption: "Pathway graph + Δ G° lookup are real; route synthesis is template-based." },
+  pathd: { level: "partial", caption: "A* search with thermodynamic ΔG scoring over a curated 500+ reaction database (real EC numbers, eQuilibrator ΔG° values). Heuristic supports SMILES-derived functional group Jaccard similarity but degenerates to constant in practice (intermediate metabolites lack SMILES), making search ΔG-greedy. Reaction database is curated subset, not live KEGG/Rhea." },
   "metabolic-eng": {
     level: "partial",
-    caption: "Same engine as PathD with live FBA hooks; force layout is heuristic.",
+    caption: "Same A* + ΔG engine as PathD with real two-phase simplex LP FBA (iJO1366 stoichiometric constraints, HiGHS solver). FBA modules: FVA, FSEOF, MOMA, OptKnock, pFBA. XState FSM with Michaelis-Menten kinetics (BRENDA-sourced Km/kcat). Force layout is heuristic.",
   },
 
   // Stage 2 — simulation
@@ -53,14 +53,14 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   proevol: {
     level: "partial",
     caption:
-      "Campaign scoring, survivor selection, lineage tracking, and next-round recommendations are deterministic modeled heuristics; outputs are simulated/inferred decision support, not wet-lab measurements.",
+      "Deterministic fitness scoring: BLOSUM62 evolutionary plausibility (0.4) + ΔΔG stability exp(-|ddG|/2) (0.3) + burial/SASA + SS propensity (0.3). ESM-2 embeddings available as toggle for sequence design weight adjustment (default OFF). Campaign simulation uses seeded RNG with Gaussian noise (stddev ~3, reproducible per campaign). GP interpolation via Cholesky-based RBF kernel (deterministic). Analysis layer is purely deterministic.",
   },
 
   // Stage 3 — chassis & control
   genmim: {
     level: "partial",
     caption:
-      "Greedy CRISPRi ranker is real (score = KD_eff + (1+GI)×0.3); viability uses additive growth-impact (no epistatic/Wagner network interactions).",
+      "CRISPRi ranker is real: greedy sort by KD_eff + (1+GI)×0.3 with FBA flux-boost (+0.08 proportional to flux fraction). sgRNA design uses full Doench 2016 Rule Set 2 (31-feature logistic regression, published weights). Limitations: 20-gene static target table (E. coli K-12, Rousset et al. 2018); growth impact pre-assigned, not computed from live FBA; off-target scoring is GC+homopolymer proxy (no genome-wide alignment).",
   },
   gecair: {
     level: "real",
@@ -87,7 +87,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   multio: {
     level: "partial",
     caption:
-      "MOFA+ factor analysis via Python backend (variational Bayes, real MOFA+). Deterministic linear embedding with KL penalty for client-side visualization. Limitations: client-side embedding is not a production VAE (no autograd); no scVI integration; demo uses synthetic data when no CSV uploaded.",
+      "Real MOFA+ variational Bayes engine (local TS: coordinate-ascent with Cholesky ridge solve, ARD priors, ELBO convergence; Python backend: mofapy2 when configured). Real UMAP engine (k-NN via KD-tree, fuzzy simplicial sets, SGD with cross-entropy loss) available via visible toggle (default: local PCA). Limitations: MOFA+ toggle exists in state but not surfaced in UI; default views use local PCA/linear embedding; demo uses synthetic data when no CSV uploaded.",
   },
   scspatial: {
     level: "real",
@@ -106,17 +106,17 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   inversefolding: {
     level: "partial",
     caption:
-      "k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 protein language model accessible via toggle (embeddings from ESM Atlas API, with Atchley-factor local fallback). When enabled, ESM-2 confidence weights adjust plausibility scoring per position. Limitations: BLOSUM62 declared but unused (uniform prior); all weights hand-tuned, not learned; ESM-2 embedding fetch adds 5-10 s latency.",
+      "k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 toggle exists in ProEvol sequence design (default OFF) but engine ESM-2 path is broken: sends all-alanine placeholder sequence, /api/esm2 returns PDB structure not embeddings, fallback uses Atchley factors (5-dim physicochemical, not 1280-dim ESM-2). Python ESM-2 service exists but not wired to frontend. All weights hand-tuned, not learned.",
   },
   multiplexcrispr: {
     level: "partial",
     caption:
-      "Rule Set 2 on-target scoring (Doench 2016 weights) and recursive combinatorial enumeration are real. CFD off-target matrix is uniform placeholder (all 0.893). Fitness is a proxy model, not FBA.",
+      "Rule Set 2 on-target scoring (Doench 2016, 31-feature logistic regression with published weights) is real. CFD off-target matrix contains real differentiated Doench 2016 values (12 mismatch types x 20 positions, seed-region decay). Recursive combinatorial enumeration is real. Fitness is a proxy model, not FBA. Limitation: off-target search not performed (requires Cas-OFFinder + genome FASTA).",
   },
   pathwaydiscovery: {
     level: "partial",
     caption:
-      "A* graph search structure and thermodynamic ΔG cascade summation are real. Heuristic uses SMILES-derived functional groups (Jaccard similarity) when available; atom economy is a fixed lookup; no mass conservation; common-metabolites shortcut bypasses search.",
+      "A* graph search structure and thermodynamic ΔG cascade summation are real (500+ curated reactions, eQuilibrator ΔG° values, real EC numbers). Heuristic supports SMILES-derived functional group Jaccard similarity but degenerates to constant (~2.5) in practice (intermediate metabolites lack SMILES), making search effectively ΔG-greedy. Limitations: no atom mapping; no mass conservation; common-metabolites shortcut bypasses search; reaction database is curated subset.",
   },
   digitaltwin: {
     level: "real",
