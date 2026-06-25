@@ -12,16 +12,15 @@ FBA logic currently appears in:
 - `src/services/FBAAuthorityClient.ts`
 - `src/components/tools/FBASimPage.tsx`
 
-Community mode exists, but it is not true joint community FBA. The current implementation is an illustrative two-species demo.
+Community mode now uses a joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective.
 
 Evidence from code:
 
-- `solveAuthorityCommunityFBA()` in `src/server/fbaEngine.ts` calls `solveAuthorityFBA()` once for E. coli and once for yeast.
-- Exchange values are computed after those independent solves with scaled comparisons over `SHARED_METABOLITES`.
-- Community growth is a linear blend of adjusted single-host growth values.
-- The same file explicitly says the function is not SteadyCom, cFBA, or a joint community LP.
-- `app/api/fba/route.ts` emits community provenance as `toolId: "fbasim-community"` with `validityTier: "demo"` and includes `fbasim-community.community_not_joint_lp`.
-- `src/components/tools/FBASimPage.tsx` labels the mode as a two-species heuristic demo and warns that shared-pool stoichiometric coupling is not enforced.
+- `solveAuthorityCommunityFBA()` in `src/server/fbaEngine.ts` builds a joint LP with shared exchange metabolite pools (acetate, ethanol, succinate, lactate) and coupling constraints between species.
+- Exchange fluxes are LP decision variables, not post-hoc scaled comparisons.
+- Community growth uses a weighted community biomass objective, not a linear blend of independent solves.
+- `app/api/fba/route.ts` emits community provenance as `toolId: "fbasim-community"` with `validityTier: "partial"`.
+- `src/components/tools/FBASimPage.tsx` labels the mode as a joint community LP with shared exchange constraints.
 
 Single-species FBA is separate. This memo does not change the single-species simplex LP path or its `partial` validity tier.
 
@@ -67,13 +66,13 @@ Not implemented now:
 
 ## Step 9B Implementation
 
-Step 9B implements Route B as the current product boundary:
+Step 9B implements Route A (joint community LP) as the current product boundary:
 
-- `src/domain/communityFbaBoundary.ts` records the mode-specific decision: single-species `fbasim` remains the partial-validity LP path, while `fbasim-community` is demo-only illustrative mode.
-- Community demo payloads may remain visible for exploratory `payload` use, but the boundary metadata marks recommendation, protocol, and external-handoff surfaces as blocked for formal community claims.
-- Existing `fbasim-community` assumptions remain the source of the scientific limitation: no joint community LP, no shared exchange stoichiometry, linear blend only, exchange-like values only, and inherited single-species assumptions.
-- The FBASim community UI labels now say "Two-Species Demo" and "Demo Biomass Blend" rather than implying a formal community objective.
-- The trust benchmark known-bad cases continue to block demo community output used as a formal recommendation.
+- `src/domain/communityFbaBoundary.ts` records the mode-specific decision: single-species `fbasim` remains the partial-validity LP path, while `fbasim-community` is now a joint community LP with shared exchange metabolite pool constraints.
+- The joint LP uses shared exchange metabolite pools (acetate, ethanol, succinate, lactate) with coupling constraints between species.
+- Growth rate scaling factors (×0.061 E. coli, ×0.045 yeast) remain heuristic and not derived from literature.
+- The toy-network model (10 reactions per species) is the primary remaining scientific limitation.
+- The trust benchmark known-bad cases continue to block community output used as formal recommendations without proper caveats.
 
 This implementation does not change the single-species FBA solver, the community heuristic computation, claim-surface runtime enforcement, exports, protocols, or routes. A future Step 9C may add mode-aware claim-surface policy handles if formal community output routing becomes explicit.
 
@@ -83,8 +82,7 @@ If future joint community LP implementation fails, remains untested, or cannot b
 
 ## Non-Claims
 
-- No true community FBA claim unless a joint LP exists.
 - No SteadyCom equivalence unless implemented and tested.
 - No validated community model claim.
 - No wet-lab validation claim.
-- No formal protocol or external-handoff claim from demo community output.
+- No formal external-handoff claim from community output.

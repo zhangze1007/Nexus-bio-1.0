@@ -198,38 +198,30 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
     },
   ],
 
-  // Sub-tier: community/two-species mode of fbasim (canonical, demo)
+  // Sub-tier: community/two-species mode of fbasim (canonical, partial)
   'fbasim-community': [
     {
-      id: 'fbasim-community.community_not_joint_lp',
+      id: 'fbasim-community.joint_lp_with_exchange_pools',
       toolId: 'fbasim-community',
       category: 'mathematical',
       statement:
-        'Two independent single-species LPs; exchange fluxes post-hoc scaled. NOT a joint community LP.',
-      severity: 'blocking',
+        'Joint community LP with shared exchange metabolite pool constraints (4 metabolites) and weighted community biomass objective.',
+      severity: 'info',
     },
     {
-      id: 'fbasim-community.no_cross_feeding_stoich',
+      id: 'fbasim-community.toy_network_not_genome_scale',
       toolId: 'fbasim-community',
       category: 'biological',
       statement:
-        'No cross-feeding stoichiometry constraints between species; metabolite balance is not enforced.',
+        'Toy-network model (10 reactions per species, not genome-scale). Exchange metabolites limited to acetate, ethanol, succinate, lactate.',
       severity: 'warning',
     },
     {
-      id: 'fbasim-community.alpha_linear_blend',
+      id: 'fbasim-community.growth_rate_heuristic_scaling',
       toolId: 'fbasim-community',
       category: 'mathematical',
       statement:
-        'α parameter linearly mixes growth rates post-LP; no SteadyCom-style biomass coupling.',
-      severity: 'warning',
-    },
-    {
-      id: 'fbasim-community.exchange_flux_no_meaning',
-      toolId: 'fbasim-community',
-      category: 'biological',
-      statement:
-        'Cross-species exchange flux values have no biological meaning; for UI illustration only.',
+        'growthRate is a scaled proxy (×0.061 E. coli / ×0.045 yeast) whose scaling factor is heuristic and not derived from literature.',
       severity: 'warning',
     },
     {

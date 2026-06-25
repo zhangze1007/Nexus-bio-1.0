@@ -43,11 +43,11 @@ export default React.memo(function FBASimPage() {
       formula={s.simMode === 'single' ? 'max cᵀv s.t. Sv=0, lb≤v≤ub' : 'μ_demo = (1-α)μ₁ + αμ₂'}
       hero={
         <ScientificHero
-            eyebrow={`Stage 2 · ${s.simMode === 'single' ? 'Host Flux Solve' : 'Two-Species Heuristic Demo'}`}
-            title={s.simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Side-by-side host flux comparison'}
+            eyebrow={`Stage 2 · ${s.simMode === 'single' ? 'Host Flux Solve' : 'Joint Community LP'}`}
+            title={s.simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Joint Community LP with Shared Exchange Pools'}
             summary={s.simMode === 'single'
               ? 'FBASim is the first point where the pathway object becomes a constrained production model. The key question is no longer "can the route exist," but "what does it cost the host and which uptake constraints dominate the present solution."'
-              : 'Community mode remains a two-species heuristic demo. It compares independent host solves and post-hoc exchange values; it does not create a shared stoichiometric pool or a real ecological operating state.'}
+              : 'Community mode uses a joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective.'}
             aside={
               <>
                 <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(205,214,236,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -90,19 +90,19 @@ export default React.memo(function FBASimPage() {
                 ]
               : [
                   {
-                    label: 'Demo Blended Growth',
+                    label: 'Community Growth Rate',
                     value: `${s.communityResult.communityGrowthRate.toFixed(4)} h⁻¹`,
-                    detail: s.communityLoading ? 'Recomputing two independent host solves for the heuristic comparison.' : s.communityResult.feasible ? 'Both independent host solves are feasible before post-hoc exchange scaling.' : 'At least one independent host solve is infeasible.',
+                    detail: s.communityLoading ? 'Solving joint community LP...' : s.communityResult.feasible ? 'Joint community LP is feasible with shared exchange constraints.' : 'Joint community LP is infeasible; falling back to heuristic.',
                     tone: s.communityResult.feasible ? 'cool' : 'alert',
                   },
                   {
-                    label: 'Demo Biomass Blend',
+                    label: 'Community Biomass',
                     value: `${s.communityResult.communityBiomassObjective.toFixed(3)}`,
                     detail: `E. coli ${s.communityResult.ecoli.growthRate.toFixed(3)} · Yeast ${s.communityResult.yeast.growthRate.toFixed(3)}`,
                     tone: 'neutral',
                   },
                   {
-                    label: 'Illustrative Exchange',
+                    label: 'Exchange Fluxes',
                     value: `${s.communityResult.exchangeFluxes.filter((entry) => Math.abs(entry.flux) > 0.01).length} active links`,
                     detail: s.communityResult.exchangeFluxes[0] ? `${s.communityResult.exchangeFluxes[0].metabolite} ${s.communityResult.exchangeFluxes[0].flux.toFixed(2)} mmol/h` : 'No exchange fluxes detected yet.',
                     tone: 'warm',
