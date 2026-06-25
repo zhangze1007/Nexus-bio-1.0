@@ -38,8 +38,10 @@ def run_mofa_analysis(
     # Set data matrices for each view
     for view_name, data_matrix in views.items():
         ent.set_data_matrix(
-            view_name=view_name,
             data=[data_matrix.tolist()],
+            views_names=[view_name],
+            samples_names=[sample_names],
+            features_names=[feature_names.get(view_name, [])],
             likelihoods=["gaussian"],
         )
 
