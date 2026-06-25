@@ -103,7 +103,7 @@ The search bar on the homepage recognizes molecules, strains, DOIs, and producti
 
 #### 2. FBASim — Flux Balance Analysis
 **Route:** `/tools/fbasim`
-**What it does:** single-species simplex LP plus illustrative two-species demo mode. single-species FBA plus demo-only two-species comparison. Knockout, overexpression, and shadow price analysis. Community FBA mode — illustrative two-species demo, NOT a joint community LP.
+**What it does:** single-species simplex LP plus joint community LP with shared exchange metabolite pools. Knockout, overexpression, and shadow price analysis. Community FBA mode — joint two-species LP with exchange pool constraints and weighted biomass objective.
 
 **Engines:** `fbaEngine` (simplex LP), `fbaFVA` (flux variability), `fbaPFBA` (parsimonious FBA), `fbaGPR` (gene-protein-reaction rules), `fbaOptKnock` (bilevel knockout), `fbaFSEOF` (flux scanning), `consortiumDesignEngine` (SteadyCom + quorum sensing)
 
