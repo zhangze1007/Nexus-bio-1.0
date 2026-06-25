@@ -5,7 +5,6 @@
  * FluxCostView, BalancerView, ParetoView, MutagenesisView.
  */
 import React from 'react';
-import { motion } from 'framer-motion';
 import { THEME } from '../../../theme';
 import { getToolValidity } from '../../../config/toolValidity';
 import {
@@ -26,11 +25,9 @@ export function MiniBar({ value, color, max = 1 }: { value: number; color: strin
         flex: 1, height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)',
         overflow: 'hidden',
       }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          style={{ height: '100%', borderRadius: 2, background: color, opacity: 0.8 }}
+        <div
+          className="nb-width-fill"
+          style={{ '--nb-w': `${pct}%`, height: '100%', borderRadius: 2, background: color, opacity: 0.8 } as React.CSSProperties}
         />
       </div>
       <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, minWidth: 28, textAlign: 'right', ...tn }}>

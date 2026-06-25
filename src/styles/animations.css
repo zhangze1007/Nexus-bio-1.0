@@ -1,0 +1,78 @@
+/* ─── Nexus-Bio CSS Animation Classes ────────────────────────────────
+   Replaces trivial framer-motion usage (opacity / transform) to reduce
+   client bundle size.  Complex animations (AnimatePresence, layoutId,
+   drag, spring physics) still use framer-motion. ──────────────────── */
+
+/* Fade in from transparent */
+.nb-fade-in {
+  animation: nb-fade-in-kf 0.3s ease-out both;
+}
+@keyframes nb-fade-in-kf {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Slide up with fade (header entrance) */
+.nb-slide-up {
+  animation: nb-slide-up-kf 0.3s ease-out both;
+}
+@keyframes nb-slide-up-kf {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade + scale (metric overlays, value badges) */
+.nb-fade-scale-in {
+  animation: nb-fade-scale-in-kf 0.2s ease-out both;
+}
+@keyframes nb-fade-scale-in-kf {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Fade + scale (larger scale for value re-animation) */
+.nb-fade-scale-in-lg {
+  animation: nb-fade-scale-in-lg-kf 0.25s ease-out both;
+}
+@keyframes nb-fade-scale-in-lg-kf {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Slide in from left with fade (table row stagger) */
+.nb-slide-in-left {
+  animation: nb-slide-in-left-kf 0.2s ease-out both;
+}
+@keyframes nb-slide-in-left-kf {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Pulsing opacity (loading dots, running indicators) */
+.nb-pulse {
+  animation: nb-pulse-kf 1.2s ease-in-out infinite;
+}
+@keyframes nb-pulse-kf {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 1; }
+}
+
+/* Pulsing opacity — slower variant (running task cards) */
+.nb-pulse-slow {
+  animation: nb-pulse-slow-kf 1.6s ease-in-out infinite;
+}
+@keyframes nb-pulse-slow-kf {
+  0%, 100% { opacity: 0.72; }
+  50%      { opacity: 1; }
+}
+
+/* Width fill from 0 to --nb-w (progress bars).
+   Set --nb-w via inline style: style={{ '--nb-w': '72%' }} */
+.nb-width-fill {
+  width: var(--nb-w, 0%);
+  animation: nb-width-fill-kf 0.6s ease-out both;
+}
+@keyframes nb-width-fill-kf {
+  from { width: 0%; }
+  to   { width: var(--nb-w, 0%); }
+}

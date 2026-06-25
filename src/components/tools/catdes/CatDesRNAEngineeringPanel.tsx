@@ -5,7 +5,6 @@
  * design notes, and evidence.
  */
 import React from 'react';
-import { motion } from 'framer-motion';
 import { THEME } from '../../../theme';
 import type { RNADesignResult } from '../../../modules/rna-engine';
 import MetricCard from '../../ide/shared/MetricCard';
@@ -70,11 +69,9 @@ export default function CatDesRNAEngineeringPanel({ result }: { result: RNADesig
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Risk Level</span>
             <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${result.offTargetScore * 100}%` }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-                style={{ height: '100%', borderRadius: 3, background: offTargetColor }}
+              <div
+                className="nb-width-fill"
+                style={{ '--nb-w': `${result.offTargetScore * 100}%`, height: '100%', borderRadius: 3, background: offTargetColor } as React.CSSProperties}
               />
             </div>
             <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: offTargetColor, minWidth: 32, textAlign: 'right' }}>

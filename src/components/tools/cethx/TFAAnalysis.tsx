@@ -4,7 +4,6 @@
  * Extracted from CETHXPage.tsx for modularity.
  */
 import React from 'react';
-import { motion } from 'framer-motion';
 import { THEME } from '../../../theme';
 import MetricCard from '../../ide/shared/MetricCard';
 import type { TFAResult, TFAReaction } from '../../../server/tfaEngine';
@@ -130,11 +129,10 @@ export default function TFAAnalysis({
                 const dirColor = r.feasibleDirection === 'forward' ? THEME.MINT : r.feasibleDirection === 'reverse' ? THEME.CORAL : THEME.APRICOT;
                 return (
                   <React.Fragment key={r.id + i}>
-                    <motion.span
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.03, duration: 0.2 }}
+                    <span
+                      className="nb-slide-in-left"
                       style={{
+                        animationDelay: `${i * 0.03}s`,
                         fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: isBottleneck ? THEME.CORAL : THEME.VALUE,
                         fontWeight: isBottleneck ? 600 : 400,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -142,7 +140,7 @@ export default function TFAAnalysis({
                       }}
                     >
                       {r.id}
-                    </motion.span>
+                    </span>
                     <span style={{
                       fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textAlign: 'right',
                       color: r.deltaG0Prime < 0 ? THEME.MINT : THEME.CORAL,

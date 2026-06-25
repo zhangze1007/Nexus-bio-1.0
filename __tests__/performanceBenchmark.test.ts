@@ -97,16 +97,16 @@ describe('Computational Performance Benchmarks', () => {
     expect(r.medianMs).toBeLessThan(5000);
   });
 
-  test('Thermo — calcGroupContribution × 50', async () => {
-    const { calcGroupContribution } = await import('../src/services/thermoEngine');
+  test('Thermo — estimateFormationEnergy × 50', async () => {
+    const { estimateFormationEnergy } = await import('../src/utils/groupContribution');
     const smiles = [
       'CC(=O)SCC', 'OC(=O)CCC(=O)O', 'C1=CC=C(C=C1)O',
       'CC(C)C(=O)O', 'C(C(=O)O)N', 'CC(=O)O',
       'C1=CN=CN1', 'C(CO)O', 'CC(=O)C(=O)O', 'OC(=O)C=CC(=O)O',
     ];
-    const r = await benchmark('Thermo — calcGroupContribution × 50', () => {
+    const r = await benchmark('Thermo — estimateFormationEnergy × 50', () => {
       for (let i = 0; i < 50; i++) {
-        calcGroupContribution(smiles[i % smiles.length]);
+        estimateFormationEnergy(smiles[i % smiles.length]);
       }
     });
     results.push(r);

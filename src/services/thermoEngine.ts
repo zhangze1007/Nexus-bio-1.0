@@ -18,6 +18,8 @@
  *   - eQuilibrator 3 (Beber et al. 2022, Nucleic Acids Research)
  */
 
+import { estimateFormationEnergy, GroupContributionResult } from '../utils/groupContribution';
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -34,210 +36,10 @@ export const T_REF = 298.15;
 // ---------------------------------------------------------------------------
 // 1. Group Contribution Method (Mavrovouniotis 1991)
 // ---------------------------------------------------------------------------
-
-/**
- * Mavrovouniotis group contribution values for ΔG°f estimation.
- *
- * Values from Mavrovouniotis (1991) J Biol Chem 266(22):14440-14445,
- * Table I — Standard Gibbs energies of formation for molecular groups
- * in aqueous solution at 25 °C, pH 7, ionic strength 0.1 M.
- *
- * Units: kJ/mol per occurrence of the group.
- */
-const GROUP_CONTRIBUTIONS: Record<string, number> = {
-  // --- Carbon skeleton groups ---
-  'CH3':   -3.6,   // Methyl
-  'CH2':    0.56,  // Methylene
-  'CH':     3.48,  // Methine (tertiary carbon)
-  'C_quat': 6.39,  // Quaternary carbon (no H)
-
-  // --- Functional groups ---
-  'OH':    -16.2,  // Hydroxyl
-  'COOH':  -24.4,  // Carboxyl
-  'NH2':    -6.6,  // Amino (primary)
-  'NH':     2.2,   // Amino (secondary / imino)
-  'C=O':    15.0,  // Carbonyl (ketone/aldehyde)
-  'SH':     1.7,   // Sulfhydryl (thiol)
-
-  // --- Aromatic / conjugation ---
-  'aromatic_C':  5.0,  // Aromatic carbon (per atom in ring)
-  'C=C':        12.6,  // Carbon-carbon double bond
-
-  // --- Phosphate groups ---
-  'phosphate':     -25.1, // Terminal phosphate (e.g., ATP → ADP)
-  'phosphoester':  -12.5, // Phosphoester linkage (sugar-phosphate)
-
-  // --- Thioester / high-energy bonds ---
-  'thioester':  18.2, // Thioester (e.g., acetyl-CoA)
-  'ester':      -8.2, // Oxygen ester
-
-  // --- Amide / peptide ---
-  'amide':     -5.8,  // Peptide / amide bond
-
-  // --- Aldehyde ---
-  'CHO':      10.8,  // Aldehyde group
-
-  // --- Epoxide ---
-  'epoxide':   8.4,  // Three-membered ring oxygen
-
-  // --- Amino acid side chains (simplified) ---
-  'guanidinium': -12.3, // Arginine-like guanidinium
-  'imidazole':   -2.1,  // Histidine-like imidazole
-  'indole':       8.7,  // Tryptophan-like indole
-  'phenol':     -13.2,  // Tyrosine-like phenol
-};
-
-/**
- * SMILES pattern → group name mapping for simplified SMILES parsing.
- *
- * Patterns are tried in order of specificity (longer/more specific first).
- * This is a simplified parser — it identifies common functional groups
- * from SMILES strings without a full chemistry toolkit.
- */
-interface SmilesPattern {
-  pattern: string;
-  group: string;
-  count: number; // how many groups this match represents
-}
-
-const SMILES_PATTERNS: SmilesPattern[] = [
-  // Phosphate groups (must check before simple O/P)
-  { pattern: 'OP(O)(=O)O',  group: 'phosphate',     count: 1 },
-  { pattern: 'OP(=O)(O)O',  group: 'phosphate',     count: 1 },
-  { pattern: 'P(=O)(O)(O)', group: 'phosphate',     count: 1 },
-  { pattern: 'OPO',         group: 'phosphoester',  count: 1 },
-
-  // Carboxyl (must check before C=O)
-  { pattern: 'C(=O)O',     group: 'COOH',          count: 1 },
-  { pattern: 'C(O)=O',     group: 'COOH',          count: 1 },
-
-  // Amide (must check before C=O and NH)
-  { pattern: 'C(=O)N',     group: 'amide',         count: 1 },
-  { pattern: 'NC(=O)',     group: 'amide',         count: 1 },
-
-  // Thioester
-  { pattern: 'C(=O)S',     group: 'thioester',     count: 1 },
-  { pattern: 'SC(=O)',     group: 'thioester',     count: 1 },
-
-  // Ester
-  { pattern: 'C(=O)O',     group: 'ester',         count: 0 }, // handled by COOH first
-  { pattern: 'COC',        group: 'ester',         count: 1 },
-
-  // Aldehyde
-  { pattern: 'C=O',        group: 'CHO',           count: 1 },
-
-  // Amino groups
-  { pattern: 'NH2',        group: 'NH2',           count: 1 },
-  { pattern: 'N',          group: 'NH',            count: 1 },
-
-  // Hydroxyl (after carboxyl/ester checks)
-  { pattern: 'O',          group: 'OH',            count: 1 },
-
-  // Sulfhydryl
-  { pattern: 'SH',         group: 'SH',            count: 1 },
-
-  // Carbon-carbon double bond
-  { pattern: 'C=C',        group: 'C=C',           count: 1 },
-
-  // Aromatic markers (lowercase in SMILES)
-  { pattern: 'c',          group: 'aromatic_C',    count: 1 },
-
-  // Methyl groups
-  { pattern: 'C',          group: 'CH3',           count: 1 },
-];
-
-/**
- * Estimate ΔG°f of formation from a SMILES string using the Mavrovouniotis
- * group contribution method.
- *
- * @param smiles - Simplified molecular-input line-entry system string
- * @returns Estimated standard Gibbs free energy of formation in kJ/mol
- *
- * @example
- * // Acetyl-CoA fragment
- * calcGroupContribution('CC(=O)SCC')  // ≈ CH3 + thioester + CH2 + CH2
- *
- * @scientific_provenance
- * Mavrovouniotis (1991) J Biol Chem 266(22):14440-14445
- */
-export function calcGroupContribution(smiles: string): number {
-  if (!smiles || smiles.trim().length === 0) {
-    throw new Error('SMILES string cannot be empty');
-  }
-
-  let remaining = smiles;
-  let totalDGf = 0;
-  const foundGroups: string[] = [];
-
-  // Simple tokenization: match functional groups from SMILES
-  // We scan left-to-right, matching the longest applicable pattern first
-  while (remaining.length > 0) {
-    let matched = false;
-
-    for (const { pattern, group, count } of SMILES_PATTERNS) {
-      if (remaining.startsWith(pattern)) {
-        const contribution = GROUP_CONTRIBUTIONS[group];
-        if (contribution !== undefined) {
-          totalDGf += contribution * count;
-          foundGroups.push(group);
-        }
-        remaining = remaining.slice(pattern.length);
-        matched = true;
-        break;
-      }
-    }
-
-    if (!matched) {
-      // Skip unrecognized characters (bond symbols, ring digits, etc.)
-      remaining = remaining.slice(1);
-    }
-  }
-
-  // If no groups were found, return 0 (unknown molecule)
-  // This is a conservative default — real tools would flag this
-  if (foundGroups.length === 0) {
-    return 0;
-  }
-
-  return totalDGf;
-}
-
-/**
- * Get detailed breakdown of group contributions from a SMILES string.
- *
- * @param smiles - SMILES string
- * @returns Object mapping group names to their total contribution (kJ/mol)
- */
-export function calcGroupContributionBreakdown(smiles: string): Record<string, number> {
-  if (!smiles || smiles.trim().length === 0) {
-    throw new Error('SMILES string cannot be empty');
-  }
-
-  let remaining = smiles;
-  const breakdown: Record<string, number> = {};
-
-  while (remaining.length > 0) {
-    let matched = false;
-
-    for (const { pattern, group, count } of SMILES_PATTERNS) {
-      if (remaining.startsWith(pattern)) {
-        const contribution = GROUP_CONTRIBUTIONS[group];
-        if (contribution !== undefined) {
-          breakdown[group] = (breakdown[group] || 0) + contribution * count;
-        }
-        remaining = remaining.slice(pattern.length);
-        matched = true;
-        break;
-      }
-    }
-
-    if (!matched) {
-      remaining = remaining.slice(1);
-    }
-  }
-
-  return breakdown;
-}
+// Group contribution estimation is delegated to utils/groupContribution.ts,
+// which uses a proper SMILES graph parser instead of naive string matching.
+// The adapter function adaptGroupContributionResult() bridges the result
+// format to ThermoEstimate.
 
 // ---------------------------------------------------------------------------
 // 2. Alberty Transformed Gibbs Energy
@@ -626,56 +428,27 @@ export interface ThermoEstimate {
 }
 
 /**
- * Calculate group contribution confidence based on how many groups were
- * identified from the SMILES string.
+ * Convert a GroupContributionResult (from the graph-based SMILES parser)
+ * to a ThermoEstimate (the thermoEngine's public interface).
  *
- * Confidence heuristic:
- *   - 0 groups → 'none' (SMILES unparseable)
- *   - 1-2 groups → 'low' (very rough estimate)
- *   - 3-5 groups → 'medium'
- *   - 6+ groups → 'high'
+ * This adapter bridges the proper graph-based group contribution method
+ * in utils/groupContribution.ts with the thermoEngine's confidence-based
+ * estimation API.
  *
- * @param smiles - SMILES string
- * @returns Estimate with confidence metadata
+ * @param result - Result from estimateFormationEnergy()
+ * @returns ThermoEstimate with confidence level mapped from numeric to categorical
  */
-export function calcGroupContributionWithConfidence(smiles: string): ThermoEstimate {
-  if (!smiles || smiles.trim().length === 0) {
-    throw new Error('SMILES string cannot be empty');
-  }
-
-  let remaining = smiles;
-  let totalDGf = 0;
-  let groupsFound = 0;
-
-  while (remaining.length > 0) {
-    let matched = false;
-
-    for (const { pattern, group, count } of SMILES_PATTERNS) {
-      if (remaining.startsWith(pattern)) {
-        const contribution = GROUP_CONTRIBUTIONS[group];
-        if (contribution !== undefined) {
-          totalDGf += contribution * count;
-          groupsFound += count;
-        }
-        remaining = remaining.slice(pattern.length);
-        matched = true;
-        break;
-      }
-    }
-
-    if (!matched) {
-      remaining = remaining.slice(1);
-    }
-  }
-
+export function adaptGroupContributionResult(result: GroupContributionResult): ThermoEstimate {
   let confidence: ConfidenceLevel;
-  if (groupsFound === 0) confidence = 'none';
-  else if (groupsFound <= 2) confidence = 'low';
-  else if (groupsFound <= 5) confidence = 'medium';
+  if (result.confidence === 0) confidence = 'none';
+  else if (result.confidence <= 0.3) confidence = 'low';
+  else if (result.confidence <= 0.7) confidence = 'medium';
   else confidence = 'high';
 
+  const groupsFound = result.matchedGroups.reduce((sum, g) => sum + g.count, 0);
+
   return {
-    dGf0: groupsFound === 0 ? 0 : totalDGf,
+    dGf0: result.deltaGf,
     confidence,
     groupsFound,
     source: 'group_contribution',
@@ -722,8 +495,8 @@ export async function estimateFormationEnergyWithFallback(
     // API failed — fall through to local estimation
   }
 
-  // Step 1: Local group contribution
-  const localEstimate = calcGroupContributionWithConfidence(smiles);
+  // Step 1: Local group contribution (using graph-based SMILES parser)
+  const localEstimate = adaptGroupContributionResult(estimateFormationEnergy(smiles));
 
   // If confidence is high/medium, return local result
   if (
@@ -763,7 +536,7 @@ export function estimateFormationEnergyLocal(
   smiles: string,
   referenceDGf0?: number,
 ): ThermoEstimate {
-  const local = calcGroupContributionWithConfidence(smiles);
+  const local = adaptGroupContributionResult(estimateFormationEnergy(smiles));
 
   if (
     (local.confidence === 'none' || local.confidence === 'low') &&

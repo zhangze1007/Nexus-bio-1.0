@@ -4,7 +4,6 @@
  * Delegates to sub-components in ./catdes/ for view panels and tab content.
  */
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import CatalystViewer3D from '../molecular/CatalystViewer3D';
@@ -177,11 +176,8 @@ export default React.memo(function CatalystDesignerPage() {
       fontFamily: THEME.SANS, flex: 1, minHeight: '100%',
     }}>
       {/* ── Custom Header ── */}
-      <motion.header
-        className="nb-tool-shell__header"
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+      <header
+        className="nb-tool-shell__header nb-slide-up"
         style={{
           padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
           flexShrink: 0, borderBottom: `1px solid ${THEME.BORDER}`,
@@ -216,7 +212,7 @@ export default React.memo(function CatalystDesignerPage() {
         <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE, padding: '5px 8px', background: THEME.PANEL_GLASS_STRONG, border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)' }}>
           {'Δ'}G_bind = {'Σ'}(group contributions) + solvation
         </div>
-      </motion.header>
+      </header>
 
       {/* ── Error Banners ── */}
       {simError && (

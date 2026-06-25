@@ -28,7 +28,6 @@
 'use client';
 import type { CSSProperties, ReactNode } from 'react';
 import { useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { LayoutGrid, ChevronLeft, SlidersHorizontal, Minimize2 } from 'lucide-react';
 import { usePersistedState } from '../../ide/shared/usePersistedState';
 import { getToolDefinition } from './toolRegistry';
@@ -128,11 +127,8 @@ export default function ToolShell({
       minHeight: '100%',
     }}>
       {/* ── Module Info Bar ──────────────────────────────────── */}
-      <motion.header
-        className="nb-tool-shell__header"
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+      <header
+        className="nb-tool-shell__header nb-slide-up"
         style={{
           padding: '8px 16px',
           display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
@@ -340,7 +336,7 @@ export default function ToolShell({
             )}
           </button>
         )}
-      </motion.header>
+      </header>
 
       {/* ── Tab Bar (optional) ─────────────────────────────── */}
       {visibleTabs && visibleTabs.length > 0 && activeTab && onTabChange && (

@@ -4,7 +4,6 @@
  * Extracted from CETHXPage.tsx for modularity.
  */
 import React from 'react';
-import { motion } from 'framer-motion';
 import { THEME } from '../../../theme';
 import MetricCard from '../../ide/shared/MetricCard';
 import type { CETHXThermoResult, CETHXFeasibilityResult } from './useCETHXState';
@@ -74,14 +73,12 @@ export default function PathwayFeasibility({
           {/* Rows */}
           {feasibilityData.stepResults.map((r, i) => (
             <React.Fragment key={r.step + i}>
-              <motion.span
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.03, duration: 0.2 }}
-                style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '3px 0', borderBottom: `1px solid ${THEME.BORDER}` }}
+              <span
+                className="nb-slide-in-left"
+                style={{ animationDelay: `${i * 0.03}s`, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '3px 0', borderBottom: `1px solid ${THEME.BORDER}` }}
               >
                 {r.step}
-              </motion.span>
+              </span>
               <span style={{
                 fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, textAlign: 'right',
                 color: r.deltaG < 0 ? THEME.MINT : r.deltaG <= 5 ? THEME.APRICOT : THEME.CORAL,

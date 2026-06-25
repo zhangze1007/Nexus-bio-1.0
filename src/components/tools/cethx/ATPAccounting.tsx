@@ -26,14 +26,13 @@ export default function ATPAccounting({ thermo }: ATPAccountingProps) {
       <div style={{ padding: '12px', borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_INSET, marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
           <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Efficiency</span>
-          <motion.span
+          <span
             key={thermo.efficiency}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            className="nb-fade-scale-in-lg"
             style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: thermo.efficiency > 50 ? THEME.VALUE : THEME.CORAL }}
           >
             {thermo.efficiency.toFixed(1)}%
-          </motion.span>
+          </span>
         </div>
         <div style={{ width: '100%', height: `${THEME.PROGRESS_HEIGHT}px`, borderRadius: `${THEME.PROGRESS_RADIUS}px`, background: THEME.PROGRESS_TRACK }}>
           <motion.div
@@ -54,12 +53,11 @@ export default function ATPAccounting({ thermo }: ATPAccountingProps) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {thermo.steps.map((s, i) => (
-            <motion.div
+            <div
               key={s.step + i}
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.2 }}
+              className="nb-slide-in-left"
               style={{
+                animationDelay: `${i * 0.04}s`,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '4px 0', borderBottom: `1px solid ${THEME.BORDER}`,
               }}
@@ -70,7 +68,7 @@ export default function ATPAccounting({ thermo }: ATPAccountingProps) {
               <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, textAlign: 'right', color: s.deltaG < 0 ? THEME.MINT : THEME.CORAL }}>
                 {s.deltaG > 0 ? '+' : ''}{s.deltaG.toFixed(1)}
               </span>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

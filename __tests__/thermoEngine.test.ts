@@ -11,8 +11,6 @@
 import {
   R,
   T_REF,
-  calcGroupContribution,
-  calcGroupContributionBreakdown,
   calcTransformedGibbs,
   calcTransformedKeq,
   calcPathwayDeltaG,
@@ -20,10 +18,12 @@ import {
   calcDeltaG,
   calcDeltaGFromQ,
   fetchEquilibratorDeltaG,
-  calcGroupContributionWithConfidence,
+  adaptGroupContributionResult,
   estimateFormationEnergyWithFallback,
   estimateFormationEnergyLocal,
 } from '../src/services/thermoEngine';
+
+import { estimateFormationEnergy } from '../src/utils/groupContribution';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -40,57 +40,51 @@ const G6P_ISOMERIZATION_dG0 = 1.7; // Glucose-6-P → Fructose-6-P
 const PFK_dG0 = -14.2; // Fructose-6-P + ATP → Fructose-1,6-bisP + ADP
 
 // ---------------------------------------------------------------------------
-// 1. calcGroupContribution tests
+// 1. estimateFormationEnergy tests (graph-based group contribution)
 // ---------------------------------------------------------------------------
 
-describe('calcGroupContribution', () => {
-  it('should throw on empty SMILES', () => {
-    expect(() => calcGroupContribution('')).toThrow('SMILES string cannot be empty');
+describe('estimateFormationEnergy (graph-based)', () => {
+  it('should return zero deltaGf for empty SMILES', () => {
+    const result = estimateFormationEnergy('');
+    expect(result.deltaGf).toBe(0);
+    expect(result.confidence).toBe(0);
+    expect(result.matchedGroups).toEqual([]);
   });
 
-  it('should return 0 for unrecognized SMILES', () => {
-    // A single unrecognized character
-    expect(calcGroupContribution('#')).toBe(0);
+  it('should return zero deltaGf for unrecognized SMILES', () => {
+    const result = estimateFormationEnergy('#');
+    expect(result.deltaGf).toBe(0);
+    expect(result.confidence).toBe(0);
   });
 
   it('should estimate ΔG°f for ethanol (CCO)', () => {
-    // Simplified parser: C → CH3, C → CH3, O → OH
-    // = -3.6 + -3.6 + (-16.2) = -23.4
-    // (Simplified SMILES parser doesn't track hydrogen count)
-    const result = calcGroupContribution('CCO');
-    expect(result).toBeCloseTo(-23.4, 1);
+    // Graph parser: CH3 + CH2 + OH = -3.6 + 0.56 + (-16.2) = -19.24
+    const result = estimateFormationEnergy('CCO');
+    expect(result.deltaGf).toBeCloseTo(-19.24, 1);
+    expect(result.matchedGroups.length).toBeGreaterThan(0);
   });
 
   it('should estimate ΔG°f for acetic acid (CC(=O)O)', () => {
-    // Acetic acid: CH3 + COOH = -3.6 + (-24.4) = -28.0
-    // But SMILES parsing: C → CH3, then C(=O)O → COOH
-    const result = calcGroupContribution('CC(=O)O');
-    // The parser will match: C (CH3: -3.6), then C(=O)O (COOH: -24.4) → -28.0
-    expect(result).toBeCloseTo(-28.0, 0);
-  });
-
-  it('should estimate ΔG°f for alanine-like fragment (CC(N)C(=O)O)', () => {
-    // Alanine fragment: CH3 + CH + NH2 + COOH = -3.6 + 3.48 + (-6.6) + (-24.4)
-    // But SMILES parsing depends on pattern matching order
-    const result = calcGroupContribution('CC(N)C(=O)O');
-    // Should find CH3, NH2, COOH groups at minimum
-    expect(typeof result).toBe('number');
-    expect(result).toBeLessThan(0); // amino acids have negative ΔG°f
+    // Graph parser: CH3 + COOH = -3.6 + (-24.4) = -28.0
+    const result = estimateFormationEnergy('CC(=O)O');
+    expect(result.deltaGf).toBeCloseTo(-28.0, 0);
   });
 
   it('should handle aromatic carbons (benzene c1ccccc1)', () => {
     // Benzene: 6 aromatic carbons = 6 × 5.0 = 30.0
-    const result = calcGroupContribution('c1ccccc1');
-    expect(result).toBeCloseTo(30.0, 0);
+    const result = estimateFormationEnergy('c1ccccc1');
+    expect(result.deltaGf).toBeCloseTo(30.0, 0);
+    expect(result.matchedGroups.length).toBeGreaterThan(0);
   });
 
-  it('should provide breakdown of group contributions', () => {
-    // Simplified parser: CCO → CH3 + CH3 + OH (doesn't track hydrogen count)
-    const breakdown = calcGroupContributionBreakdown('CCO');
-    expect(breakdown).toHaveProperty('CH3');
-    expect(breakdown).toHaveProperty('OH');
-    expect(breakdown.CH3).toBeCloseTo(-7.2, 1); // 2 × CH3
-    expect(breakdown.OH).toBeCloseTo(-16.2, 1);
+  it('should provide matched groups breakdown', () => {
+    const result = estimateFormationEnergy('CCO');
+    expect(result.matchedGroups).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ group: 'CH3' }),
+        expect.objectContaining({ group: 'OH' }),
+      ])
+    );
   });
 });
 
@@ -523,13 +517,12 @@ describe('edge cases', () => {
     expect(withI).toBeCloseTo(-30.5, 5);
   });
 
-  it('calcGroupContribution should handle SMILES with ring numbers', () => {
-    // Ring digits should be skipped by the parser
-    const result = calcGroupContribution('C1CC1');
-    // Cyclopropane: 3 CH2 groups? No, C1CC1 has ring closure chars
-    // Parser will match C (CH3), skip 1, C (CH3), C (CH3), skip 1
-    expect(typeof result).toBe('number');
-    expect(Number.isFinite(result)).toBe(true);
+  it('estimateFormationEnergy should handle SMILES with ring numbers', () => {
+    // Ring digits should be handled by the graph parser
+    const result = estimateFormationEnergy('C1CC1');
+    // Cyclopropane: 3 CH2 groups in a ring
+    expect(result.deltaGf).toBeDefined();
+    expect(Number.isFinite(result.deltaGf)).toBe(true);
   });
 
   it('calcDeltaG with multiple products and reactants', () => {
@@ -725,49 +718,65 @@ describe('fetchEquilibratorDeltaG', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 11. calcGroupContributionWithConfidence tests
+// 11. adaptGroupContributionResult tests
 // ---------------------------------------------------------------------------
 
-describe('calcGroupContributionWithConfidence', () => {
-  it('should throw on empty SMILES', () => {
-    expect(() => calcGroupContributionWithConfidence('')).toThrow('SMILES string cannot be empty');
-  });
-
-  it('should return "none" confidence for unrecognized SMILES', () => {
-    const result = calcGroupContributionWithConfidence('#');
+describe('adaptGroupContributionResult', () => {
+  it('should map confidence 0 to "none"', () => {
+    const result = adaptGroupContributionResult({
+      deltaGf: 0,
+      confidence: 0,
+      matchedGroups: [],
+    });
     expect(result.confidence).toBe('none');
     expect(result.groupsFound).toBe(0);
     expect(result.dGf0).toBe(0);
     expect(result.source).toBe('group_contribution');
   });
 
-  it('should return "low" confidence for SMILES with 1-2 groups', () => {
-    // "CC" → 2 CH3 groups
-    const result = calcGroupContributionWithConfidence('CC');
+  it('should map confidence 0.3 to "low"', () => {
+    const result = adaptGroupContributionResult({
+      deltaGf: -10,
+      confidence: 0.3,
+      matchedGroups: [{ group: 'CH3', count: 2, contribution: -3.6 }],
+    });
     expect(result.confidence).toBe('low');
     expect(result.groupsFound).toBe(2);
-    expect(result.source).toBe('group_contribution');
   });
 
-  it('should return "medium" confidence for SMILES with 3-5 groups', () => {
-    // "CCO" → 2 CH3 + 1 OH = 3 groups
-    const result = calcGroupContributionWithConfidence('CCO');
+  it('should map confidence 0.7 to "medium"', () => {
+    const result = adaptGroupContributionResult({
+      deltaGf: -20,
+      confidence: 0.7,
+      matchedGroups: [
+        { group: 'CH3', count: 2, contribution: -3.6 },
+        { group: 'OH', count: 1, contribution: -16.2 },
+      ],
+    });
     expect(result.confidence).toBe('medium');
     expect(result.groupsFound).toBe(3);
   });
 
-  it('should return "high" confidence for SMILES with 6+ groups', () => {
-    // "c1ccccc1" → 6 aromatic_C groups
-    const result = calcGroupContributionWithConfidence('c1ccccc1');
+  it('should map confidence 1.0 to "high"', () => {
+    const result = adaptGroupContributionResult({
+      deltaGf: 30,
+      confidence: 1.0,
+      matchedGroups: [{ group: 'aromatic_C', count: 6, contribution: 5.0 }],
+    });
     expect(result.confidence).toBe('high');
     expect(result.groupsFound).toBe(6);
   });
 
-  it('should match calcGroupContribution values', () => {
-    const smiles = 'CC(=O)O';
-    const basic = calcGroupContribution(smiles);
-    const withConf = calcGroupContributionWithConfidence(smiles);
-    expect(withConf.dGf0).toBeCloseTo(basic, 5);
+  it('should correctly sum group counts', () => {
+    const result = adaptGroupContributionResult({
+      deltaGf: -25,
+      confidence: 0.7,
+      matchedGroups: [
+        { group: 'CH3', count: 3, contribution: -3.6 },
+        { group: 'COOH', count: 1, contribution: -24.4 },
+      ],
+    });
+    expect(result.groupsFound).toBe(4);
   });
 });
 

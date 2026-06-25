@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { THEME } from '../../../theme';
 interface MetricItem {
   label: string;
@@ -25,13 +24,11 @@ export default function InlineMetricOverlay({
   position = 'top-right',
 }: InlineMetricOverlayProps) {
   return (
-    <motion.div
+    <div
       role="status"
       aria-live="polite"
       aria-label="Key metrics"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2 }}
+      className="nb-fade-scale-in"
       style={{
         position: 'absolute',
         ...POSITION_STYLES[position],
@@ -73,6 +70,6 @@ export default function InlineMetricOverlay({
           </span>
         </div>
       ))}
-    </motion.div>
+    </div>
   );
 }
