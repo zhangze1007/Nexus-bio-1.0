@@ -218,13 +218,13 @@ export function MultiOProjectionTab(props: ProjectionTabProps) {
                 {[1,2,3,4].map(i => <div key={i} style={{ height: '36px', flex: 1, borderRadius: '8px', background: `linear-gradient(90deg, ${THEME.PANEL_STRONG} 25%, rgba(255,255,255,0.06) 50%, ${THEME.PANEL_STRONG} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />)}
               </div>
               <div style={{ textAlign: 'center', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginTop: '4px' }}>
-                Training VAE embedding model…
+                Training linear embedding model…
               </div>
             </div>
           )}
           {vaeError && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: THEME.CORAL, fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
-              VAE error: {vaeError}
+              Linear embedding error: {vaeError}
             </div>
           )}
           {!vaeLoading && !vaeError && (
@@ -240,7 +240,7 @@ export function MultiOProjectionTab(props: ProjectionTabProps) {
                   const yMin = Math.min(...ys), yMax = Math.max(...ys);
                   const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
                   return (
-                    <SVGChartContainer W={W} H={H} ariaLabel="VAE latent space projection">
+                    <SVGChartContainer W={W} H={H} ariaLabel="Linear embedding latent space projection">
                       <ChartGrid W={W} H={H} PAD={PAD} gridCount={0} showGrid={false} />
                       <ChartAxisLabels W={W} H={H} PAD={PAD} xLabel="Projection 1" yLabel="Projection 2" />
                       {pts.map((p, i) => {
@@ -268,7 +268,7 @@ export function MultiOProjectionTab(props: ProjectionTabProps) {
                 const W = 480, H = 80, PAD = 30;
                 const maxL = Math.max(...hist.map(h => h.loss), 0.01);
                 return (
-                  <SVGChartContainer W={W} H={H} ariaLabel="VAE convergence history" fill="transparent">
+                  <SVGChartContainer W={W} H={H} ariaLabel="Linear embedding convergence history" fill="transparent">
                     <text x={PAD - 4} y={12} fontFamily={THEME.MONO} fontSize="10" fill={LABEL} textAnchor="end">Loss</text>
                     <polyline points={hist.map((h, i) => { const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2); const y = H - 8 - (h.loss / maxL) * (H - 20); return `${x},${y}`; }).join(' ')} fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5} />
                     <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>Epoch</text>

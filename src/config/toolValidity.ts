@@ -45,7 +45,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // Stage 4 — DBTL
   cellfree:     { level: 'demo',    caption: 'Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.' },
   dbtlflow:     { level: 'partial', caption: 'Iteration ledger and SBOL serialization are real; learning loop weights are heuristic.' },
-  multio:       { level: 'demo',    caption: 'Deterministic multi-omics demonstration. ALS matrix factorization (not MOFA+); seeded encoder/decoder (not a production VAE); no UMAP. Uses synthetic demo data when no CSV uploaded. No Bayesian posterior uncertainty; not trained on user data.' },
+  multio:       { level: 'demo',    caption: 'Deterministic multi-omics demonstration. ALS matrix factorization (not MOFA+); deterministic linear embedding (not a VAE); no UMAP. Uses synthetic demo data when no CSV uploaded. No Bayesian posterior uncertainty; not trained on user data.' },
   scspatial:    { level: 'real',    caption: 'Full scanpy/squidpy pipeline (Leiden, PAGA, diffusion pseudotime, Moran I, neighborhood enrichment, ligand-receptor) via Python backend. H&E tissue image overlay for Visium data. Auto-detects Visium/MERFISH/generic spatial formats. Real Visium mouse brain demo data.' },
 
   // Cross-stage

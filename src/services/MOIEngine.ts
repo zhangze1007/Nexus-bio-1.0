@@ -4,12 +4,12 @@
  * REFERENCE:
  *   MOCK_DATA: no peer-reviewed source for this TypeScript implementation.
  *   The code is a deterministic local demonstration and does not implement
- *   MOFA+, GPerturb, a production VAE, or UMAP.
+ *   MOFA+, GPerturb, a production variational autoencoder, or UMAP.
  *
  * NOT_IMPLEMENTED:
  *   - MOFA+ variational sparse factor model
  *   - View-specific likelihood/noise model
- *   - Production variational autoencoder training with autograd
+ *   - Production variational autoencoder (VAE) training with autograd
  *   - UMAP fuzzy-simplicial-set graph optimization
  *   - Bayesian posterior uncertainty
  *   - Causal perturbation model such as GPerturb
@@ -24,7 +24,8 @@
  * low-dimensional view using three pure-TypeScript routines.
  *
  * HONEST METHOD LABELS (the previous file claimed MOFA+, VAE, and UMAP — none
- * of those are actually implemented here, and that wording has been removed):
+ * of those are actually implemented here, and that wording has been removed.
+ * "VAE" has been renamed to "Linear Embedding" in all user-facing surfaces):
  *
  * 1. `extractMOFAFactors` — alternating-least-squares (ALS) low-rank matrix
  *    factorization with masked reconstruction. NOT MOFA+: there is no
@@ -32,11 +33,11 @@
  *    inference. The output is a deterministic shared-factor decomposition
  *    that is structurally similar to NMF/PCA on a stacked matrix.
  *
- * 2. `trainMultimodalVAE` — a deterministic seeded encoder/decoder optimized
- *    by simplified gradient updates. NOT a production variational autoencoder:
+ * 2. `trainMultimodalVAE` — a deterministic linear encoder with KL penalty,
+ *    optimized by simplified gradient updates. NOT a variational autoencoder:
  *    there is no autograd, no learned posterior uncertainty, no validation
- *    split, and no deployment-grade stochastic inference. Treat the output
- *    as a learned local embedding.
+ *    split, and no deployment-grade stochastic inference. Renamed to
+ *    "Linear Embedding" in all user-facing surfaces for honesty.
  *
  * 3. Predictive perturbation — modifies a single feature in the input row,
  *    re-encodes through the linear embedding above, and reports the delta in
@@ -413,11 +414,12 @@ export function extractMOFAFactors(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 2. Seeded Linear Embedding (API name retained; not production VAE)
+// 2. Linear Embedding (API function name `trainMultimodalVAE` retained for compatibility)
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Seeded encoder/decoder demonstration for multi-omics integration.
+ * Deterministic linear encoder with KL penalty for multi-omics integration.
+ * NOT a variational autoencoder — renamed to "Linear Embedding" in UI.
  *
  * Architecture:
  *   Encoder: x → h1 (128) → h2 (64) → [μ, log σ²] (latent_dim)
@@ -427,7 +429,7 @@ export function extractMOFAFactors(
  * Loss: reconstruction error plus a local KL-style penalty.
  *
  * Training uses simplified deterministic updates (no autograd, no calibrated
- * posterior uncertainty, no deployment-grade VAE inference).
+ * posterior uncertainty, no stochastic inference).
  */
 
 interface VAEWeights {
@@ -581,10 +583,12 @@ function forward(
  * @param lr - Learning rate (default 0.005)
  * @param batchLabels - Optional batch IDs for batch correction
  *
- * HONEST NAME: This is a linear encoder with KL penalty, NOT a production VAE.
- * No autograd, no validation split, no deployment-grade stochastic inference.
- * All layers are updated via hand-derived analytical gradients (backpropagation).
+ * HONEST NAME: This is a deterministic linear encoder with KL penalty,
+ * NOT a variational autoencoder. Renamed to "Linear Embedding" in all
+ * user-facing surfaces. No autograd, no validation split, no stochastic
+ * inference. All layers are updated via hand-derived analytical gradients.
  */
+/** Deterministic linear encoder with KL penalty. NOT a VAE. */
 export function trainMultimodalVAE(
   data: OmicsRow[],
   latentDim: number = 8,

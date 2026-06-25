@@ -58,9 +58,9 @@ export function MultiOEmbeddingTab(props: EmbeddingTabProps) {
     <ToolTabPanel tabId="embedding" activeId={activeTab}>
       <div style={{ display: 'flex', gap: '0', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <FloatingControlRail label="Omics Controls">
-          {/* VAE Parameters */}
+          {/* Linear Embedding Parameters */}
           <div style={{ marginBottom: '12px' }}>
-            <SectionLabel>VAE Parameters</SectionLabel>
+            <SectionLabel>Linear Embedding Parameters</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Latent Dim</span>

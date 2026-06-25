@@ -140,7 +140,7 @@ export function useMultiOState() {
     lr: 0.005,
   });
 
-  /* Auto-train VAE on mount */
+  /* Auto-train linear embedding on mount */
   useEffect(() => { trainVAE(); }, [trainVAE]);
 
   /* Fluxomics state */
@@ -248,7 +248,7 @@ export function useMultiOState() {
   /* Workflow stepper */
   const workflowSteps: StepDef[] = useMemo(() => [
     { id: 'input', label: 'Data Input', status: 'done', detail: `${activeData.length} genes` },
-    { id: 'vae', label: 'VAE Embedding', status: vaeLoading ? 'active' : vaeResult ? 'done' : 'pending', detail: vaeResult ? `${vaeResult.latentDim}D` : undefined },
+    { id: 'vae', label: 'Linear Embedding', status: vaeLoading ? 'active' : vaeResult ? 'done' : 'pending', detail: vaeResult ? `${vaeResult.latentDim}D` : undefined },
     { id: 'cluster', label: 'Clustering', status: vaeResult ? 'done' : 'pending', detail: `${Object.keys(mofaResult.factors).length > 0 ? mofaResult.factors.length : '—'} clusters` },
     { id: 'integrate', label: 'Integration', status: mofaResult.totalVarianceExplained > 0 ? 'done' : 'pending', detail: `${(mofaResult.totalVarianceExplained * 100).toFixed(0)}% var` },
     { id: 'predict', label: 'Prediction', status: perturbResult ? 'done' : 'pending', detail: perturbResult ? `${perturbResult.predicted_yield_change_percent >= 0 ? '+' : ''}${perturbResult.predicted_yield_change_percent.toFixed(1)}%` : undefined },
