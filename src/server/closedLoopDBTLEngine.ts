@@ -28,20 +28,20 @@
 
 export interface DesignParameter {
   name: string;
-  type: 'continuous' | 'discrete' | 'categorical';
-  bounds: [number, number];      // for continuous/discrete
-  categories?: string[];         // for categorical
+  type: "continuous" | "discrete" | "categorical";
+  bounds: [number, number]; // for continuous/discrete
+  categories?: string[]; // for categorical
   currentValue?: number | string;
 }
 
 export interface Experiment {
   id: string;
   parameters: Record<string, number>;
-  objective: number;              // measured result
-  uncertainty?: number;           // measurement uncertainty
+  objective: number; // measured result
+  uncertainty?: number; // measurement uncertainty
   timestamp: number;
   round: number;
-  status: 'designed' | 'running' | 'completed' | 'failed';
+  status: "designed" | "running" | "completed" | "failed";
   protocol?: string;
 }
 
@@ -49,7 +49,7 @@ export interface DBTLCampaign {
   id: string;
   name: string;
   parameters: DesignParameter[];
-  objective: 'maximize' | 'minimize';
+  objective: "maximize" | "minimize";
   experiments: Experiment[];
   bestResult: Experiment | null;
   round: number;
@@ -90,12 +90,12 @@ export interface DBTLResult {
  * Reference: Rasmussen & Williams (2006) Gaussian Processes for Machine Learning
  */
 interface GPSurrogate {
-  X: number[][];        // training inputs
-  y: number[];          // training outputs
+  X: number[][]; // training inputs
+  y: number[]; // training outputs
   lengthScales: number[];
   signalVariance: number;
   noiseVariance: number;
-  K_inv: number[][];    // inverse of kernel matrix
+  K_inv: number[][]; // inverse of kernel matrix
 }
 
 /**
@@ -135,10 +135,7 @@ function trainGP(
 /**
  * Predict mean and variance at a new point.
  */
-function gpPredict(
-  gp: GPSurrogate,
-  x: number[],
-): { mean: number; variance: number } {
+function gpPredict(gp: GPSurrogate, x: number[]): { mean: number; variance: number } {
   const n = gp.X.length;
 
   // Cross-covariance vector k*
@@ -174,12 +171,7 @@ function gpPredict(
 /**
  * Squared exponential (RBF) kernel.
  */
-function rbfKernel(
-  x1: number[],
-  x2: number[],
-  lengthScales: number[],
-  signalVariance: number,
-): number {
+function rbfKernel(x1: number[], x2: number[], lengthScales: number[], signalVariance: number): number {
   let sum = 0;
   for (let i = 0; i < x1.length; i++) {
     const diff = (x1[i] - x2[i]) / lengthScales[i];
@@ -193,7 +185,7 @@ function rbfKernel(
  */
 function invertMatrix(A: number[][]): number[][] {
   const n = A.length;
-  const aug: number[][] = A.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+  const aug: number[][] = A.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
 
   for (let col = 0; col < n; col++) {
     let maxRow = col;
@@ -213,7 +205,7 @@ function invertMatrix(A: number[][]): number[][] {
     }
   }
 
-  return aug.map(row => row.slice(n));
+  return aug.map((row) => row.slice(n));
 }
 
 // ── Acquisition Functions ──────────────────────────────────────────────────
@@ -233,14 +225,12 @@ function expectedImprovement(
   variance: number,
   bestValue: number,
   xi: number = 0.01,
-  objective: 'maximize' | 'minimize' = 'maximize',
+  objective: "maximize" | "minimize" = "maximize",
 ): number {
   const sigma = Math.sqrt(variance);
   if (sigma < 1e-10) return 0;
 
-  const improvement = objective === 'maximize'
-    ? mean - bestValue - xi
-    : bestValue - mean - xi;
+  const improvement = objective === "maximize" ? mean - bestValue - xi : bestValue - mean - xi;
 
   const Z = improvement / sigma;
   const phi = normalPDF(Z);
@@ -261,10 +251,10 @@ function upperConfidenceBound(
   mean: number,
   variance: number,
   kappa: number = 2.0,
-  objective: 'maximize' | 'minimize' = 'maximize',
+  objective: "maximize" | "minimize" = "maximize",
 ): number {
   const sigma = Math.sqrt(variance);
-  return objective === 'maximize' ? mean + kappa * sigma : -(mean - kappa * sigma);
+  return objective === "maximize" ? mean + kappa * sigma : -(mean - kappa * sigma);
 }
 
 /**
@@ -277,14 +267,12 @@ function probabilityOfImprovement(
   variance: number,
   bestValue: number,
   xi: number = 0.01,
-  objective: 'maximize' | 'minimize' = 'maximize',
+  objective: "maximize" | "minimize" = "maximize",
 ): number {
   const sigma = Math.sqrt(variance);
   if (sigma < 1e-10) return 0;
 
-  const Z = (objective === 'maximize'
-    ? mean - bestValue - xi
-    : bestValue - mean - xi) / sigma;
+  const Z = (objective === "maximize" ? mean - bestValue - xi : bestValue - mean - xi) / sigma;
 
   return normalCDF(Z);
 }
@@ -305,7 +293,7 @@ function normalCDF(x: number): number {
   const sign = x < 0 ? -1 : 1;
   const absX = Math.abs(x);
   const t = 1 / (1 + p * absX);
-  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX / 2);
+  const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp((-absX * absX) / 2);
   return 0.5 * (1 + sign * y);
 }
 
@@ -318,10 +306,7 @@ function normalCDF(x: number): number {
  *
  * Reference: McKay et al. (1979) Technometrics 21:239-245
  */
-function latinHypercubeSample(
-  parameters: DesignParameter[],
-  nSamples: number,
-): Record<string, number>[] {
+function latinHypercubeSample(parameters: DesignParameter[], nSamples: number): Record<string, number>[] {
   const samples: Record<string, number>[] = [];
   const d = parameters.length;
 
@@ -346,7 +331,7 @@ function latinHypercubeSample(
     for (let j = 0; j < d; j++) {
       const param = parameters[j];
       const [lb, ub] = param.bounds;
-      if (param.type === 'discrete') {
+      if (param.type === "discrete") {
         sample[param.name] = Math.round(lb + stratified[j][i] * (ub - lb));
       } else {
         sample[param.name] = lb + stratified[j][i] * (ub - lb);
@@ -373,24 +358,29 @@ function latinHypercubeSample(
  */
 export function runClosedLoopDBTL(
   campaign: DBTLCampaign,
-  acquisitionType: 'EI' | 'UCB' | 'PI' = 'EI',
+  acquisitionType: "EI" | "UCB" | "PI" = "EI",
   nSuggestions: number = 3,
 ): DBTLResult {
   const { parameters, experiments, objective } = campaign;
 
   // Filter completed experiments
-  const completed = experiments.filter(e => e.status === 'completed' && e.objective !== undefined);
+  const completed = experiments.filter((e) => e.status === "completed" && e.objective !== undefined);
 
   // Find best result
-  const bestResult = completed.length > 0
-    ? completed.reduce((best, e) =>
-        objective === 'maximize'
-          ? (e.objective > best.objective ? e : best)
-          : (e.objective < best.objective ? e : best)
-      )
-    : null;
+  const bestResult =
+    completed.length > 0
+      ? completed.reduce((best, e) =>
+          objective === "maximize"
+            ? e.objective > best.objective
+              ? e
+              : best
+            : e.objective < best.objective
+              ? e
+              : best,
+        )
+      : null;
 
-  const bestValue = bestResult?.objective ?? (objective === 'maximize' ? -Infinity : Infinity);
+  const bestValue = bestResult?.objective ?? (objective === "maximize" ? -Infinity : Infinity);
 
   // If no experiments yet, generate initial design via LHS
   if (completed.length === 0) {
@@ -398,7 +388,7 @@ export function runClosedLoopDBTL(
     const suggestions: NextExperimentSuggestion[] = initialSamples.map((sample, i) => ({
       parameters: sample,
       acquisitionValue: 1.0,
-      acquisitionType: 'LHS_initial',
+      acquisitionType: "LHS_initial",
       predictedObjective: 0,
       predictedUncertainty: 1.0,
       rationale: `Initial exploration point ${i + 1} (Latin Hypercube Sampling)`,
@@ -417,35 +407,37 @@ export function runClosedLoopDBTL(
   }
 
   // Normalize parameters to [0, 1] for GP
-  const X = completed.map(e => parameters.map(p => {
-    const [lb, ub] = p.bounds;
-    return (e.parameters[p.name] - lb) / (ub - lb);
-  }));
-  const y = completed.map(e => e.objective);
+  const X = completed.map((e) =>
+    parameters.map((p) => {
+      const [lb, ub] = p.bounds;
+      return (e.parameters[p.name] - lb) / (ub - lb);
+    }),
+  );
+  const y = completed.map((e) => e.objective);
 
   // Train GP surrogate
   const gp = trainGP(X, y);
 
   // Generate candidate points (grid sampling)
-  const nCandidates = Math.min(1000, Math.pow(10, parameters.length));
+  const nCandidates = Math.min(1000, 10 ** parameters.length);
   const candidates: number[][] = [];
   for (let i = 0; i < nCandidates; i++) {
     candidates.push(parameters.map(() => Math.random()));
   }
 
   // Evaluate acquisition function at each candidate
-  const acqValues = candidates.map(x => {
+  const acqValues = candidates.map((x) => {
     const { mean, variance } = gpPredict(gp, x);
 
     let acq: number;
     switch (acquisitionType) {
-      case 'EI':
+      case "EI":
         acq = expectedImprovement(mean, variance, bestValue, 0.01, objective);
         break;
-      case 'UCB':
+      case "UCB":
         acq = upperConfidenceBound(mean, variance, 2.0, objective);
         break;
-      case 'PI':
+      case "PI":
         acq = probabilityOfImprovement(mean, variance, bestValue, 0.01, objective);
         break;
     }
@@ -464,8 +456,8 @@ export function runClosedLoopDBTL(
     if (suggestions.length >= nSuggestions) break;
 
     // Check distance to existing suggestions
-    const tooClose = suggestions.some(s => {
-      const sNorm = parameters.map(p => {
+    const tooClose = suggestions.some((s) => {
+      const sNorm = parameters.map((p) => {
         const [lb, ub] = p.bounds;
         return (s.parameters[p.name] - lb) / (ub - lb);
       });
@@ -479,7 +471,7 @@ export function runClosedLoopDBTL(
     for (let j = 0; j < parameters.length; j++) {
       const [lb, ub] = parameters[j].bounds;
       paramValues[parameters[j].name] = lb + candidate.x[j] * (ub - lb);
-      if (parameters[j].type === 'discrete') {
+      if (parameters[j].type === "discrete") {
         paramValues[parameters[j].name] = Math.round(paramValues[parameters[j].name]);
       }
     }
@@ -496,9 +488,10 @@ export function runClosedLoopDBTL(
 
   // Compute convergence
   const convergenceHistory = [...campaign.convergenceHistory, bestValue];
-  const recentImprovement = convergenceHistory.length >= 2
-    ? Math.abs(convergenceHistory[convergenceHistory.length - 1] - convergenceHistory[convergenceHistory.length - 2])
-    : Infinity;
+  const recentImprovement =
+    convergenceHistory.length >= 2
+      ? Math.abs(convergenceHistory[convergenceHistory.length - 1] - convergenceHistory[convergenceHistory.length - 2])
+      : Infinity;
 
   const converged = recentImprovement < 0.001 && completed.length > 10;
 
@@ -520,10 +513,10 @@ export function runClosedLoopDBTL(
     protocol: generateProtocol(suggestions[0], parameters),
     designNotes: [
       `DBTL Round ${campaign.round + 1}: ${completed.length} experiments completed`,
-      `Best ${objective}: ${bestValue.toFixed(3)} (${bestResult?.id ?? 'none'})`,
+      `Best ${objective}: ${bestValue.toFixed(3)} (${bestResult?.id ?? "none"})`,
       `Acquisition: ${acquisitionType}, ${suggestions.length} suggestions generated`,
       `GP surrogate: ${completed.length} training points, ${parameters.length} dimensions`,
-      converged ? 'CONVERGED — minimal improvement detected' : 'Continuing exploration',
+      converged ? "CONVERGED — minimal improvement detected" : "Continuing exploration",
     ],
   };
 }
@@ -531,29 +524,27 @@ export function runClosedLoopDBTL(
 /**
  * Generate a human-readable protocol for an experiment.
  */
-function generateProtocol(
-  suggestion: NextExperimentSuggestion | undefined,
-  parameters: DesignParameter[],
-): string {
-  if (!suggestion) return 'No experiment suggested.';
+function generateProtocol(suggestion: NextExperimentSuggestion | undefined, parameters: DesignParameter[]): string {
+  if (!suggestion) return "No experiment suggested.";
 
-  const lines: string[] = [
-    `# Experiment Protocol`,
-    `## Parameters`,
-  ];
+  const lines: string[] = [`# Experiment Protocol`, `## Parameters`];
 
   for (const param of parameters) {
     const value = suggestion.parameters[param.name];
-    lines.push(`- ${param.name}: ${value?.toFixed?.(3) ?? value} (${param.type}, bounds: [${param.bounds[0]}, ${param.bounds[1]}])`);
+    lines.push(
+      `- ${param.name}: ${value?.toFixed?.(3) ?? value} (${param.type}, bounds: [${param.bounds[0]}, ${param.bounds[1]}])`,
+    );
   }
 
   lines.push(`## Predicted Outcome`);
-  lines.push(`- Objective: ${suggestion.predictedObjective.toFixed(3)} ± ${suggestion.predictedUncertainty.toFixed(3)}`);
+  lines.push(
+    `- Objective: ${suggestion.predictedObjective.toFixed(3)} ± ${suggestion.predictedUncertainty.toFixed(3)}`,
+  );
   lines.push(`- Acquisition: ${suggestion.acquisitionType} = ${suggestion.acquisitionValue.toFixed(4)}`);
   lines.push(`## Rationale`);
   lines.push(suggestion.rationale);
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function euclideanDistance(a: number[], b: number[]): number {
@@ -568,7 +559,7 @@ function euclideanDistance(a: number[], b: number[]): number {
 export function createCampaign(
   name: string,
   parameters: DesignParameter[],
-  objective: 'maximize' | 'minimize',
+  objective: "maximize" | "minimize",
 ): DBTLCampaign {
   return {
     id: `campaign_${Date.now().toString(36)}`,
