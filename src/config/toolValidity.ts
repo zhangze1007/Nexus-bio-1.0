@@ -124,6 +124,13 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
       "EKF with RK4 integration, Monod kinetics, analytical Jacobian, and sensor fusion are all genuine. Monte Carlo forecast uses diagonal-only covariance (no cross-correlations). Likelihood and NIS use correct S⁻¹ and innovation covariance S.",
   },
 
+  // Sequence Editor
+  sequence: {
+    level: "real",
+    caption:
+      "Restriction enzyme finder uses a real database of 15 common Type II enzymes with exact recognition sequences and cut site offsets. 6-frame translation uses the standard genetic code (NCBI table 1). Canvas-based linear viewer and SVG circular plasmid map are real renderers.",
+  },
+
   // ── Expansion tabs (2026-06-22) ───────────────────────────────────────────
   // These are sub-tabs within existing tool pages, not independent tools.
   // Badges rendered via FrontierEngineBadge inline component, not ToolShell.

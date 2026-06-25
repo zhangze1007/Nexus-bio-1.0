@@ -4,6 +4,7 @@ import {
   BrainCircuit,
   Cpu,
   Dna,
+  FileText,
   Gauge,
   GitBranch,
   Layers,
@@ -408,6 +409,42 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       { term: "Socratic questioning", definition: "AI-guided questions that help refine research hypotheses" },
       { term: "Agentic mode", definition: "Multi-step AI reasoning with planning and execution logging" },
     ],
+  },
+
+  // ── Sequence Editor ─────────────────────────────────────────────────
+  {
+    id: "sequence",
+    shortLabel: "SEQED",
+    name: "Sequence Editor",
+    href: "/tools/sequence",
+    category: "Genetic Systems",
+    direction: "Pathway & Design",
+    shell: "ide",
+    icon: FileText,
+    summary:
+      "DNA/protein sequence editor with linear viewer, circular plasmid map, restriction enzyme finder, 6-frame translation, and feature annotations.",
+    focus: "View, annotate, and analyze genetic sequences with interactive linear and circular maps.",
+    outputs: ["Linear sequence view", "Circular plasmid map", "Restriction sites", "6-frame translation"],
+    tags: ["sequence", "editor", "plasmid", "restriction", "annotation", "genetic"],
+    mode: "design",
+    threeDPotential: "none",
+    glossary:
+      "The Sequence Editor is a Benchling-style sequence viewer for DNA and protein sequences. It provides a Canvas-based linear viewer with zoom and selection, SVG circular plasmid maps, automatic restriction enzyme site detection, and 6-frame translation.",
+    keyConcepts: [
+      {
+        term: "Reading frame",
+        definition: "One of six possible ways to translate a DNA sequence (3 forward + 3 reverse complement)",
+      },
+      {
+        term: "Restriction enzyme",
+        definition: "An enzyme that cuts DNA at specific recognition sequences (e.g., EcoRI at GAATTC)",
+      },
+      {
+        term: "Plasmid map",
+        definition: "Circular diagram showing features and cut sites on a circular DNA molecule",
+      },
+    ],
+    relatedRoutes: ["/tools/pathd", "/tools/catdes"],
   },
 
   // ── Frontier engines (2025-2026) ──────────────────────────────────────

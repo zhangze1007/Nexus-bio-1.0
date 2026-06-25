@@ -31,6 +31,7 @@ export const TOOL_IDS = [
   "multiplexcrispr",
   "pathwaydiscovery",
   "digitaltwin",
+  "sequence",
 ] as const;
 
 export type ToolId = (typeof TOOL_IDS)[number];
