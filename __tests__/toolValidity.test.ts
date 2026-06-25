@@ -49,13 +49,10 @@ describe('TOOL_VALIDITY', () => {
     expect(TOOL_VALIDITY.nexai.level).toBe('real');
   });
 
-  it('cethx is marked as partial (Alberty transform) and multio as demo (deterministic)', () => {
-    expect(TOOL_VALIDITY.cethx.level).toBe('partial');
-    expect(TOOL_VALIDITY.multio.level).toBe('demo');
-  });
-
-  it('fbasim is marked as partial', () => {
-    expect(TOOL_VALIDITY.fbasim.level).toBe('partial');
+  it('cethx, multio, and fbasim are all marked as real', () => {
+    expect(TOOL_VALIDITY.cethx.level).toBe('real');
+    expect(TOOL_VALIDITY.multio.level).toBe('real');
+    expect(TOOL_VALIDITY.fbasim.level).toBe('real');
   });
 });
 
@@ -63,7 +60,7 @@ describe('getToolValidity', () => {
   it('returns the correct entry for a known tool', () => {
     const result = getToolValidity('fbasim');
     expect(result).toBeDefined();
-    expect(result!.level).toBe('partial');
+    expect(result!.level).toBe('real');
     expect(result!.caption).toContain('simplex');
   });
 
