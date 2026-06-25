@@ -1023,7 +1023,7 @@
         "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
         "rationale": "Demo community exchange values cannot become formal recommendations."
       },
-      "riskTags": ["known-bad", "community-fba"],
+      "riskTags": ["known-bad", "community-fba-fake-exchange"],
       "knownBad": true
     },
     {

@@ -160,7 +160,7 @@ describe('community FBA honesty boundary', () => {
       surface: 'recommendation',
       knownBad: true,
     });
-    expect(communityCase?.riskTags).toContain('community-fba');
+    expect(communityCase?.riskTags).toContain('community-fba-fake-exchange');
     expect(communityCase?.expected.status).not.toBe('ok');
     expect(communityLabel?.expectedStatus).not.toBe('ok');
     expect(communityLabel?.expectedStatus).toBe('blocked');

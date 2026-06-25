@@ -122,7 +122,7 @@ describe('MultiO model honesty boundary', () => {
 
     expect(TOOL_VALIDITY.multio.level).toBe('demo');
     expect(TOOL_VALIDITY.multio.caption).toContain('MOFA+');
-    expect(TOOL_VALIDITY.multio.caption).toContain('not a production VAE');
+    expect(TOOL_VALIDITY.multio.caption).toContain('not a VAE');
     expect(TOOL_VALIDITY.multio.caption).toContain('synthetic demo data');
     expect(registryEntry?.tags).not.toContain('vae');
     expect(registryEntry?.tags).toContain('deterministic');

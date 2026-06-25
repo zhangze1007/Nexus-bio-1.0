@@ -33,7 +33,7 @@ type RuntimePayload = Partial<WorkbenchPayloadBase> & {
 
 const SUB_TOOL_VALIDITY: Record<string, ValidityLevel> = {
   'fbasim-single': 'partial',
-  'fbasim-community': 'demo',
+  'fbasim-community': 'partial',
 };
 
 const ASSUMPTION_BY_ID = Object.values(TOOL_ASSUMPTIONS)

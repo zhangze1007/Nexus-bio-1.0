@@ -31,8 +31,8 @@
  * 2. FBAsim (fbasim) — split into sub-tier entries
  *    - The legacy 'fbasim' entry is preserved verbatim to avoid
  *      breaking any existing import call sites.
- *    - 'fbasim-single' (partial) and 'fbasim-community' (demo) are
- *      the canonical sub-tier entries going forward.
+ *    - 'fbasim-single' (partial) and 'fbasim-community' (partial)
+ *      are the canonical sub-tier entries going forward.
  *    - 'fbasim-community.community_not_joint_lp' is 'blocking' here,
  *      whereas the legacy 'fbasim.community_not_joint_lp' is only
  *      'warning'. The sub-tier entry is authoritative for downstream
@@ -231,6 +231,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       statement:
         'Inherits all fbasim-single biological assumptions (steady state, biomass objective, no regulation).',
       severity: 'info',
+    },
+    {
+      id: 'fbasim-community.community_not_joint_lp',
+      toolId: 'fbasim-community',
+      category: 'mathematical',
+      statement:
+        'Fallback: two independent LPs with post-hoc exchange scaling; NOT a joint community LP.',
+      severity: 'blocking',
     },
   ],
 
