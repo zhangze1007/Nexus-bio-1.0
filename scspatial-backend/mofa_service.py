@@ -36,8 +36,9 @@ def run_mofa_analysis(
     ent = entry_point()
 
     # Prepare data in mofapy2 format
+    # mofapy2 expects: data[groups][views] = 2D array
     view_names = list(views.keys())
-    data_matrices = [views[v] for v in view_names]  # numpy arrays
+    data_matrices = [[views[v] for v in view_names]]  # wrapped in list for groups
     features = [feature_names.get(v, [f"f{j}" for j in range(views[v].shape[1])]) for v in view_names]
     likelihoods = ["gaussian"] * len(view_names)
 
@@ -47,7 +48,7 @@ def run_mofa_analysis(
         ent.set_data_matrix(
             data=data_matrices,
             views_names=view_names,
-            samples_names=[sample_names],
+            samples_names=[sample_names],  # list of lists for groups
             features_names=features,
             likelihoods=likelihoods,
         )
