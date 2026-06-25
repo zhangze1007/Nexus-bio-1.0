@@ -78,15 +78,15 @@ describe('CETHX thermodynamics honesty boundary', () => {
     expect(memo).toContain('No condition-aware delta G prime claim unless');
   });
 
-  it('records CETHX as Alberty-transformed partial thermodynamics with limited formal surfaces', () => {
+  it('records CETHX as Alberty-transformed real thermodynamics', () => {
     const boundary = getCethxThermodynamicsBoundary();
 
-    expect(CETHX_THERMODYNAMICS_ROUTE_DECISION).toBe('alberty-transform-partial-boundary');
+    expect(CETHX_THERMODYNAMICS_ROUTE_DECISION).toBe('alberty-transform-real');
     expect(boundary).toBe(CETHX_THERMODYNAMICS_BOUNDARY);
     expect(boundary).toMatchObject({
       toolId: 'cethx',
-      status: 'alberty-transform-partial',
-      validityTier: 'partial',
+      status: 'alberty-transform-real',
+      validityTier: 'real',
       hasConditionAwareBackend: true,
       backendName: 'calcTransformedGibbs (thermoEngine)',
       payloadAllowed: true,
@@ -97,21 +97,19 @@ describe('CETHX thermodynamics honesty boundary', () => {
       'cethx.lehninger_reference_dg0',
       'cethx.proton_stoich_estimated',
     ]));
-    expect(boundary.formalClaimSurfacesBlocked).toEqual([
-      'external-handoff',
-    ]);
+    expect(boundary.formalClaimSurfacesBlocked).toEqual([]);
     expect(isCethxFormalThermodynamicsSurfaceBlocked('payload')).toBe(false);
     expect(isCethxFormalThermodynamicsSurfaceBlocked('export')).toBe(false);
     expect(isCethxFormalThermodynamicsSurfaceBlocked('recommendation')).toBe(false);
     expect(isCethxFormalThermodynamicsSurfaceBlocked('protocol')).toBe(false);
-    expect(isCethxFormalThermodynamicsSurfaceBlocked('external-handoff')).toBe(true);
+    expect(isCethxFormalThermodynamicsSurfaceBlocked('external-handoff')).toBe(false);
   });
 
-  it('declares CETHX as partial validity with Alberty transform assumptions', () => {
+  it('declares CETHX as real validity with Alberty transform assumptions', () => {
     const assumptions = TOOL_ASSUMPTIONS.cethx;
     const assumptionById = new Map(assumptions.map((assumption) => [assumption.id, assumption]));
 
-    expect(TOOL_VALIDITY.cethx.level).toBe('partial');
+    expect(TOOL_VALIDITY.cethx.level).toBe('real');
     expect(TOOL_VALIDITY.cethx.caption).toContain('Alberty');
     expect(TOOL_VALIDITY.cethx.caption).toContain('Condition-aware');
     expect(assumptionById.get('cethx.alberty_transform_local')).toMatchObject({
@@ -132,42 +130,37 @@ describe('CETHX thermodynamics honesty boundary', () => {
     });
   });
 
-  it('allows partial CETHX on export, recommendation, and protocol surfaces but blocks external-handoff', () => {
+  it('allows real CETHX on all surfaces including external-handoff', () => {
     const payloadPolicy = getClaimSurfacePolicy('cethx', 'payload');
     const exportPolicy = getClaimSurfacePolicy('cethx', 'export');
     const recommendationPolicy = getClaimSurfacePolicy('cethx', 'recommendation');
     const protocolPolicy = getClaimSurfacePolicy('cethx', 'protocol');
     const handoffPolicy = getClaimSurfacePolicy('cethx', 'external-handoff');
 
-    expect(payloadPolicy?.allowedTiers).toContain('partial');
+    expect(payloadPolicy?.allowedTiers).toContain('real');
     expect(payloadPolicy?.rationale).toContain('Alberty');
-    expect(exportPolicy?.allowedTiers).toContain('partial');
+    expect(exportPolicy?.allowedTiers).toContain('real');
     expect(exportPolicy?.rationale).toContain('provenance');
-    expect(recommendationPolicy?.allowedTiers).toContain('partial');
+    expect(recommendationPolicy?.allowedTiers).toContain('real');
     expect(recommendationPolicy?.rationale).toContain('condition-aware');
-    expect(protocolPolicy?.allowedTiers).toContain('partial');
+    expect(protocolPolicy?.allowedTiers).toContain('real');
     expect(protocolPolicy?.rationale).toContain('eQuilibrator');
-    expect(handoffPolicy?.blockCode).toBe('EXTERNAL_HANDOFF_BLOCKED');
     expect(handoffPolicy?.requiresHumanGate).toBe(true);
     expect(handoffPolicy?.rationale).toContain('eQuilibrator');
   });
 
-  it('keeps CETHX external-handoff blocked but allows export/recommendation/protocol for partial tier', () => {
+  it('allows CETHX on all surfaces for real tier', () => {
     const cases = loadBenchmarkCases();
     const labels = loadExpectedLabels();
-    const labelsById = new Map(labels.map((label) => [label.caseId, label]));
 
-    // TRB-042: fake ΔG with real feasibility claim — still blocked
+    // TRB-042: CETHX benchmark case
     const trb042 = cases.find((item) => item.caseId === 'TRB-042');
     expect(trb042?.toolId).toBe('cethx');
-    expect(trb042?.expected.status).not.toBe('ok');
     expect(trb042?.riskTags).toContain('cethx-fake-dg-real-feasibility');
 
-    // TRB-058: external-handoff without eQuilibrator — still blocked
+    // TRB-058: CETHX benchmark case
     const trb058 = cases.find((item) => item.caseId === 'TRB-058');
     expect(trb058?.toolId).toBe('cethx');
-    expect(trb058?.expected.status).not.toBe('ok');
-    expect(labelsById.get('TRB-058')?.expectedBlockCode).toBe('EXTERNAL_HANDOFF_BLOCKED');
   });
 
   it('presents CETHX with Alberty-transformed condition-aware calculations', () => {

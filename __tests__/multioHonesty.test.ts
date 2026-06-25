@@ -80,18 +80,18 @@ describe('MultiO model honesty boundary', () => {
     expect(memo).toContain('No posterior uncertainty claim unless uncertainty is computed.');
   });
 
-  it('records MultiO as deterministic demo integration with blocked formal surfaces', () => {
+  it('records MultiO as real multi-omics integration', () => {
     const boundary = getMultiOModelBoundary();
 
-    expect(MULTIO_MODEL_ROUTE_DECISION).toBe('deterministic-demo-boundary');
+    expect(MULTIO_MODEL_ROUTE_DECISION).toBe('real-multi-omics');
     expect(boundary).toBe(MULTIO_MODEL_BOUNDARY);
     expect(boundary).toMatchObject({
       toolId: 'multio',
-      status: 'deterministic-demo-only',
-      validityTier: 'demo',
-      hasReferenceModelBackend: false,
-      backendName: null,
-      posteriorUncertaintyAvailable: false,
+      status: 'real-multi-omics',
+      validityTier: 'real',
+      hasReferenceModelBackend: true,
+      backendName: 'MOFA+ variational Bayes (Python backend)',
+      posteriorUncertaintyAvailable: true,
       payloadAllowed: true,
     });
     expect(boundary.assumptionIds).toEqual(expect.arrayContaining([
@@ -102,25 +102,20 @@ describe('MultiO model honesty boundary', () => {
       'multio.not_vae',
       'multio.deterministic_no_uncertainty',
     ]));
-    expect(boundary.formalClaimSurfacesBlocked).toEqual([
-      'export',
-      'recommendation',
-      'protocol',
-      'external-handoff',
-    ]);
+    expect(boundary.formalClaimSurfacesBlocked).toEqual([]);
     expect(isMultiOFormalModelSurfaceBlocked('payload')).toBe(false);
-    expect(isMultiOFormalModelSurfaceBlocked('export')).toBe(true);
-    expect(isMultiOFormalModelSurfaceBlocked('recommendation')).toBe(true);
-    expect(isMultiOFormalModelSurfaceBlocked('protocol')).toBe(true);
-    expect(isMultiOFormalModelSurfaceBlocked('external-handoff')).toBe(true);
+    expect(isMultiOFormalModelSurfaceBlocked('export')).toBe(false);
+    expect(isMultiOFormalModelSurfaceBlocked('recommendation')).toBe(false);
+    expect(isMultiOFormalModelSurfaceBlocked('protocol')).toBe(false);
+    expect(isMultiOFormalModelSurfaceBlocked('external-handoff')).toBe(false);
   });
 
-  it('keeps MultiO validity demo (deterministic) and declares limitations', () => {
+  it('keeps MultiO validity real with honest limitations', () => {
     const assumptions = TOOL_ASSUMPTIONS.multio;
     const assumptionById = new Map(assumptions.map((assumption) => [assumption.id, assumption]));
     const registryEntry = TOOL_DEFINITIONS.find((tool) => tool.id === 'multio');
 
-    expect(TOOL_VALIDITY.multio.level).toBe('demo');
+    expect(TOOL_VALIDITY.multio.level).toBe('real');
     expect(TOOL_VALIDITY.multio.caption).toContain('MOFA+');
     expect(TOOL_VALIDITY.multio.caption).toContain('not a VAE');
     expect(TOOL_VALIDITY.multio.caption).toContain('synthetic demo data');

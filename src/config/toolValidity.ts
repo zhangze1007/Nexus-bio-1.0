@@ -43,7 +43,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   cethx: {
     level: "real",
     caption:
-      "Alberty-transformed ΔG' from Lehninger reference ΔG° via calcTransformedGibbs (thermoEngine). Condition-aware at pH, ionic-strength, temperature. eQuilibrator 3 API integration. TFA (thermodynamic feasibility analysis) with group contribution method.",
+      "Alberty-transformed ΔG' from Lehninger reference ΔG° via calcTransformedGibbs (thermoEngine). Condition-aware at pH, ionic-strength, temperature. eQuilibrator 3 API integration when available. TFA (thermodynamic feasibility analysis) with group contribution method.",
   },
   catdes: {
     level: "real",
@@ -77,7 +77,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   cellfree: {
     level: "real",
     caption:
-      "Resource-aware TX-TL ODE with RK4 integration. Kinetic constants from Silverman et al. 2010 (TX-TL calibration) and Sun et al. 2013 (PURE system). BRENDA integration for enzyme-specific Km/kcat overrides. Levenberg-Marquardt fitting for user plate-reader data.",
+      "Resource-aware TX-TL ODE structure exists with RK4 integration. Kinetic constants from Silverman et al. 2010 (TX-TL calibration) and Sun et al. 2013 (PURE system). BRENDA integration for enzyme-specific Km/kcat overrides. Levenberg-Marquardt fitting for user plate-reader data. uncertainty quantification via parameter sensitivity analysis.",
   },
   dbtlflow: {
     level: "real",
@@ -87,7 +87,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   multio: {
     level: "real",
     caption:
-      "MOFA+ factor analysis via Python backend (variational Bayes, real MOFA+ engine). Real UMAP projection via Python backend. Deterministic linear embedding with KL penalty for client-side visualization. Toggle between local and Python backend engines.",
+      "Real MOFA+ factor analysis via Python backend (variational Bayes, real MOFA+ engine). Real UMAP projection via Python backend. Deterministic linear embedding with KL penalty for client-side visualization (not a VAE). Toggle between local and Python backend engines. Uses synthetic demo data when no CSV uploaded.",
   },
   scspatial: {
     level: "real",

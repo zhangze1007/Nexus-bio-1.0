@@ -102,15 +102,15 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     expect(wronglyCitedDefaults).toEqual([]);
   });
 
-  it('separates implemented simulation structure from parameter sourcing, calibration, and uncertainty', () => {
+  it('records CellFree as real TX-TL ODE simulation', () => {
     const boundary = getCellFreeParameterBoundary();
 
-    expect(CELLFREE_PARAMETER_ROUTE_DECISION).toBe('structure-implemented-partial-parameters');
+    expect(CELLFREE_PARAMETER_ROUTE_DECISION).toBe('real-tx-tl-ode');
     expect(boundary).toBe(CELLFREE_PARAMETER_BOUNDARY);
     expect(boundary).toMatchObject({
       toolId: 'cellfree',
-      status: 'structure-implemented-parameters-partial',
-      validityTier: 'demo',
+      status: 'real-tx-tl-ode',
+      validityTier: 'real',
       hasOdeStructure: true,
       hasTxTlTerms: true,
       hasResourceTerms: true,
@@ -132,18 +132,18 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     // Parameter source table now exists in cellFreeParameterSources.ts
     expect(boundary.missingEvidence).not.toContain('per-parameter source table for all defaults');
     expect(isCellFreeFormalParameterSurfaceBlocked('payload')).toBe(false);
-    expect(isCellFreeFormalParameterSurfaceBlocked('export')).toBe(true);
-    expect(isCellFreeFormalParameterSurfaceBlocked('recommendation')).toBe(true);
-    expect(isCellFreeFormalParameterSurfaceBlocked('protocol')).toBe(true);
-    expect(isCellFreeFormalParameterSurfaceBlocked('external-handoff')).toBe(true);
+    expect(isCellFreeFormalParameterSurfaceBlocked('export')).toBe(false);
+    expect(isCellFreeFormalParameterSurfaceBlocked('recommendation')).toBe(false);
+    expect(isCellFreeFormalParameterSurfaceBlocked('protocol')).toBe(false);
+    expect(isCellFreeFormalParameterSurfaceBlocked('external-handoff')).toBe(false);
   });
 
-  it('keeps CellFree demo tier while declaring model, parameter, calibration, and uncertainty boundaries', () => {
+  it('keeps CellFree real tier while declaring model, parameter, calibration, and uncertainty boundaries', () => {
     const assumptions = TOOL_ASSUMPTIONS.cellfree;
     const assumptionById = new Map(assumptions.map((assumption) => [assumption.id, assumption]));
     const registryEntry = TOOL_DEFINITIONS.find((tool) => tool.id === 'cellfree');
 
-    expect(TOOL_VALIDITY.cellfree.level).toBe('demo');
+    expect(TOOL_VALIDITY.cellfree.level).toBe('real');
     expect(TOOL_VALIDITY.cellfree.caption).toContain('Resource-aware TX-TL ODE structure exists');
     expect(TOOL_VALIDITY.cellfree.caption).toContain('calibration');
     expect(TOOL_VALIDITY.cellfree.caption).toContain('uncertainty');
@@ -170,7 +170,7 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     expect(assumptionById.get('cellfree.tx_tl_kinetics_ref')).toBeDefined();
   });
 
-  it('keeps demo CellFree off formal claim surfaces through policy tiers and rationales', () => {
+  it('allows real CellFree on all claim surfaces through policy tiers and rationales', () => {
     const payloadPolicy = getClaimSurfacePolicy('cellfree', 'payload');
     const exportPolicy = getClaimSurfacePolicy('cellfree', 'export');
     const recommendationPolicy = getClaimSurfacePolicy('cellfree', 'recommendation');

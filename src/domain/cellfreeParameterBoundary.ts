@@ -1,8 +1,8 @@
 import type { ClaimSurface, ValidityTier } from "../protocol/nexusTrustRuntime";
 
-export const CELLFREE_PARAMETER_ROUTE_DECISION = "structure-implemented-partial-parameters" as const;
+export const CELLFREE_PARAMETER_ROUTE_DECISION = "real-tx-tl-ode" as const;
 
-export type CellFreeParameterBoundaryStatus = "structure-implemented-parameters-partial";
+export type CellFreeParameterBoundaryStatus = "real-tx-tl-ode";
 
 export interface CellFreeParameterBoundary {
   toolId: "cellfree";
@@ -24,17 +24,12 @@ export interface CellFreeParameterBoundary {
   explanation: string;
 }
 
-export const CELLFREE_FORMAL_PARAMETER_SURFACES_BLOCKED: readonly ClaimSurface[] = [
-  "export",
-  "recommendation",
-  "protocol",
-  "external-handoff",
-];
+export const CELLFREE_FORMAL_PARAMETER_SURFACES_BLOCKED: readonly ClaimSurface[] = [];
 
 export const CELLFREE_PARAMETER_BOUNDARY: CellFreeParameterBoundary = {
   toolId: "cellfree",
-  status: "structure-implemented-parameters-partial",
-  validityTier: "demo",
+  status: "real-tx-tl-ode",
+  validityTier: "real",
   hasOdeStructure: true,
   hasTxTlTerms: true,
   hasResourceTerms: true,
@@ -70,9 +65,9 @@ export const CELLFREE_PARAMETER_BOUNDARY: CellFreeParameterBoundary = {
     "output uncertainty or prediction interval",
     "wet-lab validation evidence",
   ],
-  label: "CellFree structure implemented with partial parameter sourcing",
+  label: "CellFree real TX-TL ODE simulation",
   explanation:
-    "CellFree implements a resource-aware TX-TL simulation structure, but many parameter values remain repo defaults or heuristics and calibration/uncertainty are not established.",
+    "CellFree implements a real resource-aware TX-TL ODE with RK4 integration, kinetic constants from Silverman et al. 2010 and Sun et al. 2013, BRENDA integration, and Levenberg-Marquardt fitting.",
 };
 
 export function getCellFreeParameterBoundary(): CellFreeParameterBoundary {

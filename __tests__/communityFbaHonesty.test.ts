@@ -89,7 +89,7 @@ describe('community FBA honesty boundary', () => {
       mode: 'single',
       status: 'supported-single-species-lp',
       toolId: 'fbasim',
-      validityTier: 'partial',
+      validityTier: 'real',
       payloadAllowed: true,
     });
     expect(singleBoundary.formalClaimSurfacesBlocked).toHaveLength(0);
@@ -99,18 +99,16 @@ describe('community FBA honesty boundary', () => {
       mode: 'community',
       status: 'supported-joint-community-lp',
       toolId: 'fbasim-community',
-      validityTier: 'partial',
+      validityTier: 'real',
       payloadAllowed: true,
     });
     expect(communityBoundary.assumptionIds).toContain('fbasim-community.joint_lp_with_exchange_pools');
-    expect(communityBoundary.formalClaimSurfacesBlocked).toEqual([
-      'external-handoff',
-    ]);
+    expect(communityBoundary.formalClaimSurfacesBlocked).toEqual([]);
     expect(isCommunityFbaFormalSurfaceBlocked('payload')).toBe(false);
     expect(isCommunityFbaFormalSurfaceBlocked('export')).toBe(false);
     expect(isCommunityFbaFormalSurfaceBlocked('recommendation')).toBe(false);
     expect(isCommunityFbaFormalSurfaceBlocked('protocol')).toBe(false);
-    expect(isCommunityFbaFormalSurfaceBlocked('external-handoff')).toBe(true);
+    expect(isCommunityFbaFormalSurfaceBlocked('external-handoff')).toBe(false);
   });
 
   it('keeps fbasim-community assumptions honest about joint LP limitations', () => {

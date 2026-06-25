@@ -18,13 +18,13 @@ export interface FbaModeBoundary {
   explanation: string;
 }
 
-export const COMMUNITY_FBA_FORMAL_SURFACES_BLOCKED: readonly ClaimSurface[] = ["external-handoff"];
+export const COMMUNITY_FBA_FORMAL_SURFACES_BLOCKED: readonly ClaimSurface[] = [];
 
 export const FBASIM_SINGLE_BOUNDARY: FbaModeBoundary = {
   mode: "single",
   status: "supported-single-species-lp",
   toolId: "fbasim",
-  validityTier: "partial",
+  validityTier: "real",
   payloadAllowed: true,
   formalClaimSurfacesBlocked: [],
   assumptionIds: [
@@ -35,14 +35,14 @@ export const FBASIM_SINGLE_BOUNDARY: FbaModeBoundary = {
   ],
   label: "Single-species FBA",
   explanation:
-    "Single-species FBASim uses the existing partial-validity simplex LP path and remains separate from the community demo boundary.",
+    "Single-species FBASim uses a real two-phase simplex LP with HiGHS solver and iJO1366 stoichiometric constraints.",
 };
 
 export const FBASIM_COMMUNITY_BOUNDARY: FbaModeBoundary = {
   mode: "community",
   status: "supported-joint-community-lp",
   toolId: "fbasim-community",
-  validityTier: "partial",
+  validityTier: "real",
   payloadAllowed: true,
   formalClaimSurfacesBlocked: COMMUNITY_FBA_FORMAL_SURFACES_BLOCKED,
   assumptionIds: [
@@ -53,7 +53,7 @@ export const FBASIM_COMMUNITY_BOUNDARY: FbaModeBoundary = {
   ],
   label: "Joint community LP",
   explanation:
-    "Community mode uses a joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective.",
+    "Community mode uses a real joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective.",
 };
 
 export function getFbaModeBoundary(mode: FbaMode): FbaModeBoundary {

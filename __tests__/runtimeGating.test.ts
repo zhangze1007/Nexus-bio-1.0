@@ -33,11 +33,11 @@ describe('runtime gating', () => {
     expect(decision.severity).toBe('block');
   });
 
-  it('allows demo source into demo target as a warning-only demo chain', () => {
+  it('blocks demo source into real target', () => {
     const decision = canPassToDownstream(payload({ toolId: 'cethx', validity: 'demo' }), 'cellfree');
-    expect(decision.allowed).toBe(true);
-    expect(decision.severity).toBe('warn');
-    expect(decision.reason).toContain('Demo-only chain');
+    expect(decision.allowed).toBe(false);
+    expect(decision.severity).toBe('block');
+    expect(decision.reason).toContain('Demo output cannot feed');
   });
 
   it('allows partial source into partial target when no blocking assumptions are present', () => {
@@ -103,6 +103,6 @@ describe('runtime gating', () => {
     );
     expect(decision.allowed).toBe(true);
     expect(decision.sourceValidity).toBe('partial');
-    expect(decision.targetValidity).toBe('partial');
+    expect(decision.targetValidity).toBe('real');
   });
 });

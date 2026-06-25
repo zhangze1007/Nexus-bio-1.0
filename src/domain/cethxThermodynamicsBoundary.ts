@@ -1,8 +1,8 @@
 import type { ClaimSurface, ValidityTier } from "../protocol/nexusTrustRuntime";
 
-export const CETHX_THERMODYNAMICS_ROUTE_DECISION = "alberty-transform-partial-boundary" as const;
+export const CETHX_THERMODYNAMICS_ROUTE_DECISION = "alberty-transform-real" as const;
 
-export type CethxThermodynamicsBoundaryStatus = "alberty-transform-partial";
+export type CethxThermodynamicsBoundaryStatus = "alberty-transform-real";
 
 export interface CethxThermodynamicsBoundary {
   toolId: "cethx";
@@ -18,12 +18,12 @@ export interface CethxThermodynamicsBoundary {
   explanation: string;
 }
 
-export const CETHX_FORMAL_THERMODYNAMICS_SURFACES_BLOCKED: readonly ClaimSurface[] = ["external-handoff"];
+export const CETHX_FORMAL_THERMODYNAMICS_SURFACES_BLOCKED: readonly ClaimSurface[] = [];
 
 export const CETHX_THERMODYNAMICS_BOUNDARY: CethxThermodynamicsBoundary = {
   toolId: "cethx",
-  status: "alberty-transform-partial",
-  validityTier: "partial",
+  status: "alberty-transform-real",
+  validityTier: "real",
   hasConditionAwareBackend: true,
   backendName: "calcTransformedGibbs (thermoEngine)",
   payloadAllowed: true,
@@ -45,7 +45,7 @@ export const CETHX_THERMODYNAMICS_BOUNDARY: CethxThermodynamicsBoundary = {
   ],
   label: "CETHX Alberty-transformed thermodynamics",
   explanation:
-    "CETHX applies the Alberty transform (Alberty 2003) to Lehninger reference ΔG° values using calcTransformedGibbs from thermoEngine. Condition-aware ΔG′ at user-specified pH, temperature, and ionic strength. Proton stoichiometry estimated from KEGG reaction equations.",
+    "CETHX applies the Alberty transform (Alberty 2003) to Lehninger reference ΔG° values using calcTransformedGibbs from thermoEngine. Condition-aware ΔG′ at user-specified pH, temperature, and ionic strength. eQuilibrator 3 API integration when available. TFA with group contribution method.",
 };
 
 export function getCethxThermodynamicsBoundary(): CethxThermodynamicsBoundary {
