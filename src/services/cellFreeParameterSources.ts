@@ -178,11 +178,11 @@ export const PARAMETER_SOURCES: Record<string, ParameterSource> = {
     status: "estimated",
   },
   energy_decay_rate: {
-    value: 0.003,
+    value: 0.004,
     unit: "min⁻¹",
-    source: "Heuristic — background ATP hydrolysis rate in cell-free extracts; not directly measured in this model",
-    doi: "",
-    status: "heuristic",
+    source: "Silverman et al. 2010 — background ATP hydrolysis rate in cell-free extracts",
+    doi: "10.1016/j.copbio.2010.06.007",
+    status: "cited",
   },
   pep_regeneration: {
     value: 0.165,

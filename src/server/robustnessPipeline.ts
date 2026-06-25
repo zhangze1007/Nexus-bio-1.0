@@ -82,7 +82,7 @@ function cellFreeODE(
   const d_mRNA = params.d_mRNA ?? 0.05;
   const d_protein = params.d_protein ?? 0.005;
   const K_tl = params.K_tl ?? 100;
-  const energy_decay = params.energy_decay ?? 0.01;
+  const energy_decay = params.energy_decay ?? 0.004;
   const Rnap = params.Rnap_activity ?? 1.0;
   const AA = params.AA_conc ?? 2.0;
   const DNA = params.DNA_conc ?? 5.0;

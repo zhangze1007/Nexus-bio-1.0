@@ -1066,7 +1066,7 @@ export function generateDefaultParameters(): CFSParameters {
       aminoAcids: 10.0, // mM — Jewett & Swartz 2004: amino acid mix ~10 mM
       ntps: 3.5, // mM — Silverman et al. 2010: NTP pool ~3.5 mM
     },
-    energyDecayRate: 0.004, // 1/min — Silverman et al. 2010: energy decay ~4%/min
+    energyDecayRate: 0.004, // 1/min — Silverman et al. 2010: energy decay ~0.4%/min
     pepRegenerationRate: 0.005, // 1/min — Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
     simulationTime: 240, // 4 hours — typical cell-free reaction duration
     timeStep: 0.5, // min — numerical integration step

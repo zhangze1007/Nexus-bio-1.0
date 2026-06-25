@@ -71,7 +71,7 @@ export const DEFAULT_CELL_FREE_NOMINAL: CellFreeNominalParams = {
   d_mRNA: 0.05,
   d_protein: 0.005,
   K_tl: 100,
-  energy_decay: 0.01,
+  energy_decay: 0.004,
   Rnap_activity: 1.0,
   AA_conc: 2.0,
   DNA_conc: 5.0,
