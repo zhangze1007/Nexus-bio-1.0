@@ -6,6 +6,7 @@ import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProv
 import { RouteTransition } from '../src/components/shared/RouteTransition';
 import { OnboardingOverlay } from '../src/components/shared/OnboardingOverlay';
 import AuthProvider from '../src/components/auth/AuthProvider';
+import QueryProvider from '../src/components/providers/QueryProvider';
 import WebVitals from '../src/components/WebVitals';
 import WorkflowBanner from '../src/components/WorkflowBanner';
 
@@ -40,18 +41,20 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
-        <AuthProvider>
-          <Suspense fallback={null}>
-            <WorkbenchSyncProvider />
-          </Suspense>
-          <div id="root">
-            <WorkflowBanner />
-            <RouteTransition>
-              <main id="main-content">{children}</main>
-            </RouteTransition>
-          </div>
-          <OnboardingOverlay />
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <Suspense fallback={null}>
+              <WorkbenchSyncProvider />
+            </Suspense>
+            <div id="root">
+              <WorkflowBanner />
+              <RouteTransition>
+                <main id="main-content">{children}</main>
+              </RouteTransition>
+            </div>
+            <OnboardingOverlay />
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

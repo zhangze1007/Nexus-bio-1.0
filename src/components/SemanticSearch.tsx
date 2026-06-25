@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { EuropePMCResultItem, SemanticScholarPaper, OpenAlexWork, COREWorkItem } from '../types/literature';
 import {
   AlertCircle,
@@ -442,6 +443,14 @@ const SOURCE_DEFINITIONS: SourceDefinition[] = [
   { key: 'CORE', label: 'CORE', fetcher: fetchCORE },
 ];
 
+const IDLE_SOURCE_STATES: Record<string, SourceStatus> = Object.fromEntries(
+  SOURCE_DEFINITIONS.map((s) => [s.key, 'idle' as SourceStatus]),
+);
+
+const LOADING_SOURCE_STATES: Record<string, SourceStatus> = Object.fromEntries(
+  SOURCE_DEFINITIONS.map((s) => [s.key, 'loading' as SourceStatus]),
+);
+
 interface SemanticSearchProps {
   onAnalyzePaper?: (text: string) => void;
   initialQuery?: string;
@@ -469,8 +478,7 @@ function suggestToolRoute(article: Article) {
 
 export default function SemanticSearch({ onAnalyzePaper, initialQuery }: SemanticSearchProps) {
   const [query, setQuery] = useState(initialQuery ?? '');
-  const [results, setResults] = useState<Article[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -479,10 +487,45 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
   const [sortMode, setSortMode] = useState<SortMode>('citations');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
-  const [sourceState, setSourceState] = useState<Record<string, SourceStatus>>(
-    () => Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'idle'])),
-  );
-  const [sourceIssues, setSourceIssues] = useState<Record<string, string>>({});
+
+  // React Query: cache search results per query term (staleTime 5min, gcTime 10min, retry 2)
+  const searchQuery = useQuery({
+    queryKey: ['semanticSearch', submittedQuery],
+    queryFn: async () => {
+      const allArticles: Article[] = [];
+      const states: Record<string, SourceStatus> = {};
+      const issues: Record<string, string> = {};
+
+      await Promise.allSettled(
+        SOURCE_DEFINITIONS.map(async (source) => {
+          try {
+            const articles = await source.fetcher(submittedQuery!);
+            allArticles.push(...articles);
+            states[source.key] = 'ready';
+          } catch (error) {
+            states[source.key] = 'error';
+            issues[source.key] = describeSourceIssue(error);
+          }
+        }),
+      );
+
+      return {
+        articles: mergeUniqueArticles([], allArticles),
+        sourceStates: states,
+        sourceIssues: issues,
+      };
+    },
+    enabled: !!submittedQuery,
+  });
+
+  // Derived values from query state
+  const results = searchQuery.data?.articles ?? [];
+  const isSearching = searchQuery.isLoading;
+  const sourceState: Record<string, SourceStatus> =
+    searchQuery.data?.sourceStates ??
+    (submittedQuery ? LOADING_SOURCE_STATES : IDLE_SOURCE_STATES);
+  const sourceIssues: Record<string, string> = searchQuery.data?.sourceIssues ?? {};
+
   const [showcaseAbstracts, setShowcaseAbstracts] = useState<Record<string, string>>({});
   const [showcaseAbstractState, setShowcaseAbstractState] = useState<Record<string, SourceStatus>>({});
   const [showcaseAbstractErrors, setShowcaseAbstractErrors] = useState<Record<string, string>>({});
@@ -517,9 +560,11 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
   useEffect(() => {
     if (initialQuery && !didAutoSearch.current) {
       didAutoSearch.current = true;
-      runSearch(initialQuery);
+      setQuery(initialQuery);
+      setSubmittedQuery(initialQuery);
+      setHasSearched(true);
+      setShowShowcase(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
 
   const sourceCounts = useMemo(() => {
@@ -592,45 +637,22 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
   const clearSearch = useCallback(() => {
     setQuery('');
-    setResults([]);
+    setSubmittedQuery(null);
     setExpandedIds(new Set());
     setHasSearched(false);
     setShowShowcase(true);
     setSourceFilter('All');
     setSortMode('citations');
-    setSourceIssues({});
-    setSourceState(Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'idle'])));
   }, []);
 
-  const runSearch = useCallback(async (nextQuery: string) => {
-    if (!nextQuery.trim()) return;
-
-    setIsSearching(true);
-    setHasSearched(true);
-    setResults([]);
-    setExpandedIds(new Set());
-    setShowShowcase(false);
-    setSourceFilter('All');
-    setSourceIssues({});
-    setSourceState(Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'loading'])));
-
-    await Promise.allSettled(SOURCE_DEFINITIONS.map(async (source) => {
-      try {
-        const articles = await source.fetcher(nextQuery);
-        setResults((prev) => mergeUniqueArticles(prev, articles));
-        setSourceState((prev) => ({ ...prev, [source.key]: 'ready' }));
-      } catch (error) {
-        setSourceState((prev) => ({ ...prev, [source.key]: 'error' }));
-        setSourceIssues((prev) => ({ ...prev, [source.key]: describeSourceIssue(error) }));
-      }
-    }));
-
-    setIsSearching(false);
-  }, []);
-
-  const handleSearch = async (event: React.FormEvent) => {
+  const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
-    await runSearch(query);
+    if (!query.trim()) return;
+    setSubmittedQuery(query);
+    setHasSearched(true);
+    setShowShowcase(false);
+    setExpandedIds(new Set());
+    setSourceFilter('All');
   };
 
   const loadShowcaseAbstract = useCallback(async (article: Article) => {

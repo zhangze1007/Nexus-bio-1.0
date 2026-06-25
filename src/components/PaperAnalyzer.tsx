@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import {
   ArrowUp, Upload, Camera, Globe, Image as ImageIcon,
   X, ChevronUp, Plus, AlertCircle, CheckCircle2, Loader2,
@@ -345,6 +346,30 @@ export default function PaperAnalyzer({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // React Query mutation for AI analysis (retry 2 via QueryClient defaults)
+  const analyzeMutation = useMutation({
+    mutationFn: async (requestBody: unknown) => {
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+        signal: abortRef.current.signal,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      return data as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        meta?: { provider?: string };
+      };
+    },
+  });
+
   useEffect(() => {
     if (!initialText?.trim()) return;
     setText(initialText);
@@ -425,26 +450,11 @@ export default function PaperAnalyzer({
       return;
     }
 
-    // Cancel any in-flight request
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
-
     setAnalysisState('analyzing');
     setErrorMsg(null);
 
     try {
-      const res = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRequestBody()),
-        signal: abortRef.current.signal,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || `HTTP ${res.status}`);
-      }
+      const data = await analyzeMutation.mutateAsync(buildRequestBody());
 
       const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
       const provider = data.meta?.provider as string | undefined;
