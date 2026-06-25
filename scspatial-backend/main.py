@@ -443,6 +443,8 @@ def _build_query_response(artifact: Dict[str, Any], request: QueryRequest) -> Di
             "sampleMetadataKeys": metadata.get("extractedKeys", {}).get("sampleMetadataKeys", []),
             "warnings": metadata.get("warnings", []),
         },
+        "availableGenes": gene_symbols,
+        "availableClusters": cluster_labels,
         "selection": {
             "selectedGene": selected_gene,
             "selectedCluster": request.selectedCluster,
@@ -620,5 +622,5 @@ def _find_visium_root(directory: str) -> Optional[str]:
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", "8000"))
     uvicorn.run(app, host="0.0.0.0", port=port)
