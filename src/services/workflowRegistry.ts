@@ -735,6 +735,25 @@ const DIGITAL_TWIN_CONTRACT: ToolContract = {
   isGoldenPath: false,
 };
 
+const SEQUENCE_CONTRACT: ToolContract = {
+  toolId: "sequence",
+  contractScope: "contractOnly",
+  stageId: "stage-2",
+  primaryIntent: "design",
+  requiredInputs: [],
+  optionalInputs: [],
+  outputArtifacts: [],
+  evidenceRequired: NO_EVIDENCE,
+  validityBaseline: { floor: "partial", reason: "Sequence analysis tool." },
+  confidencePolicy: NO_CONFIDENCE,
+  uncertaintyPolicy: NO_UNCERTAINTY,
+  humanGatePolicy: NO_GATE,
+  nextRecommendedNodes: [],
+  failureModes: [],
+  demoPolicy: { allowsDemoSeed: true, blockGoldenPath: false },
+  isGoldenPath: false,
+};
+
 export const WORKFLOW_CONTRACTS: Record<ToolId, ToolContract> = {
   pathd: PATHD_CONTRACT,
   "metabolic-eng": METABOLIC_ENG_CONTRACT,
