@@ -56,16 +56,16 @@ const defaultInput: PathwayDiscoveryInput = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Basic Search', () => {
-  test('finds at least one pathway from pyruvate to acetyl_coa', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('finds at least one pathway from pyruvate to acetyl_coa', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     expect(result.pathways.length).toBeGreaterThanOrEqual(1);
     expect(result.pathways[0].target.id).toBe('acetyl_coa');
     expect(result.pathways[0].precursor.id).toBe('pyruvate');
   });
 
-  test('result contains targetInfo, precursorPool, dbStats, and designNotes', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('result contains targetInfo, precursorPool, dbStats, and designNotes', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     expect(result.targetInfo.id).toBe('acetyl_coa');
     expect(result.precursorPool.length).toBeGreaterThanOrEqual(1);
@@ -76,8 +76,8 @@ describe('Pathway Discovery — Basic Search', () => {
     expect(result.designNotes.length).toBeGreaterThan(0);
   });
 
-  test('returned pathway has valid steps array', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('returned pathway has valid steps array', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
     const pathway = result.pathways[0];
 
     expect(pathway.steps.length).toBeGreaterThanOrEqual(1);
@@ -94,8 +94,8 @@ describe('Pathway Discovery — Basic Search', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — ΔG Cascade Consistency', () => {
-  test('metrics.totalDeltaG equals the sum of dgCascade values', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('metrics.totalDeltaG equals the sum of dgCascade values', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       const cascadeSum = pathway.dgCascade.reduce((sum, dg) => sum + dg, 0);
@@ -103,16 +103,16 @@ describe('Pathway Discovery — ΔG Cascade Consistency', () => {
     }
   });
 
-  test('dgCascade length equals steps length', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('dgCascade length equals steps length', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       expect(pathway.dgCascade.length).toBe(pathway.steps.length);
     }
   });
 
-  test('each dgCascade value matches the corresponding step deltaG', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('each dgCascade value matches the corresponding step deltaG', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       for (let i = 0; i < pathway.steps.length; i++) {
@@ -127,16 +127,16 @@ describe('Pathway Discovery — ΔG Cascade Consistency', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Pathway Metrics', () => {
-  test('metrics.pathwayLength === steps.length', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('metrics.pathwayLength === steps.length', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       expect(pathway.metrics.pathwayLength).toBe(pathway.steps.length);
     }
   });
 
-  test('metrics.overallScore is in [0, 1] range', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('metrics.overallScore is in [0, 1] range', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       expect(pathway.metrics.overallScore).toBeGreaterThanOrEqual(0);
@@ -144,8 +144,8 @@ describe('Pathway Discovery — Pathway Metrics', () => {
     }
   });
 
-  test('metrics.avgEnzymeAvailability is in [0, 1] range', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('metrics.avgEnzymeAvailability is in [0, 1] range', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       expect(pathway.metrics.avgEnzymeAvailability).toBeGreaterThanOrEqual(0);
@@ -153,8 +153,8 @@ describe('Pathway Discovery — Pathway Metrics', () => {
     }
   });
 
-  test('metrics.atomEconomy is in [0, 1] range', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('metrics.atomEconomy is in [0, 1] range', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       expect(pathway.metrics.atomEconomy).toBeGreaterThanOrEqual(0);
@@ -162,8 +162,8 @@ describe('Pathway Discovery — Pathway Metrics', () => {
     }
   });
 
-  test('metrics.cofactorBalance is in [0, 1] range', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('metrics.cofactorBalance is in [0, 1] range', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       expect(pathway.metrics.cofactorBalance).toBeGreaterThanOrEqual(0);
@@ -171,8 +171,8 @@ describe('Pathway Discovery — Pathway Metrics', () => {
     }
   });
 
-  test('pathways are sorted by overallScore descending', () => {
-    const result = runPathwayDiscovery({ ...defaultInput, topN: 5 });
+  test('pathways are sorted by overallScore descending', async () => {
+    const result = await runPathwayDiscovery({ ...defaultInput, topN: 5 });
 
     for (let i = 1; i < result.pathways.length; i++) {
       expect(result.pathways[i].metrics.overallScore).toBeLessThanOrEqual(
@@ -181,8 +181,8 @@ describe('Pathway Discovery — Pathway Metrics', () => {
     }
   });
 
-  test('each step has valid feasibility in [0, 1]', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('each step has valid feasibility in [0, 1]', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       for (const step of pathway.steps) {
@@ -198,9 +198,9 @@ describe('Pathway Discovery — Pathway Metrics', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Determinism', () => {
-  test('same input produces identical output on repeated runs', () => {
-    const first = runPathwayDiscovery(defaultInput);
-    const second = runPathwayDiscovery(defaultInput);
+  test('same input produces identical output on repeated runs', async () => {
+    const first = await runPathwayDiscovery(defaultInput);
+    const second = await runPathwayDiscovery(defaultInput);
 
     expect(second.pathways.length).toBe(first.pathways.length);
     for (let i = 0; i < first.pathways.length; i++) {
@@ -216,7 +216,7 @@ describe('Pathway Discovery — Determinism', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Impossible Target', () => {
-  test('returns empty pathways for target not in reaction database', () => {
+  test('returns empty pathways for target not in reaction database', async () => {
     const impossibleTarget: Molecule = {
       id: 'impossible_molecule_xyz',
       name: 'impossible_molecule_xyz',
@@ -224,7 +224,7 @@ describe('Pathway Discovery — Impossible Target', () => {
       isPrecursor: false,
     };
 
-    const result = runPathwayDiscovery({
+    const result = await runPathwayDiscovery({
       target: impossibleTarget,
       precursors: pyruvatePrecursors,
       maxLength: 8,
@@ -241,8 +241,8 @@ describe('Pathway Discovery — Impossible Target', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Multiple Precursors', () => {
-  test('accepts multiple precursors without error', () => {
-    const result = runPathwayDiscovery({
+  test('accepts multiple precursors without error', async () => {
+    const result = await runPathwayDiscovery({
       target: acetylCoA,
       precursors: multiPrecursors,
       maxLength: 8,
@@ -253,8 +253,8 @@ describe('Pathway Discovery — Multiple Precursors', () => {
     expect(result.precursorPool.length).toBe(2);
   });
 
-  test('providing topN returns at most that many pathways', () => {
-    const result = runPathwayDiscovery({
+  test('providing topN returns at most that many pathways', async () => {
+    const result = await runPathwayDiscovery({
       target: acetylCoA,
       precursors: multiPrecursors,
       maxLength: 8,
@@ -264,8 +264,8 @@ describe('Pathway Discovery — Multiple Precursors', () => {
     expect(result.pathways.length).toBeLessThanOrEqual(3);
   });
 
-  test('maxLength limits pathway length', () => {
-    const result = runPathwayDiscovery({
+  test('maxLength limits pathway length', async () => {
+    const result = await runPathwayDiscovery({
       target: acetylCoA,
       precursors: multiPrecursors,
       maxLength: 2,
@@ -283,17 +283,17 @@ describe('Pathway Discovery — Multiple Precursors', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Input Validation', () => {
-  test('throws when target has no ID', () => {
+  test('throws when target has no ID', async () => {
     const badTarget = { id: '', name: 'bad', functionalGroups: [], isPrecursor: false };
-    expect(() =>
+    await expect(
       runPathwayDiscovery({ target: badTarget as Molecule, precursors: pyruvatePrecursors }),
-    ).toThrow('Target molecule must have an ID');
+    ).rejects.toThrow('Target molecule must have an ID');
   });
 
-  test('throws when no precursors provided', () => {
-    expect(() =>
+  test('throws when no precursors provided', async () => {
+    await expect(
       runPathwayDiscovery({ target: acetylCoA, precursors: [] }),
-    ).toThrow('At least one precursor is required');
+    ).rejects.toThrow('At least one precursor is required');
   });
 });
 
@@ -302,22 +302,22 @@ describe('Pathway Discovery — Input Validation', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — checkPathwayFeasibility', () => {
-  test('returns feasible=true for known reachable target', () => {
-    const result = checkPathwayFeasibility('acetyl_coa', ['pyruvate']);
+  test('returns feasible=true for known reachable target', async () => {
+    const result = await checkPathwayFeasibility('acetyl_coa', ['pyruvate']);
 
     expect(result.feasible).toBe(true);
     expect(result.estimatedSteps).toBeGreaterThanOrEqual(1);
     expect(result.confidence).toBeGreaterThan(0);
   });
 
-  test('returns feasible=false for unreachable target', () => {
-    const result = checkPathwayFeasibility('impossible_molecule_xyz', ['pyruvate']);
+  test('returns feasible=false for unreachable target', async () => {
+    const result = await checkPathwayFeasibility('impossible_molecule_xyz', ['pyruvate']);
 
     expect(result.feasible).toBe(false);
   });
 
-  test('returns finite confidence value', () => {
-    const result = checkPathwayFeasibility('acetyl_coa', ['pyruvate']);
+  test('returns finite confidence value', async () => {
+    const result = await checkPathwayFeasibility('acetyl_coa', ['pyruvate']);
 
     expect(Number.isFinite(result.confidence)).toBe(true);
   });
@@ -328,8 +328,8 @@ describe('Pathway Discovery — checkPathwayFeasibility', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Bottleneck Detection', () => {
-  test('bottlenecks have valid structure', () => {
-    const result = runPathwayDiscovery(defaultInput);
+  test('bottlenecks have valid structure', async () => {
+    const result = await runPathwayDiscovery(defaultInput);
 
     for (const pathway of result.pathways) {
       for (const bn of pathway.bottlenecks) {
@@ -346,8 +346,8 @@ describe('Pathway Discovery — Bottleneck Detection', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('Pathway Discovery — Organism Preference', () => {
-  test('preferredOrganism filters reactions but still finds pathways', () => {
-    const result = runPathwayDiscovery({
+  test('preferredOrganism filters reactions but still finds pathways', async () => {
+    const result = await runPathwayDiscovery({
       target: acetylCoA,
       precursors: pyruvatePrecursors,
       maxLength: 8,
@@ -365,10 +365,10 @@ describe('Pathway Discovery — Organism Preference', () => {
 
 // ── Known Limitations — Regression Guards ─────────────────────────────────
 describe('Known Limitations — Regression Guards', () => {
-  test('heuristic breakage: search still returns paths when functional group scoring fails', () => {
+  test('heuristic breakage: search still returns paths when functional group scoring fails', async () => {
     // toolValidity caption: "heuristic is broken (empty functional groups)"
     // A* heuristic degenerates to 0 or fixed value; search must still complete.
-    const result = runPathwayDiscovery(defaultInput);
+    const result = await runPathwayDiscovery(defaultInput);
     expect(result.pathways.length).toBeGreaterThanOrEqual(1);
     // Record current behavior: scores may all be identical when heuristic is broken
     if (result.pathways.length > 0) {
@@ -377,20 +377,20 @@ describe('Known Limitations — Regression Guards', () => {
     }
   });
 
-  test('atom economy: value is a fixed lookup (same precursor always returns same atom economy)', () => {
+  test('atom economy: value is a fixed lookup (same precursor always returns same atom economy)', async () => {
     // toolValidity caption: "atom economy is a fixed lookup"
-    const r1 = runPathwayDiscovery(defaultInput);
-    const r2 = runPathwayDiscovery(defaultInput);
+    const r1 = await runPathwayDiscovery(defaultInput);
+    const r2 = await runPathwayDiscovery(defaultInput);
     if (r1.pathways.length > 0 && r2.pathways.length > 0) {
       expect(r1.pathways[0].metrics.atomEconomy).toBe(r2.pathways[0].metrics.atomEconomy);
     }
   });
 
-  test('no mass conservation: pathway steps do NOT guarantee stoichiometric balance', () => {
+  test('no mass conservation: pathway steps do NOT guarantee stoichiometric balance', async () => {
     // toolValidity caption: "no mass conservation"
     // Records current behavior: pathways exist but chemical balance is not enforced.
     // FUTURE: when mass conservation is implemented, replace with positive balance check.
-    const result = runPathwayDiscovery({
+    const result = await runPathwayDiscovery({
       target: { id: 'ethanol', name: 'ethanol', functionalGroups: ['hydroxyl'], isPrecursor: false },
       precursors: [glucose],
     });

@@ -175,8 +175,8 @@ describe('Engine Integration Tests', () => {
     expect(result.forecast.length).toBeGreaterThan(0);
   });
 
-  test('7. pathwayDiscoveryEngine.runPathwayDiscovery', () => {
-    const result = runPathwayDiscovery({
+  test('7. pathwayDiscoveryEngine.runPathwayDiscovery', async () => {
+    const result = await runPathwayDiscovery({
       target: {
         id: 'pyruvate',
         name: 'Pyruvate',

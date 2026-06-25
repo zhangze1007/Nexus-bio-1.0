@@ -6834,6 +6834,323 @@ const REACTION_DB: Reaction[] = [
   },
 ];
 
+// ── KEGG API Fallback ──────────────────────────────────────────────────────
+
+/**
+ * Map KEGG compound IDs to human-readable metabolite names used by the engine.
+ * Covers the most common central metabolism intermediates.
+ *
+ * Reference: https://www.kegg.jp/kegg/compound/
+ */
+const KEGG_TO_NAME: Record<string, string> = {
+  // ── Core carbon ──
+  C00022: "pyruvate",
+  C00024: "acetyl_coa",
+  C00036: "oxaloacetate",
+  C00026: "akg",
+  C00042: "succinate",
+  C00122: "fumarate",
+  C00149: "malate",
+  C00033: "acetate",
+  C00074: "pep",
+  C00158: "citrate",
+  C00051: "isocitrate",
+  C00091: "succinyl_coa",
+  C00010: "coa",
+  C00083: "malonyl_coa",
+  C00668: "glucose_6p",
+  C00085: "fructose_6p",
+  C00354: "fructose_16bp",
+  C00118: "g3p",
+  C00111: "dhap",
+  C00236: "13dpg",
+  C00197: "3pg",
+  C00631: "2pg",
+  C00031: "glucose",
+  C00084: "acetaldehyde",
+  C00469: "ethanol",
+  C00156: "formate",
+  C00186: "lactate",
+  // ── Amino acids ──
+  C00041: "alanine",
+  C00025: "glutamate",
+  C00064: "glutamine",
+  C00049: "aspartate",
+  C00037: "glycine",
+  C00065: "serine",
+  C00183: "valine",
+  C00123: "leucine",
+  C00407: "isoleucine",
+  C00079: "phenylalanine",
+  C00082: "tyrosine",
+  C00078: "tryptophan",
+  C00134: "histidine",
+  C00047: "lysine",
+  C00073: "methionine",
+  C00062: "arginine",
+  C00148: "proline",
+  C00089: "threonine",
+  C00152: "asparagine",
+  C00097: "cysteine",
+  // ── Cofactors / redox carriers ──
+  C00002: "atp",
+  C00008: "adp",
+  C00020: "amp",
+  C00003: "nad",
+  C00004: "nadh",
+  C00005: "nadph",
+  C00006: "nadp",
+  C00009: "pi",
+  C00001: "h2o",
+  C00011: "co2",
+  C00007: "o2",
+  C00288: "h",
+  C00014: "nh4",
+  C00016: "fad",
+  C00018: "pyridoxal_p",
+  C00120: "biotin",
+  // ── Pentose phosphate ──
+  C00199: "ru5p",
+  C00117: "r5p",
+  C00279: "e4p",
+  C00231: "s7p",
+  C05382: "xu5p",
+  // ── Mevalonate / terpenoid ──
+  C01144: "mevalonate",
+  C00353: "fpp",
+  C00235: "dmapp",
+  C00129: "ipp",
+  C00448: "ggpp",
+  // ── Nucleotides ──
+  C00035: "gtp",
+  C00063: "ctp",
+  C00060: "utp",
+  C00044: "gdp",
+  C00054: "gmp",
+  // ── Shikimate pathway ──
+  C00027: "chorismate",
+  C00256: "prephenate",
+  // ── Additional ──
+  C00092: "glycerol_3p",
+  C00116: "glycerol",
+  C00028: "h2",
+  C00058: "formate",
+  C00068: "thiamine",
+};
+
+/**
+ * Map KEGG compound IDs to internal metabolite IDs used by the engine.
+ * When a compound is in this map, use the mapped name; otherwise fall back
+ * to a kegg_CXXXXX convention.
+ */
+const KEGG_TO_INTERNAL_ID: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(KEGG_TO_NAME).map(([keggId, name]) => [keggId, name]),
+  ),
+};
+
+/**
+ * Map EC number first digit to Reaction type.
+ * Reference: IUBMB enzyme classification.
+ */
+function ecToReactionType(ec?: string): Reaction["type"] {
+  if (!ec) return "transferase";
+  const firstDigit = ec.split(".")[0];
+  switch (firstDigit) {
+    case "1": return "oxidoreductase";
+    case "2": return "transferase";
+    case "3": return "hydrolase";
+    case "4": return "lyase";
+    case "5": return "isomerase";
+    case "6": return "ligase";
+    case "7": return "kinase"; // translocases → kinase for this engine
+    default: return "transferase";
+  }
+}
+
+/**
+ * Parse a KEGG reaction flat-file entry into the internal Reaction type
+ * used by the pathway discovery engine.
+ *
+ * KEGG equations use compound IDs (e.g. C00022) and arrows:
+ *   <=> (reversible), => (forward), <= (backward)
+ *
+ * Metabolite IDs are resolved via KEGG_TO_NAME where available,
+ * falling back to `kegg_CXXXXX` for unknown compounds.
+ *
+ * Reference: https://www.kegg.jp/kegg/rest/weblink.html
+ */
+function parseKEGGReactionToInternal(
+  keggEntry: { entry: string; name: string; definition: string; equation: string; enzymes: string },
+): Reaction | null {
+  if (!keggEntry.equation) return null;
+
+  const eq = keggEntry.equation;
+
+  // Determine reversibility from arrow type
+  let reversible = true;
+  let arrow = "<=>";
+  if (eq.includes("<=>")) {
+    reversible = true;
+    arrow = "<=>";
+  } else if (eq.includes("=>")) {
+    reversible = false;
+    arrow = "=>";
+  } else if (eq.includes("<=")) {
+    reversible = false;
+    arrow = "<=";
+  }
+
+  const sides = eq.split(arrow);
+  if (sides.length !== 2) return null;
+
+  const substrates: string[] = [];
+  const products: string[] = [];
+
+  /**
+   * Parse one side of a KEGG equation into a list of metabolite IDs.
+   * Examples: "2 C00022", "C00001", "n C00002"
+   */
+  function parseSide(compounds: string, target: string[]): void {
+    const parts = compounds.split("+").map((s) => s.trim()).filter(Boolean);
+    for (const part of parts) {
+      const match = part.match(/^(?:(\d+|n)\s+)?(C\d{5})$/);
+      if (!match) continue;
+      const coeffStr = match[1];
+      const keggId = match[2];
+      const coeff = coeffStr && coeffStr !== "n" ? parseInt(coeffStr, 10) : 1;
+      const metId = KEGG_TO_INTERNAL_ID[keggId] ?? `kegg_${keggId.toLowerCase()}`;
+      // Add each copy (coefficient) as a separate entry
+      for (let i = 0; i < coeff; i++) {
+        target.push(metId);
+      }
+    }
+  }
+
+  // Left side = substrates
+  parseSide(sides[0], substrates);
+  // Right side = products
+  parseSide(sides[1], products);
+
+  if (substrates.length === 0 && products.length === 0) return null;
+
+  const reactionId = keggEntry.entry || "KEGG_unknown";
+  const ecNumber = keggEntry.enzymes?.split(/\s+/)[0] || undefined;
+
+  return {
+    id: reactionId,
+    name: keggEntry.name || keggEntry.definition || reactionId,
+    substrates,
+    products,
+    ecNumber,
+    deltaG: 0, // Unknown — KEGG does not provide ΔG; treat as thermodynamically neutral
+    reversible,
+    enzymeAvailability: 0.4, // Lower confidence for KEGG-sourced reactions (not curated)
+    organisms: [],
+    cofactors: [],
+    type: ecToReactionType(ecNumber),
+  };
+}
+
+/**
+ * Cache for KEGG API lookups to avoid repeated network calls for the same
+ * compound during a single discovery run.
+ */
+const keggCache = new Map<string, Reaction[]>();
+
+/**
+ * Look up reactions that produce a given metabolite from the KEGG API.
+ *
+ * Uses the KEGG link endpoint to find reactions associated with a compound,
+ * then fetches each reaction's details. Returns parsed Reaction objects.
+ *
+ * @param metaboliteId - Internal metabolite ID (e.g. "pyruvate") or KEGG ID (e.g. "C00022")
+ * @returns Array of reactions that involve this compound, or empty array on failure
+ */
+async function lookupReactionsFromKEGG(metaboliteId: string): Promise<Reaction[]> {
+  // Check cache first
+  if (keggCache.has(metaboliteId)) {
+    return keggCache.get(metaboliteId)!;
+  }
+
+  try {
+    // Resolve metabolite ID to KEGG compound ID
+    let keggCpdId: string | null = null;
+
+    // Check if the metaboliteId is already a KEGG compound ID
+    if (/^C\d{5}$/.test(metaboliteId)) {
+      keggCpdId = metaboliteId;
+    } else {
+      // Search KEGG for the compound by name
+      const searchRes = await fetch(
+        `/api/kegg?compound=${encodeURIComponent(metaboliteId)}`,
+      );
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        if (searchData.results && searchData.results.length > 0) {
+          keggCpdId = searchData.results[0].id;
+        }
+      }
+    }
+
+    if (!keggCpdId) {
+      keggCache.set(metaboliteId, []);
+      return [];
+    }
+
+    // Find reactions linked to this compound via KEGG
+    const linkRes = await fetch(
+      `https://rest.kegg.jp/link/reaction/${keggCpdId}`,
+    );
+    if (!linkRes.ok) {
+      keggCache.set(metaboliteId, []);
+      return [];
+    }
+
+    const linkText = await linkRes.text();
+    const reactionIds = linkText
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split("\t");
+        return parts[1]?.replace("rn:", "") ?? "";
+      })
+      .filter((id) => /^R\d{5}$/.test(id));
+
+    if (reactionIds.length === 0) {
+      keggCache.set(metaboliteId, []);
+      return [];
+    }
+
+    // Fetch details for each reaction (limit to first 5 to avoid overload)
+    const reactions: Reaction[] = [];
+    const toFetch = reactionIds.slice(0, 5);
+
+    for (const rxnId of toFetch) {
+      try {
+        const res = await fetch(`/api/kegg?reaction=${encodeURIComponent(rxnId)}`);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.data && data.data.length > 0) {
+          const parsed = parseKEGGReactionToInternal(data.data[0]);
+          if (parsed) {
+            reactions.push(parsed);
+          }
+        }
+      } catch {
+        // Skip failed individual reaction fetches
+      }
+    }
+
+    keggCache.set(metaboliteId, reactions);
+    return reactions;
+  } catch {
+    keggCache.set(metaboliteId, []);
+    return [];
+  }
+}
+
 // ── Functional Group Analysis ──────────────────────────────────────────────
 
 /**
@@ -7386,13 +7703,13 @@ function computeCofactorBalance(steps: PathwayStep[]): number {
  * Cost: cumulative ΔG + enzyme availability penalty
  * Heuristic: molecular similarity to nearest precursor
  */
-function aStarPathwaySearch(
+async function aStarPathwaySearch(
   target: Molecule,
   precursors: Molecule[],
   reactionDB: Reaction[],
   maxLength: number,
   topN: number,
-): DiscoveredPathway[] {
+): Promise<DiscoveredPathway[]> {
   const precursorIds = new Set(precursors.map((p) => p.id));
   const precursorMap = new Map(precursors.map((p) => [p.id, p]));
 
@@ -7575,7 +7892,23 @@ function aStarPathwaySearch(
     closedSet.add(stateKey);
 
     // Expand: find reactions that produce this metabolite
-    const producingReactions = productToReactions.get(current.metabolite) || [];
+    let producingReactions = productToReactions.get(current.metabolite) || [];
+
+    // KEGG API fallback: when no curated reactions produce this metabolite,
+    // query KEGG for reactions linked to the compound
+    if (producingReactions.length === 0) {
+      const keggReactions = await lookupReactionsFromKEGG(current.metabolite);
+      if (keggReactions.length > 0) {
+        // Index the new reactions for future lookups
+        for (const rxn of keggReactions) {
+          for (const product of rxn.products) {
+            if (!productToReactions.has(product)) productToReactions.set(product, []);
+            productToReactions.get(product)!.push(rxn);
+          }
+        }
+        producingReactions = keggReactions;
+      }
+    }
 
     for (const rxn of producingReactions) {
       // Check if we have all substrates (or they can be traced to precursors)
@@ -7684,13 +8017,19 @@ function aStarPathwaySearch(
 
 /**
  * Run pathway discovery from target to precursors.
+ *
+ * Falls back to the KEGG API when reactions are not in the curated database.
+ * @async because the KEGG fallback issues network requests.
  */
-export function runPathwayDiscovery(input: PathwayDiscoveryInput): PathwayDiscoveryResult {
+export async function runPathwayDiscovery(input: PathwayDiscoveryInput): Promise<PathwayDiscoveryResult> {
   const { target, precursors, maxLength = 8, topN = 5, preferredOrganism, includeNovel = false } = input;
 
   // Validate
   if (!target.id) throw new Error("Target molecule must have an ID");
   if (precursors.length === 0) throw new Error("At least one precursor is required");
+
+  // Clear KEGG cache for this discovery run
+  keggCache.clear();
 
   // Filter reactions by organism preference
   let reactionDB = [...REACTION_DB];
@@ -7701,8 +8040,8 @@ export function runPathwayDiscovery(input: PathwayDiscoveryInput): PathwayDiscov
     reactionDB = reactionDB.filter((r) => r.enzymeAvailability >= 0.5);
   }
 
-  // Run A* search
-  const pathways = aStarPathwaySearch(target, precursors, reactionDB, maxLength, topN);
+  // Run A* search (async — may query KEGG API for unknown metabolites)
+  const pathways = await aStarPathwaySearch(target, precursors, reactionDB, maxLength, topN);
 
   // Compute database stats
   const allMetabolites = new Set<string>();
@@ -7743,11 +8082,13 @@ export function runPathwayDiscovery(input: PathwayDiscoveryInput): PathwayDiscov
 
 /**
  * Quick pathway feasibility check.
+ *
+ * @async because it delegates to runPathwayDiscovery which may query KEGG.
  */
-export function checkPathwayFeasibility(
+export async function checkPathwayFeasibility(
   targetId: string,
   precursorIds: string[],
-): { feasible: boolean; estimatedSteps: number; confidence: number } {
+): Promise<{ feasible: boolean; estimatedSteps: number; confidence: number }> {
   const precursors: Molecule[] = precursorIds.map((id) => ({
     id,
     name: id,
@@ -7762,7 +8103,7 @@ export function checkPathwayFeasibility(
   };
 
   try {
-    const result = runPathwayDiscovery({ target, precursors: precursors, maxLength: 10, topN: 1 });
+    const result = await runPathwayDiscovery({ target, precursors: precursors, maxLength: 10, topN: 1 });
     const best = result.pathways[0];
     return {
       feasible: result.pathways.length > 0,

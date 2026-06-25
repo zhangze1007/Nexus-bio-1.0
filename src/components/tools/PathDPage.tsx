@@ -135,7 +135,7 @@ export default React.memo(function PathDPage() {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-      const result = runPathwayDiscovery({
+      const result = await runPathwayDiscovery({
         target: {
           id: discoverTarget.toLowerCase().replace(/\s+/g, "_"),
           name: discoverTarget,

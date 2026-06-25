@@ -225,7 +225,7 @@ export const multiplexCRISPRAdapter: AxonAdapter = async (input: unknown, _ctx: 
 export const pathwayDiscoveryAdapter: AxonAdapter = async (input: unknown, _ctx: AxonAdapterContext) => {
   const { runPathwayDiscovery } = await import("../server/pathwayDiscoveryEngine");
   const p = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
-  const result = runPathwayDiscovery({
+  const result = await runPathwayDiscovery({
     target: (p.target as Parameters<typeof runPathwayDiscovery>[0]["target"]) ?? {
       id: "",
       name: "",
