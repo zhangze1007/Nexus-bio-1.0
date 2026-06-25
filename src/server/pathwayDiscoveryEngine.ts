@@ -93,6 +93,7 @@ export interface DiscoveredPathway {
     avgEnzymeAvailability: number;
     atomEconomy: number;
     cofactorBalance: number;
+    massBalance: number;
     pathwayLength: number;
     overallScore: number;
   };
@@ -7162,6 +7163,110 @@ function molecularSimilarity(a: Molecule, b: Molecule): number {
 // ── Atom Economy ───────────────────────────────────────────────────────────
 
 /**
+ * Molecular weights (g/mol) for common metabolites.
+ * Used for MW-based atom economy and mass conservation checks.
+ * Sources: PubChem, KEGG compound database, BRENDA.
+ */
+const METABOLITE_WEIGHTS: Record<string, number> = {
+  // Glycolysis / TCA intermediates
+  'glucose': 180.16,
+  'glucose_6p': 260.13,
+  'fructose_6p': 260.13,
+  'fructose_16bp': 340.12,
+  'glyceraldehyde_3p': 170.06,
+  'dhap': 170.06,
+  'bisphosphoglycerate': 266.04,
+  'phosphoglycerate_3': 186.06,
+  'phosphoglycerate_2': 186.06,
+  'phosphoenolpyruvate': 168.04,
+  'pyruvate': 88.06,
+  'lactate': 90.08,
+
+  // TCA cycle
+  'acetyl_coa': 809.57,
+  'coa': 767.54,
+  'citrate': 192.12,
+  'isocitrate': 192.12,
+  'alpha_ketoglutarate': 146.11,
+  'succinyl_coa': 867.61,
+  'succinate': 118.09,
+  'fumarate': 116.07,
+  'malate': 134.09,
+  'oxaloacetate': 132.07,
+
+  // Common cofactors
+  'atp': 507.18,
+  'adp': 427.20,
+  'amp': 347.22,
+  'nad': 663.43,
+  'nadh': 665.44,
+  'nadp': 743.41,
+  'nadph': 745.42,
+  'fad': 784.56,
+  'fadh2': 786.57,
+  'gtp': 523.18,
+  'gdp': 443.20,
+  'co2': 44.01,
+  'h2o': 18.02,
+  'o2': 32.00,
+  'pi': 95.98,
+  'ppi': 177.98,
+
+  // Amino acids
+  'alanine': 89.09,
+  'glutamate': 147.13,
+  'glutamine': 146.14,
+  'aspartate': 133.10,
+  'asparagine': 132.12,
+  'glycine': 75.03,
+  'serine': 105.09,
+  'threonine': 119.12,
+  'cysteine': 121.16,
+  'methionine': 149.21,
+  'valine': 117.15,
+  'leucine': 131.17,
+  'isoleucine': 131.17,
+  'proline': 115.13,
+  'phenylalanine': 165.19,
+  'tyrosine': 181.19,
+  'tryptophan': 204.23,
+  'lysine': 146.19,
+  'arginine': 174.20,
+  'histidine': 155.15,
+
+  // Isoprenoid / mevalonate pathway
+  'mevalonate': 148.16,
+  'mevalonate_5p': 228.13,
+  'mevalonate_5pp': 308.10,
+  'isopentenyl_pp': 246.09,
+  'dimethylallyl_pp': 246.09,
+  'geranyl_pp': 314.14,
+  'farnesyl_pp': 382.19,
+  'fpp': 382.19,
+  'amorpha_4_11_diene': 204.36,
+  'artemisinic_acid': 234.34,
+  'artemisinin': 282.33,
+
+  // Pentose phosphate pathway
+  'ribulose_5p': 230.11,
+  'ribose_5p': 230.11,
+  'xylulose_5p': 230.11,
+  'sedoheptulose_7p': 290.16,
+  'erythrose_4p': 200.13,
+
+  // Other common metabolites
+  'acetate': 60.05,
+  'ethanol': 46.07,
+  'acetaldehyde': 44.05,
+  'glycerol': 92.09,
+  'glycerol_3p': 172.07,
+  'palmitate': 256.42,
+  'stearate': 284.48,
+  'oleate': 282.46,
+  'cholesterol': 386.65,
+};
+
+/**
  * Compute atom economy of a reaction.
  * Atom economy = (MW of desired product) / (MW of all reactants) × 100%
  *
@@ -7182,6 +7287,43 @@ function computeAtomEconomy(reaction: Reaction): number {
   };
 
   return typeEconomy[reaction.type] || 0.8;
+}
+
+/**
+ * Compute atom economy using molecular weights.
+ * Returns ratio of total product MW to total substrate MW.
+ * Returns 0 if substrate weights are unavailable.
+ */
+function computeMWBasedAtomEconomy(substrates: string[], products: string[]): number {
+  const subMW = substrates.reduce((sum, s) => sum + (METABOLITE_WEIGHTS[s.toLowerCase()] || 0), 0);
+  const prodMW = products.reduce((sum, p) => sum + (METABOLITE_WEIGHTS[p.toLowerCase()] || 0), 0);
+  if (subMW === 0) return 0;
+  return Math.min(1, prodMW / subMW);
+}
+
+/**
+ * Check mass conservation for a reaction.
+ * Returns a score (0-1) based on how well substrate MW matches product MW.
+ * Perfect conservation = 1.0, large discrepancy → lower score.
+ */
+function checkMassConservation(substrates: string[], products: string[]): number {
+  const subMW = substrates.reduce((sum, s) => sum + (METABOLITE_WEIGHTS[s.toLowerCase()] || 0), 0);
+  const prodMW = products.reduce((sum, p) => sum + (METABOLITE_WEIGHTS[p.toLowerCase()] || 0), 0);
+
+  // If we can't compute MW for either side, return neutral score
+  if (subMW === 0 || prodMW === 0) return 0.5;
+
+  // Compute mass ratio deviation from 1.0
+  const ratio = prodMW / subMW;
+  const deviation = Math.abs(ratio - 1.0);
+
+  // Score: 1.0 for perfect conservation, decays with deviation
+  // Allow small tolerance (cofactors may be omitted from substrate/product lists)
+  if (deviation < 0.05) return 1.0;
+  if (deviation < 0.15) return 0.8;
+  if (deviation < 0.30) return 0.6;
+  if (deviation < 0.50) return 0.4;
+  return 0.2;
 }
 
 // ── Cofactor Balance ───────────────────────────────────────────────────────
@@ -7356,15 +7498,27 @@ function aStarPathwaySearch(
       // Compute metrics
       const totalDG = steps.reduce((sum, s) => sum + s.deltaG, 0);
       const avgEnzyme = steps.length > 0 ? steps.reduce((sum, s) => sum + s.enzymeScore, 0) / steps.length : 0;
-      const atomEconomy = steps.reduce((prod, s) => prod * computeAtomEconomy(s.reaction), 1.0);
+
+      // Use MW-based atom economy when metabolite weights are available, fallback to type-based
+      const atomEconomy = steps.reduce((prod, s) => {
+        const mwEconomy = computeMWBasedAtomEconomy(s.reaction.substrates, s.reaction.products);
+        return prod * (mwEconomy > 0 ? mwEconomy : computeAtomEconomy(s.reaction));
+      }, 1.0);
+
       const cofactorBalance = computeCofactorBalance(steps);
 
-      // Overall score
+      // Mass conservation score — penalize reactions with MW mismatch
+      const massBalance = steps.length > 0
+        ? steps.reduce((sum, s) => sum + checkMassConservation(s.reaction.substrates, s.reaction.products), 0) / steps.length
+        : 1.0;
+
+      // Overall score (redistributed weights to include massBalance)
       const overallScore =
-        0.3 * Math.max(0, 1 + totalDG / 50) + // ΔG (normalized)
-        0.25 * avgEnzyme + // enzyme availability
-        0.2 * atomEconomy + // atom economy
-        0.15 * cofactorBalance + // cofactor balance
+        0.25 * Math.max(0, 1 + totalDG / 50) + // ΔG (normalized)
+        0.2 * avgEnzyme + // enzyme availability
+        0.18 * atomEconomy + // atom economy
+        0.12 * cofactorBalance + // cofactor balance
+        0.15 * massBalance + // mass conservation
         0.1 * (1 - steps.length / maxLength); // shorter is better
 
       // Detect bottlenecks
@@ -7400,6 +7554,7 @@ function aStarPathwaySearch(
           avgEnzymeAvailability: Math.round(avgEnzyme * 100) / 100,
           atomEconomy: Math.round(atomEconomy * 100) / 100,
           cofactorBalance: Math.round(cofactorBalance * 100) / 100,
+          massBalance: Math.round(massBalance * 100) / 100,
           pathwayLength: steps.length,
           overallScore: Math.round(overallScore * 100) / 100,
         },
