@@ -28,7 +28,7 @@ export interface ToolValidity {
 
 export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // Stage 1 — design
-  pathd: { level: "real", caption: "A* search with thermodynamic ΔG scoring over a curated 500+ reaction database (real EC numbers, eQuilibrator ΔG° values). Functional group Jaccard similarity from SMILES detection + 180-metabolite lookup table. Reaction database is curated subset of KEGG/Rhea." },
+  pathd: { level: "real", caption: "A* search with thermodynamic ΔG scoring. Curated 500+ reaction database (real EC numbers, eQuilibrator ΔG° values) as primary source, with live KEGG and Rhea API fallbacks for comprehensive coverage. Functional group Jaccard similarity from SMILES detection + 180-metabolite lookup table." },
   "metabolic-eng": {
     level: "real",
     caption: "Same A* + ΔG engine as PathD with real two-phase simplex LP FBA (iJO1366 stoichiometric constraints, HiGHS solver). FBA modules: FVA, FSEOF, MOMA, OptKnock, pFBA. XState FSM with Michaelis-Menten kinetics (BRENDA-sourced Km/kcat). Force layout is heuristic.",
@@ -38,7 +38,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   fbasim: {
     level: "real",
     caption:
-      "Single-species FBA uses a real two-phase simplex LP (HiGHS solver). Two-Species mode uses a joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective. BiGG model selector with real genome-scale models. growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).",
+      "Single-species FBA uses a real two-phase simplex LP (HiGHS solver) on the full iJO1366 genome-scale model (2583 reactions, 1805 metabolites). Two-Species mode uses a joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective. BiGG model selector with full genome-scale models. growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).",
   },
   cethx: {
     level: "real",
@@ -106,7 +106,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   inversefolding: {
     level: "real",
     caption:
-      "k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 toggle exists in ProEvol sequence design (default OFF) but engine ESM-2 path is broken: sends all-alanine placeholder sequence, /api/esm2 returns PDB structure not embeddings, fallback uses Atchley factors (5-dim physicochemical, not 1280-dim ESM-2). Python ESM-2 service exists but not wired to frontend. All weights hand-tuned, not learned.",
+      "k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 integration wired: /api/esm2 cascades ESM-2 Python backend (320-1280 dim) -> ESM Atlas foldSequence -> local Atchley factors (5-dim). fetchESM2Embeddings sends structurally plausible sequence (not all-alanine) derived from Cα geometry. All weights hand-tuned, not learned.",
   },
   multiplexcrispr: {
     level: "real",
@@ -140,7 +140,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   rnaengineering: {
     level: "real",
     caption:
-      "Turner 2009 nearest-neighbor stacking parameters (Turner & Mathews 2010 NAR) and Watson-Crick/wobble complementarity rules are genuine. Limitations: no full secondary structure prediction (no NUPACK/RNAfold integration); thermodynamic scores are nearest-neighbor approximations only; off-target scoring uses simplified similarity, not full alignment.",
+      "Turner 2009 nearest-neighbor stacking parameters (Turner & Mathews 2010 NAR) and Watson-Crick/wobble complementarity rules are genuine. Optional ViennaRNA/RNAfold integration (Lorenz et al. 2011) for production-quality MFE prediction via Python backend (set RNA_PYTHON_BACKEND env var). Fallback: local Nussinov DP with Turner NN parameters. Limitations: off-target scoring uses simplified similarity, not full alignment.",
   },
   biosafety: {
     level: "real",

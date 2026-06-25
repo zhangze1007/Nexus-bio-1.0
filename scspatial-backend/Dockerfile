@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     ncbi-blast+ \
     wget \
+    vienna-rna \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

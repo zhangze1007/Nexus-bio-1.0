@@ -281,6 +281,7 @@ GEMINI_API_KEY            Google Gemini authorization (used in app/api/analyze/r
 SCSPATIAL_ARTIFACT_DIR    ScSpatial artifact storage directory (optional, defaults to system temp)
 SCSPATIAL_PYTHON_BIN      Python binary path for ScSpatial sidecar (optional, defaults to "python3")
 PYTHONPATH                Additional Python module paths (optional, for custom scanpy/anndata)
+ESM2_PYTHON_BACKEND       URL of Python ESM-2 backend for real embeddings (optional, e.g. http://localhost:8000)
 ```
 
 `NODE_ENV` and `VERCEL` are set automatically by the platform.

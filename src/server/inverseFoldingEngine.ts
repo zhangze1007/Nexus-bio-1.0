@@ -903,26 +903,35 @@ function generatePlausibleSequence(backbone: BackboneAtom[]): string {
 /**
  * Fetch ESM-2 embeddings from API (synchronous wrapper).
  *
- * Calls the local /api/esm2 endpoint which proxies the ESM Atlas API.
- * Falls back to local computation if API is unavailable.
+ * Cascade (handled by /api/esm2):
+ *   1. ESM-2 Python backend (ESM2_PYTHON_BACKEND env) — real 320-1280 dim embeddings
+ *   2. ESM Atlas foldSequence — PDB structure, Atchley fallback for embeddings
+ *   3. Local Atchley factors — 5-dim physicochemical (offline)
+ *
+ * Generates a structurally plausible sequence from backbone Cα geometry
+ * (not all-alanine) so ESM-2 produces meaningful embeddings.
  */
 function fetchESM2Embeddings(backbone: BackboneAtom[]): Map<number, number[]> | null {
   // Generate a structurally plausible sequence from backbone geometry
-  // instead of sending a meaningless all-alanine string
   const seq = generatePlausibleSequence(backbone);
 
   try {
     // Use child_process to make sync HTTP call (Node.js only)
     // In browser, this would use the client-side esm2Client
     const { execSync } = require("child_process");
+    // Escape the sequence for safe shell embedding
+    const payload = JSON.stringify({ sequence: seq, model: "esm2_t6_8M_UR50D", returnEmbeddings: true });
     const result = execSync(
-      `curl -s -X POST http://localhost:3000/api/esm2 -H "Content-Type: application/json" -d '{"sequence":"${seq}"}'`,
-      { timeout: 15000, encoding: "utf-8" },
+      `curl -s -X POST http://localhost:3000/api/esm2 -H "Content-Type: application/json" -d ${JSON.stringify(payload)}`,
+      { timeout: 30000, encoding: "utf-8" },
     );
     const data = JSON.parse(result);
-    if (data.ok && data.embeddings) {
+    if (data.ok && data.embeddings && Array.isArray(data.embeddings)) {
       const embMap = new Map<number, number[]>();
       data.embeddings.forEach((emb: number[], i: number) => embMap.set(i, emb));
+      if (data.source) {
+        console.info(`[InverseFolding] ESM-2 source: ${data.source}, dim: ${data.embeddings[0]?.length ?? 0}`);
+      }
       return embMap;
     }
   } catch (e) {

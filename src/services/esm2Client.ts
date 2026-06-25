@@ -15,16 +15,31 @@ export interface ESM2Result {
   model: string;
   sequence: string;
   fallback?: boolean;
+  /** Which backend produced the embeddings */
+  source?: 'esm2_python_backend' | 'esm_atlas' | 'local_atchley';
+  /** Embedding dimension (5 for Atchley, 320-1280 for ESM-2) */
+  embeddingDim?: number;
 }
 
 /**
  * Get ESM-2 embeddings for a protein sequence.
+ *
+ * Cascade (handled by /api/esm2):
+ *   1. ESM-2 Python backend (ESM2_PYTHON_BACKEND env) — real 320-1280 dim embeddings
+ *   2. ESM Atlas foldSequence — PDB structure, Atchley fallback for embeddings
+ *   3. Local Atchley factors — 5-dim physicochemical (offline)
+ *
+ * @param sequence  Amino acid sequence (single-letter codes)
+ * @param model     ESM-2 model variant (default: esm2_t6_8M_UR50D)
  */
-export async function getESM2Embeddings(sequence: string): Promise<ESM2Result> {
+export async function getESM2Embeddings(
+  sequence: string,
+  model: string = 'esm2_t6_8M_UR50D',
+): Promise<ESM2Result> {
   const response = await fetch("/api/esm2", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sequence }),
+    body: JSON.stringify({ sequence, model, returnEmbeddings: true }),
   });
 
   const data = await response.json();

@@ -1,17 +1,13 @@
 /**
  * ESM-2 API Route — Protein Language Model Embeddings
  *
- * Proxies ESM-2 (Evolutionary Scale Modeling 2) for protein embeddings
- * and function prediction. ESM-2 is a protein language model trained
- * on 65M protein sequences.
- *
- * Capabilities:
- *   1. Sequence embeddings (per-residue and pooled)
- *   2. Function prediction from embeddings
- *   3. Sequence-structure compatibility scoring
+ * Cascade for real protein embeddings:
+ *   1. ESM-2 Python backend (ESM2_PYTHON_BACKEND env var) — full model, 320-1280 dim
+ *   2. ESM Atlas foldSequence — returns PDB structure, not embeddings (fallback)
+ *   3. Local Atchley factors — 5-dim physicochemical (final fallback)
  *
  * Reference: Lin et al. (2023) Science 379:1123-1130
- * API: https://api.esmatlas.com/
+ * Python service: scspatial-backend/esm2_service.py
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,7 +15,6 @@ import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
 export const runtime = 'edge';
 
-const ESM2_API = 'https://api.esmatlas.com/foldSequence';
 const ESM2_TIMEOUT = 30000;
 
 export async function OPTIONS(req: NextRequest) {
@@ -29,15 +24,20 @@ export async function OPTIONS(req: NextRequest) {
 /**
  * POST /api/esm2
  *
- * Body: { sequence: string, model?: 'esm2_t33_650M_UR50D' | 'esm2_t36_3B_UR50D' }
- * Returns: { embeddings: number[][], logits: number[][], contacts: number[][] }
+ * Body: { sequence: string, model?: string, returnEmbeddings?: boolean }
+ * Returns: { ok, embeddings: number[][], model, sequence, ... }
+ *
+ * Embedding cascade:
+ *   1. ESM2_PYTHON_BACKEND/esm2/analyze (real ESM-2, 320-1280 dim)
+ *   2. ESM Atlas foldSequence (PDB only, falls back to Atchley for embeddings)
+ *   3. Local Atchley factors (5-dim, offline)
  */
 export async function POST(req: NextRequest) {
   const requestId = `esm2_${Date.now().toString(36)}`;
 
   try {
     const body = await req.json();
-    const { sequence, model = 'esm2_t33_650M_UR50D' } = body;
+    const { sequence, model = 'esm2_t6_8M_UR50D', returnEmbeddings = true } = body;
 
     if (!sequence || typeof sequence !== 'string') {
       return NextResponse.json(
@@ -54,55 +54,104 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Call ESM Atlas API
-    const startTime = Date.now();
-    const response = await fetch(`https://api.esmatlas.com/foldSequence`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `sequence=${encodeURIComponent(cleanSeq)}`,
-      signal: AbortSignal.timeout(ESM2_TIMEOUT),
-    });
+    // ── Cascade 1: ESM-2 Python backend (real embeddings) ──────────────
+    const esm2Backend = process.env.ESM2_PYTHON_BACKEND;
+    if (esm2Backend) {
+      try {
+        const startTime = Date.now();
+        const backendRes = await fetch(`${esm2Backend}/esm2/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sequence: cleanSeq,
+            model,
+            returnEmbeddings,
+            returnContacts: false,
+          }),
+          signal: AbortSignal.timeout(ESM2_TIMEOUT),
+        });
 
-    if (!response.ok) {
-      // Fallback: compute embeddings locally using a simplified approach
-      const localEmbeddings = computeLocalEmbeddings(cleanSeq);
-      return NextResponse.json(
-        {
-          ok: true,
-          embeddings: localEmbeddings,
-          model: 'local_approximation',
-          sequence: cleanSeq,
-          requestId,
-          durationMs: Date.now() - startTime,
-          fallback: true,
-        },
-        { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
-      );
+        if (backendRes.ok) {
+          const data = await backendRes.json();
+          if (data.ok && data.embeddings && Array.isArray(data.embeddings)) {
+            return NextResponse.json(
+              {
+                ok: true,
+                embeddings: data.embeddings,
+                model: data.model || model,
+                sequence: cleanSeq,
+                embeddingDim: data.embedding_dim || (data.embeddings[0]?.length ?? 0),
+                requestId,
+                durationMs: Date.now() - startTime,
+                source: 'esm2_python_backend',
+              },
+              { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
+            );
+          }
+        }
+      } catch (backendErr) {
+        // Python backend unavailable, fall through to Atlas
+        console.warn('[ESM-2] Python backend unavailable, falling back:', backendErr);
+      }
     }
 
-    const result = await response.json();
+    // ── Cascade 2: ESM Atlas foldSequence (PDB structure) ──────────────
+    try {
+      const startTime = Date.now();
+      const atlasRes = await fetch('https://api.esmatlas.com/foldSequence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `sequence=${encodeURIComponent(cleanSeq)}`,
+        signal: AbortSignal.timeout(ESM2_TIMEOUT),
+      });
 
-    // ESM Atlas foldSequence returns PDB structure, not per-residue embeddings.
-    // Compute local Atchley-factor embeddings so callers always receive an
-    // embeddings array they can use for scoring / ranking.
+      if (atlasRes.ok) {
+        const atlasData = await atlasRes.json();
+        // Atlas returns PDB, not embeddings — compute Atchley factors as embedding proxy
+        const embeddings = computeLocalEmbeddings(cleanSeq);
+        return NextResponse.json(
+          {
+            ok: true,
+            pdb: atlasData.pdb || '',
+            embeddings,
+            model: 'esm_atlas + atchley_fallback',
+            sequence: cleanSeq,
+            requestId,
+            durationMs: Date.now() - startTime,
+            source: 'esm_atlas',
+            fallback: true,
+          },
+          { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
+        );
+      }
+    } catch (atlasErr) {
+      console.warn('[ESM-2] Atlas API unavailable, using local fallback:', atlasErr);
+    }
+
+    // ── Cascade 3: Local Atchley factors (offline fallback) ────────────
     const embeddings = computeLocalEmbeddings(cleanSeq);
-
     return NextResponse.json(
       {
         ok: true,
-        pdb: result.pdb || '',
         embeddings,
-        model,
+        model: 'local_atchley_approximation',
         sequence: cleanSeq,
         requestId,
-        durationMs: Date.now() - startTime,
+        durationMs: 0,
+        source: 'local_atchley',
+        fallback: true,
       },
-      { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
+      { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=3600' } },
     );
   } catch (error) {
-    // Fallback to local computation
-    const body = await req.json().catch(() => ({}));
-    const sequence = (body?.sequence || '').toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '');
+    // Final fallback: try to extract sequence and compute local embeddings
+    let sequence = '';
+    try {
+      const body = await req.clone().json();
+      sequence = (body?.sequence || '').toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '');
+    } catch {
+      // Cannot parse body
+    }
 
     if (sequence.length >= 5) {
       const localEmbeddings = computeLocalEmbeddings(sequence);
@@ -110,10 +159,11 @@ export async function POST(req: NextRequest) {
         {
           ok: true,
           embeddings: localEmbeddings,
-          model: 'local_approximation',
+          model: 'local_atchley_approximation',
           sequence,
           requestId,
           durationMs: 0,
+          source: 'local_atchley',
           fallback: true,
         },
         { headers: getCorsHeaders(req) },
@@ -141,7 +191,7 @@ export async function POST(req: NextRequest) {
  * Reference: Atchley et al. (2005) PNAS 102:6395-6400
  *
  * These are REAL published values, not approximations.
- * For production use, ESM-2 API provides 1280-dim embeddings per residue.
+ * For production use, ESM-2 Python backend provides 320-1280 dim embeddings per residue.
  */
 function computeLocalEmbeddings(sequence: string): number[][] {
   // Atchley factors from Table 1 of Atchley et al. 2005

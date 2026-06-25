@@ -45,7 +45,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from artifact_builder import build_artifact
-from blast_service import blast_screen_sequence, get_available_databases
+from blast_service import blast_screen_sequence, blast_offtarget, get_available_databases
 from mofa_service import run_mofa_analysis
 from models import AnalysisConfig, IngestResponse, JobStatus, QueryRequest
 from pipeline import run_full_pipeline
@@ -702,6 +702,30 @@ async def blast_screen(request: Request):
     return {"ok": True, **result}
 
 
+@app.post("/blast/offtarget")
+async def blast_offtarget_endpoint(request: Request):
+    """Search for CRISPR guide RNA off-target sites in E. coli K-12 genome.
+
+    Uses blastn-short for 20-nt guide RNA alignment. Reports mismatch positions,
+    seed region (positions 1-8) mismatches, and off-target risk scores.
+
+    Body: { "sequence": "ACGTACGTACGTACGTACGT", "maxMismatches": 3 }
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    sequence = body.get("sequence", "").strip()
+    if not sequence:
+        raise HTTPException(400, "sequence is required")
+
+    max_mismatches = body.get("maxMismatches", 3)
+
+    result = blast_offtarget(sequence=sequence, max_mismatches=max_mismatches)
+    return {"ok": True, **result}
+
+
 # ── ESM-2 protein language model ────────────────────────────────────
 
 @app.get("/esm2/models")
@@ -744,6 +768,79 @@ async def esm2_analyze(request: Request):
     except Exception as e:
         logger.exception("ESM-2 analysis failed")
         raise HTTPException(500, f"ESM-2 analysis failed: {str(e)}")
+
+
+# ── ViennaRNA folding engine ────────────────────────────────────────
+
+@app.post("/rna/fold")
+async def rna_fold(request: Request):
+    """Compute minimum free energy (MFE) secondary structure using ViennaRNA.
+
+    Primary: ViennaRNA Python bindings (RNA.fold_compound → MFE).
+    Fallback: RNAfold subprocess if the Python bindings are unavailable.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    sequence = body.get("sequence", "").upper().replace("T", "U")
+    if not sequence:
+        raise HTTPException(400, "sequence is required")
+    if not all(c in "AUGC" for c in sequence):
+        raise HTTPException(400, "sequence must contain only A, U, G, C (or T)")
+
+    # ── Primary: ViennaRNA Python bindings ──────────────────────────
+    try:
+        import RNA  # type: ignore[import-untyped]
+        fc = RNA.fold_compound(sequence)
+        structure, mfe = fc.mfe()
+        return {
+            "ok": True,
+            "sequence": sequence,
+            "structure": structure,
+            "deltaG": round(mfe, 2),
+            "length": len(sequence),
+            "engine": "ViennaRNA",
+        }
+    except ImportError:
+        pass
+
+    # ── Fallback: RNAfold subprocess ────────────────────────────────
+    try:
+        import subprocess
+        proc = subprocess.run(
+            ["RNAfold", "--noPS"],
+            input=sequence,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if proc.returncode == 0:
+            # RNAfold output: "sequence\nstructure ( mfe)\n"
+            lines = proc.stdout.strip().split("\n")
+            if len(lines) >= 2:
+                # Parse "((...)) ( -3.20)"
+                parts = lines[1].split()
+                structure = parts[0] if parts else ""
+                mfe_str = parts[1].strip("()") if len(parts) > 1 else "0"
+                try:
+                    mfe_val = float(mfe_str)
+                except ValueError:
+                    mfe_val = 0.0
+                return {
+                    "ok": True,
+                    "sequence": sequence,
+                    "structure": structure,
+                    "deltaG": round(mfe_val, 2),
+                    "length": len(sequence),
+                    "engine": "RNAfold-subprocess",
+                }
+        raise HTTPException(500, f"RNAfold failed: {proc.stderr}")
+    except FileNotFoundError:
+        raise HTTPException(503, "ViennaRNA not installed (neither Python bindings nor RNAfold binary found)")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(504, "RNAfold computation timed out")
 
 
 # ── Demo mode: create artifact without Python analysis ──────────────

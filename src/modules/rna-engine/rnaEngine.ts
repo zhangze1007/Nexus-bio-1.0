@@ -26,6 +26,45 @@ function computeFoldingEnergy(seq: string): number {
   return computeMRNAFoldingNN(seq);
 }
 
+/**
+ * Async folding energy computation with optional ViennaRNA backend.
+ *
+ * When RNA_PYTHON_BACKEND is set (e.g. "http://localhost:8000"), delegates
+ * to the Python /rna/fold endpoint which uses ViennaRNA for production-quality
+ * MFE prediction. Falls back to local Nussinov DP if the backend is
+ * unavailable or returns an error.
+ *
+ * ViennaRNA (Lorenz et al. 2011) uses Turner 2009/2004 nearest-neighbor
+ * parameters with full partition function — more accurate than the simplified
+ * Nussinov DP used locally.
+ *
+ * Reference: Lorenz et al. (2011) ViennaRNA Package 2.0, Algorithms Mol Biol 6:26
+ */
+const RNA_BACKEND = process.env.RNA_PYTHON_BACKEND;
+
+export async function computeFoldingEnergyAsync(
+  seq: string,
+): Promise<{ deltaG: number; structure: string }> {
+  if (RNA_BACKEND) {
+    try {
+      const res = await fetch(`${RNA_BACKEND}/rna/fold`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sequence: seq }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { deltaG: data.deltaG, structure: data.structure };
+      }
+    } catch {
+      // Backend unreachable — fall through to local Nussinov DP
+    }
+  }
+  // Fallback: local Nussinov DP with Turner 2009 parameters
+  const result = computeMRNAFoldingNN(seq);
+  return { deltaG: result, structure: "" };
+}
+
 // ── Ribozyme Design ────────────────────────────────────────────────────────
 
 /**

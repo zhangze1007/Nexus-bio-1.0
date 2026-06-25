@@ -181,6 +181,7 @@ export const inverseFoldingAdapter: AxonAdapter = async (input: unknown, _ctx: A
     fixedPositions: p.fixedPositions as number[] | undefined,
     kNeighbors: (p.kNeighbors as number) ?? 16,
     messagePassingRounds: (p.messagePassingRounds as number) ?? 3,
+    useESM2: (p.useESM2 as boolean) ?? false,
   });
   return {
     ...result,
