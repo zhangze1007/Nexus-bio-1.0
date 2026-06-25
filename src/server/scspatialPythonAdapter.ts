@@ -108,6 +108,8 @@ interface PythonQueryResponse {
       spatialPattern: string;
     }>;
   };
+  heImage?: { data: string; scaleFactor: number; spotDiameter: number } | null;
+  spatialFormat?: string;
 }
 
 /**
@@ -285,5 +287,7 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
       availableLayers: [],
     },
     analysis: (py as unknown as Record<string, unknown>).analysis as import('../types/scspatial').ScSpatialAnalysisResults | undefined,
+    heImage: (py as unknown as Record<string, unknown>).heImage as import('../types/scspatial').ScSpatialNormalizedArtifact['heImage'] | undefined ?? undefined,
+    spatialFormat: ((py as unknown as Record<string, unknown>).spatialFormat as import('../types/scspatial').ScSpatialNormalizedArtifact['spatialFormat']) || undefined,
   };
 }

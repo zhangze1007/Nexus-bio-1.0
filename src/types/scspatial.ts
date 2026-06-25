@@ -119,6 +119,14 @@ export interface ScSpatialNormalizedArtifact {
   };
   /** Pre-computed analysis results from scanpy/squidpy (Python backend). */
   analysis?: ScSpatialAnalysisResults;
+  /** H&E tissue image (Visium data only). */
+  heImage?: {
+    data: string;  // base64 PNG
+    scaleFactor: number;
+    spotDiameter: number;
+  };
+  /** Detected spatial data format. */
+  spatialFormat?: 'visium' | 'merfish' | 'generic' | 'none';
 }
 
 export interface ScSpatialIngestConfig {
@@ -297,6 +305,14 @@ export interface ScSpatialQueryResponse {
   };
   /** Pre-computed analysis from Python backend (scanpy/squidpy). */
   analysis?: ScSpatialAnalysisResults;
+  /** H&E tissue image (Visium data only). */
+  heImage?: {
+    data: string;
+    scaleFactor: number;
+    spotDiameter: number;
+  };
+  /** Detected spatial data format. */
+  spatialFormat?: 'visium' | 'merfish' | 'generic' | 'none';
 }
 
 export interface ScSpatialIngestResponse {
