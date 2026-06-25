@@ -43,18 +43,18 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   dyncon:       { level: 'partial', caption: 'Hill feedback + Monod growth + RK4 ODE are textbook-correct; bioreactor parameters are reference values.' },
 
   // Stage 4 — DBTL
-  cellfree:     { level: 'demo',    caption: 'Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.' },
+  cellfree:     { level: 'partial', caption: 'Resource-aware TX-TL ODE with RK4 integration; kinetic constants from Silverman et al. 2010 and Sun et al. 2013 (PURE system). BRENDA integration for enzyme-specific Km/kcat overrides. Limitations: energy decay rates are heuristic estimates; no wet-lab calibration for user-specific extract.' },
   dbtlflow:     { level: 'partial', caption: 'Iteration ledger and SBOL serialization are real; learning loop weights are heuristic.' },
-  multio:       { level: 'demo',    caption: 'Deterministic multi-omics demonstration. ALS matrix factorization (not MOFA+); deterministic linear embedding (not a VAE); no UMAP. Uses synthetic demo data when no CSV uploaded. No Bayesian posterior uncertainty; not trained on user data.' },
+  multio:       { level: 'partial', caption: 'MOFA+ factor analysis via Python backend (variational Bayes, real MOFA+). Deterministic linear embedding with KL penalty for client-side visualization. Limitations: client-side embedding is not a production VAE (no autograd); no scVI integration; demo uses synthetic data when no CSV uploaded.' },
   scspatial:    { level: 'real',    caption: 'Full scanpy/squidpy pipeline (Leiden, PAGA, diffusion pseudotime, Moran I, neighborhood enrichment, ligand-receptor) via Python backend. H&E tissue image overlay for Visium data. Auto-detects Visium/MERFISH/generic spatial formats. Real Visium mouse brain demo data.' },
 
   // Cross-stage
   nexai:        { level: 'real',    caption: 'Answers come exclusively from Groq llama-3.3-70b-versatile via /api/analyze. No client-side template fallback.' },
 
   // Frontier engines (2025-2026)
-  inversefolding:    { level: 'partial', caption: 'k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). BLOSUM62 declared but unused (uniform prior); all weights hand-tuned, not learned; ESM-2 path is a stub.' },
+  inversefolding:    { level: 'partial', caption: 'k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). ESM-2 protein language model endpoint available via Python backend (embeddings, fitness scoring via log-likelihood ratios). Limitations: BLOSUM62 declared but unused (uniform prior); all weights hand-tuned, not learned; ESM-2 requires separate torch installation.' },
   multiplexcrispr:   { level: 'partial', caption: 'Rule Set 2 on-target scoring (Doench 2016 weights) and recursive combinatorial enumeration are real. CFD off-target matrix is uniform placeholder (all 0.893). Fitness is a proxy model, not FBA.' },
-  pathwaydiscovery:  { level: 'partial', caption: 'A* graph search structure and thermodynamic ΔG cascade summation are real. Heuristic is broken (empty functional groups); atom economy is a fixed lookup; no mass conservation; common-metabolites shortcut bypasses search.' },
+  pathwaydiscovery:  { level: 'partial', caption: 'A* graph search structure and thermodynamic ΔG cascade summation are real. Heuristic uses SMILES-derived functional groups (Jaccard similarity) when available; atom economy is a fixed lookup; no mass conservation; common-metabolites shortcut bypasses search.' },
   digitaltwin:       { level: 'real',    caption: 'EKF with RK4 integration, Monod kinetics, analytical Jacobian, and sensor fusion are all genuine. Monte Carlo forecast uses diagonal-only covariance (no cross-correlations). Likelihood and NIS use correct S⁻¹ and innovation covariance S.' },
 
   // ── Expansion tabs (2026-06-22) ───────────────────────────────────────────
@@ -63,7 +63,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   mfa13c:            { level: 'partial', caption: 'EMU decomposition and isotopomer balancing (Antoniewicz 2007) are real. Monte Carlo confidence intervals via Box-Muller perturbation are genuine. Limitations: flux estimation uses grid search (not nonlinear least-squares); no atom mapping verification; σ=0.01 noise level is fixed, not data-driven.' },
   gemreconstruct:    { level: 'partial', caption: 'GPR boolean parsing and iJO1366 stoichiometric matrix assembly are real. Biomass composition from iJO1366 (Orth et al. 2011). Limitations: KEGG reaction mapping uses iJO1366Subset as proxy (no live KEGG API); no gap-filling; no organism-specific biomass optimization.' },
   rnaengineering:    { level: 'partial', caption: 'Turner 2009 nearest-neighbor stacking parameters (Turner & Mathews 2010 NAR) and Watson-Crick/wobble complementarity rules are genuine. Limitations: no full secondary structure prediction (no NUPACK/RNAfold integration); thermodynamic scores are nearest-neighbor approximations only; off-target scoring uses simplified similarity, not full alignment.' },
-  biosafety:         { level: 'demo',    caption: 'k-mer Jaccard similarity algorithm is real. Pattern database is a 14-entry simulated subset (not live VFDB/CDC download); 21-mer substring matching has very low sensitivity to real mutant sequences. Not suitable for actual biosafety screening without BLAST integration and live database.' },
+  biosafety:         { level: 'partial', caption: 'BLAST sequence alignment via Python backend with VFDB (Virulence Factor Database) for real biosafety screening. k-mer Jaccard similarity fallback when BLAST is unavailable. CARD (antibiotic resistance) database not yet integrated. E-value-based significance filtering with BH FDR correction.' },
 };
 
 export function getToolValidity(moduleId: string): ToolValidity | undefined {
