@@ -197,12 +197,12 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       severity: "info",
     },
     {
-      id: "fbasim-community.toy_network_not_genome_scale",
+      id: "fbasim-community.genome_scale_model",
       toolId: "fbasim-community",
       category: "biological",
       statement:
-        "Toy-network model (10 reactions per species, not genome-scale). Exchange metabolites limited to acetate, ethanol, succinate, lactate.",
-      severity: "warning",
+        "Full iJO1366 genome-scale model (2583 reactions, 1805 metabolites) with complete exchange metabolite coverage.",
+      severity: "info",
     },
     {
       id: "fbasim-community.growth_rate_from_normalized_biomass",

@@ -17,6 +17,14 @@ export interface BiGGReaction {
   stoichiometry: Record<string, number>;
 }
 
+export interface FullBiGGModel {
+  modelId: string;
+  reactions: BiGGReaction[];
+  metabolites: string[];
+  reactionCount: number;
+  metaboliteCount: number;
+}
+
 const MOCK_ECOLI_MODEL: BiGGModel = {
   bigg_id: "e_coli_core",
   organism: "Escherichia coli str. K-12 substr. MG1655",
@@ -144,5 +152,85 @@ export async function getModelReactions(
     },
     "BiGG",
     { retries: 1, retryDelayMs: 2000 },
+  );
+}
+
+/**
+ * Fetch the FULL genome-scale model from BiGG (all reactions, all pages).
+ *
+ * For large models like iJO1366 (2583 reactions), this fetches all pages
+ * of the reactions list (100 per page), then fetches stoichiometry details
+ * for each reaction in batches of 10 concurrent requests.
+ *
+ * WARNING: For large models, this can take several minutes and ~2500 API calls.
+ * Results are cached in-memory for the session.
+ */
+const fullModelCache = new Map<string, FullBiGGModel>();
+
+export async function getFullModel(modelId: string): Promise<FallbackResult<FullBiGGModel>> {
+  const cached = fullModelCache.get(modelId);
+  if (cached) {
+    return { data: cached, source: "live", apiName: "BiGG" };
+  }
+
+  return fetchWithFallback(
+    async () => {
+      // Step 1: Fetch all reaction IDs via paginated list
+      const allReactionIds: Array<{ bigg_id: string; name: string }> = [];
+      let page = 1;
+      const perPage = 100;
+
+      while (true) {
+        const listRes = await fetch(`/api/bigg?type=rxn_page&id=${modelId}&page=${page}`, {
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!listRes.ok) throw new Error(`BiGG page ${page} returned ${listRes.status}`);
+        const listData = await listRes.json();
+        const results: Array<{ bigg_id: string; name: string }> = listData.results ?? [];
+        allReactionIds.push(...results);
+
+        // BiGG API returns `next` URL when more pages exist
+        if (!listData.next || results.length < perPage) break;
+        page++;
+      }
+
+      if (allReactionIds.length === 0) throw new Error("No reactions found in model");
+
+      // Step 2: Fetch reaction details in batches
+      const controller = new AbortController();
+      const signal = controller.signal;
+      const tasks = allReactionIds.map((r) => () => fetchReactionDetail(modelId, r.bigg_id, signal));
+      const detailResults = await runBatched(tasks, 10);
+
+      const reactions: BiGGReaction[] = [];
+      for (const detail of detailResults) {
+        if (detail) reactions.push(detail);
+      }
+
+      if (reactions.length === 0) throw new Error("Failed to fetch any reaction details");
+
+      // Step 3: Extract all unique metabolite IDs
+      const metSet = new Set<string>();
+      for (const rxn of reactions) {
+        for (const metId of Object.keys(rxn.stoichiometry)) {
+          metSet.add(metId);
+        }
+      }
+      const metabolites = Array.from(metSet).sort();
+
+      const model: FullBiGGModel = {
+        modelId,
+        reactions,
+        metabolites,
+        reactionCount: reactions.length,
+        metaboliteCount: metabolites.length,
+      };
+
+      fullModelCache.set(modelId, model);
+      return model;
+    },
+    null as unknown as FullBiGGModel,
+    "BiGG",
+    { retries: 1, retryDelayMs: 5000 },
   );
 }

@@ -111,7 +111,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   multiplexcrispr: {
     level: "real",
     caption:
-      "Rule Set 2 on-target scoring (Doench 2016, 31-feature logistic regression with published weights) is real. CFD off-target matrix contains real differentiated Doench 2016 values (12 mismatch types x 20 positions, seed-region decay). Recursive combinatorial enumeration is real. Fitness is a proxy model, not FBA. Limitation: off-target search not performed (requires Cas-OFFinder + genome FASTA).",
+      "Rule Set 2 on-target scoring (Doench 2016, 31-feature logistic regression with published weights) is real. CFD off-target matrix contains real differentiated Doench 2016 values (12 mismatch types x 20 positions, seed-region decay). Recursive combinatorial enumeration is real. Fitness is a proxy model, not FBA. BLAST-based off-target search against E. coli K-12 genome via Python backend (blastn-short, seed region mismatch analysis).",
   },
   pathwaydiscovery: {
     level: "real",

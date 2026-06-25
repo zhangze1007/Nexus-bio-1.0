@@ -224,7 +224,7 @@ export function useFBASimState(): FBASimState {
     };
   }, []);
 
-  // Auto-load default BiGG model on mount instead of falling back to toy network
+  // Auto-load default BiGG model on mount instead of falling back to legacy network
   useEffect(() => {
     if (selectedModel && !loadedReactions && !modelLoading && biggModels.length > 0) {
       handleLoadModel();

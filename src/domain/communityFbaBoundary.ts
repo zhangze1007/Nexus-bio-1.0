@@ -31,7 +31,7 @@ export const FBASIM_SINGLE_BOUNDARY: FbaModeBoundary = {
     "fbasim.steady_state",
     "fbasim.fixed_uptake_bounds",
     "fbasim.no_enzyme_capacity",
-    "fbasim.toy_core_model",
+    "fbasim.genome_scale_model",
   ],
   label: "Single-species FBA",
   explanation:
@@ -47,7 +47,7 @@ export const FBASIM_COMMUNITY_BOUNDARY: FbaModeBoundary = {
   formalClaimSurfacesBlocked: COMMUNITY_FBA_FORMAL_SURFACES_BLOCKED,
   assumptionIds: [
     "fbasim-community.joint_lp_with_exchange_pools",
-    "fbasim-community.toy_network_not_genome_scale",
+    "fbasim-community.genome_scale_model",
     "fbasim-community.growth_rate_heuristic_scaling",
     "fbasim-community.inherits_single_assumptions",
   ],

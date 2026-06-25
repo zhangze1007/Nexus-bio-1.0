@@ -18,6 +18,7 @@ export async function GET(request: Request) {
   }
 
   const rxnId = searchParams.get('rxnId');
+  const page = searchParams.get('page');
 
   const endpointMap: Record<string, string> = {
     models: 'models',
@@ -25,6 +26,7 @@ export async function GET(request: Request) {
     reaction: `models/${id}/reactions`,
     metabolite: `models/${id}/metabolites`,
     rxn_detail: rxnId ? `models/${id}/reactions/${rxnId}` : '',
+    rxn_page: `models/${id}/reactions?page=${page ?? 1}&per_page=100`,
   };
 
   const endpoint = endpointMap[type];

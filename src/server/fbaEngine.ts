@@ -167,7 +167,7 @@ const ECOLI_NETWORK: NetworkSpec = {
         GAPD: round(vars.GAPD ?? 0),
         // PGK and ENO carry the same flux as GAPD in this linear glycolysis
         // segment (GAPD → PGK → ENO → PYK). This is a simplification — the
-        // toy network does not include independent PGK/ENO variables.
+        // legacy network does not include independent PGK/ENO variables.
         PGK: round(vars.GAPD ?? 0),
         ENO: round(vars.GAPD ?? 0),
         PYK: round(vars.PYK ?? 0),
@@ -517,7 +517,7 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
 
 // ── P3.1: Expanded FBA using iJO1366 subset (~95 rxns, ~78 metabolites) ──
 // This uses the real stoichiometric matrix from the genome-scale model rather
-// than the hand-written 10-reaction toy networks above.
+// than the hand-written 10-reaction legacy networks above.
 
 export interface ExpandedFBARequest {
   objective: "biomass" | "product";
@@ -612,12 +612,50 @@ export interface DynamicFBAOptions {
   knockouts?: string[];
 }
 
+/**
+ * Auto-detect the biomass reaction ID from a list of reactions.
+ * BiGG models use various naming conventions:
+ *   - "BIOMASS_Ec_iJO1366_core_53p95M" (iJO1366)
+ *   - "BIOMASS_Ecoli_core" (e_coli_core)
+ *   - Any reaction with "biomass" in the ID (case-insensitive)
+ */
+function detectBiomassReaction(reactions: DynamicReaction[]): string | null {
+  // Priority 1: reaction ID starts with BIOMASS
+  const byPrefix = reactions.find((r) => r.id.toUpperCase().startsWith("BIOMASS"));
+  if (byPrefix) return byPrefix.id;
+  // Priority 2: reaction name contains "biomass"
+  const byName = reactions.find((r) => r.name.toLowerCase().includes("biomass"));
+  if (byName) return byName.id;
+  return null;
+}
+
 function findExchangeReaction(reactions: DynamicReaction[], metaboliteSuffix: string): DynamicReaction | undefined {
   return reactions.find((r) => r.id.startsWith("EX_") && r.id.includes(metaboliteSuffix));
 }
 
 function findMetaboliteConstraint(metId: string): string {
   return `${metId}_balance`;
+}
+
+/**
+ * Build an optimized metabolite → reaction index map for large models.
+ * This avoids O(metCount * rxnCount) filtering when building constraints.
+ */
+function buildMetaboliteReactionIndex(
+  reactions: DynamicReaction[],
+): Map<string, Array<{ rxnId: string; coef: number }>> {
+  const index = new Map<string, Array<{ rxnId: string; coef: number }>>();
+  for (const rxn of reactions) {
+    for (const [metId, coef] of Object.entries(rxn.stoichiometry)) {
+      let entry = index.get(metId);
+      if (!entry) {
+        entry = [];
+        index.set(metId, entry);
+      }
+      entry.push({ rxnId: rxn.id, coef });
+    }
+  }
+  return index;
 }
 
 export async function solveDynamicFBA(
@@ -629,20 +667,21 @@ export async function solveDynamicFBA(
   const glucoseUptake = options.glucoseUptake ?? 10;
   const oxygenUptake = options.oxygenUptake ?? 12;
 
-  const allMetIds = new Set<string>();
-  for (const r of reactions) {
-    for (const metId of Object.keys(r.stoichiometry)) {
-      allMetIds.add(metId);
-    }
+  // Auto-detect biomass if objectiveId not found in reactions
+  let effectiveObjectiveId = objectiveId;
+  if (!reactions.find((r) => r.id === objectiveId)) {
+    const detected = detectBiomassReaction(reactions);
+    if (detected) effectiveObjectiveId = detected;
   }
 
-  const objective = [{ name: objectiveId, coef: 1 }];
+  // Build optimized metabolite → reaction index (O(total_stoich_entries) instead of O(mets * rxns))
+  const metRxnIndex = buildMetaboliteReactionIndex(reactions);
 
-  const constraints = Array.from(allMetIds).map((metId) => ({
+  const objective = [{ name: effectiveObjectiveId, coef: 1 }];
+
+  const constraints = Array.from(metRxnIndex.entries()).map(([metId, rxns]) => ({
     name: `${metId}_balance`,
-    vars: reactions
-      .filter((r) => r.stoichiometry[metId] !== undefined)
-      .map((r) => ({ name: r.id, coef: r.stoichiometry[metId] })),
+    vars: rxns.map((r) => ({ name: r.rxnId, coef: r.coef })),
     lb: 0,
     ub: 0,
   }));
@@ -686,7 +725,7 @@ export async function solveDynamicFBA(
   const oxygenShadow = o2Constraint ? (result.duals[o2Constraint] ?? 0) : 0;
 
   const glcFlux = glcRxn ? Math.abs(fluxes[glcRxn.id] ?? 0) : glucoseUptake;
-  const biomassFlux = fluxes[objectiveId] ?? 0;
+  const biomassFlux = fluxes[effectiveObjectiveId] ?? 0;
 
   // For dynamic models, ATP/NADH cannot be reliably computed without
   // explicit metabolite-level identification (stoichiometric coefficients
