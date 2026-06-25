@@ -21,14 +21,14 @@ export interface ESM2Result {
  * Get ESM-2 embeddings for a protein sequence.
  */
 export async function getESM2Embeddings(sequence: string): Promise<ESM2Result> {
-  const response = await fetch('/api/esm2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch("/api/esm2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sequence }),
   });
 
   const data = await response.json();
-  if (!data.ok) throw new Error(data.error || 'ESM-2 request failed');
+  if (!data.ok) throw new Error(data.error || "ESM-2 request failed");
   return data as ESM2Result;
 }
 
@@ -60,9 +60,7 @@ export function computeSequenceStructureCompatibility(
  *
  * Uses nearest-neighbor in embedding space to known enzyme families.
  */
-export function predictFunctionFromEmbeddings(
-  embeddings: number[][],
-): { ecClass: string; confidence: number } {
+export function predictFunctionFromEmbeddings(embeddings: number[][]): { ecClass: string; confidence: number } {
   const pooled = poolEmbeddings(embeddings);
 
   // Simplified: use embedding statistics to predict EC class
@@ -70,7 +68,7 @@ export function predictFunctionFromEmbeddings(
   const variance = pooled.reduce((s, v) => s + (v - meanActivation) ** 2, 0) / pooled.length;
 
   // Map to EC classes based on embedding patterns
-  const ecClasses = ['1.-.-.-', '2.-.-.-', '3.-.-.-', '4.-.-.-', '5.-.-.-', '6.-.-.-'];
+  const ecClasses = ["1.-.-.-", "2.-.-.-", "3.-.-.-", "4.-.-.-", "5.-.-.-", "6.-.-.-"];
   const idx = Math.abs(Math.round(meanActivation * 10)) % ecClasses.length;
 
   return {
@@ -91,19 +89,19 @@ export function computeFitnessLandscape(
   wildTypeEmbeddings: number[][],
   mutations: Array<{ position: number; mutantAA: string }>,
 ): Array<{ position: number; mutantAA: string; llr: number; predictedEffect: string }> {
-  return mutations.map(mut => {
+  return mutations.map((mut) => {
     // Simplified LLR computation from embedding differences
     const posEmbedding = wildTypeEmbeddings[mut.position] || [];
     const meanActivation = posEmbedding.reduce((s, v) => s + v, 0) / Math.max(1, posEmbedding.length);
 
-    // LLR approximation
-    const llr = meanActivation * (Math.random() * 0.4 + 0.8); // with noise
+    // LLR approximation (deterministic from embedding)
+    const llr = meanActivation;
 
     return {
       position: mut.position,
       mutantAA: mut.mutantAA,
       llr: Math.round(llr * 1000) / 1000,
-      predictedEffect: llr > 0.1 ? 'beneficial' : llr < -0.1 ? 'deleterious' : 'neutral',
+      predictedEffect: llr > 0.1 ? "beneficial" : llr < -0.1 ? "deleterious" : "neutral",
     };
   });
 }
@@ -121,11 +119,13 @@ function poolEmbeddings(embeddings: number[][]): number[] {
     }
   }
 
-  return pooled.map(v => v / embeddings.length);
+  return pooled.map((v) => v / embeddings.length);
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0, normA = 0, normB = 0;
+  let dot = 0,
+    normA = 0,
+    normB = 0;
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
     dot += a[i] * b[i];
     normA += a[i] * a[i];
