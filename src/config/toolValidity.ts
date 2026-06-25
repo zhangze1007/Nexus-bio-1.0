@@ -36,14 +36,14 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
 
   // Stage 2 — simulation
   fbasim: {
-    level: "real",
+    level: "partial",
     caption:
-      "Single-species FBA uses a real two-phase simplex LP. Two-Species mode uses a joint community LP with shared exchange metabolite pool constraints (4 metabolites) and weighted community biomass objective. growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹). Toy-core network (10 reactions per species) for educational demonstration.",
+      "Single-species FBA uses a real two-phase simplex LP. Two-Species mode uses a joint community LP with shared exchange metabolite pool constraints (4 metabolites) and weighted community biomass objective; falls back to heuristic if infeasible. growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).",
   },
   cethx: {
-    level: "real",
+    level: "partial",
     caption:
-      "Alberty-transformed ΔG' from Lehninger reference ΔG° via calcTransformedGibbs (thermoEngine). Condition-aware at pH, ionic-strength, temperature. eQuilibrator 3 API integration when available. TFA (thermodynamic feasibility analysis) with group contribution method.",
+      "Alberty-transformed ΔG' from Lehninger reference ΔG° via calcTransformedGibbs (thermoEngine). Condition-aware at pH, ionic-strength, temperature. eQuilibrator 3 used when available. Proton stoichiometry estimated.",
   },
   catdes: {
     level: "partial",
@@ -75,9 +75,9 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
 
   // Stage 4 — DBTL
   cellfree: {
-    level: "real",
+    level: "demo",
     caption:
-      "Resource-aware TX-TL ODE with RK4 integration. Kinetic constants from Silverman et al. 2010 (TX-TL calibration) and Sun et al. 2013 (PURE system). BRENDA integration for enzyme-specific Km/kcat overrides. Levenberg-Marquardt fitting for user plate-reader data.",
+      "Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.",
   },
   dbtlflow: {
     level: "partial",
@@ -85,9 +85,9 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
       "Design-Build-Test-Learn cycle tracking with iteration ledger, SBOL serialization, and protocol generation. Closed-loop tab uses real GP/Bayesian optimization engine (Cholesky-based RBF kernel GP, EI/UCB/PI acquisition functions, Latin Hypercube initial design). LIMITATION: parameter mapping from iterations uses golden-ratio heuristic (not explicit experimental parameters); GP trains on iteration results only. For real research: need user-provided experimental parameter vectors.",
   },
   multio: {
-    level: "partial",
+    level: "demo",
     caption:
-      "Real MOFA+ variational Bayes engine (local TS: coordinate-ascent with Cholesky ridge solve, ARD priors, ELBO convergence; Python backend: mofapy2 when configured). Real UMAP engine (k-NN via KD-tree, fuzzy simplicial sets, SGD with cross-entropy loss) available via visible toggle (default: local PCA). Limitations: MOFA+ toggle exists in state but not surfaced in UI; default views use local PCA/linear embedding; demo uses synthetic data when no CSV uploaded.",
+      "Deterministic multi-omics demonstration. ALS matrix factorization (not MOFA+); seeded encoder/decoder (not a VAE); no UMAP. Uses synthetic demo data when no CSV uploaded. No Bayesian posterior uncertainty; not trained on user data.",
   },
   scspatial: {
     level: "real",
@@ -130,12 +130,12 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   mfa13c: {
     level: "partial",
     caption:
-      "EMU decomposition and isotopomer balancing (Antoniewicz 2007) are real. Monte Carlo confidence intervals via Box-Muller perturbation are genuine. Limitations: flux estimation uses grid search (not nonlinear least-squares); no atom mapping verification; σ=0.01 noise level is fixed, not data-driven.",
+      "EMU decomposition and isotopomer balancing (Antoniewicz 2007) are real. Levenberg-Marquardt nonlinear least-squares flux estimation with numerical Jacobian. Monte Carlo confidence intervals via Box-Muller perturbation. Limitations: no GC-MS raw data parsing; EMU network not pruned for large models.",
   },
   gemreconstruct: {
     level: "partial",
     caption:
-      "GPR boolean parsing and iJO1366 stoichiometric matrix assembly are real. Biomass composition from iJO1366 (Orth et al. 2011). Limitations: KEGG reaction mapping uses iJO1366Subset as proxy (no live KEGG API); no gap-filling; no organism-specific biomass optimization.",
+      "GPR boolean parsing and iJO1366 stoichiometric matrix assembly are real. Biomass composition from iJO1366 (Orth et al. 2011). Internal EC_REACTION_MAP contains 100+ reactions with real stoichiometry and EC numbers. Limitations: no gap-filling; no organism-specific biomass optimization; no live KEGG API integration.",
   },
   rnaengineering: {
     level: "partial",
