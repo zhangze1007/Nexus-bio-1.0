@@ -1,15 +1,77 @@
 """BLAST sequence screening service for biosafety checks."""
 from __future__ import annotations
+import gzip
 import logging
 import os
+import shutil
 import subprocess
 import tempfile
+import urllib.request
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 BLAST_DB_DIR = os.environ.get("BLAST_DB_DIR", "/app/blast_databases")
+
+# VFDB download URLs (try multiple mirrors)
+VFDB_URLS = [
+    "https://mgc.ac.cn/VFDB/SetA/VFDB_setA_nt.fasta.gz",
+    "https://ccb-microbe.cs.uni-saarland.de/vfdb/VFDB_setA_nt.fasta.gz",
+]
+
+
+def ensure_vfdb_database() -> bool:
+    """Download and format VFDB database if not already present."""
+    db_path = os.path.join(BLAST_DB_DIR, "VFDB")
+    if os.path.exists(f"{db_path}.nin") or os.path.exists(f"{db_path}.nsq"):
+        return True
+
+    os.makedirs(BLAST_DB_DIR, exist_ok=True)
+
+    # Try downloading from each mirror
+    fasta_gz = os.path.join(BLAST_DB_DIR, "VFDB_setA_nt.fasta.gz")
+    downloaded = False
+
+    for url in VFDB_URLS:
+        try:
+            logger.info(f"Downloading VFDB from {url}")
+            urllib.request.urlretrieve(url, fasta_gz)
+            downloaded = True
+            break
+        except Exception as e:
+            logger.warning(f"Failed to download from {url}: {e}")
+            continue
+
+    if not downloaded:
+        logger.error("Failed to download VFDB from all mirrors")
+        return False
+
+    # Decompress
+    fasta_path = os.path.join(BLAST_DB_DIR, "VFDB_setA_nt.fasta")
+    try:
+        with gzip.open(fasta_gz, 'rb') as f_in:
+            with open(fasta_path, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        os.unlink(fasta_gz)
+    except Exception as e:
+        logger.error(f"Failed to decompress VFDB: {e}")
+        return False
+
+    # Format for BLAST
+    try:
+        subprocess.run(
+            ["makeblastdb", "-in", fasta_path, "-dbtype", "nucl",
+             "-out", db_path, "-title", "VFDB Core"],
+            capture_output=True, text=True, timeout=300,
+        )
+        os.unlink(fasta_path)
+        logger.info("VFDB database formatted successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to format VFDB: {e}")
+        return False
 
 def blast_screen_sequence(
     sequence: str,
@@ -28,6 +90,9 @@ def blast_screen_sequence(
     Returns:
         Dict with query_length, total_hits, hits list, databases_searched
     """
+    # Auto-download VFDB if not present
+    ensure_vfdb_database()
+
     if databases is None:
         databases = _discover_databases()
 
