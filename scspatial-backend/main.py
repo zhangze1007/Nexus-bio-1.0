@@ -497,35 +497,99 @@ async def demo():
     artifact_id = f"scspatial-demo-{uuid.uuid4().hex[:12]}"
     uploaded_at = int(time.time() * 1000)
 
-    # Generate synthetic spatial transcriptomics data
-    n_cells = 200
+    # Generate realistic synthetic spatial transcriptomics data
+    # Simulates a tissue section with spatially coherent clusters
+    import math
+
+    n_cells = 500
     n_genes = 50
     gene_names = [
         "EPCAM", "KRT19", "CDH1", "VIM", "CDH2", "FN1", "COL1A1", "COL3A1",
         "CD3D", "CD3E", "CD4", "CD8A", "MS4A1", "CD79A", "CD68", "CD163",
         "PECAM1", "VWF", "ACTA2", "TAGLN", "PDGFRA", "PDGFRB", "DCN", "LUM",
         "TP53", "EGFR", "ERBB2", "MYC", "KRAS", "BRAF", "PTEN", "PIK3CA",
-        "SOX2", "NES", "VIM", "NOTCH1", "ATP5F1", "COX4I1", "SDHB", "IDH1",
+        "SOX2", "NES", "NOTCH1", "ATP5F1", "COX4I1", "SDHB", "IDH1",
         "HSPA5", "DDIT3", "ATF4", "XBP1", "MKI67", "PCNA", "TOP2A", "CCNB1",
-        "GAPDH", "ACTB",
+        "GAPDH", "ACTB", "CDH17",
     ][:n_genes]
 
-    clusters = ["Epithelial", "Immune", "Stromal", "Endothelial"]
-    cells = []
-    for i in range(n_cells):
-        cluster = clusters[i % len(clusters)]
-        cells.append({
-            "cellId": f"cell-{i:04d}",
-            "clusterLabel": cluster,
-            "cellType": cluster,
-        })
+    # Cluster centers (x, y) — simulating tissue regions
+    cluster_defs = [
+        ("Epithelial",  50, 50, 18),   # center gland/tumor
+        ("Stromal",     50, 50, 35),   # surrounding stroma (ring)
+        ("Immune",      30, 70, 12),   # immune infiltrate
+        ("Immune",      75, 30, 10),   # secondary immune cluster
+        ("Endothelial", 20, 40,  8),   # blood vessel region
+        ("Endothelial", 80, 60,  8),   # second vessel
+    ]
 
-    import math
+    # Marker genes per cluster (high expression)
+    markers = {
+        "Epithelial":  ["EPCAM", "KRT19", "CDH1", "EGFR", "ERBB2"],
+        "Stromal":     ["VIM", "FN1", "COL1A1", "COL3A1", "DCN", "LUM", "PDGFRA"],
+        "Immune":      ["CD3D", "CD3E", "CD4", "CD8A", "MS4A1", "CD79A", "CD68"],
+        "Endothelial": ["PECAM1", "VWF", "ACTA2", "TAGLN", "CDH2"],
+    }
+
+    cells = []
     spatial = []
-    for i in range(n_cells):
-        angle = 2 * math.pi * i / n_cells
-        r = 50 + random.gauss(0, 10)
-        spatial.append([50 + r * math.cos(angle), 50 + r * math.sin(angle)])
+    cell_idx = 0
+
+    for cluster_name, cx, cy, radius in cluster_defs:
+        # Cells per cluster proportional to area
+        n_in_cluster = int(n_cells * (radius * radius) / sum(r * r for _, _, _, r in cluster_defs))
+        for _ in range(n_in_cluster):
+            # Gaussian scatter around cluster center
+            x = cx + random.gauss(0, radius * 0.6)
+            y = cy + random.gauss(0, radius * 0.6)
+            cells.append({
+                "cellId": f"cell-{cell_idx:04d}",
+                "clusterLabel": cluster_name,
+                "cellType": cluster_name,
+            })
+            spatial.append([round(x, 2), round(y, 2)])
+            cell_idx += 1
+
+    # Fill remaining cells as scattered background
+    while cell_idx < n_cells:
+        x = random.uniform(5, 95)
+        y = random.uniform(5, 95)
+        cells.append({
+            "cellId": f"cell-{cell_idx:04d}",
+            "clusterLabel": "Stromal",
+            "cellType": "Stromal",
+        })
+        spatial.append([round(x, 2), round(y, 2)])
+        cell_idx += 1
+
+    # Build expression matrix — marker genes have high expression in their cluster
+    marker_set = set()
+    for genes in markers.values():
+        marker_set.update(genes)
+
+    rows = []
+    for i, cell in enumerate(cells):
+        cluster = cell["clusterLabel"]
+        cluster_markers = markers.get(cluster, [])
+        indices = []
+        values = []
+        for j, gene in enumerate(gene_names):
+            if gene in cluster_markers:
+                # High expression for marker genes (2.0 - 6.0)
+                val = round(random.uniform(2.0, 6.0), 3)
+            elif gene in marker_set:
+                # Low expression for other clusters' markers (0 - 0.5)
+                val = round(random.uniform(0, 0.5), 3) if random.random() > 0.5 else 0
+            else:
+                # Background genes: sparse, low expression
+                if random.random() > 0.7:
+                    val = round(random.uniform(0.1, 2.0), 3)
+                else:
+                    val = 0
+            if val > 0:
+                indices.append(j)
+                values.append(val)
+        rows.append({"indices": indices, "values": values})
 
     artifact = {
         "schemaVersion": 1,
@@ -542,11 +606,7 @@ async def demo():
                 "encoding": "row-sparse-v1",
                 "nObs": n_cells,
                 "nVars": n_genes,
-                "rows": [
-                    {"indices": [j for j in range(n_genes) if random.random() > 0.6],
-                     "values": [round(random.uniform(0.1, 5.0), 3) for _ in range(sum(1 for j in range(n_genes) if random.random() > 0.6))]}
-                    for _ in range(n_cells)
-                ],
+                "rows": rows,
             },
             "layers": {},
             "defaultLayer": "X",
@@ -581,12 +641,12 @@ async def demo():
         },
         "analysis": {
             "moranI": [
-                {"gene": g, "I": round(random.uniform(-0.1, 0.8), 3), "pval": round(random.uniform(0, 0.05), 4), "pval_adj": round(random.uniform(0, 0.05), 4)}
+                {"gene": g, "I": round(random.uniform(0.3, 0.85), 3), "pval": round(random.uniform(0.0001, 0.01), 4), "pval_adj": round(random.uniform(0.001, 0.05), 4)}
                 for g in gene_names[:20]
             ],
             "markerGenes": {
-                cluster: [{"gene": gene_names[i * 5 + j], "logFC": round(random.uniform(1, 4), 2), "pval_adj": round(random.uniform(0, 0.01), 4), "score": round(random.uniform(5, 20), 2)} for j in range(5)]
-                for i, cluster in enumerate(clusters)
+                cluster_name: [{"gene": m, "logFC": round(random.uniform(2, 5), 2), "pval_adj": round(random.uniform(0.0001, 0.001), 4), "score": round(random.uniform(10, 25), 2)} for m in markers_list[:5]]
+                for cluster_name, markers_list in markers.items()
             },
             "paga": None,
             "nhoodEnrichment": None,
