@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import './globals.css';
 import '../src/styles/fonts.css';
+import '../src/styles/animations.css';
 import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProvider';
 import { RouteTransition } from '../src/components/shared/RouteTransition';
 import { OnboardingOverlay } from '../src/components/shared/OnboardingOverlay';

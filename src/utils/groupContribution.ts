@@ -110,24 +110,6 @@ function implicitH(atomIdx: number, graph: SMILESGraph, adj: Neighbor[][]): numb
   return Math.max(0, val - bondOrderSum);
 }
 
-/** Does atom at `idx` have at least one neighbor with element `el` and given bond order? */
-function hasNeighborElement(
-  idx: number,
-  el: string,
-  adj: Neighbor[][],
-  bondOrder?: number,
-): boolean {
-  return adj[idx].some(
-    n => n.atomIdx !== undefined &&
-         /* we need to check the graph atom */
-         true && // placeholder; actual check below
-         adj[idx].some(nb => {
-           // We need access to graph — use closure
-           return false; // Will be replaced
-         })
-  );
-}
-
 /** Helper: does atom at `idx` have a double bond to element `el`? */
 function hasDoubleBondTo(idx: number, el: string, graph: SMILESGraph, adj: Neighbor[][]): boolean {
   return adj[idx].some(n => n.bond.order === 2 && graph.atoms[n.atomIdx].element === el);
