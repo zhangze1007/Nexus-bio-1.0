@@ -49,26 +49,59 @@ export function useGenMIMState() {
     setProtectEssential((dynconPayload?.result.doRmse ?? 0.05) <= 0.08);
   }, [dynconPayload?.result.doRmse, recommendedEfficiency, recommendedTargets]);
 
+  // Auto-generate targets from FBA model gene-reaction associations when available.
+  // Extracts genes from topFluxes via REACTION_TO_GENES mapping and merges them
+  // with the curated CRISPRI_TARGETS, giving priority to curated entries (they have
+  // real knockdown efficiency data from Rousset et al. 2018).
+  const fbaGenes = useMemo(() => {
+    if (!fbaPayload?.result?.topFluxes?.length) return [];
+    const geneSet = new Set<string>();
+    for (const { reactionId } of fbaPayload.result.topFluxes) {
+      const genes = REACTION_TO_GENES[reactionId];
+      if (genes) {
+        for (const gene of genes) {
+          geneSet.add(gene);
+        }
+      }
+    }
+    return Array.from(geneSet);
+  }, [fbaPayload?.result?.topFluxes]);
+
+  const mergedTargets = useMemo(() => {
+    const curatedGeneIds = new Set(CRISPRI_TARGETS.map((t) => t.gene));
+    const dynamicTargets: CRISPRiTarget[] = fbaGenes
+      .filter((g) => !curatedGeneIds.has(g))
+      .map((g) => ({
+        gene: g,
+        position: 0,
+        essential: false,
+        knockdown_efficiency: 0.8,
+        phenotype: "FBA-derived target",
+        growth_impact: -0.05,
+        source: "Auto-populated from FBA model gene-reaction associations",
+      }));
+    const customGeneIds = new Set([...curatedGeneIds, ...dynamicTargets.map((t) => t.gene)]);
+    const customAsTargets: CRISPRiTarget[] =
+      customTargets && customTargets.length > 0
+        ? customTargets
+            .filter((ct) => !customGeneIds.has(ct.geneId))
+            .map((ct) => ({
+              gene: ct.geneId,
+              position: 0,
+              essential: ct.essentiality > 0.5,
+              knockdown_efficiency: 0.8,
+              phenotype: ct.geneName || ct.geneId,
+              growth_impact: -0.05,
+            }))
+        : [];
+    return [...CRISPRI_TARGETS, ...dynamicTargets, ...customAsTargets];
+  }, [fbaGenes, customTargets]);
+
   // Flux-boosted CRISPRi targets: boost knockdown_efficiency for genes
   // whose corresponding FBA reactions carry high flux (bottleneck candidates)
-  // Merges custom uploaded targets with default CRISPRI_TARGETS
+  // Uses mergedTargets (curated + FBA-derived + custom) as base
   const fluxBoostedTargets = useMemo(() => {
-    // Build base targets: merge custom + default
-    let baseTargets: CRISPRiTarget[] = [...CRISPRI_TARGETS];
-    if (customTargets && customTargets.length > 0) {
-      const defaultGeneIds = new Set(CRISPRI_TARGETS.map((t) => t.gene));
-      const customAsTargets: CRISPRiTarget[] = customTargets.map((ct) => ({
-        gene: ct.geneId,
-        position: 0,
-        essential: ct.essentiality > 0.5,
-        knockdown_efficiency: 0.8,
-        phenotype: ct.geneName || ct.geneId,
-        growth_impact: -0.05,
-      }));
-      // Add custom targets that don't already exist in defaults
-      const newCustom = customAsTargets.filter((t) => !defaultGeneIds.has(t.gene));
-      baseTargets = [...CRISPRI_TARGETS, ...newCustom];
-    }
+    const baseTargets = mergedTargets;
 
     if (!fbaPayload?.result.topFluxes?.length) return baseTargets;
     const geneFluxBoost = new Map<string, number>();
@@ -89,7 +122,7 @@ export function useGenMIMState() {
       const normalizedBoost = (boost / maxFlux) * 0.08;
       return { ...t, knockdown_efficiency: Math.min(1, t.knockdown_efficiency + normalizedBoost) };
     });
-  }, [fbaPayload?.result.topFluxes, customTargets]);
+  }, [fbaPayload?.result.topFluxes, mergedTargets]);
 
   const { data: schedule, error: simError } = useMemo(() => {
     try {
@@ -159,6 +192,8 @@ export function useGenMIMState() {
     // Derived
     recommendedEfficiency,
     recommendedTargets,
+    fbaGenes,
+    mergedTargets,
     fluxBoostedTargets,
     schedule,
     simError,
