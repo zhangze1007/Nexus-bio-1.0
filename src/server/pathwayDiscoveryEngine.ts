@@ -850,6 +850,7 @@ function detectFunctionalGroups(smiles: string): string[] {
  * Compute molecular similarity based on functional group overlap.
  */
 function molecularSimilarity(a: Molecule, b: Molecule): number {
+  // Default 0.5 only when both molecules lack SMILES-derived functional groups
   if (a.functionalGroups.length === 0 && b.functionalGroups.length === 0) return 0.5;
 
   const setA = new Set(a.functionalGroups);
@@ -979,9 +980,23 @@ function aStarPathwaySearch(
   const foundPathways: DiscoveredPathway[] = [];
   const cofactors = ['atp', 'adp', 'nad', 'nadh', 'nadp', 'nadph', 'coa', 'fad', 'fadh2', 'h2o', 'o2', 'co2', 'pi', 'ppi', 'h', 'nh4', 'thf', 'methf', 'plp', 'acp', 'mg2', 'k', 'fe-s'];
 
+  // Build SMILES lookup from target + precursors for functional group detection
+  const smilesMap = new Map<string, string>();
+  if (target.smiles) smilesMap.set(target.id, target.smiles);
+  for (const p of precursors) {
+    if (p.smiles) smilesMap.set(p.id, p.smiles);
+  }
+
   // Heuristic: minimum similarity to any precursor
   function heuristic(metaboliteId: string): number {
-    const met: Molecule = { id: metaboliteId, name: metaboliteId, functionalGroups: [], isPrecursor: false };
+    const smiles = smilesMap.get(metaboliteId);
+    const met: Molecule = {
+      id: metaboliteId,
+      name: metaboliteId,
+      smiles,
+      functionalGroups: smiles ? detectFunctionalGroups(smiles) : [],
+      isPrecursor: false,
+    };
     let minDist = Infinity;
     for (const prec of precursors) {
       const sim = molecularSimilarity(met, prec);
@@ -1101,10 +1116,12 @@ function aStarPathwaySearch(
       // Take the first substrate as the next metabolite to trace back
       const nextMetabolite = rxn.substrates.find(s => !cofactors.includes(s)) || rxn.substrates[0];
 
+      const subSmiles = smilesMap.get(nextMetabolite);
+      const prodSmiles = smilesMap.get(matchingProduct);
       const step: PathwayStep = {
         reaction: rxn,
-        substrate: { id: nextMetabolite, name: nextMetabolite, functionalGroups: [], isPrecursor: precursorIds.has(nextMetabolite) },
-        product: { id: matchingProduct, name: matchingProduct, functionalGroups: [], isPrecursor: false },
+        substrate: { id: nextMetabolite, name: nextMetabolite, smiles: subSmiles, functionalGroups: subSmiles ? detectFunctionalGroups(subSmiles) : [], isPrecursor: precursorIds.has(nextMetabolite) },
+        product: { id: matchingProduct, name: matchingProduct, smiles: prodSmiles, functionalGroups: prodSmiles ? detectFunctionalGroups(prodSmiles) : [], isPrecursor: false },
         deltaG: rxn.deltaG,
         enzymeScore: rxn.enzymeAvailability,
         feasibility: Math.max(0, 1 - Math.abs(rxn.deltaG) / 20) * rxn.enzymeAvailability,
