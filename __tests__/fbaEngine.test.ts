@@ -85,10 +85,9 @@ describe('FBA Engine — Known-Solution Validation (E. coli)', () => {
   });
 
   test('E. coli LP objective value is in a positive finite range for standard conditions', async () => {
-    // NOTE: growthRate = objectiveValue * 0.061 (E. coli heuristic scaling, no literature source)
-    // 本测试只验证 LP 返回正数且在 (0, 50] 内（工程合理性上界）
-    // 不验证与文献值吻合，因为 0.061 系数未经文献校准
-    // Reference limitation: documented in toolValidity.ts fbasim caption
+    // NOTE: growthRate = LP objective value (biomass flux, normalized biomass reaction)
+    // The LP objective already represents h⁻¹ when the biomass reaction is properly normalized.
+    // We only verify it is positive and within a reasonable upper bound.
     const result = await solveAuthorityFBA(ECOLI_AEROBIC_BIOMASS);
     expect(result.feasible).toBe(true);
     expect(result.growthRate).toBeGreaterThan(0);
@@ -284,9 +283,9 @@ describe('FBA Engine — Species Tests', () => {
     // IDH = BIOMASS_y + PRODUCT_y = ACS = O2tx_y
     // Max O2tx_y = 10 (limited by TPI = PDC = HXT = 10)
     // BIOMASS_y = 10, PRODUCT_y = 0
-    // growthRate = 10 * 0.045 = 0.45
+    // growthRate = BIOMASS_y = 10 (LP objective already in h⁻¹)
     const result = await solveAuthorityFBA(YEAST_AEROBIC_BIOMASS);
-    expect(result.growthRate).toBeCloseTo(0.45, 2);
+    expect(result.growthRate).toBeCloseTo(10, 1);
   });
 
   test('E. coli and yeast have distinct reaction IDs', async () => {
@@ -350,7 +349,7 @@ describe('FBA Engine — Objective Tests', () => {
       ...ECOLI_AEROBIC_BIOMASS,
       objective: 'product',
     });
-    // growthRate = BIOMASS * 0.061, and BIOMASS ≈ 0 under product objective
+    // growthRate = BIOMASS, and BIOMASS ≈ 0 under product objective
     expect(result.growthRate).toBeCloseTo(0, 2);
   });
 

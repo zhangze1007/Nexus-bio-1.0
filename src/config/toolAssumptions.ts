@@ -217,12 +217,12 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       severity: 'warning',
     },
     {
-      id: 'fbasim-community.growth_rate_heuristic_scaling',
+      id: 'fbasim-community.growth_rate_from_normalized_biomass',
       toolId: 'fbasim-community',
       category: 'mathematical',
       statement:
-        'growthRate is a scaled proxy (×0.061 E. coli / ×0.045 yeast) whose scaling factor is heuristic and not derived from literature.',
-      severity: 'warning',
+        'growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).',
+      severity: 'info',
     },
     {
       id: 'fbasim-community.inherits_single_assumptions',

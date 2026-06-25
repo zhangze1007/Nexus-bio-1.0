@@ -100,7 +100,7 @@ const ECOLI_NETWORK: NetworkSpec = {
     const product = vars.PRODUCT ?? 0;
     const atpYield = glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0) + (vars.PDH ?? 0) * 0.5) / glc : 0;
     const carbonEfficiency = glc > 1e-9 ? (((biomass * 4.6) + (product * 6)) / (glc * 6)) * 100 : 0;
-    const growthRate = biomass * 0.061;
+    const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {
       fluxes: {
@@ -174,7 +174,7 @@ const YEAST_NETWORK: NetworkSpec = {
     const product = vars.PRODUCT_y ?? 0;
     const atpYield = glc > 1e-9 ? ((vars.TPI ?? 0) + (vars.ADH ?? 0) * 0.4 + (vars.IDH ?? 0) - (vars.PFK_y ?? 0)) / glc : 0;
     const carbonEfficiency = glc > 1e-9 ? (((biomass * 4.2) + (product * 5.6)) / (glc * 6)) * 100 : 0;
-    const growthRate = biomass * 0.045;
+    const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {
       fluxes: {
@@ -475,7 +475,7 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
 
   return {
     fluxes,
-    growthRate: round(fluxes.BIOMASS * 0.061),
+    growthRate: round(fluxes.BIOMASS),
     objectiveValue: round(result.objectiveValue),
     feasible: result.status === 'optimal' && result.objectiveValue > 1e-6,
     stats: IJO1366_STATS,
