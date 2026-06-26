@@ -1,0 +1,78 @@
+# API Overview
+
+Nexus-Bio provides a RESTful API for programmatic access to its tools and data.
+
+## Base URL
+
+```
+https://nexus-bio-1-0.vercel.app/api
+```
+
+## API Endpoints
+
+### AI Endpoint
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/analyze` | POST | Primary AI endpoint (Groq → Gemini fallback chain) |
+
+### Data Proxy Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/alphafold` | GET | AlphaFold EBI CORS proxy |
+| `/api/pubchem` | GET | PubChem 3D SDF lookup |
+| `/api/kegg` | GET | KEGG pathway database proxy |
+
+### Simulation Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/fba` | POST | Flux Balance Analysis solver |
+| `/api/scspatial/ingest` | POST | ScSpatial data upload |
+| `/api/scspatial/query` | POST | ScSpatial query API |
+
+### Data Management
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/workbench` | GET/PUT | Workbench state sync with revision conflict detection |
+
+## Response Format
+
+All API endpoints return JSON responses with the following structure:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "metadata": { ... }
+}
+```
+
+Error responses:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message"
+  }
+}
+```
+
+## Rate Limits
+
+- **AI Endpoint (Groq)**: 1000 requests/day
+- **AI Endpoint (Gemini)**: 250 requests/day
+- **Other endpoints**: No explicit rate limits (Vercel platform limits apply)
+
+## Authentication
+
+See the [Authentication](/api-docs/authentication) guide for details on API authentication.
+
+## Links
+
+- [Authentication Guide](/api-docs/authentication)
+- [GitHub Repository](https://github.com/zhangze1007/Nexus-bio-1.0)

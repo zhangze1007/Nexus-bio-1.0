@@ -1,0 +1,92 @@
+# DBTL Cycle
+
+The Design-Build-Test-Learn (DBTL) cycle is the fundamental methodology underlying synthetic biology research. Nexus-Bio implements this cycle across all 14 tools.
+
+## Overview
+
+The DBTL cycle is an iterative approach to engineering biological systems:
+
+1. **Design** — Use computational tools to design biological parts and systems
+2. **Build** — Construct the designed system in the lab
+3. **Test** — Evaluate the system's performance
+4. **Learn** — Analyze results and update the design
+
+## DBTL in Nexus-Bio
+
+Nexus-Bio provides tools for each stage of the DBTL cycle:
+
+### Stage 1: Design & Discovery
+
+| Tool | Purpose |
+|------|---------|
+| **Pathway Designer** | Design metabolic pathways with 3D visualization |
+| **NEXAI** | AI-powered literature research and hypothesis generation |
+| **Sequence Editor** | Design DNA/RNA sequences for synthetic biology |
+
+### Stage 2: Simulation & Optimization
+
+| Tool | Purpose |
+|------|---------|
+| **FBA Simulator** | Simulate metabolic flux distributions |
+| **CETHX** | Analyze thermodynamic feasibility |
+| **ProEvol** | Optimize protein sequences through evolution |
+| **CATDES** | Design enzymes with desired catalytic properties |
+
+### Stage 3: Chassis Engineering
+
+| Tool | Purpose |
+|------|---------|
+| **GenMIM** | Minimize genomes for efficient chassis |
+| **GECAIR** | Design genetic circuits with logic gates |
+| **DynCon** | Implement dynamic feedback control |
+
+### Stage 4: Test & Iterate
+
+| Tool | Purpose |
+|------|---------|
+| **DBTLflow** | Track DBTL iterations with waterfall visualization |
+| **CellFree** | Simulate cell-free expression systems |
+| **MultiO** | Integrate multi-omics data for analysis |
+| **ScSpatial** | Analyze single-cell and spatial omics data |
+
+## Iteration Tracking
+
+The DBTLflow tool tracks each iteration of the DBTL cycle:
+
+- **Iteration Waterfall** — Visualize the progression of design iterations
+- **Protocol Generation** — Generate lab protocols for each iteration
+- **SBOL Serialization** — Export designs in SBOL format
+- **Decision Trace** — Record the rationale behind each design decision
+
+## Feedback Loops
+
+The DBTL cycle in Nexus-Bio includes multiple feedback loops:
+
+1. **Test → Design** — Experimental results inform the next design iteration
+2. **Learn → Build** — Insights from analysis guide construction decisions
+3. **Multi-omics → Simulation** — Omics data validates and refines simulations
+
+## Integration with Workbench
+
+The Nexus-Bio workbench maintains a complete record of the DBTL cycle:
+
+- **Experiment Ledger** — Track all experiments and their outcomes
+- **Decision Trace** — Record the rationale behind each decision
+- **Evidence Trace** — Link experimental evidence to design decisions
+- **Audit Timeline** — Complete history of all changes
+
+## Example: Artemisinin Pathway
+
+The Artemisinin biosynthesis pathway demonstrates the DBTL cycle:
+
+1. **Design** — Use Pathway Designer to design the mevalonate pathway
+2. **Build** — Construct the pathway in S. cerevisiae
+3. **Test** — Use CellFree to simulate expression yields
+4. **Learn** — Analyze results with MultiO to identify bottlenecks
+5. **Iterate** — Use ProEvol to optimize rate-limiting enzymes
+
+## Links
+
+- [DBTLflow Tool](https://nexus-bio-1-0.vercel.app/tools/dbtlflow)
+- [Pathway Designer](/tools/pathd)
+- [FBA Simulator](/tools/fbasim)

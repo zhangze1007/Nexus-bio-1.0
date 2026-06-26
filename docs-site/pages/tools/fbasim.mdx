@@ -1,0 +1,68 @@
+# FBA Simulator
+
+The FBA Simulator (`/tools/fbasim`) provides Flux Balance Analysis for metabolic network optimization, including single-species and community FBA.
+
+## What It Does
+
+Flux Balance Analysis (FBA) is a mathematical method for analyzing metabolic networks. It uses linear programming to predict metabolic flux distributions under steady-state conditions. The FBA Simulator implements a simplex LP solver for both single-species and community FBA.
+
+## Key Features
+
+- **Single-Species FBA** — Standard flux balance analysis for individual organisms
+- **Community FBA** — Multi-species metabolic modeling
+- **Knockout/OE Strategies** — Gene knockout and overexpression analysis
+- **Shadow Prices** — Dual values indicating metabolite limitations
+- **Carbon Efficiency** — Measure of carbon utilization in the network
+- **Escher-Style Visualization** — Subsystem background rects, flux-width Bezier edges with arrowhead markers
+
+## How to Use It
+
+1. Navigate to `/tools/fbasim` in the Nexus-Bio IDE
+2. Select or import a metabolic model
+3. Define the objective function (e.g., biomass production)
+4. Run FBA to get optimal flux distribution
+5. Analyze results with shadow prices and carbon efficiency
+
+## Algorithm
+
+The FBA Simulator uses a simplex LP solver implemented in `src/server/fbaEngine.ts`:
+
+```
+Maximize: c^T * v (objective function)
+Subject to: S * v = 0 (stoichiometric constraints)
+            lb <= v <= ub (flux bounds)
+```
+
+Where:
+- `S` is the stoichiometric matrix
+- `v` is the flux vector
+- `c` is the objective coefficient vector
+- `lb` and `ub` are lower and upper flux bounds
+
+## Example Workflow
+
+1. Load the E. coli core model
+2. Set biomass as the objective function
+3. Run FBA to find optimal growth rate
+4. Use knockout analysis to identify essential genes
+5. Compare single vs. community FBA results
+
+## API Endpoint
+
+The FBA solver is available as an API endpoint:
+
+```
+POST /api/fba
+Content-Type: application/json
+
+{
+  "model": { ... },
+  "objective": "biomass",
+  "constraints": { ... }
+}
+```
+
+## Links
+
+- [Live Tool](https://nexus-bio-1-0.vercel.app/tools/fbasim)
+- [Source Code](https://github.com/zhangze1007/Nexus-bio-1.0/blob/main/src/components/tools/FBASimPage.tsx)

@@ -1,0 +1,53 @@
+# Installation
+
+## Prerequisites
+
+- Node.js 18+ (recommended: 20+)
+- npm, yarn, or pnpm
+
+## Clone and Install
+
+```bash
+git clone https://github.com/zhangze1007/Nexus-bio-1.0.git
+cd Nexus-bio-1.0
+npm ci
+```
+
+## Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+GROQ_API_KEY=your_groq_key
+GEMINI_API_KEY=your_gemini_key
+```
+
+### Without API Keys
+
+The app runs without API keys but AI features (analyze, paper search) will return 503.
+All tool page simulations (FBA, kinetics, thermodynamics, etc.) work offline.
+
+## Development
+
+```bash
+npm run dev          # http://localhost:3000
+```
+
+## Quality Checks
+
+```bash
+npx tsc --noEmit     # Type check
+npm test             # Jest unit tests (76 files)
+npm run build        # Production build
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 19 + TypeScript + Next.js 15 (App Router) + Tailwind CSS v3 + Framer Motion |
+| 3D | Three.js 0.183 + @react-three/fiber 9.5 + @react-three/drei 10.7 + 3Dmol.js (CDN) |
+| AI | Groq API (primary) + Gemini API (fallback) |
+| State | Zustand 5 + XState 5 |
+| Database | better-sqlite3 (server-side only) |
+| Deploy | Vercel (Hobby plan, free tier, Edge Runtime) |

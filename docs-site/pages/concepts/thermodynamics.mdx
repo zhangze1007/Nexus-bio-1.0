@@ -1,0 +1,110 @@
+# Thermodynamic Analysis
+
+Thermodynamic analysis is essential for evaluating the feasibility of metabolic pathways. Nexus-Bio implements the CETHX tool for comprehensive thermodynamic calculations.
+
+## Overview
+
+Thermodynamic analysis determines whether a metabolic pathway is thermodynamically favorable. The key metric is the change in Gibbs free energy (ΔG), which indicates whether a reaction will proceed spontaneously.
+
+## Gibbs Free Energy
+
+The Gibbs free energy change for a reaction is:
+
+```
+ΔG = ΔG° + RT ln(Q)
+```
+
+Where:
+- `ΔG°` is the standard Gibbs free energy change
+- `R` is the gas constant (8.314 J/mol·K)
+- `T` is the temperature in Kelvin
+- `Q` is the reaction quotient
+
+### Thermodynamic Favorability
+
+| ΔG | Meaning |
+|----|---------|
+| ΔG < 0 | Spontaneous (exergonic) |
+| ΔG = 0 | Equilibrium |
+| ΔG > 0 | Non-spontaneous (endergonic) |
+
+## Group Contribution Method
+
+Nexus-Bio uses the group contribution method to estimate ΔG° values for metabolites:
+
+1. **Decompose** each metabolite into functional groups
+2. **Sum** the group contributions to estimate ΔG°f
+3. **Calculate** ΔG° for each reaction using:
+   ```
+   ΔG° = Σ ΔG°f(products) - Σ ΔG°f(reactants)
+   ```
+
+## CETHX Tool
+
+The Cell Thermodynamics (CETHX) tool provides:
+
+### Waterfall ΔG Cascade
+
+Visualizes the cumulative ΔG across a pathway:
+
+```
+Step 1: ΔG₁ = -15.2 kJ/mol
+Step 2: ΔG₂ = -8.7 kJ/mol
+Step 3: ΔG₃ = +3.1 kJ/mol  ← Thermodynamic bottleneck
+Step 4: ΔG₄ = -12.4 kJ/mol
+─────────────────────────────
+Total: ΔG_total = -33.2 kJ/mol
+```
+
+### ATP Accounting
+
+Tracks ATP consumption and production across the pathway:
+
+- **ATP consumed** — Reactions that use ATP
+- **ATP produced** — Reactions that generate ATP
+- **Net ATP balance** — Overall energy budget
+
+### Pathway Feasibility
+
+Determines if a pathway is thermodynamically feasible:
+
+- **Feasible** — All steps have favorable ΔG (or the pathway can be driven by coupling)
+- **Marginal** — Some steps are slightly unfavorable
+- **Infeasible** — Critical steps have highly unfavorable ΔG
+
+## Example: Mevalonate Pathway
+
+The mevalonate pathway in Artemisinin biosynthesis:
+
+| Reaction | ΔG° (kJ/mol) | Status |
+|----------|---------------|--------|
+| Acetyl-CoA → HMG-CoA | -15.2 | Favorable |
+| HMG-CoA → Mevalonate | -8.7 | Favorable |
+| Mevalonate → IPP | -12.4 | Favorable |
+| IPP → FPP | -6.3 | Favorable |
+| FPP → Amorpha-4,11-diene | -3.1 | Marginal |
+
+**Total ΔG°: -45.7 kJ/mol** — Thermodynamically feasible
+
+## Coupling Unfavorable Reactions
+
+Unfavorable reactions can be driven by coupling with favorable ones:
+
+1. **ATP coupling** — Use ATP hydrolysis to drive endergonic reactions
+2. **Cofactor coupling** — Use NADH/NADPH oxidation to drive reactions
+3. **CoA coupling** — Use CoA thioester hydrolysis
+
+## Integration with Other Tools
+
+Thermodynamic analysis integrates with:
+
+- **FBA Simulator** — Thermodynamic constraints improve flux predictions
+- **Pathway Designer** — Identify thermodynamic bottlenecks in pathway design
+- **ProEvol** — Optimize enzyme kinetics to overcome thermodynamic barriers
+- **CATDES** — Design enzymes that catalyze thermodynamically challenging reactions
+
+## Links
+
+- [CETHX Tool](https://nexus-bio-1-0.vercel.app/tools/cethx)
+- [FBA Simulator](/tools/fbasim)
+- [Pathway Designer](/tools/pathd)

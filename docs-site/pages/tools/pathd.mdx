@@ -1,0 +1,62 @@
+# Pathway Designer
+
+The Pathway Designer (`/tools/pathd`) is the primary 3D metabolic pathway lab with full DBTL (Design-Build-Test-Learn) integration.
+
+## What It Does
+
+The Pathway Designer provides an interactive 3D visualization of metabolic pathways combined with a scientific workbench for analyzing nodes, edges, and pathway feasibility. It wraps the full Metabolic Engineering Lab with a focus on pathway design workflows.
+
+## Key Features
+
+- **3D FluidSim Canvas** — Real-time fluid simulation visualization of metabolic flux
+- **NodePanel Workbench** — 3-tab scientific panel (Overview, Structure, Analysis)
+- **XState FSM** — Finite state machine for managing lab workflow states
+- **60 Hz FBA Worker** — Real-time flux balance analysis running at 60 frames per second
+- **DBTL Integration** — Full Design-Build-Test-Learn cycle tracking
+
+## How to Use It
+
+1. Navigate to `/tools/pathd` in the Nexus-Bio IDE
+2. The 3D canvas loads with the current pathway visualization
+3. Click on nodes to open the NodePanel with detailed analysis
+4. Use the workbench to track experiments and decisions
+
+## NodePanel Tabs
+
+### Tab 1: Overview
+- Summary of the selected node
+- Evidence trace with citations
+- Connections to other nodes
+- External database IDs
+
+### Tab 2: Structure
+Smart switching based on node type:
+- **Enzyme** — AlphaFold/RCSB rotating protein (3Dmol.js)
+- **Nucleic acid** — RCSB structures
+- **Metabolite** — PubChem 3D conformer
+- **Cell/tissue** — CellImageViewer microscopy
+
+### Tab 3: Analysis
+- **Enzyme nodes** — KineticPanel (Michaelis-Menten + RK4 ODE)
+- **Metabolite nodes** — ThermodynamicsPanel (ΔG group contribution)
+
+## Example Workflow
+
+1. Load the Artemisinin biosynthesis showcase pathway
+2. Click on the `amorpha_4_11_diene` node
+3. Switch to Structure tab to view the AlphaFold protein structure (Q9AR04)
+4. Switch to Analysis tab to view kinetic parameters
+5. Use the workbench to log design decisions
+
+## Showcase Pathway
+
+The default demo uses Artemisinin biosynthesis (Ro et al., Nature 2006):
+
+```
+acetyl_coa → hmg_coa → mevalonate → fpp → amorpha_4_11_diene → artemisinic_acid → artemisinin
+```
+
+## Links
+
+- [Live Tool](https://nexus-bio-1-0.vercel.app/tools/pathd)
+- [Source Code](https://github.com/zhangze1007/Nexus-bio-1.0/blob/main/src/components/tools/MetabolicEngPage.tsx)
