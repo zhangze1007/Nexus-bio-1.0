@@ -5,6 +5,7 @@ import {
   Cpu,
   Dna,
   FileText,
+  FlaskConical,
   Gauge,
   GitBranch,
   Layers,
@@ -22,7 +23,8 @@ export type ToolCategory =
   | "Simulation"
   | "Genetic Systems"
   | "Omics & Screening"
-  | "Research Intelligence";
+  | "Research Intelligence"
+  | "Lab";
 
 export type ToolDirection =
   | "Research Intake"
@@ -546,6 +548,32 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       { term: "Monte Carlo forecast", definition: "Propagating uncertainty forward using random sampling" },
     ],
     relatedRoutes: ["/tools/dyncon"],
+  },
+
+  // ── Inventory Management ────────────────────────────────────────────
+  {
+    id: "inventory",
+    shortLabel: "INV",
+    name: "Inventory Management",
+    href: "/tools/inventory/strains",
+    category: "Lab",
+    direction: "Validation & DBTL",
+    shell: "ide",
+    icon: FlaskConical,
+    summary:
+      "Biological inventory management for tracking strains, plasmids, primers, and chemicals with search, CRUD, and PubChem integration.",
+    focus: "Track physical lab materials alongside digital pathway designs.",
+    outputs: ["Strain catalog", "Plasmid registry", "Primer database", "Chemical inventory"],
+    tags: ["inventory", "strains", "plasmids", "primers", "chemicals", "lab"],
+    mode: "workflow",
+    threeDPotential: "none",
+    glossary:
+      "Inventory Management bridges digital designs with physical lab materials. It tracks bacterial strains, plasmid constructs, oligonucleotide primers, and chemical reagents with searchable tables, auto-calculated primer properties, and PubChem integration.",
+    keyConcepts: [
+      { term: "Strain", definition: "A bacterial strain with specific genotype and resistance markers" },
+      { term: "Plasmid", definition: "An extrachromosomal DNA construct with backbone, insert, and selection markers" },
+      { term: "Primer", definition: "A short oligonucleotide used for PCR amplification of target sequences" },
+    ],
   },
 ];
 

@@ -754,6 +754,25 @@ const SEQUENCE_CONTRACT: ToolContract = {
   isGoldenPath: false,
 };
 
+const INVENTORY_CONTRACT: ToolContract = {
+  toolId: "inventory",
+  contractScope: "contractOnly",
+  stageId: "stage-4",
+  primaryIntent: "validate",
+  requiredInputs: [],
+  optionalInputs: [],
+  outputArtifacts: [],
+  evidenceRequired: NO_EVIDENCE,
+  validityBaseline: { floor: "partial", reason: "Inventory management tool." },
+  confidencePolicy: NO_CONFIDENCE,
+  uncertaintyPolicy: NO_UNCERTAINTY,
+  humanGatePolicy: NO_GATE,
+  nextRecommendedNodes: [],
+  failureModes: [],
+  demoPolicy: { allowsDemoSeed: true, blockGoldenPath: false },
+  isGoldenPath: false,
+};
+
 export const WORKFLOW_CONTRACTS: Record<ToolId, ToolContract> = {
   pathd: PATHD_CONTRACT,
   "metabolic-eng": METABOLIC_ENG_CONTRACT,
@@ -774,6 +793,7 @@ export const WORKFLOW_CONTRACTS: Record<ToolId, ToolContract> = {
   pathwaydiscovery: PATHWAY_DISCOVERY_CONTRACT,
   digitaltwin: DIGITAL_TWIN_CONTRACT,
   sequence: SEQUENCE_CONTRACT,
+  inventory: INVENTORY_CONTRACT,
 };
 
 export function getToolContract(id: ToolId): ToolContract {
