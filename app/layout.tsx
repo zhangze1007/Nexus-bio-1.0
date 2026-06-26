@@ -10,6 +10,7 @@ import AuthProvider from '../src/components/auth/AuthProvider';
 import QueryProvider from '../src/components/providers/QueryProvider';
 import WebVitals from '../src/components/WebVitals';
 import WorkflowBanner from '../src/components/WorkflowBanner';
+import { PostHogProvider } from '../src/components/analytics/PostHogProvider';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Synthetic Biology Research Workbench',
@@ -42,20 +43,22 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
-        <QueryProvider>
-          <AuthProvider>
-            <Suspense fallback={null}>
-              <WorkbenchSyncProvider />
-            </Suspense>
-            <div id="root">
-              <WorkflowBanner />
-              <RouteTransition>
-                <main id="main-content">{children}</main>
-              </RouteTransition>
-            </div>
-            <OnboardingOverlay />
-          </AuthProvider>
-        </QueryProvider>
+        <PostHogProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <Suspense fallback={null}>
+                <WorkbenchSyncProvider />
+              </Suspense>
+              <div id="root">
+                <WorkflowBanner />
+                <RouteTransition>
+                  <main id="main-content">{children}</main>
+                </RouteTransition>
+              </div>
+              <OnboardingOverlay />
+            </AuthProvider>
+          </QueryProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
