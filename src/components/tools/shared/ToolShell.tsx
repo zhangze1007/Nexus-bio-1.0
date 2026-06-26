@@ -26,9 +26,9 @@
  *   </ToolShell>
  */
 "use client";
-import { ChevronLeft, LayoutGrid, Minimize2, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, LayoutGrid, Menu, Minimize2, SlidersHorizontal, X } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { getToolValidity, type ValidityLevel } from "../../../config/toolValidity";
 import { useNavigation } from "../../../contexts/NavigationContext";
 import { THEME } from "../../../theme";
@@ -96,6 +96,7 @@ export default function ToolShell({
   const tool = getToolDefinition(moduleId);
   const validity = getToolValidity(moduleId);
   const { handleBack } = useNavigation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const validityStyles: Record<ValidityLevel, { bg: string; border: string; color: string; label: string }> = {
     real: { bg: "rgba(147, 203, 82, 0.16)", border: "rgba(147, 203, 82, 0.45)", color: "#5d8a2f", label: "REAL" },
@@ -168,7 +169,8 @@ export default function ToolShell({
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
-              minHeight: "28px",
+              minHeight: "44px",
+              minWidth: "44px",
               padding: "0 7px",
               borderRadius: "var(--nb-radius-md)",
               border: "1px solid var(--nb-control-border)",
@@ -192,10 +194,11 @@ export default function ToolShell({
           title="Back to Tools"
         >
           <ChevronLeft size={12} />
-          Tools
+          <span className="hidden sm:inline">Tools</span>
         </button>
 
         <div
+          className="hidden sm:flex"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -232,6 +235,7 @@ export default function ToolShell({
           </h1>
           {description && (
             <div
+              className="hidden sm:block"
               style={{
                 fontFamily: THEME.SANS,
                 fontSize: "var(--nb-fs-xs)",
@@ -243,7 +247,7 @@ export default function ToolShell({
             </div>
           )}
           {(tool?.focus || tool?.glossary) && (
-            <details style={{ marginTop: "4px" }}>
+            <details className="hidden md:block" style={{ marginTop: "4px" }}>
               <summary
                 style={{
                   fontFamily: THEME.MONO,
@@ -318,89 +322,224 @@ export default function ToolShell({
           )}
         </div>
 
-        {validity && (
-          <div
-            title={validity.caption}
-            style={{
-              fontFamily: THEME.MONO,
-              fontSize: "var(--nb-fs-xs)",
-              fontWeight: 700,
-              letterSpacing: "0.10em",
-              padding: "5px 9px",
-              borderRadius: "var(--nb-radius-md)",
-              background: validityStyles[validity.level].bg,
-              border: `1px solid ${validityStyles[validity.level].border}`,
-              color: validityStyles[validity.level].color,
-              cursor: "help",
-              flexShrink: 0,
-            }}
-          >
-            {validityStyles[validity.level].label}
-          </div>
-        )}
-
-        {formula && (
-          <div
-            style={{
-              fontFamily: THEME.MONO,
-              fontSize: "var(--nb-fs-xs)",
-              color: THEME.VALUE,
-              padding: "5px 8px",
-              background: THEME.PANEL_GLASS_STRONG,
-              border: `1px solid ${THEME.BORDER}`,
-              borderRadius: "var(--nb-radius-md)",
-            }}
-          >
-            {formula}
-          </div>
-        )}
-
-        {/* ── Simple/Advanced Toggle ── */}
-        {hasAdvancedTabs && (
-          <button
-            type="button"
-            onClick={toggleMode}
-            className="nb-ui-control"
-            title={mode === "simple" ? "Show advanced tabs" : "Show simple view"}
-            style={
-              {
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                minHeight: "28px",
-                padding: "0 7px",
-                borderRadius: "var(--nb-radius-md)",
-                border: "1px solid var(--nb-control-border)",
-                background: mode === "advanced" ? "rgba(175, 195, 214, 0.15)" : "var(--nb-control-bg)",
-                color: mode === "advanced" ? THEME.SKY : "var(--nb-control-color)",
-                cursor: "pointer",
-                fontFamily: THEME.SANS,
+        {/* Desktop: inline badges + toggle */}
+        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+          {validity && (
+            <div
+              title={validity.caption}
+              style={{
+                fontFamily: THEME.MONO,
                 fontSize: "var(--nb-fs-xs)",
-                fontWeight: mode === "advanced" ? 600 : 400,
-                flexShrink: 0,
-                transition: "all 0.2s ease",
-                ["--nb-control-bg" as const]: "rgba(16,19,26,0.8)",
-                ["--nb-control-border" as const]: "rgba(255,255,255,0.08)",
-                ["--nb-control-color" as const]: THEME.LABEL,
-                ["--nb-control-hover-bg" as const]: "rgba(255,255,255,0.08)",
-                ["--nb-control-hover-border" as const]: "rgba(255,255,255,0.12)",
-                ["--nb-control-hover-color" as const]: THEME.VALUE,
-                ["--nb-control-active-bg" as const]: "rgba(255,255,255,0.12)",
-                ["--nb-control-active-border" as const]: "rgba(255,255,255,0.16)",
-                ["--nb-control-active-color" as const]: THEME.VALUE,
-              } as ControlVarsStyle
-            }
+                fontWeight: 700,
+                letterSpacing: "0.10em",
+                padding: "5px 9px",
+                borderRadius: "var(--nb-radius-md)",
+                background: validityStyles[validity.level].bg,
+                border: `1px solid ${validityStyles[validity.level].border}`,
+                color: validityStyles[validity.level].color,
+                cursor: "help",
+              }}
+            >
+              {validityStyles[validity.level].label}
+            </div>
+          )}
+
+          {formula && (
+            <div
+              style={{
+                fontFamily: THEME.MONO,
+                fontSize: "var(--nb-fs-xs)",
+                color: THEME.VALUE,
+                padding: "5px 8px",
+                background: THEME.PANEL_GLASS_STRONG,
+                border: `1px solid ${THEME.BORDER}`,
+                borderRadius: "var(--nb-radius-md)",
+              }}
+            >
+              {formula}
+            </div>
+          )}
+
+          {/* ── Simple/Advanced Toggle ── */}
+          {hasAdvancedTabs && (
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="nb-ui-control"
+              title={mode === "simple" ? "Show advanced tabs" : "Show simple view"}
+              style={
+                {
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  minHeight: "44px",
+                  padding: "0 7px",
+                  borderRadius: "var(--nb-radius-md)",
+                  border: "1px solid var(--nb-control-border)",
+                  background: mode === "advanced" ? "rgba(175, 195, 214, 0.15)" : "var(--nb-control-bg)",
+                  color: mode === "advanced" ? THEME.SKY : "var(--nb-control-color)",
+                  cursor: "pointer",
+                  fontFamily: THEME.SANS,
+                  fontSize: "var(--nb-fs-xs)",
+                  fontWeight: mode === "advanced" ? 600 : 400,
+                  flexShrink: 0,
+                  transition: "all 0.2s ease",
+                  ["--nb-control-bg" as const]: "rgba(16,19,26,0.8)",
+                  ["--nb-control-border" as const]: "rgba(255,255,255,0.08)",
+                  ["--nb-control-color" as const]: THEME.LABEL,
+                  ["--nb-control-hover-bg" as const]: "rgba(255,255,255,0.08)",
+                  ["--nb-control-hover-border" as const]: "rgba(255,255,255,0.12)",
+                  ["--nb-control-hover-color" as const]: THEME.VALUE,
+                  ["--nb-control-active-bg" as const]: "rgba(255,255,255,0.12)",
+                  ["--nb-control-active-border" as const]: "rgba(255,255,255,0.16)",
+                  ["--nb-control-active-color" as const]: THEME.VALUE,
+                } as ControlVarsStyle
+              }
+            >
+              {mode === "simple" ? (
+                <>
+                  <SlidersHorizontal size={12} /> Advanced
+                </>
+              ) : (
+                <>
+                  <Minimize2 size={12} /> Simple
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Mobile: hamburger menu toggle */}
+        <button
+          type="button"
+          className="md:hidden nb-ui-control"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          style={
+            {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "44px",
+              minWidth: "44px",
+              padding: "0",
+              borderRadius: "var(--nb-radius-md)",
+              border: "1px solid var(--nb-control-border)",
+              background: "var(--nb-control-bg)",
+              color: "var(--nb-control-color)",
+              cursor: "pointer",
+              flexShrink: 0,
+              ["--nb-control-bg" as const]: "rgba(16,19,26,0.8)",
+              ["--nb-control-border" as const]: "rgba(255,255,255,0.08)",
+              ["--nb-control-color" as const]: THEME.LABEL,
+              ["--nb-control-hover-bg" as const]: "rgba(255,255,255,0.08)",
+              ["--nb-control-hover-border" as const]: "rgba(255,255,255,0.12)",
+              ["--nb-control-hover-color" as const]: THEME.VALUE,
+              ["--nb-control-active-bg" as const]: "rgba(255,255,255,0.12)",
+              ["--nb-control-active-border" as const]: "rgba(255,255,255,0.16)",
+              ["--nb-control-active-color" as const]: THEME.VALUE,
+            } as ControlVarsStyle
+          }
+        >
+          {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+        </button>
+
+        {/* Mobile: collapsible menu for badges + toggle */}
+        {mobileMenuOpen && (
+          <div
+            className="md:hidden nb-tool-shell__mobile-menu"
+            style={{
+              width: "100%",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              padding: "8px 0 4px",
+              borderTop: `1px solid ${THEME.BORDER}`,
+              marginTop: "4px",
+            }}
           >
-            {mode === "simple" ? (
-              <>
-                <SlidersHorizontal size={12} /> Advanced
-              </>
-            ) : (
-              <>
-                <Minimize2 size={12} /> Simple
-              </>
+            {validity && (
+              <div
+                title={validity.caption}
+                style={{
+                  fontFamily: THEME.MONO,
+                  fontSize: "var(--nb-fs-xs)",
+                  fontWeight: 700,
+                  letterSpacing: "0.10em",
+                  padding: "5px 9px",
+                  borderRadius: "var(--nb-radius-md)",
+                  background: validityStyles[validity.level].bg,
+                  border: `1px solid ${validityStyles[validity.level].border}`,
+                  color: validityStyles[validity.level].color,
+                  cursor: "help",
+                }}
+              >
+                {validityStyles[validity.level].label}
+              </div>
             )}
-          </button>
+
+            {formula && (
+              <div
+                style={{
+                  fontFamily: THEME.MONO,
+                  fontSize: "var(--nb-fs-xs)",
+                  color: THEME.VALUE,
+                  padding: "5px 8px",
+                  background: THEME.PANEL_GLASS_STRONG,
+                  border: `1px solid ${THEME.BORDER}`,
+                  borderRadius: "var(--nb-radius-md)",
+                }}
+              >
+                {formula}
+              </div>
+            )}
+
+            {hasAdvancedTabs && (
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="nb-ui-control"
+                title={mode === "simple" ? "Show advanced tabs" : "Show simple view"}
+                style={
+                  {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    minHeight: "44px",
+                    padding: "0 7px",
+                    borderRadius: "var(--nb-radius-md)",
+                    border: "1px solid var(--nb-control-border)",
+                    background: mode === "advanced" ? "rgba(175, 195, 214, 0.15)" : "var(--nb-control-bg)",
+                    color: mode === "advanced" ? THEME.SKY : "var(--nb-control-color)",
+                    cursor: "pointer",
+                    fontFamily: THEME.SANS,
+                    fontSize: "var(--nb-fs-xs)",
+                    fontWeight: mode === "advanced" ? 600 : 400,
+                    transition: "all 0.2s ease",
+                    ["--nb-control-bg" as const]: "rgba(16,19,26,0.8)",
+                    ["--nb-control-border" as const]: "rgba(255,255,255,0.08)",
+                    ["--nb-control-color" as const]: THEME.LABEL,
+                    ["--nb-control-hover-bg" as const]: "rgba(255,255,255,0.08)",
+                    ["--nb-control-hover-border" as const]: "rgba(255,255,255,0.12)",
+                    ["--nb-control-hover-color" as const]: THEME.VALUE,
+                    ["--nb-control-active-bg" as const]: "rgba(255,255,255,0.12)",
+                    ["--nb-control-active-border" as const]: "rgba(255,255,255,0.16)",
+                    ["--nb-control-active-color" as const]: THEME.VALUE,
+                  } as ControlVarsStyle
+                }
+              >
+                {mode === "simple" ? (
+                  <>
+                    <SlidersHorizontal size={12} /> Advanced
+                  </>
+                ) : (
+                  <>
+                    <Minimize2 size={12} /> Simple
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         )}
       </header>
 
@@ -411,6 +550,7 @@ export default function ToolShell({
 
       {/* ── BentoGrid ──────────────────────────────────────── */}
       {/* P3.4: fixed token padding (SP_SM=8, SP_MD=16) instead of dynamic Math.max */}
+      {/* Responsive: single-column on mobile, 2-col on tablet, custom grid on desktop */}
       <div
         className="nb-tool-shell__body"
         style={{
@@ -429,12 +569,27 @@ export default function ToolShell({
             flex: 1,
             minHeight: 0,
             display: "grid",
-            gridTemplateAreas: grid,
-            gridTemplateColumns: columns ?? "1fr",
+            gridTemplateAreas: "inherit",
+            gridTemplateColumns: "1fr",
             gridTemplateRows: rows ?? "1fr",
             gap: "8px",
           }}
         >
+          {/* Responsive grid: override inline grid styles via media queries */}
+          <style>{`
+            @media (min-width: 768px) {
+              .nb-tool-shell__grid {
+                grid-template-columns: ${columns ? `repeat(${columns.split(' ').length}, 1fr)` : '1fr 1fr'} !important;
+                grid-template-areas: ${grid ?? 'none'} !important;
+              }
+            }
+            @media (min-width: 1024px) {
+              .nb-tool-shell__grid {
+                grid-template-columns: ${columns ?? '1fr'} !important;
+                grid-template-areas: ${grid ?? 'none'} !important;
+              }
+            }
+          `}</style>
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>
       </div>
@@ -523,6 +678,7 @@ export default function ToolShell({
             padding: "8px 16px",
             display: "flex",
             gap: "8px",
+            flexWrap: "wrap",
             flexShrink: 0,
             borderTop: `1px solid ${THEME.BORDER}`,
             background: THEME.PANEL_MUTED,

@@ -28,11 +28,15 @@ export default function ParameterPanel({ title, children, defaultCollapsed = fal
 
   return (
     <div
+      className="nb-parameter-panel"
       style={{
         borderRadius: THEME.R_MD,
         border: `1px solid ${THEME.BORDER}`,
         background: THEME.PANEL_SURFACE,
         overflow: "hidden",
+        minHeight: "44px",
+        /* Responsive: full-width on mobile */
+        width: "100%",
       }}
     >
       {/* Header bar */}

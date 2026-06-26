@@ -66,6 +66,7 @@ export default function Pagination({
 
         {onPageSizeChange && (
           <label
+            className="hidden sm:flex"
             style={{
               display: "flex",
               alignItems: "center",
@@ -83,7 +84,7 @@ export default function Pagination({
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
               style={{
-                minHeight: "36px",
+                minHeight: "44px",
                 borderRadius: "12px",
                 border: "1px solid rgba(255,255,255,0.12)",
                 background: "rgba(11,15,22,0.92)",
@@ -104,106 +105,114 @@ export default function Pagination({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-        {[
-          { label: "First", ariaLabel: "Go to first page", target: 1, disabled: safePage === 1 },
-          { label: "Prev", ariaLabel: "Go to previous page", target: safePage - 1, disabled: safePage === 1 },
-        ].map((control) => (
-          <button
-            key={control.label}
-            type="button"
-            onClick={() => onPageChange(control.target)}
-            disabled={control.disabled}
-            aria-label={control.ariaLabel}
-            style={{
-              minHeight: "36px",
-              padding: "0 12px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: control.disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.05)",
-              color: control.disabled ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.8)",
-              cursor: control.disabled ? "not-allowed" : "pointer",
-              fontFamily: SANS,
-              fontSize: "12px",
-              fontWeight: 500,
-            }}
-          >
-            {control.label}
-          </button>
-        ))}
+        {/* Prev button — always visible */}
+        <button
+          type="button"
+          onClick={() => onPageChange(safePage - 1)}
+          disabled={safePage === 1}
+          aria-label="Go to previous page"
+          style={{
+            minHeight: "44px",
+            minWidth: "44px",
+            padding: "0 12px",
+            borderRadius: "12px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            background: safePage === 1 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.05)",
+            color: safePage === 1 ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.8)",
+            cursor: safePage === 1 ? "not-allowed" : "pointer",
+            fontFamily: SANS,
+            fontSize: "12px",
+            fontWeight: 500,
+          }}
+        >
+          Prev
+        </button>
 
-        {pages.map((page) => {
-          if (typeof page !== "number") {
+        {/* Page numbers — hidden on very small screens */}
+        <div className="hidden sm:flex" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          {pages.map((page) => {
+            if (typeof page !== "number") {
+              return (
+                <span
+                  key={page}
+                  aria-hidden="true"
+                  style={{
+                    minWidth: "28px",
+                    textAlign: "center",
+                    color: "rgba(255,255,255,0.3)",
+                    fontFamily: MONO,
+                    fontSize: "11px",
+                  }}
+                >
+                  …
+                </span>
+              );
+            }
+
+            const isActive = page === safePage;
+
             return (
-              <span
+              <button
                 key={page}
-                aria-hidden="true"
+                type="button"
+                onClick={() => onPageChange(page)}
+                aria-current={isActive ? "page" : undefined}
+                aria-label={`Go to page ${page}`}
                 style={{
-                  minWidth: "28px",
-                  textAlign: "center",
-                  color: "rgba(255,255,255,0.3)",
+                  minWidth: "44px",
+                  minHeight: "44px",
+                  padding: "0 10px",
+                  borderRadius: "12px",
+                  border: isActive ? "1px solid rgba(255,255,255,0.45)" : "1px solid rgba(255,255,255,0.08)",
+                  background: isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+                  color: isActive ? "#ffffff" : "rgba(255,255,255,0.72)",
+                  cursor: "pointer",
                   fontFamily: MONO,
                   fontSize: "11px",
+                  fontWeight: 600,
                 }}
               >
-                …
-              </span>
+                {page}
+              </button>
             );
-          }
+          })}
+        </div>
 
-          const isActive = page === safePage;
+        {/* Mobile: compact page indicator */}
+        <span
+          className="sm:hidden"
+          style={{
+            fontFamily: MONO,
+            fontSize: "11px",
+            color: "rgba(255,255,255,0.6)",
+            padding: "0 4px",
+          }}
+        >
+          {safePage}/{totalPages}
+        </span>
 
-          return (
-            <button
-              key={page}
-              type="button"
-              onClick={() => onPageChange(page)}
-              aria-current={isActive ? "page" : undefined}
-              aria-label={`Go to page ${page}`}
-              style={{
-                minWidth: "36px",
-                minHeight: "36px",
-                padding: "0 10px",
-                borderRadius: "12px",
-                border: isActive ? "1px solid rgba(255,255,255,0.45)" : "1px solid rgba(255,255,255,0.08)",
-                background: isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
-                color: isActive ? "#ffffff" : "rgba(255,255,255,0.72)",
-                cursor: "pointer",
-                fontFamily: MONO,
-                fontSize: "11px",
-                fontWeight: 600,
-              }}
-            >
-              {page}
-            </button>
-          );
-        })}
-
-        {[
-          { label: "Next", ariaLabel: "Go to next page", target: safePage + 1, disabled: safePage === totalPages },
-          { label: "Last", ariaLabel: "Go to last page", target: totalPages, disabled: safePage === totalPages },
-        ].map((control) => (
-          <button
-            key={control.label}
-            type="button"
-            onClick={() => onPageChange(control.target)}
-            disabled={control.disabled}
-            aria-label={control.ariaLabel}
-            style={{
-              minHeight: "36px",
-              padding: "0 12px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: control.disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.05)",
-              color: control.disabled ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.8)",
-              cursor: control.disabled ? "not-allowed" : "pointer",
-              fontFamily: SANS,
-              fontSize: "12px",
-              fontWeight: 500,
-            }}
-          >
-            {control.label}
-          </button>
-        ))}
+        {/* Next button — always visible */}
+        <button
+          type="button"
+          onClick={() => onPageChange(safePage + 1)}
+          disabled={safePage === totalPages}
+          aria-label="Go to next page"
+          style={{
+            minHeight: "44px",
+            minWidth: "44px",
+            padding: "0 12px",
+            borderRadius: "12px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            background: safePage === totalPages ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.05)",
+            color: safePage === totalPages ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.8)",
+            cursor: safePage === totalPages ? "not-allowed" : "pointer",
+            fontFamily: SANS,
+            fontSize: "12px",
+            fontWeight: 500,
+          }}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

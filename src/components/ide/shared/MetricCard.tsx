@@ -18,6 +18,7 @@ export default function MetricCard({ label, value, unit, delta, warning, highlig
 
   return (
     <div
+      className="nb-metric-card"
       style={{
         padding: "14px 14px 12px",
         background: highlight ? "rgba(191,220,205,0.10)" : THEME.PANEL_SURFACE,
@@ -25,6 +26,9 @@ export default function MetricCard({ label, value, unit, delta, warning, highlig
         borderRadius: "12px",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
         overflow: "hidden",
+        minHeight: "44px",
+        /* Responsive: on mobile, cards stretch full width and stack vertically */
+        width: "100%",
       }}
     >
       <p

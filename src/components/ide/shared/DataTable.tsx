@@ -93,15 +93,25 @@ export default function DataTable<T extends object>({
 
   return (
     <div
+      className="nb-data-table"
       style={{
         width: "100%",
         minHeight: 0,
         display: "flex",
         flexDirection: "column",
+        /* Mobile: ensure table scrolls horizontally, no page-level overflow */
+        maxWidth: "100vw",
       }}
     >
-      <div style={{ overflowX: "auto", width: "100%", flex: 1 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ overflowX: "auto", width: "100%", flex: 1, WebkitOverflowScrolling: "touch" }}>
+        {/* Responsive: reduce cell padding on mobile */}
+        <style>{`
+          @media (max-width: 767px) {
+            .nb-data-table th { padding: 6px 6px !important; font-size: 9px !important; }
+            .nb-data-table td { padding: 6px 6px !important; font-size: 10px !important; }
+          }
+        `}</style>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "max-content" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
               {expandable && (

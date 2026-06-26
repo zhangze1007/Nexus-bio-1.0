@@ -52,6 +52,7 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
 
   return (
     <div
+      className="nb-tool-tab-bar"
       role="tablist"
       aria-label="Tool sections"
       onKeyDown={handleKeyDown}
