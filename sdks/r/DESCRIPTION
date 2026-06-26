@@ -1,0 +1,23 @@
+Package: nexusbio
+Type: Package
+Title: R SDK for the Nexus-Bio Synthetic Biology AI Platform
+Version: 0.1.0
+Authors@R: person("Zhang Ze Foo", email = "fuchanze@gmail.com",
+                  role = c("aut", "cre"))
+Description: Provides an R6 client for programmatic access to the
+    Nexus-Bio REST API. Supports AI-powered research queries, flux
+    balance analysis simulations, inventory management, protein
+    structure lookups, and pathway database searches.
+License: MIT + file LICENSE
+URL: https://github.com/zhangze1007/Nexus-bio-1.0
+BugReports: https://github.com/zhangze1007/Nexus-bio-1.0/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    R6,
+    httr2
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Encoding: UTF-8
+RoxygenNote: 7.3.0
