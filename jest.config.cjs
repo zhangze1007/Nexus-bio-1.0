@@ -13,7 +13,15 @@ module.exports = {
         module: 'commonjs',
       },
     }],
+    // Transform ESM-only node_modules (otplib dependencies)
+    '^.+\\.js$': ['babel-jest', {
+      presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
+    }],
   },
+  // Allow babel-jest to transform ESM-only otplib and crypto dependencies
+  transformIgnorePatterns: [
+    'node_modules/(?!(@otplib|@scure|@noble|otplib)/)',
+  ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
