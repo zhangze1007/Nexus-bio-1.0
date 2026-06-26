@@ -5,6 +5,7 @@ import { runFVA } from '../../../src/server/fbaFVA';
 import { runPFBA } from '../../../src/server/fbaPFBA';
 import { getKnockoutReactions } from '../../../src/server/fbaGPR';
 import { IJO1366_REACTIONS } from '../../../src/data/iJO1366Subset';
+import { steadyCom, type SteadyComSpecies } from '../../../src/server/fbaSteadyCom';
 import { createProvenanceEntry } from '../../../src/utils/provenance';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
@@ -101,6 +102,62 @@ export async function POST(request: Request) {
         }],
       });
       return NextResponse.json({ ok: true, mode: 'community', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
+    }
+
+    // ── SteadyCom Community FBA ──────────────────────────────────────
+    if (input.mode === 'steadycom') {
+      const rawSpecies = input.species as Record<string, unknown>[] | undefined;
+      if (!Array.isArray(rawSpecies) || rawSpecies.length === 0) {
+        return NextResponse.json(
+          { ok: false, error: 'steadycom mode requires a non-empty "species" array', requestId },
+          { status: 400, headers: getCorsHeaders(request) },
+        );
+      }
+
+      const parsedSpecies: SteadyComSpecies[] = rawSpecies.map((sp) => {
+        const spObj = sp as Record<string, unknown>;
+        const rawRxns = spObj.reactions as Record<string, unknown>[] | undefined;
+        return {
+          id: String(spObj.id ?? 'unknown'),
+          name: String(spObj.name ?? spObj.id ?? 'unknown'),
+          reactions: Array.isArray(rawRxns) ? rawRxns.map((r) => {
+            const rObj = r as Record<string, unknown>;
+            return {
+              id: String(rObj.id ?? ''),
+              stoichiometry: (rObj.stoichiometry as Record<string, number>) ?? {},
+              lowerBound: asNumber(rObj.lowerBound, 0),
+              upperBound: asNumber(rObj.upperBound, 1000),
+            };
+          }) : [],
+          metabolites: asStringArray(spObj.metabolites),
+          biomassReaction: String(spObj.biomassReaction ?? ''),
+        };
+      });
+
+      const sharedMetabolites = asStringArray(input.sharedMetabolites);
+      const maxIterations = asNumber(input.maxIterations, 100);
+      const tolerance = asNumber(input.tolerance, 1e-6);
+
+      const result = await steadyCom(parsedSpecies, sharedMetabolites, maxIterations, tolerance);
+
+      const provenanceEntry = createProvenanceEntry({
+        toolId: 'fbasim-steadycom',
+        outputAssumptions: [
+          'fbasim-steadycom.steady_state',
+          'fbasim-steadycom.community_growth_rate',
+          'fbasim-steadycom.binary_search_lp',
+          'fbasim-steadycom.no_regulation',
+          'fbasim-steadycom.highs_lp_solver',
+        ],
+        evidence: [{
+          id: `steadycom-${Date.now()}`,
+          source: 'computation',
+          reference: `SteadyCom (Heinken et al. 2015, PLOS Comput Biol 11(1):e1004010) — binary search on community growth rate, ${parsedSpecies.length} species, tolerance=${tolerance}`,
+          confidence: 'high',
+        }],
+      });
+
+      return NextResponse.json({ ok: true, mode: 'steadycom', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
     }
 
     // ── Custom (BiGG model) FBA ─────────────────────────────────────
