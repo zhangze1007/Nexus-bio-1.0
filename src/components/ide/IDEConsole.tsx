@@ -73,6 +73,7 @@ export default function IDEConsole() {
         <div style={{ display: "flex", gap: "4px" }}>
           <button
             onClick={clearConsole}
+            aria-label="Clear console"
             style={{
               background: "none",
               border: "none",
@@ -87,6 +88,7 @@ export default function IDEConsole() {
           </button>
           <button
             onClick={toggleConsole}
+            aria-label="Close console"
             style={{
               background: "none",
               border: "none",

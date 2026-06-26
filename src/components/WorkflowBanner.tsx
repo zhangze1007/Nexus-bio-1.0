@@ -96,7 +96,7 @@ export default function WorkflowBanner() {
           fontSize: "14px",
           padding: "2px 6px",
         }}
-        aria-label="退出工作流"
+        aria-label="Dismiss workflow"
       >
         ✕
       </button>

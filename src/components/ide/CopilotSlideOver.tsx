@@ -329,6 +329,7 @@ export default function CopilotSlideOver() {
                 <Link
                   href="/tools/nexai"
                   onClick={close}
+                  aria-label="Open full Copilot view"
                   title="Open full Copilot view"
                   data-testid="copilot-fullview-link"
                   style={{

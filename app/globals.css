@@ -412,18 +412,18 @@
 .nb-directory-layout input:focus-visible,
 .nb-directory-layout select:focus-visible,
 .nb-tool-shell a:focus-visible {
-  outline: 2px solid rgba(175,195,214,0.52);
+  outline: 2px solid #C8D8E8;
   outline-offset: 2px;
 }
 
-/* ── Global focus-visible: all interactive elements ── */
+/* ── Global focus-visible: all interactive elements — WCAG 2.1 AA ── */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid rgba(175,195,214,0.52);
+  outline: 2px solid #C8D8E8;
   outline-offset: 2px;
 }
 
@@ -438,9 +438,10 @@ textarea:focus-visible,
   }
 }
 
-@media (max-width: 1320px) {
+/* ── Tablet (768-1023px): 2-column grid, collapsible sidebar ── */
+@media (min-width: 768px) and (max-width: 1023px) {
   .nb-tool-shell__grid {
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-areas: none !important;
     grid-template-rows: auto !important;
   }
@@ -454,9 +455,6 @@ textarea:focus-visible,
   .nb-scientific-hero__top {
     grid-template-columns: minmax(0, 1fr) !important;
   }
-
-  /* nb-tool-panels stays horizontal at 1320px — only collapse at narrow screens */
-  /* (moved to 768px breakpoint below so laptops get the 3-column layout)      */
 
   .nb-pathd-hero-stack--rail {
     width: clamp(248px, calc(100vw - 420px), 272px) !important;
@@ -489,8 +487,21 @@ textarea:focus-visible,
   }
 }
 
-/* ── Narrow screens: collapse 3-column → single scrollable column ── */
-@media (max-width: 768px) {
+/* ── Mobile (<768px): single column, full-width panels ── */
+@media (max-width: 767px) {
+  /* BentoGrid → single column */
+  .nb-tool-shell__grid {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: none !important;
+    grid-template-rows: auto !important;
+  }
+
+  .nb-tool-shell__grid > .nb-tool-card {
+    grid-area: auto !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
   .nb-tool-panels {
     flex-direction: column !important;
     overflow: auto !important;   /* allow scroll on mobile */

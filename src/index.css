@@ -251,9 +251,9 @@ pre,
   color: #e2e8f0;
 }
 
-/* ── Focus ring ── */
+/* ── Focus ring — WCAG 2.1 AA ── */
 *:focus-visible {
-  outline: 1px solid rgba(175, 195, 214, 0.56);
+  outline: 2px solid #C8D8E8;
   outline-offset: 2px;
 }
 
