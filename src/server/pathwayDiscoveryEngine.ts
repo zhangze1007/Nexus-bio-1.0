@@ -6954,9 +6954,7 @@ const KEGG_TO_NAME: Record<string, string> = {
  * to a kegg_CXXXXX convention.
  */
 const KEGG_TO_INTERNAL_ID: Record<string, string> = {
-  ...Object.fromEntries(
-    Object.entries(KEGG_TO_NAME).map(([keggId, name]) => [keggId, name]),
-  ),
+  ...Object.fromEntries(Object.entries(KEGG_TO_NAME).map(([keggId, name]) => [keggId, name])),
 };
 
 /**
@@ -6967,14 +6965,22 @@ function ecToReactionType(ec?: string): Reaction["type"] {
   if (!ec) return "transferase";
   const firstDigit = ec.split(".")[0];
   switch (firstDigit) {
-    case "1": return "oxidoreductase";
-    case "2": return "transferase";
-    case "3": return "hydrolase";
-    case "4": return "lyase";
-    case "5": return "isomerase";
-    case "6": return "ligase";
-    case "7": return "kinase"; // translocases → kinase for this engine
-    default: return "transferase";
+    case "1":
+      return "oxidoreductase";
+    case "2":
+      return "transferase";
+    case "3":
+      return "hydrolase";
+    case "4":
+      return "lyase";
+    case "5":
+      return "isomerase";
+    case "6":
+      return "ligase";
+    case "7":
+      return "kinase"; // translocases → kinase for this engine
+    default:
+      return "transferase";
   }
 }
 
@@ -6990,9 +6996,13 @@ function ecToReactionType(ec?: string): Reaction["type"] {
  *
  * Reference: https://www.kegg.jp/kegg/rest/weblink.html
  */
-function parseKEGGReactionToInternal(
-  keggEntry: { entry: string; name: string; definition: string; equation: string; enzymes: string },
-): Reaction | null {
+function parseKEGGReactionToInternal(keggEntry: {
+  entry: string;
+  name: string;
+  definition: string;
+  equation: string;
+  enzymes: string;
+}): Reaction | null {
   if (!keggEntry.equation) return null;
 
   const eq = keggEntry.equation;
@@ -7022,7 +7032,10 @@ function parseKEGGReactionToInternal(
    * Examples: "2 C00022", "C00001", "n C00002"
    */
   function parseSide(compounds: string, target: string[]): void {
-    const parts = compounds.split("+").map((s) => s.trim()).filter(Boolean);
+    const parts = compounds
+      .split("+")
+      .map((s) => s.trim())
+      .filter(Boolean);
     for (const part of parts) {
       const match = part.match(/^(?:(\d+|n)\s+)?(C\d{5})$/);
       if (!match) continue;
@@ -7092,9 +7105,7 @@ async function lookupReactionsFromKEGG(metaboliteId: string): Promise<Reaction[]
       keggCpdId = metaboliteId;
     } else {
       // Search KEGG for the compound by name
-      const searchRes = await fetch(
-        `/api/kegg?compound=${encodeURIComponent(metaboliteId)}`,
-      );
+      const searchRes = await fetch(`/api/kegg?compound=${encodeURIComponent(metaboliteId)}`);
       if (searchRes.ok) {
         const searchData = await searchRes.json();
         if (searchData.results && searchData.results.length > 0) {
@@ -7109,9 +7120,7 @@ async function lookupReactionsFromKEGG(metaboliteId: string): Promise<Reaction[]
     }
 
     // Find reactions linked to this compound via KEGG
-    const linkRes = await fetch(
-      `https://rest.kegg.jp/link/reaction/${keggCpdId}`,
-    );
+    const linkRes = await fetch(`https://rest.kegg.jp/link/reaction/${keggCpdId}`);
     if (!linkRes.ok) {
       keggCache.set(metaboliteId, []);
       return [];
@@ -7231,10 +7240,9 @@ async function lookupReactionsFromRhea(metaboliteId: string): Promise<Reaction[]
 
   try {
     // Search Rhea for reactions involving this metabolite
-    const searchRes = await fetch(
-      `/api/rhea?query=${encodeURIComponent(metaboliteId)}`,
-      { signal: AbortSignal.timeout(10000) },
-    );
+    const searchRes = await fetch(`/api/rhea?query=${encodeURIComponent(metaboliteId)}`, {
+      signal: AbortSignal.timeout(10000),
+    });
 
     if (!searchRes.ok) {
       rheaCache.set(metaboliteId, []);
@@ -7257,16 +7265,12 @@ async function lookupReactionsFromRhea(metaboliteId: string): Promise<Reaction[]
       try {
         // Fetch full reaction details for EC numbers and direction
         if (result.id) {
-          const detailRes = await fetch(
-            `/api/rhea?id=${encodeURIComponent(result.id)}`,
-            { signal: AbortSignal.timeout(10000) },
-          );
+          const detailRes = await fetch(`/api/rhea?id=${encodeURIComponent(result.id)}`, {
+            signal: AbortSignal.timeout(10000),
+          });
           if (detailRes.ok) {
             const detailData = await detailRes.json();
-            const parsed = parseRheaReactionToInternal(
-              { ...result, ...detailData },
-              metaboliteId,
-            );
+            const parsed = parseRheaReactionToInternal({ ...result, ...detailData }, metaboliteId);
             if (parsed) reactions.push(parsed);
             continue;
           }
@@ -7622,101 +7626,101 @@ function molecularSimilarity(a: Molecule, b: Molecule): number {
  */
 const METABOLITE_WEIGHTS: Record<string, number> = {
   // Glycolysis / TCA intermediates
-  'glucose': 180.16,
-  'glucose_6p': 260.13,
-  'fructose_6p': 260.13,
-  'fructose_16bp': 340.12,
-  'glyceraldehyde_3p': 170.06,
-  'dhap': 170.06,
-  'bisphosphoglycerate': 266.04,
-  'phosphoglycerate_3': 186.06,
-  'phosphoglycerate_2': 186.06,
-  'phosphoenolpyruvate': 168.04,
-  'pyruvate': 88.06,
-  'lactate': 90.08,
+  glucose: 180.16,
+  glucose_6p: 260.13,
+  fructose_6p: 260.13,
+  fructose_16bp: 340.12,
+  glyceraldehyde_3p: 170.06,
+  dhap: 170.06,
+  bisphosphoglycerate: 266.04,
+  phosphoglycerate_3: 186.06,
+  phosphoglycerate_2: 186.06,
+  phosphoenolpyruvate: 168.04,
+  pyruvate: 88.06,
+  lactate: 90.08,
 
   // TCA cycle
-  'acetyl_coa': 809.57,
-  'coa': 767.54,
-  'citrate': 192.12,
-  'isocitrate': 192.12,
-  'alpha_ketoglutarate': 146.11,
-  'succinyl_coa': 867.61,
-  'succinate': 118.09,
-  'fumarate': 116.07,
-  'malate': 134.09,
-  'oxaloacetate': 132.07,
+  acetyl_coa: 809.57,
+  coa: 767.54,
+  citrate: 192.12,
+  isocitrate: 192.12,
+  alpha_ketoglutarate: 146.11,
+  succinyl_coa: 867.61,
+  succinate: 118.09,
+  fumarate: 116.07,
+  malate: 134.09,
+  oxaloacetate: 132.07,
 
   // Common cofactors
-  'atp': 507.18,
-  'adp': 427.20,
-  'amp': 347.22,
-  'nad': 663.43,
-  'nadh': 665.44,
-  'nadp': 743.41,
-  'nadph': 745.42,
-  'fad': 784.56,
-  'fadh2': 786.57,
-  'gtp': 523.18,
-  'gdp': 443.20,
-  'co2': 44.01,
-  'h2o': 18.02,
-  'o2': 32.00,
-  'pi': 95.98,
-  'ppi': 177.98,
+  atp: 507.18,
+  adp: 427.2,
+  amp: 347.22,
+  nad: 663.43,
+  nadh: 665.44,
+  nadp: 743.41,
+  nadph: 745.42,
+  fad: 784.56,
+  fadh2: 786.57,
+  gtp: 523.18,
+  gdp: 443.2,
+  co2: 44.01,
+  h2o: 18.02,
+  o2: 32.0,
+  pi: 95.98,
+  ppi: 177.98,
 
   // Amino acids
-  'alanine': 89.09,
-  'glutamate': 147.13,
-  'glutamine': 146.14,
-  'aspartate': 133.10,
-  'asparagine': 132.12,
-  'glycine': 75.03,
-  'serine': 105.09,
-  'threonine': 119.12,
-  'cysteine': 121.16,
-  'methionine': 149.21,
-  'valine': 117.15,
-  'leucine': 131.17,
-  'isoleucine': 131.17,
-  'proline': 115.13,
-  'phenylalanine': 165.19,
-  'tyrosine': 181.19,
-  'tryptophan': 204.23,
-  'lysine': 146.19,
-  'arginine': 174.20,
-  'histidine': 155.15,
+  alanine: 89.09,
+  glutamate: 147.13,
+  glutamine: 146.14,
+  aspartate: 133.1,
+  asparagine: 132.12,
+  glycine: 75.03,
+  serine: 105.09,
+  threonine: 119.12,
+  cysteine: 121.16,
+  methionine: 149.21,
+  valine: 117.15,
+  leucine: 131.17,
+  isoleucine: 131.17,
+  proline: 115.13,
+  phenylalanine: 165.19,
+  tyrosine: 181.19,
+  tryptophan: 204.23,
+  lysine: 146.19,
+  arginine: 174.2,
+  histidine: 155.15,
 
   // Isoprenoid / mevalonate pathway
-  'mevalonate': 148.16,
-  'mevalonate_5p': 228.13,
-  'mevalonate_5pp': 308.10,
-  'isopentenyl_pp': 246.09,
-  'dimethylallyl_pp': 246.09,
-  'geranyl_pp': 314.14,
-  'farnesyl_pp': 382.19,
-  'fpp': 382.19,
-  'amorpha_4_11_diene': 204.36,
-  'artemisinic_acid': 234.34,
-  'artemisinin': 282.33,
+  mevalonate: 148.16,
+  mevalonate_5p: 228.13,
+  mevalonate_5pp: 308.1,
+  isopentenyl_pp: 246.09,
+  dimethylallyl_pp: 246.09,
+  geranyl_pp: 314.14,
+  farnesyl_pp: 382.19,
+  fpp: 382.19,
+  amorpha_4_11_diene: 204.36,
+  artemisinic_acid: 234.34,
+  artemisinin: 282.33,
 
   // Pentose phosphate pathway
-  'ribulose_5p': 230.11,
-  'ribose_5p': 230.11,
-  'xylulose_5p': 230.11,
-  'sedoheptulose_7p': 290.16,
-  'erythrose_4p': 200.13,
+  ribulose_5p: 230.11,
+  ribose_5p: 230.11,
+  xylulose_5p: 230.11,
+  sedoheptulose_7p: 290.16,
+  erythrose_4p: 200.13,
 
   // Other common metabolites
-  'acetate': 60.05,
-  'ethanol': 46.07,
-  'acetaldehyde': 44.05,
-  'glycerol': 92.09,
-  'glycerol_3p': 172.07,
-  'palmitate': 256.42,
-  'stearate': 284.48,
-  'oleate': 282.46,
-  'cholesterol': 386.65,
+  acetate: 60.05,
+  ethanol: 46.07,
+  acetaldehyde: 44.05,
+  glycerol: 92.09,
+  glycerol_3p: 172.07,
+  palmitate: 256.42,
+  stearate: 284.48,
+  oleate: 282.46,
+  cholesterol: 386.65,
 };
 
 /**
@@ -7774,8 +7778,8 @@ function checkMassConservation(substrates: string[], products: string[]): number
   // Allow small tolerance (cofactors may be omitted from substrate/product lists)
   if (deviation < 0.05) return 1.0;
   if (deviation < 0.15) return 0.8;
-  if (deviation < 0.30) return 0.6;
-  if (deviation < 0.50) return 0.4;
+  if (deviation < 0.3) return 0.6;
+  if (deviation < 0.5) return 0.4;
   return 0.2;
 }
 
@@ -7961,9 +7965,11 @@ async function aStarPathwaySearch(
       const cofactorBalance = computeCofactorBalance(steps);
 
       // Mass conservation score — penalize reactions with MW mismatch
-      const massBalance = steps.length > 0
-        ? steps.reduce((sum, s) => sum + checkMassConservation(s.reaction.substrates, s.reaction.products), 0) / steps.length
-        : 1.0;
+      const massBalance =
+        steps.length > 0
+          ? steps.reduce((sum, s) => sum + checkMassConservation(s.reaction.substrates, s.reaction.products), 0) /
+            steps.length
+          : 1.0;
 
       // Overall score (redistributed weights to include massBalance)
       const overallScore =

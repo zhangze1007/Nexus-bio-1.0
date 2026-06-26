@@ -882,22 +882,24 @@ function generatePlausibleSequence(backbone: BackboneAtom[]): string {
   // Amino acid pools per secondary structure class
   const HELIX_AA = ["A", "L", "E"];
   const SHEET_AA = ["V", "I", "T"];
-  const COIL_AA  = ["G", "P", "S"];
+  const COIL_AA = ["G", "P", "S"];
 
-  return backbone.map((_a, i) => {
-    // Classify secondary structure from Cα-Cα distances (mirrors buildStructuralGraph)
-    let ssClass: "helix" | "sheet" | "coil" = "coil";
-    if (i > 0 && i < n - 1) {
-      const d1 = euclideanDistance(coords[i - 1], coords[i]);
-      const d2 = euclideanDistance(coords[i + 1], coords[i]);
-      const avgDist = (d1 + d2) / 2;
-      if (avgDist < SS_HELIX_CA_DIST + 0.3) ssClass = "helix";
-      else if (avgDist > SS_SHEET_CA_DIST - 1.0) ssClass = "sheet";
-    }
+  return backbone
+    .map((_a, i) => {
+      // Classify secondary structure from Cα-Cα distances (mirrors buildStructuralGraph)
+      let ssClass: "helix" | "sheet" | "coil" = "coil";
+      if (i > 0 && i < n - 1) {
+        const d1 = euclideanDistance(coords[i - 1], coords[i]);
+        const d2 = euclideanDistance(coords[i + 1], coords[i]);
+        const avgDist = (d1 + d2) / 2;
+        if (avgDist < SS_HELIX_CA_DIST + 0.3) ssClass = "helix";
+        else if (avgDist > SS_SHEET_CA_DIST - 1.0) ssClass = "sheet";
+      }
 
-    const pool = ssClass === "helix" ? HELIX_AA : ssClass === "sheet" ? SHEET_AA : COIL_AA;
-    return pool[i % pool.length];
-  }).join("");
+      const pool = ssClass === "helix" ? HELIX_AA : ssClass === "sheet" ? SHEET_AA : COIL_AA;
+      return pool[i % pool.length];
+    })
+    .join("");
 }
 
 /**

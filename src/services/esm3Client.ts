@@ -48,7 +48,7 @@ export interface ESM3GenerateResult {
   }>;
   model: string;
   /** Which backend generated the results */
-  source: 'esm3_backend' | 'esm_atlas' | 'local_heuristic';
+  source: "esm3_backend" | "esm_atlas" | "local_heuristic";
   /** Generation metadata */
   metadata: {
     temperature: number;
@@ -187,12 +187,12 @@ export function generateProteinLocalHeuristic(
 
   // Function-based amino acid biases
   const functionBiases: Record<string, string> = {
-    "enzyme": "DEKRHSTNQ",           // catalytic residues enriched
-    "structural": "GAPVLIMFW",        // hydrophobic core
-    "binding": "DEKRHSTNQYW",        // diverse surface
-    "fluorescent": "SYWTGALVMF",      // chromophore-forming
-    "membrane": "LIVMFCAW",           // transmembrane
-    "soluble": "DEKRHSTNQP",          // hydrophilic
+    enzyme: "DEKRHSTNQ", // catalytic residues enriched
+    structural: "GAPVLIMFW", // hydrophobic core
+    binding: "DEKRHSTNQYW", // diverse surface
+    fluorescent: "SYWTGALVMF", // chromophore-forming
+    membrane: "LIVMFCAW", // transmembrane
+    soluble: "DEKRHSTNQP", // hydrophilic
   };
 
   // Determine bias set
@@ -210,10 +210,26 @@ export function generateProteinLocalHeuristic(
   // Generate sequence with realistic composition
   // Use a simple Markov-like approach: bias toward common amino acids
   const frequencies: Record<string, number> = {
-    A: 0.082, C: 0.013, D: 0.054, E: 0.067, F: 0.039,
-    G: 0.069, H: 0.023, I: 0.059, K: 0.058, L: 0.096,
-    M: 0.024, N: 0.043, P: 0.047, Q: 0.039, R: 0.055,
-    S: 0.067, T: 0.055, V: 0.069, W: 0.011, Y: 0.029,
+    A: 0.082,
+    C: 0.013,
+    D: 0.054,
+    E: 0.067,
+    F: 0.039,
+    G: 0.069,
+    H: 0.023,
+    I: 0.059,
+    K: 0.058,
+    L: 0.096,
+    M: 0.024,
+    N: 0.043,
+    P: 0.047,
+    Q: 0.039,
+    R: 0.055,
+    S: 0.067,
+    T: 0.055,
+    V: 0.069,
+    W: 0.011,
+    Y: 0.029,
   };
 
   let sequence = "";

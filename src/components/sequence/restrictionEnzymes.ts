@@ -9,7 +9,7 @@ export interface RestrictionEnzyme {
   name: string;
   sequence: string; // IUPAC
   cutSite: number; // offset from start of recognition sequence (5' cut position)
-  overhang: '5prime' | '3prime' | 'blunt';
+  overhang: "5prime" | "3prime" | "blunt";
 }
 
 /**
@@ -17,35 +17,35 @@ export interface RestrictionEnzyme {
  * Recognition sequences are given 5'->3' on the Watson strand.
  */
 export const COMMON_ENZYMES: RestrictionEnzyme[] = [
-  { name: 'EcoRI',  sequence: 'GAATTC',   cutSite: 1, overhang: '5prime' },
-  { name: 'BamHI',  sequence: 'GGATCC',   cutSite: 1, overhang: '5prime' },
-  { name: 'HindIII', sequence: 'AAGCTT',  cutSite: 1, overhang: '5prime' },
-  { name: 'XhoI',   sequence: 'CTCGAG',   cutSite: 1, overhang: '5prime' },
-  { name: 'NcoI',   sequence: 'CCATGG',   cutSite: 1, overhang: '5prime' },
-  { name: 'XbaI',   sequence: 'TCTAGA',   cutSite: 1, overhang: '5prime' },
-  { name: 'SpeI',   sequence: 'ACTAGT',   cutSite: 1, overhang: '5prime' },
-  { name: 'PstI',   sequence: 'CTGCAG',   cutSite: 5, overhang: '3prime' },
-  { name: 'SalI',   sequence: 'GTCGAC',   cutSite: 1, overhang: '5prime' },
-  { name: 'KpnI',   sequence: 'GGTACC',   cutSite: 5, overhang: '3prime' },
-  { name: 'SmaI',   sequence: 'CCCGGG',   cutSite: 3, overhang: 'blunt' },
-  { name: 'EcoRV',  sequence: 'GATATC',   cutSite: 3, overhang: 'blunt' },
-  { name: 'NotI',   sequence: 'GCGGCCGC', cutSite: 2, overhang: '5prime' },
-  { name: 'SacI',   sequence: 'GAGCTC',   cutSite: 5, overhang: '3prime' },
-  { name: 'BglII',  sequence: 'AGATCT',   cutSite: 1, overhang: '5prime' },
+  { name: "EcoRI", sequence: "GAATTC", cutSite: 1, overhang: "5prime" },
+  { name: "BamHI", sequence: "GGATCC", cutSite: 1, overhang: "5prime" },
+  { name: "HindIII", sequence: "AAGCTT", cutSite: 1, overhang: "5prime" },
+  { name: "XhoI", sequence: "CTCGAG", cutSite: 1, overhang: "5prime" },
+  { name: "NcoI", sequence: "CCATGG", cutSite: 1, overhang: "5prime" },
+  { name: "XbaI", sequence: "TCTAGA", cutSite: 1, overhang: "5prime" },
+  { name: "SpeI", sequence: "ACTAGT", cutSite: 1, overhang: "5prime" },
+  { name: "PstI", sequence: "CTGCAG", cutSite: 5, overhang: "3prime" },
+  { name: "SalI", sequence: "GTCGAC", cutSite: 1, overhang: "5prime" },
+  { name: "KpnI", sequence: "GGTACC", cutSite: 5, overhang: "3prime" },
+  { name: "SmaI", sequence: "CCCGGG", cutSite: 3, overhang: "blunt" },
+  { name: "EcoRV", sequence: "GATATC", cutSite: 3, overhang: "blunt" },
+  { name: "NotI", sequence: "GCGGCCGC", cutSite: 2, overhang: "5prime" },
+  { name: "SacI", sequence: "GAGCTC", cutSite: 5, overhang: "3prime" },
+  { name: "BglII", sequence: "AGATCT", cutSite: 1, overhang: "5prime" },
 ];
 
-import type { RestrictionSite } from './types';
+import type { RestrictionSite } from "./types";
 
 /**
  * Compute the reverse complement of a DNA string (uppercase).
  */
 function revComp(seq: string): string {
-  const comp: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C' };
+  const comp: Record<string, string> = { A: "T", T: "A", C: "G", G: "C" };
   return seq
-    .split('')
+    .split("")
     .reverse()
     .map((b) => comp[b] ?? b)
-    .join('');
+    .join("");
 }
 
 /**
@@ -59,10 +59,7 @@ function revComp(seq: string): string {
  * @param enzymes  - enzyme set to scan (defaults to COMMON_ENZYMES)
  * @returns sorted array of RestrictionSite
  */
-export function findRestrictionSites(
-  sequence: string,
-  enzymes?: RestrictionEnzyme[]
-): RestrictionSite[] {
+export function findRestrictionSites(sequence: string, enzymes?: RestrictionEnzyme[]): RestrictionSite[] {
   if (!sequence) return [];
 
   const upper = sequence.toUpperCase();

@@ -28,10 +28,15 @@ export interface ToolValidity {
 
 export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // Stage 1 — design
-  pathd: { level: "real", caption: "A* search with thermodynamic ΔG scoring. Curated 500+ reaction database (real EC numbers, eQuilibrator ΔG° values) as primary source, with live KEGG and Rhea API fallbacks for comprehensive coverage. Functional group Jaccard similarity from SMILES detection + 180-metabolite lookup table." },
+  pathd: {
+    level: "real",
+    caption:
+      "A* search with thermodynamic ΔG scoring. Curated 500+ reaction database (real EC numbers, eQuilibrator ΔG° values) as primary source, with live KEGG and Rhea API fallbacks for comprehensive coverage. Functional group Jaccard similarity from SMILES detection + 180-metabolite lookup table.",
+  },
   "metabolic-eng": {
     level: "real",
-    caption: "Same A* + ΔG engine as PathD with real two-phase simplex LP FBA (iJO1366 stoichiometric constraints, HiGHS solver). FBA modules: FVA, FSEOF, MOMA, OptKnock, pFBA. XState FSM with Michaelis-Menten kinetics (BRENDA-sourced Km/kcat). Force layout is heuristic.",
+    caption:
+      "Same A* + ΔG engine as PathD with real two-phase simplex LP FBA (iJO1366 stoichiometric constraints, HiGHS solver). FBA modules: FVA, FSEOF, MOMA, OptKnock, pFBA. XState FSM with Michaelis-Menten kinetics (BRENDA-sourced Km/kcat). Force layout is heuristic.",
   },
 
   // Stage 2 — simulation

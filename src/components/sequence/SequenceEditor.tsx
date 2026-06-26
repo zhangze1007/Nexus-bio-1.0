@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Sequence Editor
@@ -11,16 +11,16 @@
  * - Sidebar: selected feature details, restriction enzyme list
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { THEME } from '../../theme';
-import type { SequenceData, SequenceFeature } from './types';
-import { createSequenceData } from './types';
-import { FEATURE_COLORS } from './colors';
-import { findRestrictionSites } from './restrictionEnzymes';
-import { sixFrameTranslation } from './translation';
-import FeatureAnnotation from './FeatureAnnotation';
-import LinearSequenceViewer from './LinearSequenceViewer';
-import CircularPlasmidView from './CircularPlasmidView';
+import React, { useCallback, useMemo, useState } from "react";
+import { THEME } from "../../theme";
+import CircularPlasmidView from "./CircularPlasmidView";
+import { FEATURE_COLORS } from "./colors";
+import FeatureAnnotation from "./FeatureAnnotation";
+import LinearSequenceViewer from "./LinearSequenceViewer";
+import { findRestrictionSites } from "./restrictionEnzymes";
+import { sixFrameTranslation } from "./translation";
+import type { SequenceData, SequenceFeature } from "./types";
+import { createSequenceData } from "./types";
 
 interface SequenceEditorProps {
   initialData?: SequenceData;
@@ -28,24 +28,59 @@ interface SequenceEditorProps {
 
 /** Demo sequence: partial artemisinin biosynthesis operon */
 const DEMO_SEQUENCE = createSequenceData({
-  name: 'pNexus-Artemisinin',
+  name: "pNexus-Artemisinin",
   sequence:
-    'TTGACAGCTAGCTCAGTCCTAGGTATAATGCTAGCGATGAAATTTGGGTAGAATTCAGAATTCAAGCTTGCA' +
-    'GATATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGGATCCGATCGATCGATCGATCGATC' +
-    'GATCGATCGATCGATCGATCGATCGATCGATCTGCAGGATCGATCGATCGATCGATCGATCGATCGATCGAT' +
-    'CGATCGATCGATCGATCGATCCCGGGGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGA' +
-    'TCGATCGATCGATCGATCGATCGATCGATCGATCGAGATCTGATCGATCGATCGATCGATCGATCGATCGAT' +
-    'CGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGAT' +
-    'CGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGGTCGACGATCGATC',
-  type: 'dna',
-  topology: 'circular',
+    "TTGACAGCTAGCTCAGTCCTAGGTATAATGCTAGCGATGAAATTTGGGTAGAATTCAGAATTCAAGCTTGCA" +
+    "GATATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGGATCCGATCGATCGATCGATCGATC" +
+    "GATCGATCGATCGATCGATCGATCGATCGATCTGCAGGATCGATCGATCGATCGATCGATCGATCGATCGAT" +
+    "CGATCGATCGATCGATCGATCCCGGGGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGA" +
+    "TCGATCGATCGATCGATCGATCGATCGATCGATCGAGATCTGATCGATCGATCGATCGATCGATCGATCGAT" +
+    "CGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGAT" +
+    "CGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGGTCGACGATCGATC",
+  type: "dna",
+  topology: "circular",
   features: [
-    { id: 'promoter', type: 'promoter', start: 0, end: 35, strand: 1, name: 'Ptac', color: FEATURE_COLORS.promoter, notes: 'IPTG-inducible promoter' },
-    { id: 'rbs', type: 'RBS', start: 36, end: 50, strand: 1, name: 'RBS', color: FEATURE_COLORS.RBS },
-    { id: 'cds1', type: 'CDS', start: 50, end: 200, strand: 1, name: 'ADS', color: FEATURE_COLORS.CDS, notes: 'Amorpha-4,11-diene synthase' },
-    { id: 'cds2', type: 'CDS', start: 220, end: 450, strand: 1, name: 'CYP71AV1', color: FEATURE_COLORS.CDS, notes: 'Cytochrome P450 monooxygenase' },
-    { id: 'term', type: 'terminator', start: 460, end: 500, strand: 1, name: 'T7term', color: FEATURE_COLORS.terminator },
-    { id: 'primer-fwd', type: 'primer', start: 0, end: 20, strand: 1, name: 'Fwd', color: FEATURE_COLORS.primer },
+    {
+      id: "promoter",
+      type: "promoter",
+      start: 0,
+      end: 35,
+      strand: 1,
+      name: "Ptac",
+      color: FEATURE_COLORS.promoter,
+      notes: "IPTG-inducible promoter",
+    },
+    { id: "rbs", type: "RBS", start: 36, end: 50, strand: 1, name: "RBS", color: FEATURE_COLORS.RBS },
+    {
+      id: "cds1",
+      type: "CDS",
+      start: 50,
+      end: 200,
+      strand: 1,
+      name: "ADS",
+      color: FEATURE_COLORS.CDS,
+      notes: "Amorpha-4,11-diene synthase",
+    },
+    {
+      id: "cds2",
+      type: "CDS",
+      start: 220,
+      end: 450,
+      strand: 1,
+      name: "CYP71AV1",
+      color: FEATURE_COLORS.CDS,
+      notes: "Cytochrome P450 monooxygenase",
+    },
+    {
+      id: "term",
+      type: "terminator",
+      start: 460,
+      end: 500,
+      strand: 1,
+      name: "T7term",
+      color: FEATURE_COLORS.terminator,
+    },
+    { id: "primer-fwd", type: "primer", start: 0, end: 20, strand: 1, name: "Fwd", color: FEATURE_COLORS.primer },
   ],
 });
 
@@ -54,9 +89,9 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
   const [zoom, setZoom] = useState<1 | 2 | 4>(1);
   const [selectedRange, setSelectedRange] = useState<{ start: number; end: number } | null>(null);
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showTranslation, setShowTranslation] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<'features' | 'enzymes' | 'info'>('features');
+  const [sidebarTab, setSidebarTab] = useState<"features" | "enzymes" | "info">("features");
   const [scrollLeft, setScrollLeft] = useState(0);
 
   // Find restriction sites
@@ -64,7 +99,7 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
 
   // Six-frame translation
   const translation = useMemo(() => {
-    if (data.type !== 'dna') return null;
+    if (data.type !== "dna") return null;
     return sixFrameTranslation(data.sequence);
   }, [data.sequence, data.type]);
 
@@ -82,18 +117,14 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
   }, [data.sequence, searchQuery]);
 
   // Selected feature
-  const selectedFeature = selectedFeatureId
-    ? data.features.find((f) => f.id === selectedFeatureId)
-    : null;
+  const selectedFeature = selectedFeatureId ? data.features.find((f) => f.id === selectedFeatureId) : null;
 
   // Selection info
   const selectionInfo = useMemo(() => {
     if (!selectedRange) return null;
     const subseq = data.sequence.slice(selectedRange.start, selectedRange.end);
     const gc =
-      data.type !== 'protein'
-        ? ((subseq.match(/[GC]/gi)?.length ?? 0) / subseq.length * 100).toFixed(1)
-        : null;
+      data.type !== "protein" ? (((subseq.match(/[GC]/gi)?.length ?? 0) / subseq.length) * 100).toFixed(1) : null;
     return {
       start: selectedRange.start + 1,
       end: selectedRange.end,
@@ -105,24 +136,24 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
 
   // Topology toggle
   const toggleTopology = useCallback(() => {
-    setData((prev) => ({ ...prev, topology: prev.topology === 'circular' ? 'linear' : 'circular' }));
+    setData((prev) => ({ ...prev, topology: prev.topology === "circular" ? "linear" : "circular" }));
   }, []);
 
   // Export FASTA
   const handleExport = useCallback(() => {
-    const fasta = `>${data.name} ${data.length} bp\n${data.sequence.replace(/(.{60})/g, '$1\n')}`;
-    const blob = new Blob([fasta], { type: 'text/plain' });
+    const fasta = `>${data.name} ${data.length} bp\n${data.sequence.replace(/(.{60})/g, "$1\n")}`;
+    const blob = new Blob([fasta], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${data.name.replace(/\s+/g, '_')}.fasta`;
+    a.download = `${data.name.replace(/\s+/g, "_")}.fasta`;
     a.click();
     URL.revokeObjectURL(url);
   }, [data]);
 
   // Handle paste/input of new sequence
   const handleNewSequence = useCallback((seq: string, name?: string) => {
-    setData(createSequenceData({ sequence: seq, name: name ?? 'Imported' }));
+    setData(createSequenceData({ sequence: seq, name: name ?? "Imported" }));
     setSelectedRange(null);
     setSelectedFeatureId(null);
   }, []);
@@ -130,9 +161,9 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
         background: THEME.BG_SHELL,
         color: THEME.VALUE,
         fontFamily: THEME.SANS,
@@ -142,18 +173,16 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
       {/* ── Toolbar ──────────────────────────────────────── */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 8,
-          padding: '8px 16px',
+          padding: "8px 16px",
           background: THEME.BG_PANEL,
           borderBottom: `1px solid ${THEME.BORDER}`,
           flexShrink: 0,
         }}
       >
-        <span style={{ fontFamily: THEME.BRAND, fontWeight: 600, fontSize: 14 }}>
-          {data.name}
-        </span>
+        <span style={{ fontFamily: THEME.BRAND, fontWeight: 600, fontSize: 14 }}>{data.name}</span>
         <span style={{ color: THEME.DIM, fontFamily: THEME.MONO, fontSize: 11 }}>
           {data.length.toLocaleString()} bp &middot; {data.topology}
         </span>
@@ -168,37 +197,35 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             width: 180,
-            padding: '4px 8px',
+            padding: "4px 8px",
             background: THEME.INPUT_BG,
             border: `1px solid ${THEME.INPUT_BORDER}`,
             borderRadius: THEME.R_SM,
             color: THEME.INPUT_TEXT,
             fontFamily: THEME.MONO,
             fontSize: 11,
-            outline: 'none',
+            outline: "none",
           }}
         />
         {searchResults.length > 0 && (
-          <span style={{ color: THEME.DIM, fontSize: 10, fontFamily: THEME.MONO }}>
-            {searchResults.length} hits
-          </span>
+          <span style={{ color: THEME.DIM, fontSize: 10, fontFamily: THEME.MONO }}>{searchResults.length} hits</span>
         )}
 
         {/* Zoom */}
-        <div style={{ display: 'flex', gap: 2 }}>
+        <div style={{ display: "flex", gap: 2 }}>
           {([1, 2, 4] as const).map((z) => (
             <button
               key={z}
               onClick={() => setZoom(z)}
               style={{
-                padding: '3px 8px',
-                background: z === zoom ? THEME.SKY : 'transparent',
+                padding: "3px 8px",
+                background: z === zoom ? THEME.SKY : "transparent",
                 border: `1px solid ${THEME.BORDER}`,
                 borderRadius: THEME.R_SM,
-                color: z === zoom ? '#050505' : THEME.DIM,
+                color: z === zoom ? "#050505" : THEME.DIM,
                 fontFamily: THEME.MONO,
                 fontSize: 10,
-                cursor: 'pointer',
+                cursor: "pointer",
               }}
             >
               {z}x
@@ -210,31 +237,31 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
         <button
           onClick={toggleTopology}
           style={{
-            padding: '3px 10px',
-            background: 'transparent',
+            padding: "3px 10px",
+            background: "transparent",
             border: `1px solid ${THEME.BORDER}`,
             borderRadius: THEME.R_SM,
             color: THEME.DIM,
             fontFamily: THEME.SANS,
             fontSize: 11,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
-          {data.topology === 'circular' ? '◯ Circular' : '— Linear'}
+          {data.topology === "circular" ? "◯ Circular" : "— Linear"}
         </button>
 
         {/* Export */}
         <button
           onClick={handleExport}
           style={{
-            padding: '3px 10px',
-            background: 'transparent',
+            padding: "3px 10px",
+            background: "transparent",
             border: `1px solid ${THEME.BORDER}`,
             borderRadius: THEME.R_SM,
             color: THEME.DIM,
             fontFamily: THEME.SANS,
             fontSize: 11,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           Export FASTA
@@ -242,9 +269,9 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
       </div>
 
       {/* ── Main Content ─────────────────────────────────── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* ── Center: sequence viewer ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {/* Feature annotation bar */}
           <FeatureAnnotation
             data={data}
@@ -255,7 +282,7 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
           />
 
           {/* Linear viewer */}
-          <div style={{ flex: 1, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflow: "hidden" }}>
             <LinearSequenceViewer
               data={data}
               zoom={zoom}
@@ -270,13 +297,13 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
           {selectionInfo && (
             <div
               style={{
-                padding: '6px 16px',
+                padding: "6px 16px",
                 background: THEME.PANEL_STRONG,
                 borderTop: `1px solid ${THEME.BORDER}`,
                 fontFamily: THEME.MONO,
                 fontSize: 11,
                 color: THEME.DIM,
-                display: 'flex',
+                display: "flex",
                 gap: 16,
                 flexShrink: 0,
               }}
@@ -285,20 +312,20 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                 Selection: {selectionInfo.start}&ndash;{selectionInfo.end} ({selectionInfo.length} bp)
               </span>
               {selectionInfo.gc && <span>GC: {selectionInfo.gc}%</span>}
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 400 }}>
                 {selectionInfo.sequence}
               </span>
             </div>
           )}
 
           {/* Circular map (if circular topology) */}
-          {data.topology === 'circular' && (
+          {data.topology === "circular" && (
             <div
               style={{
                 padding: 16,
                 borderTop: `1px solid ${THEME.BORDER}`,
-                display: 'flex',
-                justifyContent: 'center',
+                display: "flex",
+                justifyContent: "center",
                 flexShrink: 0,
               }}
             >
@@ -318,35 +345,35 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
             width: 260,
             borderLeft: `1px solid ${THEME.BORDER}`,
             background: THEME.BG_PANEL,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
             flexShrink: 0,
           }}
         >
           {/* Sidebar tabs */}
           <div
             style={{
-              display: 'flex',
+              display: "flex",
               borderBottom: `1px solid ${THEME.BORDER}`,
               flexShrink: 0,
             }}
           >
-            {(['features', 'enzymes', 'info'] as const).map((tab) => (
+            {(["features", "enzymes", "info"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setSidebarTab(tab)}
                 style={{
                   flex: 1,
-                  padding: '6px 0',
-                  background: tab === sidebarTab ? THEME.BG_SHELL : 'transparent',
-                  border: 'none',
-                  borderBottom: tab === sidebarTab ? `2px solid ${THEME.SKY}` : '2px solid transparent',
+                  padding: "6px 0",
+                  background: tab === sidebarTab ? THEME.BG_SHELL : "transparent",
+                  border: "none",
+                  borderBottom: tab === sidebarTab ? `2px solid ${THEME.SKY}` : "2px solid transparent",
                   color: tab === sidebarTab ? THEME.VALUE : THEME.DIM,
                   fontFamily: THEME.SANS,
                   fontSize: 11,
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
+                  cursor: "pointer",
+                  textTransform: "capitalize",
                 }}
               >
                 {tab}
@@ -354,10 +381,10 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
             ))}
           </div>
 
-          <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+          <div style={{ flex: 1, overflow: "auto", padding: 12 }}>
             {/* Features tab */}
-            {sidebarTab === 'features' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {sidebarTab === "features" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {selectedFeature && (
                   <div
                     style={{
@@ -368,15 +395,13 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                       marginBottom: 8,
                     }}
                   >
-                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
-                      {selectedFeature.name}
-                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{selectedFeature.name}</div>
                     <div style={{ fontFamily: THEME.MONO, fontSize: 10, color: THEME.DIM }}>
                       Type: {selectedFeature.type}
                       <br />
                       Position: {selectedFeature.start + 1}&ndash;{selectedFeature.end}
                       <br />
-                      Strand: {selectedFeature.strand === 1 ? '→ Forward' : '← Reverse'}
+                      Strand: {selectedFeature.strand === 1 ? "→ Forward" : "← Reverse"}
                       {selectedFeature.notes && (
                         <>
                           <br />
@@ -391,13 +416,13 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                     key={feat.id}
                     onClick={() => setSelectedFeatureId(feat.id === selectedFeatureId ? null : feat.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      display: "flex",
+                      alignItems: "center",
                       gap: 6,
-                      padding: '4px 6px',
+                      padding: "4px 6px",
                       borderRadius: THEME.R_SM,
-                      background: feat.id === selectedFeatureId ? 'rgba(175,195,214,0.12)' : 'transparent',
-                      cursor: 'pointer',
+                      background: feat.id === selectedFeatureId ? "rgba(175,195,214,0.12)" : "transparent",
+                      cursor: "pointer",
                       fontSize: 11,
                     }}
                   >
@@ -411,7 +436,7 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                       }}
                     />
                     <span style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}>{feat.name}</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 9, color: THEME.DIM, marginLeft: 'auto' }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 9, color: THEME.DIM, marginLeft: "auto" }}>
                       {feat.start + 1}&ndash;{feat.end}
                     </span>
                   </div>
@@ -423,8 +448,8 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
             )}
 
             {/* Enzymes tab */}
-            {sidebarTab === 'enzymes' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {sidebarTab === "enzymes" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <div style={{ fontSize: 10, color: THEME.DIM, marginBottom: 4 }}>
                   {restrictionSites.length} sites found
                 </div>
@@ -432,10 +457,10 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                   <div
                     key={`${site.enzyme}-${site.position}`}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      display: "flex",
+                      alignItems: "center",
                       gap: 6,
-                      padding: '3px 6px',
+                      padding: "3px 6px",
                       fontSize: 11,
                     }}
                   >
@@ -446,7 +471,7 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                       pos {site.position + 1}
                     </span>
                     <span style={{ fontFamily: THEME.MONO, fontSize: 9, color: THEME.DIM }}>
-                      {site.strand === 1 ? '→' : '←'}
+                      {site.strand === 1 ? "→" : "←"}
                     </span>
                   </div>
                 ))}
@@ -457,8 +482,8 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
             )}
 
             {/* Info tab */}
-            {sidebarTab === 'info' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11 }}>
+            {sidebarTab === "info" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 11 }}>
                 <div>
                   <div style={{ color: THEME.DIM, fontSize: 10 }}>Name</div>
                   <div>{data.name}</div>
@@ -475,11 +500,11 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                   <div style={{ color: THEME.DIM, fontSize: 10 }}>Topology</div>
                   <div>{data.topology}</div>
                 </div>
-                {data.type === 'dna' && (
+                {data.type === "dna" && (
                   <div>
                     <div style={{ color: THEME.DIM, fontSize: 10 }}>GC Content</div>
                     <div style={{ fontFamily: THEME.MONO }}>
-                      {((data.sequence.match(/[GC]/gi)?.length ?? 0) / data.length * 100).toFixed(1)}%
+                      {(((data.sequence.match(/[GC]/gi)?.length ?? 0) / data.length) * 100).toFixed(1)}%
                     </div>
                   </div>
                 )}
@@ -495,18 +520,22 @@ export default function SequenceEditor({ initialData }: SequenceEditorProps) {
                 {/* 6-frame translation preview */}
                 {translation && (
                   <div>
-                    <div style={{ color: THEME.DIM, fontSize: 10, marginBottom: 4 }}>6-Frame Translation (first 60 aa)</div>
+                    <div style={{ color: THEME.DIM, fontSize: 10, marginBottom: 4 }}>
+                      6-Frame Translation (first 60 aa)
+                    </div>
                     {Object.entries(translation).map(([frame, seq]) => (
-                      <div key={frame} style={{ display: 'flex', gap: 4, marginBottom: 2 }}>
-                        <span style={{ fontFamily: THEME.MONO, fontSize: 9, color: THEME.SKY, width: 20 }}>{frame}</span>
+                      <div key={frame} style={{ display: "flex", gap: 4, marginBottom: 2 }}>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 9, color: THEME.SKY, width: 20 }}>
+                          {frame}
+                        </span>
                         <span
                           style={{
                             fontFamily: THEME.MONO,
                             fontSize: 9,
                             color: THEME.DIM,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
                         >
                           {seq.slice(0, 60)}

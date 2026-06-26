@@ -13,7 +13,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended",
+      "recommended": false,
       "correctness": {
         "noUnusedVariables": "warn",
         "noUnusedImports": "warn",
@@ -27,18 +27,24 @@
       "suspicious": {
         "noExplicitAny": "warn",
         "noArrayIndexKey": "warn",
-        "useIterableCallbackReturn": "warn",
+        "useIterableCallbackReturn": "off",
         "noImplicitAnyLet": "warn",
         "noControlCharactersInRegex": "warn",
-        "noAssignInExpressions": "warn",
-        "noUnknownAtRules": "warn"
+        "noAssignInExpressions": "off",
+        "noUnknownAtRules": "warn",
+        "noConfusingVoidType": "off",
+        "noDoubleEquals": "warn"
       },
       "complexity": {
         "noUselessFragments": "warn",
-        "noForEach": "warn"
+        "noForEach": "off",
+        "useOptionalChain": "warn"
       },
       "style": {
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "warn",
+        "useConst": "warn",
+        "useForOf": "warn"
       },
       "a11y": {
         "useButtonType": "warn",

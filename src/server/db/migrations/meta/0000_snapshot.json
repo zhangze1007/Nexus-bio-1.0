@@ -109,9 +109,7 @@
       "indexes": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         }
       },
@@ -528,9 +526,7 @@
       "indexes": {
         "audit_log_sequence_number_unique": {
           "name": "audit_log_sequence_number_unique",
-          "columns": [
-            "sequence_number"
-          ],
+          "columns": ["sequence_number"],
           "isUnique": true
         }
       },
@@ -610,9 +606,7 @@
       "indexes": {
         "api_keys_key_hash_unique": {
           "name": "api_keys_key_hash_unique",
-          "columns": [
-            "key_hash"
-          ],
+          "columns": ["key_hash"],
           "isUnique": true
         }
       },

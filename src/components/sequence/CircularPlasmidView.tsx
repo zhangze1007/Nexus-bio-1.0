@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Circular Plasmid Map
@@ -12,9 +12,10 @@
  * - Click and drag to rotate
  */
 
-import React, { useState, useCallback, useRef, useMemo } from 'react';
-import { THEME } from '../../theme';
-import type { SequenceData } from './types';
+import type React from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { THEME } from "../../theme";
+import type { SequenceData } from "./types";
 
 interface CircularPlasmidViewProps {
   data: SequenceData;
@@ -35,7 +36,7 @@ function featureArcPath(
   length: number,
   innerR: number,
   outerR: number,
-  rotation: number
+  rotation: number,
 ): string {
   const a1 = posToAngle(start, length, rotation);
   const a2 = posToAngle(end, length, rotation);
@@ -57,8 +58,8 @@ function featureArcPath(
     `A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o}`,
     `L ${x2i} ${y2i}`,
     `A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i} ${y1i}`,
-    'Z',
-  ].join(' ');
+    "Z",
+  ].join(" ");
 }
 
 export default function CircularPlasmidView({
@@ -92,13 +93,10 @@ export default function CircularPlasmidView({
   }, [data.length]);
 
   // Mouse wheel to rotate
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      setRotation((r) => r + (e.deltaY > 0 ? 0.05 : -0.05));
-    },
-    []
-  );
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setRotation((r) => r + (e.deltaY > 0 ? 0.05 : -0.05));
+  }, []);
 
   // Drag to rotate
   const handleMouseDown = useCallback(
@@ -106,7 +104,7 @@ export default function CircularPlasmidView({
       setIsDragging(true);
       dragStartRef.current = { x: e.clientX, rot: rotation };
     },
-    [rotation]
+    [rotation],
   );
 
   const handleMouseMove = useCallback(
@@ -115,7 +113,7 @@ export default function CircularPlasmidView({
       const dx = e.clientX - dragStartRef.current.x;
       setRotation(dragStartRef.current.rot + dx * 0.005);
     },
-    [isDragging]
+    [isDragging],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -128,7 +126,7 @@ export default function CircularPlasmidView({
     (id: string) => {
       onSelectFeature?.(id === selectedFeatureId ? null : id);
     },
-    [onSelectFeature, selectedFeatureId]
+    [onSelectFeature, selectedFeatureId],
   );
 
   // Hit test for mouse position
@@ -140,9 +138,9 @@ export default function CircularPlasmidView({
         background: THEME.BG_CANVAS,
         borderRadius: THEME.R_MD,
         border: `1px solid ${THEME.BORDER}`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
         padding: THEME.SP_SM,
       }}
     >
@@ -155,7 +153,7 @@ export default function CircularPlasmidView({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
       >
         {/* Background circle */}
         <circle cx={0} cy={0} r={outerR + 4} fill="none" stroke={THEME.BORDER} strokeWidth={1} />
@@ -199,7 +197,7 @@ export default function CircularPlasmidView({
               d={d}
               fill={feat.color}
               fillOpacity={isSelected ? 1 : isHovered ? 0.8 : 0.55}
-              stroke={isSelected ? THEME.VALUE : 'none'}
+              stroke={isSelected ? THEME.VALUE : "none"}
               strokeWidth={isSelected ? 2 : 0}
               onClick={(e) => {
                 e.stopPropagation();
@@ -207,7 +205,7 @@ export default function CircularPlasmidView({
               }}
               onMouseEnter={() => setHoveredId(feat.id)}
               onMouseLeave={() => setHoveredId(null)}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: "pointer" }}
             />
           );
         })}
@@ -231,9 +229,9 @@ export default function CircularPlasmidView({
               fontSize={9}
               fontFamily={THEME.SANS}
               fontWeight={feat.id === selectedFeatureId ? 700 : 400}
-              style={{ pointerEvents: 'none' }}
+              style={{ pointerEvents: "none" }}
             >
-              {feat.name.length > 10 ? feat.name.slice(0, 10) + '..' : feat.name}
+              {feat.name.length > 10 ? feat.name.slice(0, 10) + ".." : feat.name}
             </text>
           );
         })}
@@ -243,19 +241,9 @@ export default function CircularPlasmidView({
           const angle = posToAngle(site.position, data.length, rotation);
           const x1 = Math.cos(angle) * (innerR - 4);
           const y1 = Math.sin(angle) * (innerR - 4);
-          const x2 = Math.cos(angle) * (tickInnerR);
-          const y2 = Math.sin(angle) * (tickInnerR);
-          return (
-            <line
-              key={`rs-${i}`}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke={THEME.LILAC}
-              strokeWidth={1.5}
-            />
-          );
+          const x2 = Math.cos(angle) * tickInnerR;
+          const y2 = Math.sin(angle) * tickInnerR;
+          return <line key={`rs-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={THEME.LILAC} strokeWidth={1.5} />;
         })}
 
         {/* Center: plasmid name and length */}
@@ -291,7 +279,7 @@ export default function CircularPlasmidView({
           fontSize={9}
           fontFamily={THEME.SANS}
         >
-          {data.topology === 'circular' ? 'Circular' : 'Linear'}
+          {data.topology === "circular" ? "Circular" : "Linear"}
         </text>
       </svg>
 
@@ -300,19 +288,18 @@ export default function CircularPlasmidView({
         <div
           style={{
             marginTop: 4,
-            padding: '4px 10px',
+            padding: "4px 10px",
             background: THEME.PANEL_STRONG,
             border: `1px solid ${THEME.BORDER_ACTIVE}`,
             borderRadius: THEME.R_SM,
             fontFamily: THEME.SANS,
             fontSize: 11,
             color: THEME.VALUE,
-            textAlign: 'center',
+            textAlign: "center",
           }}
         >
-          <strong>{hoveredFeature.name}</strong> ({hoveredFeature.type}) &middot;{' '}
-          {hoveredFeature.start + 1}&ndash;{hoveredFeature.end}{' '}
-          {hoveredFeature.strand === 1 ? '→' : '←'}
+          <strong>{hoveredFeature.name}</strong> ({hoveredFeature.type}) &middot; {hoveredFeature.start + 1}&ndash;
+          {hoveredFeature.end} {hoveredFeature.strand === 1 ? "→" : "←"}
         </div>
       )}
     </div>

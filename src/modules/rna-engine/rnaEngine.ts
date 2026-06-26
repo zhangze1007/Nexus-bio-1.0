@@ -15,8 +15,8 @@
  *   ALGORITHM: Thermodynamic folding + off-target scoring + activity prediction
  */
 
-import type { RibozymeType, RNADesignInput, RNADesignResult } from "./types";
 import { computeMRNAFoldingNN } from "../../server/regulatoryDesignEngine";
+import type { RibozymeType, RNADesignInput, RNADesignResult } from "./types";
 
 /**
  * Compute RNA folding energy using Nussinov DP with Turner NN parameters.
@@ -42,9 +42,7 @@ function computeFoldingEnergy(seq: string): number {
  */
 const RNA_BACKEND = process.env.RNA_PYTHON_BACKEND;
 
-export async function computeFoldingEnergyAsync(
-  seq: string,
-): Promise<{ deltaG: number; structure: string }> {
+export async function computeFoldingEnergyAsync(seq: string): Promise<{ deltaG: number; structure: string }> {
   if (RNA_BACKEND) {
     try {
       const res = await fetch(`${RNA_BACKEND}/rna/fold`, {
@@ -503,13 +501,24 @@ export function designCircularRNA(
     `Linear length: ${fullSequence.length} nt (will be circularized)`,
     `IRES type: ${iresType} (cap-independent translation)`,
     `GC content: ${(gcContent * 100).toFixed(1)}%`,
-    includeSplint ? `Splint sequence: ${splintLength} nt for enzymatic circularization` : "No splint (self-circularizing)",
+    includeSplint
+      ? `Splint sequence: ${splintLength} nt for enzymatic circularization`
+      : "No splint (self-circularizing)",
     `Back-splice junction: ${junctionSequence.substring(0, 20)}...`,
     `Predicted stability: ${predictedStability.toFixed(2)} (enhanced vs linear mRNA)`,
     `Reference: Wesselhoeft et al. (2018) Nat Commun 9:2127`,
   ];
 
-  return { fullSequence, iresSequence, cds, splintSequence, junctionSequence, gcContent, predictedStability, designNotes };
+  return {
+    fullSequence,
+    iresSequence,
+    cds,
+    splintSequence,
+    junctionSequence,
+    gcContent,
+    predictedStability,
+    designNotes,
+  };
 }
 
 // ── Self-Amplifying RNA Design ────────────────────────────────────────────
@@ -589,5 +598,13 @@ export function designSelfAmplifyingRNA(
     `First approved: ARCT-154 (Arcturus Therapeutics, Japan 2023)`,
   ];
 
-  return { fullSequence, replicase, subgenomicPromoter, geneOfInterest: goi, gcContent, predictedAmplification, designNotes };
+  return {
+    fullSequence,
+    replicase,
+    subgenomicPromoter,
+    geneOfInterest: goi,
+    gcContent,
+    predictedAmplification,
+    designNotes,
+  };
 }

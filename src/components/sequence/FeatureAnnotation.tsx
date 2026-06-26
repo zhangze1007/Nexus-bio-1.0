@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Feature Annotation Bar
@@ -7,9 +7,9 @@
  * with strand arrows, tooltips, and click-to-select interaction.
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
-import { THEME } from '../../theme';
-import type { SequenceData, SequenceFeature } from './types';
+import React, { useCallback, useMemo, useState } from "react";
+import { THEME } from "../../theme";
+import type { SequenceData, SequenceFeature } from "./types";
 
 interface FeatureAnnotationProps {
   data: SequenceData;
@@ -55,10 +55,7 @@ export default function FeatureAnnotation({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const laneMap = useMemo(() => assignLanes(data.features), [data.features]);
-  const numLanes = useMemo(
-    () => (laneMap.size > 0 ? Math.max(...laneMap.values()) + 1 : 0),
-    [laneMap]
-  );
+  const numLanes = useMemo(() => (laneMap.size > 0 ? Math.max(...laneMap.values()) + 1 : 0), [laneMap]);
   const totalHeight = numLanes * (height + 4) + 8;
   const seqPixelWidth = data.length * baseWidth;
 
@@ -66,15 +63,15 @@ export default function FeatureAnnotation({
     (id: string) => {
       onSelectFeature?.(id === selectedFeatureId ? null : id);
     },
-    [onSelectFeature, selectedFeatureId]
+    [onSelectFeature, selectedFeatureId],
   );
 
   return (
     <div
       style={{
-        position: 'relative',
-        width: '100%',
-        overflow: 'hidden',
+        position: "relative",
+        width: "100%",
+        overflow: "hidden",
         background: THEME.BG_CANVAS,
         borderBottom: `1px solid ${THEME.BORDER}`,
         minHeight: totalHeight,
@@ -84,7 +81,7 @@ export default function FeatureAnnotation({
         width={seqPixelWidth}
         height={totalHeight}
         style={{
-          display: 'block',
+          display: "block",
           transform: `translateX(${-scrollLeft}px)`,
         }}
       >
@@ -110,13 +107,13 @@ export default function FeatureAnnotation({
               onClick={() => handleClick(feat.id)}
               onMouseEnter={() => setHoveredId(feat.id)}
               onMouseLeave={() => setHoveredId(null)}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: "pointer" }}
             >
               <path
                 d={path}
                 fill={feat.color}
                 fillOpacity={isSelected ? 1 : isHovered ? 0.85 : 0.6}
-                stroke={isSelected ? THEME.VALUE : 'none'}
+                stroke={isSelected ? THEME.VALUE : "none"}
                 strokeWidth={isSelected ? 1.5 : 0}
               />
               {w > 30 && (
@@ -128,9 +125,9 @@ export default function FeatureAnnotation({
                   fill={THEME.VALUE}
                   fontSize={10}
                   fontFamily={THEME.SANS}
-                  style={{ pointerEvents: 'none' }}
+                  style={{ pointerEvents: "none" }}
                 >
-                  {feat.name.length > Math.floor(w / 7) ? feat.name.slice(0, Math.floor(w / 7)) + '..' : feat.name}
+                  {feat.name.length > Math.floor(w / 7) ? feat.name.slice(0, Math.floor(w / 7)) + ".." : feat.name}
                 </text>
               )}
             </g>
@@ -139,38 +136,39 @@ export default function FeatureAnnotation({
       </svg>
 
       {/* Tooltip for hovered feature */}
-      {hoveredId && (() => {
-        const feat = data.features.find((f) => f.id === hoveredId);
-        if (!feat) return null;
-        const lane = laneMap.get(feat.id) ?? 0;
-        const tipX = feat.start * baseWidth - scrollLeft + ((feat.end - feat.start) * baseWidth) / 2;
-        const tipY = lane * (height + 4);
-        return (
-          <div
-            style={{
-              position: 'absolute',
-              left: tipX,
-              top: Math.max(0, tipY - 40),
-              transform: 'translateX(-50%)',
-              background: THEME.PANEL_STRONG,
-              border: `1px solid ${THEME.BORDER_ACTIVE}`,
-              borderRadius: THEME.R_SM,
-              padding: '4px 8px',
-              fontFamily: THEME.SANS,
-              fontSize: 11,
-              color: THEME.VALUE,
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none',
-              zIndex: 10,
-              boxShadow: THEME.SHADOW_MEDIUM,
-            }}
-          >
-            <strong>{feat.name}</strong> ({feat.type}) &middot; {feat.start + 1}&ndash;{feat.end}{' '}
-            {feat.strand === 1 ? '&rarr;' : '&larr;'}
-            {feat.notes && <div style={{ color: THEME.DIM, fontSize: 10 }}>{feat.notes}</div>}
-          </div>
-        );
-      })()}
+      {hoveredId &&
+        (() => {
+          const feat = data.features.find((f) => f.id === hoveredId);
+          if (!feat) return null;
+          const lane = laneMap.get(feat.id) ?? 0;
+          const tipX = feat.start * baseWidth - scrollLeft + ((feat.end - feat.start) * baseWidth) / 2;
+          const tipY = lane * (height + 4);
+          return (
+            <div
+              style={{
+                position: "absolute",
+                left: tipX,
+                top: Math.max(0, tipY - 40),
+                transform: "translateX(-50%)",
+                background: THEME.PANEL_STRONG,
+                border: `1px solid ${THEME.BORDER_ACTIVE}`,
+                borderRadius: THEME.R_SM,
+                padding: "4px 8px",
+                fontFamily: THEME.SANS,
+                fontSize: 11,
+                color: THEME.VALUE,
+                whiteSpace: "nowrap",
+                pointerEvents: "none",
+                zIndex: 10,
+                boxShadow: THEME.SHADOW_MEDIUM,
+              }}
+            >
+              <strong>{feat.name}</strong> ({feat.type}) &middot; {feat.start + 1}&ndash;{feat.end}{" "}
+              {feat.strand === 1 ? "&rarr;" : "&larr;"}
+              {feat.notes && <div style={{ color: THEME.DIM, fontSize: 10 }}>{feat.notes}</div>}
+            </div>
+          );
+        })()}
     </div>
   );
 }

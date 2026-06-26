@@ -531,9 +531,16 @@ function generateGuides(
       // Proxy off-target risk based on GC content and homopolymers
       const hasHomopolymer = /(.)\1{3,}/.test(c.spacer);
       const proxyRisk = gcContent > 0.7 || gcContent < 0.3 || hasHomopolymer ? 0.8 : 0.2;
-      const offTargetSites: GuideRNA["offTargetSites"] = proxyRisk > 0.5
-        ? [{ gene: 'proxy_risk', mismatches: 0, position: `GC=${(gcContent*100).toFixed(0)}%${hasHomopolymer ? ', homopolymer' : ''}` }]
-        : [];
+      const offTargetSites: GuideRNA["offTargetSites"] =
+        proxyRisk > 0.5
+          ? [
+              {
+                gene: "proxy_risk",
+                mismatches: 0,
+                position: `GC=${(gcContent * 100).toFixed(0)}%${hasHomopolymer ? ", homopolymer" : ""}`,
+              },
+            ]
+          : [];
 
       // Composite quality score
       const gcScore = gcContent >= 0.4 && gcContent <= 0.6 ? 0.2 : 0.1;
@@ -805,9 +812,7 @@ async function searchOffTargets(
  * Used as fallback when the BLAST backend is not available.
  * High GC or homopolymers increase off-target risk.
  */
-function proxyOffTargetScore(
-  guideSequence: string,
-): Array<{ gene: string; mismatches: number; position: string }> {
+function proxyOffTargetScore(guideSequence: string): Array<{ gene: string; mismatches: number; position: string }> {
   const gcContent = (guideSequence.match(/[GC]/g) || []).length / guideSequence.length;
   const hasHomopolymer = /(.)\1{3,}/.test(guideSequence);
   const proxyRisk = gcContent > 0.7 || gcContent < 0.3 || hasHomopolymer ? 0.8 : 0.2;
@@ -887,7 +892,9 @@ export async function runMultiplexCRISPR(input: MultiplexCRISPRInput): Promise<M
     const realHits = guide.offTargetSites.filter((s) => s.gene !== "proxy_risk");
     if (realHits.length > 0) {
       // Off-target score: lower with more off-targets, especially seed mismatches
-      const seedHits = realHits.filter((s) => s.position.includes("seed:1") || s.position.includes("seed:2") || s.position.includes("seed:3"));
+      const seedHits = realHits.filter(
+        (s) => s.position.includes("seed:1") || s.position.includes("seed:2") || s.position.includes("seed:3"),
+      );
       guide.qualityScore = Math.max(0, guide.qualityScore - realHits.length * 0.05 - seedHits.length * 0.1);
     }
   }
@@ -911,9 +918,12 @@ export async function runMultiplexCRISPR(input: MultiplexCRISPRInput): Promise<M
       allGuides.length > 0
         ? Math.round((allGuides.reduce((sum, g) => sum + g.onTargetScore, 0) / allGuides.length) * 100) / 100
         : 0,
-    avgOffTargetRisk: allGuides.length > 0
-      ? Math.round(allGuides.reduce((sum, g) => sum + (g.offTargetSites.length > 0 ? 1 : 0), 0) / allGuides.length * 100) / 100
-      : 0,
+    avgOffTargetRisk:
+      allGuides.length > 0
+        ? Math.round(
+            (allGuides.reduce((sum, g) => sum + (g.offTargetSites.length > 0 ? 1 : 0), 0) / allGuides.length) * 100,
+          ) / 100
+        : 0,
     diversityScore:
       allGuides.length > 0
         ? Math.round((new Set(allGuides.map((g) => g.sequence)).size / allGuides.length) * 100) / 100
@@ -939,9 +949,7 @@ export async function runMultiplexCRISPR(input: MultiplexCRISPRInput): Promise<M
       `Off-target search: BLAST (E. coli K-12 genome) — ${totalBlastHits} off-target sites found across ${allGuides.length} guides`,
     );
   } else {
-    designNotes.push(
-      `Off-target search: proxy scoring (set BLAST_PYTHON_BACKEND env for real genome alignment)`,
-    );
+    designNotes.push(`Off-target search: proxy scoring (set BLAST_PYTHON_BACKEND env for real genome alignment)`);
   }
 
   if (guideWarnings.length > 0) {

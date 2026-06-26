@@ -1374,7 +1374,10 @@ function parseKEGGReaction(
    * Examples: "2 C00022", "C00001", "n C00002"
    */
   function parseSide(compounds: string, sign: number): void {
-    const parts = compounds.split("+").map((s) => s.trim()).filter(Boolean);
+    const parts = compounds
+      .split("+")
+      .map((s) => s.trim())
+      .filter(Boolean);
     for (const part of parts) {
       const match = part.match(/^(?:(\d+|n)\s+)?(C\d{5})$/);
       if (!match) continue;

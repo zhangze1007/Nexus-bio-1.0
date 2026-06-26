@@ -1,9 +1,4 @@
-import {
-	DeleteObjectCommand,
-	GetObjectCommand,
-	PutObjectCommand,
-	S3Client,
-} from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 /**
@@ -21,18 +16,18 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
  */
 
 function getS3Client(): S3Client {
-	return new S3Client({
-		region: "auto",
-		endpoint: process.env.R2_ENDPOINT,
-		credentials: {
-			accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-			secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-		},
-	});
+  return new S3Client({
+    region: "auto",
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+    },
+  });
 }
 
 function getBucket(): string {
-	return process.env.R2_BUCKET || "nexus-bio-files";
+  return process.env.R2_BUCKET || "nexus-bio-files";
 }
 
 /**
@@ -43,17 +38,13 @@ function getBucket(): string {
  * @param expiresIn   — URL validity in seconds (default: 3600 = 1 hour)
  * @returns Pre-signed PUT URL
  */
-export async function getUploadUrl(
-	key: string,
-	contentType: string,
-	expiresIn = 3600,
-): Promise<string> {
-	const command = new PutObjectCommand({
-		Bucket: getBucket(),
-		Key: key,
-		ContentType: contentType,
-	});
-	return getSignedUrl(getS3Client(), command, { expiresIn });
+export async function getUploadUrl(key: string, contentType: string, expiresIn = 3600): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: getBucket(),
+    Key: key,
+    ContentType: contentType,
+  });
+  return getSignedUrl(getS3Client(), command, { expiresIn });
 }
 
 /**
@@ -63,15 +54,12 @@ export async function getUploadUrl(
  * @param expiresIn — URL validity in seconds (default: 3600 = 1 hour)
  * @returns Pre-signed GET URL
  */
-export async function getDownloadUrl(
-	key: string,
-	expiresIn = 3600,
-): Promise<string> {
-	const command = new GetObjectCommand({
-		Bucket: getBucket(),
-		Key: key,
-	});
-	return getSignedUrl(getS3Client(), command, { expiresIn });
+export async function getDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: getBucket(),
+    Key: key,
+  });
+  return getSignedUrl(getS3Client(), command, { expiresIn });
 }
 
 /**
@@ -80,11 +68,11 @@ export async function getDownloadUrl(
  * @param key — Object key (path) in the bucket
  */
 export async function deleteFile(key: string): Promise<void> {
-	const command = new DeleteObjectCommand({
-		Bucket: getBucket(),
-		Key: key,
-	});
-	await getS3Client().send(command);
+  const command = new DeleteObjectCommand({
+    Bucket: getBucket(),
+    Key: key,
+  });
+  await getS3Client().send(command);
 }
 
 /**
@@ -97,12 +85,8 @@ export async function deleteFile(key: string): Promise<void> {
  * @param filename  — Original filename (will be sanitized)
  * @returns Object key for R2
  */
-export function buildFileKey(
-	projectId: string,
-	category: string,
-	filename: string,
-): string {
-	const timestamp = Date.now();
-	const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-	return `${projectId}/${category}/${timestamp}_${safeName}`;
+export function buildFileKey(projectId: string, category: string, filename: string): string {
+  const timestamp = Date.now();
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return `${projectId}/${category}/${timestamp}_${safeName}`;
 }

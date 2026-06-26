@@ -43,10 +43,9 @@ export interface RheaSearchResult {
  */
 export async function searchRhea(query: string): Promise<RheaSearchResult[]> {
   try {
-    const res = await fetch(
-      `${RHEA_API}/rhea/search?query=${encodeURIComponent(query)}&format=json`,
-      { signal: AbortSignal.timeout(10000) },
-    );
+    const res = await fetch(`${RHEA_API}/rhea/search?query=${encodeURIComponent(query)}&format=json`, {
+      signal: AbortSignal.timeout(10000),
+    });
     if (!res.ok) return [];
     const data = await res.json();
     if (!data.results) return [];
@@ -70,10 +69,9 @@ export async function getRheaReaction(rheaId: string): Promise<RheaReaction | nu
   try {
     // Normalize: accept both "RHEA:12345" and "12345"
     const normalizedId = rheaId.replace(/^RHEA:/i, "");
-    const res = await fetch(
-      `${RHEA_API}/rhea/${encodeURIComponent(normalizedId)}?format=json`,
-      { signal: AbortSignal.timeout(10000) },
-    );
+    const res = await fetch(`${RHEA_API}/rhea/${encodeURIComponent(normalizedId)}?format=json`, {
+      signal: AbortSignal.timeout(10000),
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return {
@@ -95,9 +93,5 @@ export async function getRheaReaction(rheaId: string): Promise<RheaReaction | nu
  * Uses fetchWithFallback pattern consistent with other database clients.
  */
 export async function searchRheaWithFallback(query: string): Promise<FallbackResult<RheaSearchResult[]>> {
-  return fetchWithFallback(
-    async () => searchRhea(query),
-    [],
-    "Rhea",
-  );
+  return fetchWithFallback(async () => searchRhea(query), [], "Rhea");
 }

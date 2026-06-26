@@ -1,10 +1,6 @@
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
 
-export async function withSpan<T>(
-  name: string,
-  fn: () => Promise<T>,
-  op = 'function'
-): Promise<T> {
+export async function withSpan<T>(name: string, fn: () => Promise<T>, op = "function"): Promise<T> {
   return Sentry.startSpan({ name, op }, async () => fn());
 }
 

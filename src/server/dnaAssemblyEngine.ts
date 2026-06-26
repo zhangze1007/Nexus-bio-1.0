@@ -154,7 +154,7 @@ export function designGibsonAssembly(input: GibsonAssemblyInput): AssemblyResult
       `Gibson Assembly: ${fragments.length} fragments → ${assembledSequence.length} bp construct`,
       `Overlap length: ${overlapLength} bp (target Tm: ${targetTm}°C)`,
       `Average overlap Tm: ${(junctions.reduce((s, j) => s + j.tm, 0) / junctions.length).toFixed(1)}°C`,
-      `Average overlap GC: ${(junctions.reduce((s, j) => s + j.gcContent, 0) / junctions.length * 100).toFixed(1)}%`,
+      `Average overlap GC: ${((junctions.reduce((s, j) => s + j.gcContent, 0) / junctions.length) * 100).toFixed(1)}%`,
       `Reference: Gibson et al. (2009) Nat Methods 6:343-345`,
       `Protocol: Incubate at 50°C for 15-60 min with Gibson Master Mix`,
     ],
@@ -271,13 +271,15 @@ export function designMoCloAssembly(input: MoCloInput): AssemblyResult {
 
   // Standard MoClo fusion sites (4 bp)
   const FUSION_SITES: Record<number, Record<number, string>> = {
-    1: { // Level 1 — transcriptional units
+    1: {
+      // Level 1 — transcriptional units
       0: "AATG", // {1} — promoter start
       1: "AGGT", // {2} — promoter/CDS junction
       2: "GCTT", // {3} — CDS/terminator junction
       3: "CGCT", // {4} — terminator end
     },
-    2: { // Level 2 — multi-gene
+    2: {
+      // Level 2 — multi-gene
       0: "AATG", // {1}
       1: "AGGT", // {2}
       2: "GCTT", // {3}
@@ -354,7 +356,7 @@ function computeTm(sequence: string): number {
     return 2 * (a + t) + 4 * (g + c);
   } else {
     // Salt-adjusted Tm for longer sequences
-    return 64.9 + 41 * (g + c - 16.4) / (a + t + g + c);
+    return 64.9 + (41 * (g + c - 16.4)) / (a + t + g + c);
   }
 }
 
@@ -415,13 +417,16 @@ function removeRestrictionSites(sequence: string, site: string): string {
   const after = sequence.substring(idx + site.length);
 
   // Simple substitution: change one base to break the recognition site
-  const mutated = site.split("").map((base, i) => {
-    if (i === Math.floor(site.length / 2)) {
-      // Change middle base
-      return base === "G" ? "A" : base === "C" ? "T" : base === "A" ? "G" : "C";
-    }
-    return base;
-  }).join("");
+  const mutated = site
+    .split("")
+    .map((base, i) => {
+      if (i === Math.floor(site.length / 2)) {
+        // Change middle base
+        return base === "G" ? "A" : base === "C" ? "T" : base === "A" ? "G" : "C";
+      }
+      return base;
+    })
+    .join("");
 
   return before + mutated + after;
 }

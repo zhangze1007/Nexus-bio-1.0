@@ -16,7 +16,7 @@ export interface ESM2Result {
   sequence: string;
   fallback?: boolean;
   /** Which backend produced the embeddings */
-  source?: 'esm2_python_backend' | 'esm_atlas' | 'local_atchley';
+  source?: "esm2_python_backend" | "esm_atlas" | "local_atchley";
   /** Embedding dimension (5 for Atchley, 320-1280 for ESM-2) */
   embeddingDim?: number;
 }
@@ -32,10 +32,7 @@ export interface ESM2Result {
  * @param sequence  Amino acid sequence (single-letter codes)
  * @param model     ESM-2 model variant (default: esm2_t6_8M_UR50D)
  */
-export async function getESM2Embeddings(
-  sequence: string,
-  model: string = 'esm2_t6_8M_UR50D',
-): Promise<ESM2Result> {
+export async function getESM2Embeddings(sequence: string, model: string = "esm2_t6_8M_UR50D"): Promise<ESM2Result> {
   const response = await fetch("/api/esm2", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -82,31 +79,30 @@ export function computeSequenceStructureCompatibility(
  */
 export function predictFunctionFromEmbeddings(embeddings: number[][]): { ecClass: string; confidence: number } {
   if (!embeddings || embeddings.length === 0) {
-    return { ecClass: 'unknown', confidence: 0 };
+    return { ecClass: "unknown", confidence: 0 };
   }
 
   // Mean absolute activation per residue (pooled across embedding dimension)
-  const meanEmb = embeddings.reduce(
-    (s, e) => s + e.reduce((a, b) => a + Math.abs(b), 0) / e.length,
-    0,
-  ) / embeddings.length;
+  const meanEmb =
+    embeddings.reduce((s, e) => s + e.reduce((a, b) => a + Math.abs(b), 0) / e.length, 0) / embeddings.length;
 
   // Variance across all embedding values — proxy for functional specificity
-  const variance = embeddings.reduce((s, e) => {
-    const m = e.reduce((a, b) => a + b, 0) / e.length;
-    return s + e.reduce((a, b) => a + (b - m) ** 2, 0) / e.length;
-  }, 0) / embeddings.length;
+  const variance =
+    embeddings.reduce((s, e) => {
+      const m = e.reduce((a, b) => a + b, 0) / e.length;
+      return s + e.reduce((a, b) => a + (b - m) ** 2, 0) / e.length;
+    }, 0) / embeddings.length;
 
   // Higher variance → more specialized function
   const confidence = Math.min(1, variance / 10);
 
   const ecClasses = [
-    'EC 1.-.-.- (oxidoreductase)',
-    'EC 2.-.-.- (transferase)',
-    'EC 3.-.-.- (hydrolase)',
-    'EC 4.-.-.- (lyase)',
-    'EC 5.-.-.- (isomerase)',
-    'EC 6.-.-.- (ligase)',
+    "EC 1.-.-.- (oxidoreductase)",
+    "EC 2.-.-.- (transferase)",
+    "EC 3.-.-.- (hydrolase)",
+    "EC 4.-.-.- (lyase)",
+    "EC 5.-.-.- (isomerase)",
+    "EC 6.-.-.- (ligase)",
   ];
   const idx = Math.floor((meanEmb * 100) % ecClasses.length);
 

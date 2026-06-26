@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Linear Sequence Viewer
@@ -12,11 +12,12 @@
  * - Virtualized rendering for sequences > 10K bp
  */
 
-import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
-import { THEME } from '../../theme';
-import type { SequenceData } from './types';
-import { getCharColor } from './colors';
-import { translateFrame } from './translation';
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { THEME } from "../../theme";
+import { getCharColor } from "./colors";
+import { translateFrame } from "./translation";
+import type { SequenceData } from "./types";
 
 interface LinearSequenceViewerProps {
   data: SequenceData;
@@ -53,11 +54,11 @@ export default function LinearSequenceViewer({
   const layout = LAYOUT[zoom];
   const totalRows = Math.ceil(data.length / layout.basesPerRow);
   const contentHeight = totalRows * layout.rowHeight;
-  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+  const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
 
   // Precompute translation for zoom >= 2
   const translation = useMemo(() => {
-    if (zoom < 2 || data.type === 'protein') return null;
+    if (zoom < 2 || data.type === "protein") return null;
     return translateFrame(data.sequence, 0);
   }, [data.sequence, data.type, zoom]);
 
@@ -71,7 +72,7 @@ export default function LinearSequenceViewer({
       }
       return null;
     },
-    [data.features]
+    [data.features],
   );
 
   // Resize observer
@@ -92,7 +93,7 @@ export default function LinearSequenceViewer({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const cw = containerWidth;
@@ -108,12 +109,9 @@ export default function LinearSequenceViewer({
     ctx.fillRect(0, 0, cw, ch);
 
     const firstVisibleRow = Math.floor(scrollTop / layout.rowHeight);
-    const lastVisibleRow = Math.min(
-      totalRows - 1,
-      Math.ceil((scrollTop + ch) / layout.rowHeight)
-    );
+    const lastVisibleRow = Math.min(totalRows - 1, Math.ceil((scrollTop + ch) / layout.rowHeight));
 
-    const seqType = data.type === 'rna' ? 'dna' : data.type;
+    const seqType = data.type === "rna" ? "dna" : data.type;
 
     for (let row = firstVisibleRow; row <= lastVisibleRow; row++) {
       const y = row * layout.rowHeight - scrollTop;
@@ -122,12 +120,12 @@ export default function LinearSequenceViewer({
       // Position number
       ctx.fillStyle = THEME.DIM;
       ctx.font = `${layout.fontSize - 2}px ${THEME.MONO}`;
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'top';
+      ctx.textAlign = "right";
+      ctx.textBaseline = "top";
       ctx.fillText(`${startPos + 1}`, layout.margin - 8, y + 2);
 
       // Separator line
-      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.strokeStyle = "rgba(255,255,255,0.04)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(layout.margin, y);
@@ -135,7 +133,7 @@ export default function LinearSequenceViewer({
       ctx.stroke();
 
       // Bases
-      ctx.textAlign = 'left';
+      ctx.textAlign = "left";
       ctx.font = `${layout.fontSize}px ${THEME.MONO}`;
 
       for (let col = 0; col < layout.basesPerRow; col++) {
@@ -156,7 +154,7 @@ export default function LinearSequenceViewer({
 
         // Selection highlight
         if (selectedRange && pos >= selectedRange.start && pos < selectedRange.end) {
-          ctx.fillStyle = 'rgba(175, 195, 214, 0.25)';
+          ctx.fillStyle = "rgba(175, 195, 214, 0.25)";
           ctx.fillRect(x - 1, y + 1, layout.charWidth, layout.rowHeight - 2);
         }
 
@@ -164,26 +162,26 @@ export default function LinearSequenceViewer({
         if (highlightFeatureId) {
           const hf = data.features.find((f) => f.id === highlightFeatureId);
           if (hf && pos >= hf.start && pos < hf.end) {
-            ctx.fillStyle = 'rgba(175, 195, 214, 0.3)';
+            ctx.fillStyle = "rgba(175, 195, 214, 0.3)";
             ctx.fillRect(x - 1, y + 1, layout.charWidth, layout.rowHeight - 2);
           }
         }
 
         // Base character
-        ctx.fillStyle = seqType === 'protein' ? getCharColor(base, 'protein') : getCharColor(base, 'dna');
+        ctx.fillStyle = seqType === "protein" ? getCharColor(base, "protein") : getCharColor(base, "dna");
         ctx.fillText(base, x, y + 3);
       }
 
       // Translation line (zoom >= 2, DNA only)
       if (translation && zoom >= 2) {
         ctx.font = `${layout.fontSize - 2}px ${THEME.MONO}`;
-        ctx.textAlign = 'left';
+        ctx.textAlign = "left";
         for (let col = 0; col < layout.basesPerRow; col++) {
           const pos = startPos + col;
           if (pos >= translation.length) break;
           const aa = translation[pos];
           const x = layout.margin + col * layout.charWidth;
-          ctx.fillStyle = aa === '*' ? THEME.CORAL : THEME.DIM;
+          ctx.fillStyle = aa === "*" ? THEME.CORAL : THEME.DIM;
           ctx.fillText(aa, x, y + layout.rowHeight - 16);
         }
       }
@@ -225,7 +223,7 @@ export default function LinearSequenceViewer({
       setScrollTop(target.scrollTop);
       onScrollChange?.(target.scrollLeft);
     },
-    [onScrollChange]
+    [onScrollChange],
   );
 
   // Mouse position to sequence position
@@ -242,7 +240,7 @@ export default function LinearSequenceViewer({
       const pos = row * layout.basesPerRow + col;
       return pos >= 0 && pos < data.length ? pos : null;
     },
-    [scrollTop, layout, data.length]
+    [scrollTop, layout, data.length],
   );
 
   // Click to select
@@ -254,7 +252,7 @@ export default function LinearSequenceViewer({
       setDragStart(pos);
       onSelectRange?.({ start: pos, end: pos + 1 });
     },
-    [posFromMouse, onSelectRange]
+    [posFromMouse, onSelectRange],
   );
 
   const handleMouseMove = useCallback(
@@ -266,7 +264,7 @@ export default function LinearSequenceViewer({
       const end = Math.max(dragStart, pos) + 1;
       onSelectRange?.({ start, end });
     },
-    [isDragging, dragStart, posFromMouse, onSelectRange]
+    [isDragging, dragStart, posFromMouse, onSelectRange],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -280,7 +278,7 @@ export default function LinearSequenceViewer({
       const shift = e.shiftKey;
 
       switch (e.key) {
-        case 'ArrowRight': {
+        case "ArrowRight": {
           e.preventDefault();
           const newStart = Math.min(currentStart + 1, data.length - 1);
           if (shift && selectedRange) {
@@ -290,17 +288,20 @@ export default function LinearSequenceViewer({
           }
           break;
         }
-        case 'ArrowLeft': {
+        case "ArrowLeft": {
           e.preventDefault();
           const newStart = Math.max(currentStart - 1, 0);
           if (shift && selectedRange) {
-            onSelectRange?.({ start: selectedRange.start, end: Math.max(selectedRange.end - 1, selectedRange.start + 1) });
+            onSelectRange?.({
+              start: selectedRange.start,
+              end: Math.max(selectedRange.end - 1, selectedRange.start + 1),
+            });
           } else {
             onSelectRange?.({ start: newStart, end: newStart + 1 });
           }
           break;
         }
-        case 'ArrowDown': {
+        case "ArrowDown": {
           e.preventDefault();
           const pos = Math.min(currentStart + layout.basesPerRow, data.length - 1);
           if (shift && selectedRange) {
@@ -310,7 +311,7 @@ export default function LinearSequenceViewer({
           }
           break;
         }
-        case 'ArrowUp': {
+        case "ArrowUp": {
           e.preventDefault();
           const pos = Math.max(currentStart - layout.basesPerRow, 0);
           if (shift && selectedRange) {
@@ -322,7 +323,7 @@ export default function LinearSequenceViewer({
         }
       }
     },
-    [selectedRange, onSelectRange, layout.basesPerRow, data.length]
+    [selectedRange, onSelectRange, layout.basesPerRow, data.length],
   );
 
   return (
@@ -336,20 +337,20 @@ export default function LinearSequenceViewer({
       onMouseLeave={handleMouseUp}
       onScroll={handleScroll}
       style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        overflow: 'auto',
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "auto",
         background: THEME.BG_CANVAS,
-        outline: 'none',
-        cursor: 'text',
+        outline: "none",
+        cursor: "text",
         fontFamily: THEME.MONO,
       }}
     >
       <canvas
         ref={canvasRef}
         style={{
-          display: 'block',
+          display: "block",
           width: layout.margin + layout.basesPerRow * layout.charWidth + 20,
           height: contentHeight,
         }}

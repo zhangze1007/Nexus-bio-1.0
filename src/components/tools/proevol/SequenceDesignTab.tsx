@@ -115,7 +115,8 @@ export default function SequenceDesignTab({ state }: { state: ProEvolState }) {
           style={{
             padding: "6px 12px",
             borderRadius: "var(--nb-radius-sm)",
-            background: !scanSequence || designLoading || esm2Loading ? "rgba(255,255,255,0.04)" : "rgba(191,220,205,0.14)",
+            background:
+              !scanSequence || designLoading || esm2Loading ? "rgba(255,255,255,0.04)" : "rgba(191,220,205,0.14)",
             border: `1px solid ${!scanSequence || designLoading || esm2Loading ? "rgba(255,255,255,0.08)" : "rgba(191,220,205,0.3)"}`,
             color: !scanSequence || designLoading || esm2Loading ? "rgba(255,255,255,0.35)" : PROEVOL_THEME.mint,
             fontFamily: THEME.MONO,

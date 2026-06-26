@@ -12,47 +12,90 @@
  */
 const CODON_TABLE: Record<string, string> = {
   // Phenylalanine
-  TTT: 'F', TTC: 'F',
+  TTT: "F",
+  TTC: "F",
   // Leucine
-  TTA: 'L', TTG: 'L', CTT: 'L', CTC: 'L', CTA: 'L', CTG: 'L',
+  TTA: "L",
+  TTG: "L",
+  CTT: "L",
+  CTC: "L",
+  CTA: "L",
+  CTG: "L",
   // Isoleucine
-  ATT: 'I', ATC: 'I', ATA: 'I',
+  ATT: "I",
+  ATC: "I",
+  ATA: "I",
   // Methionine (start)
-  ATG: 'M',
+  ATG: "M",
   // Valine
-  GTT: 'V', GTC: 'V', GTA: 'V', GTG: 'V',
+  GTT: "V",
+  GTC: "V",
+  GTA: "V",
+  GTG: "V",
   // Serine
-  TCT: 'S', TCC: 'S', TCA: 'S', TCG: 'S', AGT: 'S', AGC: 'S',
+  TCT: "S",
+  TCC: "S",
+  TCA: "S",
+  TCG: "S",
+  AGT: "S",
+  AGC: "S",
   // Proline
-  CCT: 'P', CCC: 'P', CCA: 'P', CCG: 'P',
+  CCT: "P",
+  CCC: "P",
+  CCA: "P",
+  CCG: "P",
   // Threonine
-  ACT: 'T', ACC: 'T', ACA: 'T', ACG: 'T',
+  ACT: "T",
+  ACC: "T",
+  ACA: "T",
+  ACG: "T",
   // Alanine
-  GCT: 'A', GCC: 'A', GCA: 'A', GCG: 'A',
+  GCT: "A",
+  GCC: "A",
+  GCA: "A",
+  GCG: "A",
   // Tyrosine
-  TAT: 'Y', TAC: 'Y',
+  TAT: "Y",
+  TAC: "Y",
   // Stop
-  TAA: '*', TAG: '*', TGA: '*',
+  TAA: "*",
+  TAG: "*",
+  TGA: "*",
   // Histidine
-  CAT: 'H', CAC: 'H',
+  CAT: "H",
+  CAC: "H",
   // Glutamine
-  CAA: 'Q', CAG: 'Q',
+  CAA: "Q",
+  CAG: "Q",
   // Asparagine
-  AAT: 'N', AAC: 'N',
+  AAT: "N",
+  AAC: "N",
   // Lysine
-  AAA: 'K', AAG: 'K',
+  AAA: "K",
+  AAG: "K",
   // Aspartate
-  GAT: 'D', GAC: 'D',
+  GAT: "D",
+  GAC: "D",
   // Glutamate
-  GAA: 'E', GAG: 'E',
+  GAA: "E",
+  GAG: "E",
   // Cysteine
-  TGT: 'C', TGC: 'C',
+  TGT: "C",
+  TGC: "C",
   // Tryptophan
-  TGG: 'W',
+  TGG: "W",
   // Arginine
-  CGT: 'R', CGC: 'R', CGA: 'R', CGG: 'R', AGA: 'R', AGG: 'R',
+  CGT: "R",
+  CGC: "R",
+  CGA: "R",
+  CGG: "R",
+  AGA: "R",
+  AGG: "R",
   // Glycine
-  GGT: 'G', GGC: 'G', GGA: 'G', GGG: 'G',
+  GGT: "G",
+  GGC: "G",
+  GGA: "G",
+  GGG: "G",
 };
 
 /**
@@ -61,20 +104,20 @@ const CODON_TABLE: Record<string, string> = {
  */
 export function translateCodon(codon: string): string {
   const upper = codon.toUpperCase();
-  if (upper.length !== 3) return '?';
-  return CODON_TABLE[upper] ?? '?';
+  if (upper.length !== 3) return "?";
+  return CODON_TABLE[upper] ?? "?";
 }
 
 /**
  * Compute the reverse complement of a DNA string.
  */
 function revComp(seq: string): string {
-  const comp: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C' };
+  const comp: Record<string, string> = { A: "T", T: "A", C: "G", G: "C" };
   return seq
-    .split('')
+    .split("")
     .reverse()
     .map((b) => comp[b] ?? b)
-    .join('');
+    .join("");
 }
 
 /**
@@ -91,21 +134,21 @@ function revComp(seq: string): string {
  * Incomplete trailing codons (1-2 leftover bases) are silently dropped.
  */
 export function translateFrame(sequence: string, frame: 0 | 1 | 2 | -1 | -2 | -3): string {
-  if (!sequence) return '';
+  if (!sequence) return "";
 
   const upper = sequence.toUpperCase();
   const seq = frame < 0 ? revComp(upper) : upper;
   const offset = Math.abs(frame) - (frame < 0 ? 1 : 0);
   // For positive frames: offset = frame (0,1,2)
   // For negative frames: offset = |frame|-1 (0,1,2) since frame -1 => offset 0, -2 => 1, -3 => 2
-  const actualOffset = frame >= 0 ? frame : (Math.abs(frame) - 1);
+  const actualOffset = frame >= 0 ? frame : Math.abs(frame) - 1;
 
   const result: string[] = [];
   for (let i = actualOffset; i + 2 < seq.length; i += 3) {
     const codon = seq.substring(i, i + 3);
     result.push(translateCodon(codon));
   }
-  return result.join('');
+  return result.join("");
 }
 
 /**
@@ -113,15 +156,13 @@ export function translateFrame(sequence: string, frame: 0 | 1 | 2 | -1 | -2 | -3
  *
  * Returns an object with keys '+1', '+2', '+3', '-1', '-2', '-3'.
  */
-export function sixFrameTranslation(
-  sequence: string
-): Record<string, string> {
+export function sixFrameTranslation(sequence: string): Record<string, string> {
   return {
-    '+1': translateFrame(sequence, 0),
-    '+2': translateFrame(sequence, 1),
-    '+3': translateFrame(sequence, 2),
-    '-1': translateFrame(sequence, -1),
-    '-2': translateFrame(sequence, -2),
-    '-3': translateFrame(sequence, -3),
+    "+1": translateFrame(sequence, 0),
+    "+2": translateFrame(sequence, 1),
+    "+3": translateFrame(sequence, 2),
+    "-1": translateFrame(sequence, -1),
+    "-2": translateFrame(sequence, -2),
+    "-3": translateFrame(sequence, -3),
   };
 }

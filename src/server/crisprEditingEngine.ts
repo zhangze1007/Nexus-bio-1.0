@@ -125,35 +125,96 @@ export interface PASTEDesign {
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const CODON_TABLE: Record<string, string> = {
-  TTT: "F", TTC: "F", TTA: "L", TTG: "L", CTT: "L", CTC: "L", CTA: "L", CTG: "L",
-  ATT: "I", ATC: "I", ATA: "I", ATG: "M", GTT: "V", GTC: "V", GTA: "V", GTG: "V",
-  TCT: "S", TCC: "S", TCA: "S", TCG: "S", CCT: "P", CCC: "P", CCA: "P", CCG: "P",
-  ACT: "T", ACC: "T", ACA: "T", ACG: "T", GCT: "A", GCC: "A", GCA: "A", GCG: "A",
-  TAT: "Y", TAC: "Y", TAA: "*", TAG: "*", CAT: "H", CAC: "H", CAA: "Q", CAG: "Q",
-  AAT: "N", AAC: "N", AAA: "K", AAG: "K", GAT: "D", GAC: "D", GAA: "E", GAG: "E",
-  TGT: "C", TGC: "C", TGA: "*", TGG: "W", CGT: "R", CGC: "R", CGA: "R", CGG: "R",
-  AGT: "S", AGC: "S", AGA: "R", AGG: "R", GGT: "G", GGC: "G", GGA: "G", GGG: "G",
+  TTT: "F",
+  TTC: "F",
+  TTA: "L",
+  TTG: "L",
+  CTT: "L",
+  CTC: "L",
+  CTA: "L",
+  CTG: "L",
+  ATT: "I",
+  ATC: "I",
+  ATA: "I",
+  ATG: "M",
+  GTT: "V",
+  GTC: "V",
+  GTA: "V",
+  GTG: "V",
+  TCT: "S",
+  TCC: "S",
+  TCA: "S",
+  TCG: "S",
+  CCT: "P",
+  CCC: "P",
+  CCA: "P",
+  CCG: "P",
+  ACT: "T",
+  ACC: "T",
+  ACA: "T",
+  ACG: "T",
+  GCT: "A",
+  GCC: "A",
+  GCA: "A",
+  GCG: "A",
+  TAT: "Y",
+  TAC: "Y",
+  TAA: "*",
+  TAG: "*",
+  CAT: "H",
+  CAC: "H",
+  CAA: "Q",
+  CAG: "Q",
+  AAT: "N",
+  AAC: "N",
+  AAA: "K",
+  AAG: "K",
+  GAT: "D",
+  GAC: "D",
+  GAA: "E",
+  GAG: "E",
+  TGT: "C",
+  TGC: "C",
+  TGA: "*",
+  TGG: "W",
+  CGT: "R",
+  CGC: "R",
+  CGA: "R",
+  CGG: "R",
+  AGT: "S",
+  AGC: "S",
+  AGA: "R",
+  AGG: "R",
+  GGT: "G",
+  GGC: "G",
+  GGA: "G",
+  GGG: "G",
 };
 
 // Safe harbor loci in common model organisms
 const SAFE_HARBORS: Record<string, { locus: string; sequence: string; organism: string }[]> = {
   human: [
-    { locus: "AAVS1", sequence: "GGGGCCACTAGGGACAGGATCGGGGCCACAGGGGCCCCGCGGCCCGGGCCCGCCGTGCCACTA", organism: "Homo sapiens" },
+    {
+      locus: "AAVS1",
+      sequence: "GGGGCCACTAGGGACAGGATCGGGGCCACAGGGGCCCCGCGGCCCGGGCCCGCCGTGCCACTA",
+      organism: "Homo sapiens",
+    },
     { locus: "Rosa26", sequence: "GAGATGGGCGGGAGTCTTGTGGCCCCTCCTCTGGACCCCAGGCTCCTGTCC", organism: "Homo sapiens" },
   ],
   mouse: [
     { locus: "Rosa26", sequence: "GAGATGGGCGGGAGTCTTGTGGCCCCTCCTCTGGACCCCAGGCTCCTGTCC", organism: "Mus musculus" },
     { locus: "Hipp11", sequence: "GATGGGCGGGAGTCTTGTGGCCCCTCCTCTGGACCCCAGG", organism: "Mus musculus" },
   ],
-  ecoli: [
-    { locus: "attTn7", sequence: "CGGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTT", organism: "E. coli" },
-  ],
+  ecoli: [{ locus: "attTn7", sequence: "CGGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTT", organism: "E. coli" }],
 };
 
 // Serine integrase attachment sites
 const INTEGRASE_SITES: Record<string, { attB: string; attP: string }> = {
   Bxb1: { attB: "TCAATTTCTTGTCTACCTAGGCTA", attP: "TCAATTTCTTGTCTACCTAGGCTA" },
-  phiC31: { attB: "GCGGTCTCGGTCGTTGCGGACCGTGCGGGTGCCAGGGCGTGCCCTTGGGCTCCCCGGGCGCGTACTCCAC", attP: "GCGGTCTCGGTCGTTGCGGACCGTGCGGGTGCCAGGGCGTGCCCTTGGGCTCCCCGGGCGCGTACTCCAC" },
+  phiC31: {
+    attB: "GCGGTCTCGGTCGTTGCGGACCGTGCGGGTGCCAGGGCGTGCCCTTGGGCTCCCCGGGCGCGTACTCCAC",
+    attP: "GCGGTCTCGGTCGTTGCGGACCGTGCGGGTGCCAGGGCGTGCCCTTGGGCTCCCCGGGCGCGTACTCCAC",
+  },
   PhiBT1: { attB: "TCAATTTCTTGTCTACCTAGGCTA", attP: "TCAATTTCTTGTCTACCTAGGCTA" },
 };
 
@@ -211,7 +272,8 @@ export function designPrimeEdit(
   if (editType === "substitution") {
     const codonStart = Math.floor(editPosition / 3) * 3;
     originalCodon = seq.substring(codonStart, codonStart + 3);
-    editedCodon = originalCodon.substring(0, editPosition - codonStart) +
+    editedCodon =
+      originalCodon.substring(0, editPosition - codonStart) +
       newBases.charAt(0) +
       originalCodon.substring(editPosition - codonStart + 1);
     const originalAA = CODON_TABLE[originalCodon] || "?";
@@ -226,7 +288,9 @@ export function designPrimeEdit(
   } else {
     // deletion
     const delLength = newBases.length || 3;
-    rtt = seq.substring(editPosition, editPosition + 5) + seq.substring(editPosition + delLength, editPosition + delLength + 8);
+    rtt =
+      seq.substring(editPosition, editPosition + 5) +
+      seq.substring(editPosition + delLength, editPosition + delLength + 8);
     aaChange = `del:${delLength}bp`;
     editedCodon = "";
     originalCodon = seq.substring(editPosition, editPosition + delLength);
@@ -239,10 +303,11 @@ export function designPrimeEdit(
   // Efficiency estimation (heuristic based on PBS/RTT length and GC content)
   const pbsGC = (pbs.match(/[GC]/g) || []).length / pbs.length;
   const rttGC = (rtt.match(/[GC]/g) || []).length / Math.max(1, rtt.length);
-  const baseEfficiency = peVersion === "PEmax" ? 0.65 : peVersion === "PE3" ? 0.45 : 0.30;
-  const efficiency = Math.min(0.9, Math.max(0.05,
-    baseEfficiency + 0.1 * (1 - Math.abs(pbsGC - 0.5)) - 0.05 * Math.abs(rttGC - 0.5)
-  ));
+  const baseEfficiency = peVersion === "PEmax" ? 0.65 : peVersion === "PE3" ? 0.45 : 0.3;
+  const efficiency = Math.min(
+    0.9,
+    Math.max(0.05, baseEfficiency + 0.1 * (1 - Math.abs(pbsGC - 0.5)) - 0.05 * Math.abs(rttGC - 0.5)),
+  );
 
   // Indel frequency (PE3 has lower indels than PE2)
   const indelFrequency = peVersion === "PE3" ? 0.02 : peVersion === "PEmax" ? 0.01 : 0.05;
@@ -325,8 +390,8 @@ export function designBaseEdit(
   const targetPosition = editPosition - spacerStart;
 
   // Efficiency estimation
-  const baseEfficiency = editorType === "ABE8e" ? 0.55 : editorType === "CGBE" ? 0.35 : 0.50;
-  const windowBonus = (targetPosition >= editingWindow.start && targetPosition <= editingWindow.end) ? 0.2 : -0.3;
+  const baseEfficiency = editorType === "ABE8e" ? 0.55 : editorType === "CGBE" ? 0.35 : 0.5;
+  const windowBonus = targetPosition >= editingWindow.start && targetPosition <= editingWindow.end ? 0.2 : -0.3;
   const efficiency = Math.min(0.9, Math.max(0.02, baseEfficiency + windowBonus));
 
   // Bystander editing analysis (other editable bases in the window)

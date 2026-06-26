@@ -1,6 +1,6 @@
-'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { io, type Socket } from "socket.io-client";
 
 /** User info broadcast from the server */
 export interface SocketUser {
@@ -35,7 +35,7 @@ export interface UseSocketReturn {
   /** Users currently in the same project room */
   users: SocketUser[];
   /** Send a cursor position update */
-  sendCursorMove: (data: Omit<CursorPayload, 'projectId'>) => void;
+  sendCursorMove: (data: Omit<CursorPayload, "projectId">) => void;
   /** Send a chat message */
   sendChatMessage: (message: string, userId: string, userName: string) => void;
 }
@@ -58,39 +58,39 @@ export function useSocket(projectId: string | null): UseSocketReturn {
     if (!projectId) return;
 
     const socket = io({
-      path: '/api/ws',
-      transports: ['websocket', 'polling'],
+      path: "/api/ws",
+      transports: ["websocket", "polling"],
     });
 
-    socket.on('connect', () => {
+    socket.on("connect", () => {
       setConnected(true);
-      socket.emit('join:project', {
+      socket.emit("join:project", {
         projectId,
-        userId: 'current-user', // TODO: replace with real auth session
-        userName: 'Current User',
+        userId: "current-user", // TODO: replace with real auth session
+        userName: "Current User",
       });
     });
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       setConnected(false);
     });
 
-    socket.on('users:list', (list: SocketUser[]) => {
+    socket.on("users:list", (list: SocketUser[]) => {
       setUsers(list);
     });
 
-    socket.on('user:joined', (user: SocketUser) => {
+    socket.on("user:joined", (user: SocketUser) => {
       setUsers((prev) => [...prev, user]);
     });
 
-    socket.on('user:left', ({ userId }: { userId: string }) => {
+    socket.on("user:left", ({ userId }: { userId: string }) => {
       setUsers((prev) => prev.filter((u) => u.userId !== userId));
     });
 
     socketRef.current = socket;
 
     return () => {
-      socket.emit('leave:project', { projectId });
+      socket.emit("leave:project", { projectId });
       socket.disconnect();
       socketRef.current = null;
       setConnected(false);
@@ -99,9 +99,9 @@ export function useSocket(projectId: string | null): UseSocketReturn {
   }, [projectId]);
 
   const sendCursorMove = useCallback(
-    (data: Omit<CursorPayload, 'projectId'>) => {
+    (data: Omit<CursorPayload, "projectId">) => {
       if (!socketRef.current || !projectId) return;
-      socketRef.current.emit('cursor:move', { ...data, projectId });
+      socketRef.current.emit("cursor:move", { ...data, projectId });
     },
     [projectId],
   );
@@ -109,7 +109,7 @@ export function useSocket(projectId: string | null): UseSocketReturn {
   const sendChatMessage = useCallback(
     (message: string, userId: string, userName: string) => {
       if (!socketRef.current || !projectId) return;
-      socketRef.current.emit('chat:message', {
+      socketRef.current.emit("chat:message", {
         projectId,
         userId,
         userName,

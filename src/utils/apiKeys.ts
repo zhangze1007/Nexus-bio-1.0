@@ -1,6 +1,6 @@
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes } from "crypto";
 
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
 
 /**
  * Generate a URL-safe random string of the given length using crypto.randomBytes.
@@ -8,7 +8,7 @@ const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
  */
 function randomString(length: number): string {
   const bytes = randomBytes(length);
-  let result = '';
+  let result = "";
   for (let i = 0; i < length; i++) {
     result += ALPHABET[bytes[i] % ALPHABET.length];
   }
@@ -26,7 +26,7 @@ function randomString(length: number): string {
 export function generateApiKey(): { key: string; hash: string; prefix: string } {
   const randomPart = randomString(32);
   const key = `nxb_${randomPart}`;
-  const hash = createHash('sha256').update(key).digest('hex');
+  const hash = createHash("sha256").update(key).digest("hex");
   const prefix = key.slice(0, 11); // nxb_ + 7 chars
   return { key, hash, prefix };
 }
@@ -35,5 +35,5 @@ export function generateApiKey(): { key: string; hash: string; prefix: string } 
  * Hash an API key with SHA-256. Deterministic — same input always produces same output.
  */
 export function hashApiKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex');
+  return createHash("sha256").update(key).digest("hex");
 }

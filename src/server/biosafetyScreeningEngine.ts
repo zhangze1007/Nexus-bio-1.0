@@ -90,7 +90,8 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
     name: "Bacillus anthracis protective antigen",
     category: "select_agent",
     organism: "Bacillus anthracis",
-    sequenceFragment: "MKKRKVLAAMLALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIKNINMNIKNINDNINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
+    sequenceFragment:
+      "MKKRKVLAAMLALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIKNINMNIKNINDNINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
     regulation: "42 CFR Part 73 — HHS Select Agents",
     description: "Anthrax protective antigen (PA) — component of anthrax toxin",
   },
@@ -99,7 +100,8 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
     name: "Yersinia pestis F1 capsular antigen",
     category: "select_agent",
     organism: "Yersinia pestis",
-    sequenceFragment: "MKKKLLAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIKNINMNIKNINDNINNLFG",
+    sequenceFragment:
+      "MKKKLLAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIKNINMNIKNINDNINNLFG",
     regulation: "42 CFR Part 73 — HHS Select Agents",
     description: "Plague F1 capsular antigen",
   },
@@ -108,7 +110,8 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
     name: "Variola major envelope protein",
     category: "select_agent",
     organism: "Variola major",
-    sequenceFragment: "MKKVLAAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
+    sequenceFragment:
+      "MKKVLAAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
     regulation: "42 CFR Part 73 — HHS Select Agents",
     description: "Smallpox virus envelope protein",
   },
@@ -118,7 +121,8 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
     name: "Botulinum neurotoxin",
     category: "toxin",
     organism: "Clostridium botulinum",
-    sequenceFragment: "MPFVNKQFNYKDPVNGVDIAYIKIPNAGQMQPVKAFKIHNKIYVPTINLVNKPGRISKHNIDRLIVDEYINENFNINNNIQDIKNFINDTLNIKNINMNIKNINDNINNLFG",
+    sequenceFragment:
+      "MPFVNKQFNYKDPVNGVDIAYIKIPNAGQMQPVKAFKIHNKIYVPTINLVNKPGRISKHNIDRLIVDEYINENFNINNNIQDIKNFINDTLNIKNINMNIKNINDNINNLFG",
     regulation: "Select Agent Toxin — 42 CFR Part 73",
     description: "Botulinum toxin — most potent known biological toxin",
   },
@@ -127,7 +131,8 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
     name: "Ricin",
     category: "toxin",
     organism: "Ricinus communis",
-    sequenceFragment: "MKKLLFAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
+    sequenceFragment:
+      "MKKLLFAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
     regulation: "Select Agent Toxin — 42 CFR Part 73",
     description: "Ricin toxin — derived from castor beans",
   },
@@ -136,7 +141,8 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
     name: "Shiga toxin",
     category: "toxin",
     organism: "Shigella dysenteriae",
-    sequenceFragment: "MKKTLALAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
+    sequenceFragment:
+      "MKKTLALAALAVLFFTMASSSSEAASTKGPSLGLKDDTKRIKTENSSRINIKLGELQKNIKNLEKIKNDINNIKDDINNLFGKLNIKLNIDGINNNIQDIKNFINDTLNIK",
     regulation: "Select Agent Toxin — 42 CFR Part 73",
     description: "Shiga toxin — causes dysentery",
   },
@@ -146,7 +152,8 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
     name: "H5N1 hemagglutinin (gain-of-function)",
     category: "enhanced_pathogen",
     organism: "Influenza A H5N1",
-    sequenceFragment: "MEKIVLLFAIVSLVKSDQICIGYHANNSTEQVDTIMEKNVTVTHAQDILEKTHNGKLCDLNGVKPLILRDCSVAGWLLGNPMCDEFINVPEWSYIVEKINPANDLCYPGNFNDYEELKHLLSRINHFEKIQIIPKSSWSDHEASSGVSSACPYQGRSSFFRNVVWLIKKDNAYPTIKRSYNNTNQEDLLILWGIHHPNDAAEQTKLYQNPTTYISVGTSTLNQRLVPKIATRSQVNGQRGRMDFFWTILKPNDAINFESNGNFIAPEYAYKIVKKGDSTIMKSELEYGNCNTKCQTPMGAINSSMPFHNIHPLTIGECPKYVKSNRLVLATGLRNSPQRERRRKKRGLFGAIAGFIEGGWQGMVDGWYGYHHSNEQGSGYAADKESTQKAIDGVTNKVNSIIDKMNTQFEAVGREFNNLERRIENLNKKMEDGFLDVWTYNAELLVLMENERTLDFHDSNVKNLYDKVRLQLRDNAKELGNGCFEFYHKCDNTCMESVKNGTYDYPKYSEEAKLNREEIDGVKLESTRIYQILAIYSTVASSLVLVVSLGAISFWMCSNGSLQCRICI",
+    sequenceFragment:
+      "MEKIVLLFAIVSLVKSDQICIGYHANNSTEQVDTIMEKNVTVTHAQDILEKTHNGKLCDLNGVKPLILRDCSVAGWLLGNPMCDEFINVPEWSYIVEKINPANDLCYPGNFNDYEELKHLLSRINHFEKIQIIPKSSWSDHEASSGVSSACPYQGRSSFFRNVVWLIKKDNAYPTIKRSYNNTNQEDLLILWGIHHPNDAAEQTKLYQNPTTYISVGTSTLNQRLVPKIATRSQVNGQRGRMDFFWTILKPNDAINFESNGNFIAPEYAYKIVKKGDSTIMKSELEYGNCNTKCQTPMGAINSSMPFHNIHPLTIGECPKYVKSNRLVLATGLRNSPQRERRRKKRGLFGAIAGFIEGGWQGMVDGWYGYHHSNEQGSGYAADKESTQKAIDGVTNKVNSIIDKMNTQFEAVGREFNNLERRIENLNKKMEDGFLDVWTYNAELLVLMENERTLDFHDSNVKNLYDKVRLQLRDNAKELGNGCFEFYHKCDNTCMESVKNGTYDYPKYSEEAKLNREEIDGVKLESTRIYQILAIYSTVASSLVLVVSLGAISFWMCSNGSLQCRICI",
     regulation: "NIH Guidelines — Enhanced Potential Pandemic Pathogen",
     description: "H5N1 hemagglutinin with gain-of-function mutations",
   },
@@ -161,10 +168,7 @@ const SEQUENCES_OF_CONCERN: SequenceOfConcern[] = [
  * @param mode       Whether the sequence is DNA or protein
  * @returns Comprehensive biosafety screening result
  */
-export function screenSequence(
-  sequence: string,
-  mode: "dna" | "protein" = "dna",
-): BiosafetyScreeningResult {
+export function screenSequence(sequence: string, mode: "dna" | "protein" = "dna"): BiosafetyScreeningResult {
   const startTime = Date.now();
   const cleanSeq = sequence.toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, "");
 
@@ -176,9 +180,7 @@ export function screenSequence(
 
     if (similarity > 0.3) {
       const riskLevel: RiskLevel =
-        similarity > 0.8 ? "critical" :
-        similarity > 0.6 ? "high" :
-        similarity > 0.4 ? "moderate" : "low";
+        similarity > 0.8 ? "critical" : similarity > 0.6 ? "high" : similarity > 0.4 ? "moderate" : "low";
 
       findings.push({
         category: soc.category,
@@ -199,10 +201,15 @@ export function screenSequence(
   // Compute overall risk
   const riskScore = computeRiskScore(findings);
   const overallRisk: RiskLevel =
-    riskScore >= 80 ? "critical" :
-    riskScore >= 60 ? "high" :
-    riskScore >= 40 ? "moderate" :
-    riskScore >= 20 ? "low" : "none";
+    riskScore >= 80
+      ? "critical"
+      : riskScore >= 60
+        ? "high"
+        : riskScore >= 40
+          ? "moderate"
+          : riskScore >= 20
+            ? "low"
+            : "none";
 
   // Determine synthesis approval
   const synthesisApproved = overallRisk !== "critical" && overallRisk !== "high";
@@ -381,7 +388,9 @@ function generateRecommendations(findings: BiosafetyFinding[], overallRisk: Risk
   const recommendations: string[] = [];
 
   if (overallRisk === "critical") {
-    recommendations.push("BLOCK: This sequence must not be synthesized without institutional biosafety committee (IBC) review.");
+    recommendations.push(
+      "BLOCK: This sequence must not be synthesized without institutional biosafety committee (IBC) review.",
+    );
     recommendations.push("Contact your institutional biosafety officer immediately.");
   }
 
@@ -391,7 +400,9 @@ function generateRecommendations(findings: BiosafetyFinding[], overallRisk: Risk
   }
 
   if (findings.some((f) => f.category === "select_agent")) {
-    recommendations.push("Sequence matches a Select Agent. Verify compliance with 42 CFR Part 73 (HHS) or 9 CFR Part 121 (USDA).");
+    recommendations.push(
+      "Sequence matches a Select Agent. Verify compliance with 42 CFR Part 73 (HHS) or 9 CFR Part 121 (USDA).",
+    );
   }
 
   if (findings.some((f) => f.category === "toxin")) {
@@ -399,7 +410,9 @@ function generateRecommendations(findings: BiosafetyFinding[], overallRisk: Risk
   }
 
   if (findings.some((f) => f.category === "enhanced_pathogen")) {
-    recommendations.push("Sequence may relate to an enhanced pandemic potential pathogen. Review NIH Guidelines Section III-E.");
+    recommendations.push(
+      "Sequence may relate to an enhanced pandemic potential pathogen. Review NIH Guidelines Section III-E.",
+    );
   }
 
   if (findings.some((f) => f.category === "dual_use")) {
