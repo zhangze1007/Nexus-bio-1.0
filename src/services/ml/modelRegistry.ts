@@ -7,44 +7,44 @@
  * exist and how to invoke them.
  */
 
-import type { ModelMetadata } from './types';
+import type { ModelMetadata } from "./types";
 
 const MODELS: ModelMetadata[] = [
   {
-    id: 'yield-predictor-v1',
-    name: 'Yield Predictor',
-    version: '1.0.0',
-    description: 'Predicts metabolic yield from pathway features',
+    id: "yield-predictor-v1",
+    name: "Yield Predictor",
+    version: "1.0.0",
+    description: "Predicts metabolic yield from pathway features",
     inputSchema: {
-      pathway_length: { type: 'number' },
-      num_heterologous: { type: 'number' },
-      thermodynamic_feasibility: { type: 'number' },
-      carbon_efficiency: { type: 'number' },
+      pathway_length: { type: "number" },
+      num_heterologous: { type: "number" },
+      thermodynamic_feasibility: { type: "number" },
+      carbon_efficiency: { type: "number" },
     },
     outputSchema: {
-      predicted_yield: { type: 'number' },
+      predicted_yield: { type: "number" },
     },
-    framework: 'onnx',
-    filePath: '/models/yield-predictor-v1.onnx',
-    createdAt: '2026-06-25',
+    framework: "onnx",
+    filePath: "/models/yield-predictor-v1.onnx",
+    createdAt: "2026-06-25",
   },
   {
-    id: 'enzyme-activity-v1',
-    name: 'Enzyme Activity Predictor',
-    version: '1.0.0',
-    description: 'Predicts enzyme kcat from sequence features',
+    id: "enzyme-activity-v1",
+    name: "Enzyme Activity Predictor",
+    version: "1.0.0",
+    description: "Predicts enzyme kcat from sequence features",
     inputSchema: {
-      sequence_length: { type: 'number' },
-      molecular_weight: { type: 'number' },
-      isoelectric_point: { type: 'number' },
-      gravy: { type: 'number' },
+      sequence_length: { type: "number" },
+      molecular_weight: { type: "number" },
+      isoelectric_point: { type: "number" },
+      gravy: { type: "number" },
     },
     outputSchema: {
-      log_kcat: { type: 'number' },
+      log_kcat: { type: "number" },
     },
-    framework: 'onnx',
-    filePath: '/models/enzyme-activity-v1.onnx',
-    createdAt: '2026-06-25',
+    framework: "onnx",
+    filePath: "/models/enzyme-activity-v1.onnx",
+    createdAt: "2026-06-25",
   },
 ];
 
@@ -53,7 +53,7 @@ const MODELS: ModelMetadata[] = [
  * Returns `undefined` if no model matches.
  */
 export function getModel(id: string): ModelMetadata | undefined {
-  return MODELS.find(m => m.id === id);
+  return MODELS.find((m) => m.id === id);
 }
 
 /**

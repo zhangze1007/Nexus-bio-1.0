@@ -81,6 +81,10 @@ jest.mock("otplib", () => {
       const expected = computeTOTP(secret);
       return { valid: token === expected, delta: 0 };
     },
+    verifySync: ({ secret, token, epochTolerance }: { secret: string; token: string; epochTolerance?: number }) => {
+      const expected = computeTOTP(secret);
+      return { valid: token === expected, delta: 0 };
+    },
   };
 });
 
@@ -156,7 +160,7 @@ describe("verifyToken", () => {
 
   it("returns true for a valid token computed from the same secret", () => {
     const { secret } = generateMfaSecret("user-1", "test@example.com");
-    // The mock verify compares against the standard TOTP algorithm
+    // The mock verifySync compares against the standard TOTP algorithm
     // We need to compute the expected token the same way
     const { createHmac } = require("node:crypto");
 

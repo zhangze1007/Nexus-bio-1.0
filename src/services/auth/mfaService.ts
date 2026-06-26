@@ -9,7 +9,7 @@
  */
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { generateSecret, generateURI, verify } from "otplib";
+import { generateSecret, generateURI, verifySync } from "otplib";
 
 const ISSUER = "Nexus-Bio";
 const BACKUP_CODE_COUNT = 8;
@@ -66,7 +66,7 @@ export function generateMfaSecret(userId: string, email: string): {
  */
 export function verifyToken(secret: string, token: string): boolean {
   try {
-    const result = verify({ secret, token });
+    const result = verifySync({ secret, token, epochTolerance: 1 });
     return result.valid === true;
   } catch {
     return false;

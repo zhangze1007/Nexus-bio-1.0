@@ -10,10 +10,10 @@ export interface ModelMetadata {
   name: string;
   version: string;
   description: string;
-  inputSchema: Record<string, { type: 'number' | 'string' | 'number[]'; shape?: number[] }>;
-  outputSchema: Record<string, { type: 'number' | 'number[]'; shape?: number[] }>;
+  inputSchema: Record<string, { type: "number" | "string" | "number[]"; shape?: number[] }>;
+  outputSchema: Record<string, { type: "number" | "number[]"; shape?: number[] }>;
   metrics?: Record<string, number>; // r2, rmse, etc.
-  framework: 'onnx';
+  framework: "onnx";
   filePath: string; // path to .onnx file
   createdAt: string;
 }

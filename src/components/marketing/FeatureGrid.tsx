@@ -177,10 +177,7 @@ function ToolCardComponent({ tool, index }: { tool: ToolCard; index: number }) {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3
-                className="text-sm font-semibold truncate"
-                style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}
-              >
+              <h3 className="text-sm font-semibold truncate" style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}>
                 {tool.name}
               </h3>
               <span
@@ -195,10 +192,7 @@ function ToolCardComponent({ tool, index }: { tool: ToolCard; index: number }) {
                 {cat?.label}
               </span>
             </div>
-            <p
-              className="text-xs leading-relaxed"
-              style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-            >
+            <p className="text-xs leading-relaxed" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
               {tool.description}
             </p>
           </div>
@@ -234,16 +228,10 @@ export default function FeatureGrid() {
           >
             Platform
           </span>
-          <h2
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-          >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
             14 Integrated Tools, One Platform
           </h2>
-          <p
-            className="text-base max-w-xl mx-auto"
-            style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-          >
+          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
             Every stage of the synthetic biology research cycle — from pathway discovery to validated designs.
           </p>
         </motion.div>
@@ -257,19 +245,12 @@ export default function FeatureGrid() {
                 className="text-xs font-semibold uppercase tracking-wider mb-4 flex items-center gap-2"
                 style={{ fontFamily: THEME.MONO, color: cat.color }}
               >
-                <span
-                  className="w-3 h-px"
-                  style={{ backgroundColor: cat.color, opacity: 0.4 }}
-                />
+                <span className="w-3 h-px" style={{ backgroundColor: cat.color, opacity: 0.4 }} />
                 {cat.label}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {catTools.map((tool, i) => (
-                  <ToolCardComponent
-                    key={tool.slug}
-                    tool={tool}
-                    index={TOOLS.indexOf(tool)}
-                  />
+                  <ToolCardComponent key={tool.slug} tool={tool} index={TOOLS.indexOf(tool)} />
                 ))}
               </div>
             </div>

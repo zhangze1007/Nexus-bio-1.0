@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import posthog from 'posthog-js';
-import { PostHogProvider as Provider } from 'posthog-js/react';
+import { useEffect, useState } from "react";
+import posthog from "posthog-js";
+import { PostHogProvider as Provider } from "posthog-js/react";
 
 /**
  * PostHog analytics provider for Nexus-Bio.
@@ -16,14 +16,12 @@ import { PostHogProvider as Provider } from 'posthog-js/react';
  *   document.cookie = 'ph_analytics_consent=true; max-age=31536000; path=/';
  */
 
-const CONSENT_COOKIE = 'ph_analytics_consent';
+const CONSENT_COOKIE = "ph_analytics_consent";
 
 function hasAnalyticsConsent(): boolean {
-  if (typeof document === 'undefined') return false;
+  if (typeof document === "undefined") return false;
   // Treat missing consent cookie as "no consent" (opt-in model)
-  return document.cookie
-    .split(';')
-    .some((c) => c.trim().startsWith(`${CONSENT_COOKIE}=true`));
+  return document.cookie.split(";").some((c) => c.trim().startsWith(`${CONSENT_COOKIE}=true`));
 }
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
@@ -43,19 +41,19 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (typeof window !== 'undefined' && !posthog.__loaded) {
+    if (typeof window !== "undefined" && !posthog.__loaded) {
       posthog.init(key, {
-        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
         capture_pageview: false, // We capture pageviews manually via useAnalytics().page()
         capture_pageleave: true,
         autocapture: true,
         // Respect Do Not Track
         respect_dnt: true,
         // Do not persist anything if user hasn't consented (belt-and-suspenders)
-        persistence: 'localStorage+cookie',
+        persistence: "localStorage+cookie",
         loaded: (ph) => {
           // In development, disable autocapture to reduce noise
-          if (process.env.NODE_ENV === 'development') {
+          if (process.env.NODE_ENV === "development") {
             ph.opt_out_capturing();
             // Re-enable so dev can opt-in manually via console:
             //   posthog.opt_in_capturing()

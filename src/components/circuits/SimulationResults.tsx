@@ -8,15 +8,7 @@
  *   - Close button to dismiss
  */
 import React, { useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { THEME } from "../../theme";
 import type { CircuitDefinition, SimulationResult, GateType } from "./circuitSimulator";
 
@@ -235,13 +227,34 @@ export default function SimulationResults({ result, circuit, onClose }: Simulati
         >
           <thead>
             <tr>
-              <th style={{ textAlign: "left", padding: "6px 8px", color: THEME.DIM, borderBottom: `1px solid ${THEME.BORDER}` }}>
+              <th
+                style={{
+                  textAlign: "left",
+                  padding: "6px 8px",
+                  color: THEME.DIM,
+                  borderBottom: `1px solid ${THEME.BORDER}`,
+                }}
+              >
                 Node
               </th>
-              <th style={{ textAlign: "left", padding: "6px 8px", color: THEME.DIM, borderBottom: `1px solid ${THEME.BORDER}` }}>
+              <th
+                style={{
+                  textAlign: "left",
+                  padding: "6px 8px",
+                  color: THEME.DIM,
+                  borderBottom: `1px solid ${THEME.BORDER}`,
+                }}
+              >
                 Type
               </th>
-              <th style={{ textAlign: "right", padding: "6px 8px", color: THEME.DIM, borderBottom: `1px solid ${THEME.BORDER}` }}>
+              <th
+                style={{
+                  textAlign: "right",
+                  padding: "6px 8px",
+                  color: THEME.DIM,
+                  borderBottom: `1px solid ${THEME.BORDER}`,
+                }}
+              >
                 Value
               </th>
             </tr>
@@ -289,8 +302,7 @@ export default function SimulationResults({ result, circuit, onClose }: Simulati
           fontFamily: THEME.MONO,
         }}
       >
-        {result.timePoints.length} time points | t = 0 to{" "}
-        {result.timePoints[result.timePoints.length - 1]?.toFixed(1)}
+        {result.timePoints.length} time points | t = 0 to {result.timePoints[result.timePoints.length - 1]?.toFixed(1)}
       </div>
     </div>
   );

@@ -6,14 +6,14 @@
  * dynamic-import pattern used in src/services/vaeONNX.ts.
  */
 
-import type { ModelMetadata } from './types';
+import type { ModelMetadata } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let ort: any = null;
 
 async function getOrt() {
   if (!ort) {
-    ort = await import('onnxruntime-web');
+    ort = await import("onnxruntime-web");
     // Single-threaded WASM — avoids SharedArrayBuffer / COOP/COEP requirements
     ort.env.wasm.numThreads = 1;
   }
@@ -37,8 +37,8 @@ export async function loadModel(model: ModelMetadata) {
   const runtime = await getOrt();
 
   const session = await runtime.InferenceSession.create(model.filePath, {
-    executionProviders: ['wasm'],
-    graphOptimizationLevel: 'all',
+    executionProviders: ["wasm"],
+    graphOptimizationLevel: "all",
   });
 
   sessions.set(model.id, session);

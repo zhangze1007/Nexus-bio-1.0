@@ -16,16 +16,16 @@
 
 // ── Types ───────────────────────────────────────────────────────────────
 
-export type GateType = 'promoter' | 'andGate' | 'orGate' | 'notGate' | 'norGate' | 'nandGate' | 'reporter';
+export type GateType = "promoter" | "andGate" | "orGate" | "notGate" | "norGate" | "nandGate" | "reporter";
 
 export interface CircuitNode {
   id: string;
   type: GateType;
   name: string;
   params?: {
-    K?: number;   // Hill constant (default 0.5)
-    n?: number;   // Hill coefficient (default 2)
-    tau?: number;  // Time constant for ODE (default 1.0)
+    K?: number; // Hill constant (default 0.5)
+    n?: number; // Hill coefficient (default 2)
+    tau?: number; // Time constant for ODE (default 1.0)
   };
 }
 
@@ -73,37 +73,37 @@ export function hillFunction(x: number, K = 0.5, n = 2): number {
  */
 export function evaluateGate(gateType: GateType, inputs: number[]): number {
   switch (gateType) {
-    case 'promoter':
+    case "promoter":
       // Promoters pass through their activation; for simulation they are
       // driven by external input concentrations, so this is a no-op
       return inputs.length > 0 ? inputs[0] : 0;
 
-    case 'andGate':
+    case "andGate":
       // AND: multiply activated inputs
       if (inputs.length < 2) return 0;
       return inputs[0] * inputs[1];
 
-    case 'orGate':
+    case "orGate":
       // OR: max of activated inputs
       if (inputs.length < 2) return 0;
       return Math.max(inputs[0], inputs[1]);
 
-    case 'notGate':
+    case "notGate":
       // NOT: invert single input
       if (inputs.length < 1) return 1;
       return 1 - inputs[0];
 
-    case 'norGate':
+    case "norGate":
       // NOR: invert the OR
       if (inputs.length < 2) return 1;
       return 1 - Math.max(inputs[0], inputs[1]);
 
-    case 'nandGate':
+    case "nandGate":
       // NAND: invert the AND
       if (inputs.length < 2) return 1;
       return 1 - inputs[0] * inputs[1];
 
-    case 'reporter':
+    case "reporter":
       // Reporter passes through
       return inputs.length > 0 ? inputs[0] : 0;
 
@@ -151,7 +151,7 @@ export function topologicalSort(nodes: CircuitNode[], edges: CircuitEdge[]): str
   }
 
   if (sorted.length !== nodes.length) {
-    throw new Error('Circuit contains a cycle — topological sort impossible');
+    throw new Error("Circuit contains a cycle — topological sort impossible");
   }
 
   return sorted;
@@ -180,7 +180,7 @@ export function simulateCircuit(
   dt = 0.05,
 ): SimulationResult {
   const { nodes, edges } = circuit;
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   const executionOrder = topologicalSort(nodes, edges);
 
   // Build incoming-edge map: target -> source[]
@@ -201,7 +201,7 @@ export function simulateCircuit(
 
   // Set initial promoter concentrations from inputs
   for (const node of nodes) {
-    if (node.type === 'promoter' && inputs[node.id] !== undefined) {
+    if (node.type === "promoter" && inputs[node.id] !== undefined) {
       concentrations[node.id][0] = inputs[node.id];
     }
   }
@@ -223,17 +223,15 @@ export function simulateCircuit(
       const n = node.params?.n ?? 2;
       const tau = node.params?.tau ?? 1.0;
 
-      if (node.type === 'promoter') {
+      if (node.type === "promoter") {
         // Promoters are driven by external inputs; keep constant
-        concentrations[nodeId][step + 1] = inputs[nodeId] !== undefined
-          ? inputs[nodeId]
-          : current[nodeId];
+        concentrations[nodeId][step + 1] = inputs[nodeId] !== undefined ? inputs[nodeId] : current[nodeId];
         continue;
       }
 
       // Get upstream inputs and apply Hill activation
       const upstreamIds = incomingMap.get(nodeId) ?? [];
-      const activatedInputs = upstreamIds.map(srcId => {
+      const activatedInputs = upstreamIds.map((srcId) => {
         const srcNode = nodeMap.get(srcId);
         const srcK = srcNode?.params?.K ?? K;
         const srcN = srcNode?.params?.n ?? n;
@@ -264,16 +262,20 @@ export function simulateCircuit(
  * Extract a CircuitDefinition from React Flow nodes and edges.
  */
 export function extractCircuitDefinition(
-  flowNodes: Array<{ id: string; type?: string; data: { label: string; gateType: GateType; params?: CircuitNode['params'] } }>,
+  flowNodes: Array<{
+    id: string;
+    type?: string;
+    data: { label: string; gateType: GateType; params?: CircuitNode["params"] };
+  }>,
   flowEdges: Array<{ source: string; target: string }>,
 ): CircuitDefinition {
   return {
-    nodes: flowNodes.map(n => ({
+    nodes: flowNodes.map((n) => ({
       id: n.id,
       type: n.data.gateType,
       name: n.data.label,
       params: n.data.params,
     })),
-    edges: flowEdges.map(e => ({ source: e.source, target: e.target })),
+    edges: flowEdges.map((e) => ({ source: e.source, target: e.target })),
   };
 }

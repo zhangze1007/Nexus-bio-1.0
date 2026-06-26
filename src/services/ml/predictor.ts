@@ -5,9 +5,9 @@
  * extraction. Designed to be called from the API route layer.
  */
 
-import { loadModel } from './modelLoader';
-import { getModel } from './modelRegistry';
-import type { PredictionRequest, PredictionResponse } from './types';
+import { loadModel } from "./modelLoader";
+import { getModel } from "./modelRegistry";
+import type { PredictionRequest, PredictionResponse } from "./types";
 
 /**
  * Run inference for the given prediction request.
@@ -34,18 +34,18 @@ export async function predict(request: PredictionRequest): Promise<PredictionRes
   }
 
   const session = await loadModel(model);
-  const ort = await import('onnxruntime-web');
+  const ort = await import("onnxruntime-web");
   const startTime = performance.now();
 
   // Convert inputs to ONNX tensors
   const feeds: Record<string, unknown> = {};
   for (const [key, schema] of Object.entries(model.inputSchema)) {
     const value = request.inputs[key];
-    if (schema.type === 'number') {
-      feeds[key] = new ort.Tensor('float32', [value as number], [1, 1]);
-    } else if (schema.type === 'number[]') {
+    if (schema.type === "number") {
+      feeds[key] = new ort.Tensor("float32", [value as number], [1, 1]);
+    } else if (schema.type === "number[]") {
       const arr = value as number[];
-      feeds[key] = new ort.Tensor('float32', arr, [1, arr.length]);
+      feeds[key] = new ort.Tensor("float32", arr, [1, arr.length]);
     }
   }
 
@@ -59,7 +59,7 @@ export async function predict(request: PredictionRequest): Promise<PredictionRes
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tensor = (results as any)[key];
     if (tensor) {
-      if (schema.type === 'number') {
+      if (schema.type === "number") {
         outputs[key] = (tensor.data as Float32Array)[0];
       } else {
         outputs[key] = Array.from(tensor.data as Float32Array);

@@ -79,7 +79,7 @@ export default function InventoryForm({
         return prev;
       });
     },
-    [fields]
+    [fields],
   );
 
   const handleSubmit = useCallback(
@@ -110,7 +110,10 @@ export default function InventoryForm({
         } else if (field.isArray) {
           // Parse comma-separated into JSON array
           result[field.name] = JSON.stringify(
-            val.split(",").map((s) => s.trim()).filter(Boolean)
+            val
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean),
           );
         } else {
           result[field.name] = val;
@@ -119,14 +122,14 @@ export default function InventoryForm({
 
       onSubmit(result);
     },
-    [fields, values, onSubmit]
+    [fields, values, onSubmit],
   );
 
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === overlayRef.current) onCancel();
     },
-    [onCancel]
+    [onCancel],
   );
 
   return (
@@ -223,9 +226,7 @@ export default function InventoryForm({
                 }}
               >
                 {field.label}
-                {field.required && (
-                  <span style={{ color: THEME.CORAL, marginLeft: "4px" }}>*</span>
-                )}
+                {field.required && <span style={{ color: THEME.CORAL, marginLeft: "4px" }}>*</span>}
               </label>
 
               {field.type === "textarea" ? (

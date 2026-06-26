@@ -109,32 +109,20 @@ function TierCard({ tier, index }: { tier: PricingTier; index: number }) {
 
       {/* Header */}
       <div className="mb-6">
-        <h3
-          className="text-lg font-semibold mb-1"
-          style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-        >
+        <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
           {tier.name}
         </h3>
         <div className="flex items-baseline gap-1 mb-3">
-          <span
-            className="text-4xl font-bold"
-            style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-          >
+          <span className="text-4xl font-bold" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
             {tier.price}
           </span>
           {tier.period && (
-            <span
-              className="text-sm"
-              style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}
-            >
+            <span className="text-sm" style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}>
               {tier.period}
             </span>
           )}
         </div>
-        <p
-          className="text-sm leading-relaxed"
-          style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-        >
+        <p className="text-sm leading-relaxed" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
           {tier.description}
         </p>
       </div>
@@ -144,17 +132,9 @@ function TierCard({ tier, index }: { tier: PricingTier; index: number }) {
         {tier.features.map((feature) => (
           <li key={feature.text} className="flex items-start gap-2.5">
             {feature.included ? (
-              <Check
-                size={15}
-                className="mt-0.5 shrink-0"
-                style={{ color: THEME.MINT }}
-              />
+              <Check size={15} className="mt-0.5 shrink-0" style={{ color: THEME.MINT }} />
             ) : (
-              <Minus
-                size={15}
-                className="mt-0.5 shrink-0"
-                style={{ color: THEME.INK_SOFT }}
-              />
+              <Minus size={15} className="mt-0.5 shrink-0" style={{ color: THEME.INK_SOFT }} />
             )}
             <span
               className="text-sm"
@@ -221,16 +201,10 @@ export default function PricingTable({ compact = false }: { compact?: boolean })
             >
               Pricing
             </span>
-            <h2
-              className="text-3xl md:text-4xl font-bold mb-4"
-              style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-            >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
               Simple, Transparent Pricing
             </h2>
-            <p
-              className="text-base max-w-xl mx-auto"
-              style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-            >
+            <p className="text-base max-w-xl mx-auto" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
               Start free. Scale as your research grows.
             </p>
           </motion.div>
@@ -251,16 +225,9 @@ export default function PricingTable({ compact = false }: { compact?: boolean })
           transition={{ duration: 0.5, delay: 0.4 }}
           className="text-center mt-10"
         >
-          <p
-            className="text-sm"
-            style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}
-          >
+          <p className="text-sm" style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}>
             Need a custom plan?{" "}
-            <Link
-              href="/contact"
-              className="underline transition-colors"
-              style={{ color: THEME.MINT }}
-            >
+            <Link href="/contact" className="underline transition-colors" style={{ color: THEME.MINT }}>
               Contact us for Enterprise pricing
             </Link>
             .

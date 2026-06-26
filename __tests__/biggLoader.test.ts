@@ -1,4 +1,4 @@
-import { biggToFBAFormat, clearCache } from '../src/services/fba/biggLoader';
+import { biggToFBAFormat, clearCache, type BiGGModel } from '../src/services/fba/biggLoader';
 
 describe('BiGG Loader', () => {
   afterEach(() => {
@@ -32,7 +32,7 @@ describe('BiGG Loader', () => {
         geneCount: 1366,
       };
 
-      const result = biggToFBAFormat(model);
+      const result = biggToFBAFormat(model as unknown as BiGGModel);
 
       expect(result.reactions).toHaveLength(2);
       expect(result.reactions[0].id).toBe('PFK');
@@ -50,7 +50,7 @@ describe('BiGG Loader', () => {
         geneCount: 0,
       };
 
-      const result = biggToFBAFormat(model);
+      const result = biggToFBAFormat(model as unknown as BiGGModel);
       expect(result.reactions).toHaveLength(0);
       expect(result.metabolites).toHaveLength(0);
     });
@@ -70,7 +70,7 @@ describe('BiGG Loader', () => {
         geneCount: 0,
       };
 
-      const result = biggToFBAFormat(model);
+      const result = biggToFBAFormat(model as unknown as BiGGModel);
       expect(result.reactions[0].stoichiometry.A).toBe(-2);
       expect(result.reactions[0].stoichiometry.B).toBe(-3);
       expect(result.reactions[0].stoichiometry.C).toBe(1);

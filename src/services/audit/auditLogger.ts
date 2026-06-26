@@ -55,17 +55,12 @@ const GENESIS_HASH = "0".repeat(64);
  *
  * Returns the entry's UUID and computed hash.
  */
-export async function logAuditEvent(
-  event: AuditEvent,
-): Promise<{ id: string; hash: string }> {
+export async function logAuditEvent(event: AuditEvent): Promise<{ id: string; hash: string }> {
   // Get the previous hash and next sequence number from the last chain entry
-  const lastEntry = await sqlAll(
-    "SELECT hash, sequence_number FROM audit_log ORDER BY sequence_number DESC LIMIT 1",
-  );
+  const lastEntry = await sqlAll("SELECT hash, sequence_number FROM audit_log ORDER BY sequence_number DESC LIMIT 1");
 
   const previousHash = lastEntry.length > 0 ? String(lastEntry[0].hash) : GENESIS_HASH;
-  const nextSeq =
-    lastEntry.length > 0 ? Number(lastEntry[0].sequence_number) + 1 : 1;
+  const nextSeq = lastEntry.length > 0 ? Number(lastEntry[0].sequence_number) + 1 : 1;
 
   const timestamp = new Date().toISOString();
   const id = crypto.randomUUID();

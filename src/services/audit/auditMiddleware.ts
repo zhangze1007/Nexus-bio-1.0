@@ -27,10 +27,7 @@ interface AuditMiddlewareOptions {
  * If the handler throws, no audit entry is created (the error propagates).
  */
 export function withAudit(
-  handler: (
-    req: NextRequest,
-    context?: unknown,
-  ) => Promise<NextResponse>,
+  handler: (req: NextRequest, context?: unknown) => Promise<NextResponse>,
   options: AuditMiddlewareOptions,
 ): (req: NextRequest, context?: unknown) => Promise<NextResponse> {
   return async (req: NextRequest, context?: unknown) => {

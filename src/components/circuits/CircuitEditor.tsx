@@ -73,20 +73,13 @@ const DEFAULT_NODES: Node<CircuitNodeData>[] = [
   },
 ];
 
-const DEFAULT_EDGES: Edge[] = [
-  { id: "e-p1-g1", source: "p1", target: "g1", sourceHandle: null, targetHandle: "in1" },
-];
+const DEFAULT_EDGES: Edge[] = [{ id: "e-p1-g1", source: "p1", target: "g1", sourceHandle: null, targetHandle: "in1" }];
 
 // ── Inner Editor (needs ReactFlowProvider) ──────────────────────────────
 
 let nodeIdCounter = 10;
 
-function CircuitEditorInner({
-  initialNodes,
-  initialEdges,
-  onChange,
-  onSimulate,
-}: CircuitEditorProps) {
+function CircuitEditorInner({ initialNodes, initialEdges, onChange, onSimulate }: CircuitEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes ?? DEFAULT_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges ?? DEFAULT_EDGES);
   const [simResult, setSimResult] = useState<SimulationResult | null>(null);

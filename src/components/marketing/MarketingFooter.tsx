@@ -48,10 +48,7 @@ export default function MarketingFooter() {
                 Nexus-Bio
               </span>
             </div>
-            <p
-              className="text-sm leading-relaxed mb-6"
-              style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-            >
+            <p className="text-sm leading-relaxed mb-6" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
               The synthetic biology operating system. Design, simulate, and optimize biological systems with AI.
             </p>
             <div className="flex gap-3">
@@ -131,16 +128,10 @@ export default function MarketingFooter() {
           className="mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4"
           style={{ borderTop: `1px solid ${THEME.BORDER}` }}
         >
-          <p
-            className="text-xs"
-            style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}
-          >
+          <p className="text-xs" style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}>
             &copy; 2026 Nexus-Bio. All rights reserved.
           </p>
-          <p
-            className="text-xs"
-            style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}
-          >
+          <p className="text-xs" style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}>
             Built with care in Malaysia
           </p>
         </div>

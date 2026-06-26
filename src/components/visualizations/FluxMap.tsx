@@ -83,10 +83,7 @@ interface LayoutLink extends d3.SimulationLinkDatum<LayoutNode> {
   flux: number;
 }
 
-function buildGraph(
-  model: FluxMapModel,
-  fluxes: Record<string, number>,
-): { nodes: LayoutNode[]; links: LayoutLink[] } {
+function buildGraph(model: FluxMapModel, fluxes: Record<string, number>): { nodes: LayoutNode[]; links: LayoutLink[] } {
   const metaboliteIds = new Set(model.metabolites.map((m) => m.id));
   const nodeMap = new Map<string, LayoutNode>();
 
@@ -141,13 +138,7 @@ function edgeWidth(absFlux: number, maxFlux: number): number {
 
 // ── Bezier path between two points ───────────────────────────────────────────
 
-function bezierPath(
-  sx: number,
-  sy: number,
-  tx: number,
-  ty: number,
-  curvature = 0.15,
-): string {
+function bezierPath(sx: number, sy: number, tx: number, ty: number, curvature = 0.15): string {
   const dx = tx - sx;
   const dy = ty - sy;
   const len = Math.max(Math.sqrt(dx * dx + dy * dy), 1);
@@ -179,10 +170,7 @@ export function FluxMap({
   const { nodes, links } = useMemo(() => buildGraph(model, fluxes), [model, fluxes]);
 
   // Compute max flux for scaling
-  const maxFlux = useMemo(
-    () => Math.max(...links.map((l) => Math.abs(l.flux)), 1),
-    [links],
-  );
+  const maxFlux = useMemo(() => Math.max(...links.map((l) => Math.abs(l.flux)), 1), [links]);
 
   // Run d3-force layout
   const positions = useMemo(() => {
@@ -207,7 +195,10 @@ export function FluxMap({
       )
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collide", d3.forceCollide().radius((d) => (d as LayoutNode).radius + 8))
+      .force(
+        "collide",
+        d3.forceCollide().radius((d) => (d as LayoutNode).radius + 8),
+      )
       .stop();
 
     // Run simulation to convergence
@@ -378,10 +369,7 @@ export function FluxMap({
   }, [model.reactions]);
 
   return (
-    <div
-      data-testid="flux-map-container"
-      style={{ position: "relative", width: "100%", height: "100%" }}
-    >
+    <div data-testid="flux-map-container" style={{ position: "relative", width: "100%", height: "100%" }}>
       <svg
         ref={svgRef}
         data-testid="flux-map-svg"
@@ -453,14 +441,7 @@ export function FluxMap({
                 strokeOpacity={0.2}
                 strokeDasharray="4 3"
               />
-              <text
-                x={sb.x + 12}
-                y={sb.y + 18}
-                fontFamily={THEME.MONO}
-                fontSize={11}
-                fill={sb.color}
-                opacity={0.7}
-              >
+              <text x={sb.x + 12} y={sb.y + 18} fontFamily={THEME.MONO} fontSize={11} fill={sb.color} opacity={0.7}>
                 {sb.key}
               </text>
             </g>
@@ -538,9 +519,7 @@ export function FluxMap({
             if (!pos) return null;
             const isHovered = hoveredMetabolite === node.id;
             const isConnected = hoveredReaction != null && connectedMetabolites.has(node.id);
-            const isDimmed =
-              (hoveredMetabolite != null && !isHovered) ||
-              (hoveredReaction != null && !isConnected);
+            const isDimmed = (hoveredMetabolite != null && !isHovered) || (hoveredReaction != null && !isConnected);
             const r = node.radius;
 
             return (
@@ -554,15 +533,7 @@ export function FluxMap({
                 style={{ cursor: onMetaboliteClick ? "pointer" : "default" }}
               >
                 {/* Glow halo on hover */}
-                {isHovered && (
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={r + 8}
-                    fill="#C8D8E8"
-                    opacity={0.12}
-                  />
-                )}
+                {isHovered && <circle cx={pos.x} cy={pos.y} r={r + 8} fill="#C8D8E8" opacity={0.12} />}
                 <circle
                   cx={pos.x}
                   cy={pos.y}

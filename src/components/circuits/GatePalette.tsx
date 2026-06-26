@@ -165,8 +165,9 @@ export default function GatePalette({ style }: GatePaletteProps) {
         }}
       >
         <div style={{ fontWeight: 600, color: THEME.LABEL, marginBottom: 4 }}>How to use</div>
-        Drag components onto the canvas. Connect output handles (right) to input handles (left).
-        Press <kbd style={{ background: THEME.INPUT_BG, padding: "1px 4px", borderRadius: 3, fontSize: 10 }}>Del</kbd> to remove selected.
+        Drag components onto the canvas. Connect output handles (right) to input handles (left). Press{" "}
+        <kbd style={{ background: THEME.INPUT_BG, padding: "1px 4px", borderRadius: 3, fontSize: 10 }}>Del</kbd> to
+        remove selected.
       </div>
     </div>
   );

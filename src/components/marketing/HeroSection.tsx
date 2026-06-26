@@ -85,8 +85,8 @@ export default function HeroSection() {
           className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
         >
-          Design, simulate, and optimize biological systems with AI-powered tools.
-          From pathway design to protein engineering — all in one platform.
+          Design, simulate, and optimize biological systems with AI-powered tools. From pathway design to protein
+          engineering — all in one platform.
         </motion.p>
 
         {/* CTAs */}
@@ -140,16 +140,10 @@ export default function HeroSection() {
             { value: "100%", label: "Open Source" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
-              <div
-                className="text-2xl font-bold mb-1"
-                style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-              >
+              <div className="text-2xl font-bold mb-1" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
                 {stat.value}
               </div>
-              <div
-                className="text-xs"
-                style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}
-              >
+              <div className="text-xs" style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}>
                 {stat.label}
               </div>
             </div>

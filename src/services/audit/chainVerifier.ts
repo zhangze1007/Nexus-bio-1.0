@@ -44,9 +44,7 @@ const GENESIS_HASH = "0".repeat(64);
  * about where the chain broke.
  */
 export async function verifyAuditChain(): Promise<ChainVerificationResult> {
-  const entries = await sqlAll(
-    "SELECT * FROM audit_log ORDER BY sequence_number ASC",
-  );
+  const entries = await sqlAll("SELECT * FROM audit_log ORDER BY sequence_number ASC");
 
   if (entries.length === 0) {
     return { valid: true, totalEntries: 0, verifiedEntries: 0, brokenAt: null };
