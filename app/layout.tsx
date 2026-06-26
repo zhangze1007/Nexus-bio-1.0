@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import '../src/styles/fonts.css';
 import '../src/styles/animations.css';
@@ -11,6 +12,7 @@ import QueryProvider from '../src/components/providers/QueryProvider';
 import WebVitals from '../src/components/WebVitals';
 import WorkflowBanner from '../src/components/WorkflowBanner';
 import { PostHogProvider } from '../src/components/analytics/PostHogProvider';
+import I18nProvider from '../src/components/i18n/I18nProvider';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Synthetic Biology Research Workbench',
@@ -29,13 +31,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head />
       <body>
         <WebVitals />
@@ -43,22 +48,24 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
-        <PostHogProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <Suspense fallback={null}>
-                <WorkbenchSyncProvider />
-              </Suspense>
-              <div id="root">
-                <WorkflowBanner />
-                <RouteTransition>
-                  <main id="main-content">{children}</main>
-                </RouteTransition>
-              </div>
-              <OnboardingOverlay />
-            </AuthProvider>
-          </QueryProvider>
-        </PostHogProvider>
+        <I18nProvider locale={locale} messages={messages}>
+          <PostHogProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <Suspense fallback={null}>
+                  <WorkbenchSyncProvider />
+                </Suspense>
+                <div id="root">
+                  <WorkflowBanner />
+                  <RouteTransition>
+                    <main id="main-content">{children}</main>
+                  </RouteTransition>
+                </div>
+                <OnboardingOverlay />
+              </AuthProvider>
+            </QueryProvider>
+          </PostHogProvider>
+        </I18nProvider>
       </body>
     </html>
   );

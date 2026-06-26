@@ -5,6 +5,7 @@ import { Dna, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { THEME } from "../../theme";
+import LanguageSwitcher from "../i18n/LanguageSwitcher";
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "Features", href: "#features" },
@@ -40,10 +41,7 @@ export default function MarketingNav() {
             >
               <Dna size={16} color="#0d0f14" strokeWidth={2.5} />
             </div>
-            <span
-              className="text-lg font-bold tracking-tight"
-              style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-            >
+            <span className="text-lg font-bold tracking-tight" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
               Nexus-Bio
             </span>
           </Link>
@@ -69,6 +67,7 @@ export default function MarketingNav() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher compact />
             <Link
               href="/tools"
               className="px-5 py-2 rounded-lg text-sm font-semibold transition-all hover:scale-[1.02]"
@@ -108,6 +107,9 @@ export default function MarketingNav() {
           }}
         >
           <div className="px-6 py-4 space-y-3">
+            <div className="py-2">
+              <LanguageSwitcher />
+            </div>
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

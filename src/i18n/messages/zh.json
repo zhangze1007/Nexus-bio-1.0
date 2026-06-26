@@ -1,0 +1,135 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "loading": "加载中...",
+    "error": "错误",
+    "retry": "重试",
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "import": "导入",
+    "settings": "设置",
+    "help": "帮助",
+    "submit": "提交",
+    "confirm": "确认",
+    "yes": "是",
+    "no": "否",
+    "copy": "复制",
+    "copied": "已复制",
+    "download": "下载",
+    "upload": "上传",
+    "refresh": "刷新",
+    "reset": "重置",
+    "apply": "应用",
+    "skipToContent": "跳转到内容"
+  },
+  "nav": {
+    "home": "首页",
+    "workbench": "工作台",
+    "features": "功能",
+    "pricing": "定价",
+    "github": "GitHub",
+    "getStarted": "开始使用",
+    "tools": "工具",
+    "research": "研究",
+    "analyze": "分析",
+    "contact": "联系我们",
+    "console": "控制台"
+  },
+  "auth": {
+    "signIn": "登录",
+    "signOut": "退出登录",
+    "profile": "个人资料",
+    "login": "登录",
+    "email": "邮箱",
+    "password": "密码",
+    "forgotPassword": "忘记密码？",
+    "createAccount": "创建账号",
+    "alreadyHaveAccount": "已有账号？"
+  },
+  "tools": {
+    "pathd": {
+      "name": "通路与酶设计",
+      "description": "主要的3D通路设计工作台，支持模拟叠加和节点级证据钻取。"
+    },
+    "metabolicEng": {
+      "name": "代谢工程实验室",
+      "description": "完整的3D代谢实验室，支持实时FBA和力导向布局。"
+    },
+    "catdes": {
+      "name": "催化剂设计器",
+      "description": "催化剂排名工作区，结合结合力、设计、通量耦合和多目标评分。"
+    },
+    "proevol": {
+      "name": "蛋白质进化",
+      "description": "基于轮次的蛋白质进化工作区，用于变体库和存活者选择。"
+    },
+    "fbasim": {
+      "name": "通量平衡分析",
+      "description": "通量平衡工作区，用于目标检查、通量图和代谢读数。"
+    },
+    "dyncon": {
+      "name": "动态控制模拟器",
+      "description": "动态控制工作区，用于调节反馈回路和观察收敛行为。"
+    },
+    "cethx": {
+      "name": "细胞热力学",
+      "description": "条件感知热力学，支持Alberty变换的ΔG'和可行性仪表板。"
+    },
+    "gecair": {
+      "name": "基因电路AI推理器",
+      "description": "交互式逻辑门和Hill函数工作台，用于合成基因电路。"
+    },
+    "multio": {
+      "name": "多组学整合器",
+      "description": "演示多组学整合，使用确定性因子、投影和表格视图。"
+    },
+    "scspatial": {
+      "name": "单细胞与空间转录组",
+      "description": "QC、聚类、轨迹和空间自相关工作台。"
+    },
+    "cellfree": {
+      "name": "无细胞沙盒",
+      "description": "资源感知的TX-TL模拟，具有明确的参数来源限制。"
+    },
+    "dbtlflow": {
+      "name": "DBTL循环追踪器",
+      "description": "追踪DBTL循环，包含协议、时间线和携带证据的设计工件。"
+    },
+    "genmim": {
+      "name": "基因最小化",
+      "description": "CRISPRi最小化规划器，包含目标计划、基因组图和影响摘要。"
+    },
+    "nexai": {
+      "name": "Axon研究助手",
+      "description": "研究助手界面，包含查询历史、引用图和可导出的综合输出。"
+    },
+    "sequence": {
+      "name": "序列编辑器",
+      "description": "DNA/蛋白质序列编辑器，包含线性查看器、环形质粒图和限制性内切酶查找器。"
+    },
+    "inventory": {
+      "name": "库存管理",
+      "description": "生物库存管理，用于追踪菌株、质粒、引物和化学品。"
+    }
+  },
+  "copilot": {
+    "askAxon": "询问Axon",
+    "placeholder": "提出研究问题...",
+    "thinking": "思考中...",
+    "noResults": "未找到结果",
+    "send": "发送",
+    "clear": "清除对话"
+  },
+  "language": {
+    "label": "语言",
+    "en": "英文",
+    "zh": "中文",
+    "ja": "日文"
+  }
+}

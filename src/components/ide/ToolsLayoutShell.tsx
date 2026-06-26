@@ -31,6 +31,7 @@ import { useUIStore } from "../../store/uiStore";
 import { useWorkbenchStore } from "../../store/workbenchStore";
 import { THEME } from "../../theme";
 import { ErrorBoundary } from "../shared/ErrorBoundary";
+import LanguageSwitcher from "../i18n/LanguageSwitcher";
 import { OnboardingOverlay } from "../shared/OnboardingOverlay";
 import WorkbenchStatusBar from "../workbench/WorkbenchStatusBar";
 import CopilotSlideOver from "./CopilotSlideOver";
@@ -122,7 +123,7 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
       <AxonOrchestratorProvider>
         <div className={`nb-ide-shell${isWorkbench ? " nb-workbench" : ""}`}>
           {/* TopBar — fixed at top, z-index: 100. Always mounted. */}
-          <IDETopBar moduleId={moduleId ?? ""} />
+          <IDETopBar moduleId={moduleId ?? ""} actions={<LanguageSwitcher compact />} />
 
           {/* Sidebar — fixed overlay, z-index: 90. Only on workbench pages. */}
           {isWorkbench && <IDESidebar />}

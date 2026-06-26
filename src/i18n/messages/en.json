@@ -1,0 +1,135 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "settings": "Settings",
+    "help": "Help",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download",
+    "upload": "Upload",
+    "refresh": "Refresh",
+    "reset": "Reset",
+    "apply": "Apply",
+    "skipToContent": "Skip to content"
+  },
+  "nav": {
+    "home": "Home",
+    "workbench": "Workbench",
+    "features": "Features",
+    "pricing": "Pricing",
+    "github": "GitHub",
+    "getStarted": "Get Started",
+    "tools": "Tools",
+    "research": "Research",
+    "analyze": "Analyze",
+    "contact": "Contact",
+    "console": "Console"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "profile": "Profile",
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "createAccount": "Create account",
+    "alreadyHaveAccount": "Already have an account?"
+  },
+  "tools": {
+    "pathd": {
+      "name": "Pathway & Enzyme Design",
+      "description": "Primary 3D pathway design workbench with simulation overlays and node-level evidence drill-down."
+    },
+    "metabolicEng": {
+      "name": "Metabolic Engineering Lab",
+      "description": "Full 3D metabolic lab with live FBA hooks and force-directed layout."
+    },
+    "catdes": {
+      "name": "Catalyst Designer",
+      "description": "Catalyst ranking workspace combining binding, design, flux coupling, and multi-objective scoring."
+    },
+    "proevol": {
+      "name": "Protein Evolution",
+      "description": "Round-based protein evolution workspace for variant libraries and survivor selection."
+    },
+    "fbasim": {
+      "name": "Flux Balance Analysis",
+      "description": "Flux-balance workspace for objective inspection, flux maps, and metabolic readouts."
+    },
+    "dyncon": {
+      "name": "Dynamic Control Simulator",
+      "description": "Dynamic control workspace for tuning feedback loops and observing convergence behaviour."
+    },
+    "cethx": {
+      "name": "Cell Thermodynamics",
+      "description": "Condition-aware thermodynamics with Alberty-transformed delta-G prime and feasibility dashboard."
+    },
+    "gecair": {
+      "name": "Gene Circuit AI Reasoner",
+      "description": "Interactive logic-gate and hill-function workbench for synthetic gene circuits."
+    },
+    "multio": {
+      "name": "Multi-Omics Integrator",
+      "description": "Demo multi-omics integration using deterministic factors, projections, and table views."
+    },
+    "scspatial": {
+      "name": "Single-Cell & Spatial",
+      "description": "QC, clustering, trajectory, and spatial autocorrelation workbench."
+    },
+    "cellfree": {
+      "name": "Cell-Free Sandbox",
+      "description": "Resource-aware TX-TL simulation with explicit parameter-sourcing limits."
+    },
+    "dbtlflow": {
+      "name": "DBTL Cycle Tracker",
+      "description": "Tracks the DBTL loop with protocol, timeline, and evidence-carrying design artifacts."
+    },
+    "genmim": {
+      "name": "Gene Minimization",
+      "description": "CRISPRi minimization planner with target schedule, genome map, and impact summary."
+    },
+    "nexai": {
+      "name": "Axon Research Agent",
+      "description": "Research assistant surface with query history, citation graph, and exportable synthesis output."
+    },
+    "sequence": {
+      "name": "Sequence Editor",
+      "description": "DNA/protein sequence editor with linear viewer, circular plasmid map, and restriction enzyme finder."
+    },
+    "inventory": {
+      "name": "Inventory Management",
+      "description": "Biological inventory management for tracking strains, plasmids, primers, and chemicals."
+    }
+  },
+  "copilot": {
+    "askAxon": "Ask Axon",
+    "placeholder": "Ask a research question...",
+    "thinking": "Thinking...",
+    "noResults": "No results found",
+    "send": "Send",
+    "clear": "Clear conversation"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "zh": "Chinese",
+    "ja": "Japanese"
+  }
+}

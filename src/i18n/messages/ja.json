@@ -1,0 +1,135 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "retry": "再試行",
+    "close": "閉じる",
+    "back": "戻る",
+    "next": "次へ",
+    "search": "検索",
+    "filter": "フィルター",
+    "export": "エクスポート",
+    "import": "インポート",
+    "settings": "設定",
+    "help": "ヘルプ",
+    "submit": "送信",
+    "confirm": "確認",
+    "yes": "はい",
+    "no": "いいえ",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "download": "ダウンロード",
+    "upload": "アップロード",
+    "refresh": "更新",
+    "reset": "リセット",
+    "apply": "適用",
+    "skipToContent": "コンテンツへスキップ"
+  },
+  "nav": {
+    "home": "ホーム",
+    "workbench": "ワークベンチ",
+    "features": "機能",
+    "pricing": "料金",
+    "github": "GitHub",
+    "getStarted": "始める",
+    "tools": "ツール",
+    "research": "研究",
+    "analyze": "分析",
+    "contact": "お問い合わせ",
+    "console": "コンソール"
+  },
+  "auth": {
+    "signIn": "サインイン",
+    "signOut": "サインアウト",
+    "profile": "プロフィール",
+    "login": "ログイン",
+    "email": "メール",
+    "password": "パスワード",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "createAccount": "アカウント作成",
+    "alreadyHaveAccount": "すでにアカウントをお持ちですか？"
+  },
+  "tools": {
+    "pathd": {
+      "name": "経路・酵素設計",
+      "description": "シミュレーションオーバーレイとノードレベルのエビデンスドリルダウンを備えた主要な3D経路設計ワークベンチ。"
+    },
+    "metabolicEng": {
+      "name": "代謝工学ラボ",
+      "description": "リアルタイムFBAフックと力-directedレイアウトを備えた完全な3D代謝ラボ。"
+    },
+    "catdes": {
+      "name": "触媒デザイナー",
+      "description": "結合、設計、フラックスカップリング、多目的スコアリングを組み合わせた触媒ランキングワークスペース。"
+    },
+    "proevol": {
+      "name": "タンパク質進化",
+      "description": "変異体ライブラリとサバイバー選択のためのラウンドベースのタンパク質進化ワークスペース。"
+    },
+    "fbasim": {
+      "name": "フラックスバランス解析",
+      "description": "目的検査、フラックスマップ、代謝リードアウトのためのフラックスバランスワークスペース。"
+    },
+    "dyncon": {
+      "name": "動的制御シミュレーター",
+      "description": "フィードバックループのチューニングと収束動作の観察のための動的制御ワークスペース。"
+    },
+    "cethx": {
+      "name": "細胞熱力学",
+      "description": "Alberty変換されたΔG'と実現可能性ダッシュボードを備えた条件認識熱力学。"
+    },
+    "gecair": {
+      "name": "遺伝子回路AIリーズナー",
+      "description": "合成遺伝子回路のためのインタラクティブな論理ゲートとHill関数ワークベンチ。"
+    },
+    "multio": {
+      "name": "マルチオミクス統合器",
+      "description": "決定論的因子、射影、テーブルビューを使用したデモマルチオミクス統合。"
+    },
+    "scspatial": {
+      "name": "シングルセル・空間トランスクリプトーム",
+      "description": "QC、クラスタリング、トラジェクトリー、空間自己相関ワークベンチ。"
+    },
+    "cellfree": {
+      "name": "セルフリーサンドボックス",
+      "description": "明示的なパラメータソーシング制限を備えたリソース認識TX-TLシミュレーション。"
+    },
+    "dbtlflow": {
+      "name": "DBTLサイクルトラッカー",
+      "description": "プロトコル、タイムライン、エビデンス付き設計アーティファクトでDBTLループを追跡。"
+    },
+    "genmim": {
+      "name": "遺伝子最小化",
+      "description": "ターゲットスケジュール、ゲノムマップ、影響サマリーを備えたCRISPRi最小化プランナー。"
+    },
+    "nexai": {
+      "name": "Axon研究エージェント",
+      "description": "クエリ履歴、引用グラフ、エクスポート可能な合成出力を備えた研究アシスタント。"
+    },
+    "sequence": {
+      "name": "シーケンスエディター",
+      "description": "リニアビューア、環形プラスミドマップ、制限酵素ファインダーを備えたDNA/タンパク質シーケンスエディター。"
+    },
+    "inventory": {
+      "name": "在庫管理",
+      "description": "株、プラスミド、プライマー、化学物品の追跡のための生物学的在庫管理。"
+    }
+  },
+  "copilot": {
+    "askAxon": "Axonに質問",
+    "placeholder": "研究の質問を入力...",
+    "thinking": "思考中...",
+    "noResults": "結果が見つかりません",
+    "send": "送信",
+    "clear": "会話をクリア"
+  },
+  "language": {
+    "label": "言語",
+    "en": "英語",
+    "zh": "中国語",
+    "ja": "日本語"
+  }
+}
