@@ -139,7 +139,7 @@ export async function getDataClassification(
     [entityId, entityType],
   );
   if (!row) return null;
-  return (row as DataClassificationRow).classification;
+  return (row as unknown as DataClassificationRow).classification;
 }
 
 /**
