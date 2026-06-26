@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { predict } from '../../../../src/services/ml/predictor';
 import type { PredictionRequest } from '../../../../src/services/ml/types';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
