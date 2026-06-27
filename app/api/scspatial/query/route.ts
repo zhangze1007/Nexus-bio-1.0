@@ -2,12 +2,17 @@ import { NextResponse } from 'next/server';
 import { buildScSpatialQueryResponse } from '../../../../src/server/scspatialAnalysis';
 import { readScSpatialArtifact } from '../../../../src/server/scspatialArtifactStore';
 import type { ScSpatialQueryRequest, ScSpatialViewMode } from '../../../../src/types/scspatial';
+import { getCorsHeaders, handleOptions } from '../../../../src/utils/cors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /** Python backend URL (set via SCSPATIAL_PYTHON_BACKEND env var). */
 const PYTHON_BACKEND = process.env.SCSPATIAL_PYTHON_BACKEND?.replace(/\/+$/, '') || '';
+
+export async function OPTIONS(req: Request) {
+  return handleOptions(req);
+}
 
 const VIEW_MODES = new Set<ScSpatialViewMode>([
   'spatial-2d',
@@ -31,19 +36,19 @@ function asString(value: unknown) {
   return typeof value === 'string' ? value : '';
 }
 
-function jsonError(error: string, status = 400, detail?: string) {
-  return NextResponse.json({ ok: false, error, detail }, { status });
+function jsonError(error: string, status = 400, detail?: string, req?: Request) {
+  return NextResponse.json({ ok: false, error, detail }, { status, headers: getCorsHeaders(req) });
 }
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object') {
-    return jsonError('Invalid SCSPATIAL query payload');
+    return jsonError('Invalid SCSPATIAL query payload', 400, undefined, request);
   }
 
   const artifactId = asString((body as Record<string, unknown>).artifactId);
   if (!artifactId) {
-    return jsonError('artifactId is required');
+    return jsonError('artifactId is required', 400, undefined, request);
   }
 
   // ── Proxy to Python backend ──────────────────────────────────────
@@ -57,14 +62,14 @@ export async function POST(request: Request) {
 
       if (resp.ok) {
         const data = await resp.json();
-        return NextResponse.json({ ok: true, ...data });
+        return NextResponse.json({ ok: true, ...data }, { headers: getCorsHeaders(request) });
       }
 
       // If artifact not found on Python side, fall through to local
       if (resp.status !== 404) {
         const errText = await resp.text();
         console.error('Python backend query error:', errText);
-        return jsonError('Python backend query failed', 502, errText);
+        return jsonError('Python backend query failed', 502, errText, request);
       }
     } catch (err) {
       console.error('Python backend unreachable for query:', err);
@@ -75,7 +80,7 @@ export async function POST(request: Request) {
   // ── Fallback: local TypeScript engine ────────────────────────────
   const artifact = await readScSpatialArtifact(artifactId);
   if (!artifact) {
-    return jsonError('SCSPATIAL artifact not found', 404);
+    return jsonError('SCSPATIAL artifact not found', 404, undefined, request);
   }
 
   try {
@@ -88,12 +93,14 @@ export async function POST(request: Request) {
       developerMode: Boolean((body as Record<string, unknown>).developerMode),
     } satisfies ScSpatialQueryRequest);
 
-    return NextResponse.json({ ok: true, ...query });
+    return NextResponse.json({ ok: true, ...query }, { headers: getCorsHeaders(request) });
   } catch (error) {
     console.error('SCSPATIAL query error:', error);
     return jsonError(
       'SCSPATIAL query failed',
       500,
+      undefined,
+      request,
     );
   }
 }

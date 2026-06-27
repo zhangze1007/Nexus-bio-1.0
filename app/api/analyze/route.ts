@@ -95,6 +95,12 @@ export async function OPTIONS(req: Request) {
 export async function POST(req: NextRequest) {
   const requestId = req.headers.get('x-request-id') || `anon_${Date.now().toString(36)}`;
 
+  // ── Body size limit (1MB) ──
+  const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
+  if (contentLength > 1_000_000) {
+    return errorResponse('Request too large', 413, { requestId }, getCorsHeaders(req));
+  }
+
   // ── Rate limiting ──
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
   if (!(await checkRateLimit(ip, '/api/analyze')).allowed) {

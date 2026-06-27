@@ -8,6 +8,7 @@ import { IJO1366_REACTIONS } from '../../../src/data/iJO1366Subset';
 import { steadyCom, type SteadyComSpecies } from '../../../src/server/fbaSteadyCom';
 import { createProvenanceEntry } from '../../../src/utils/provenance';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
+import { errorResponse } from '../../../src/utils/apiErrors';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -39,6 +40,15 @@ function asAction(value: unknown): 'fba' | 'fva' | 'pfba' | 'knockout' | 'fseof'
   return 'fba';
 }
 
+const FBA_TIMEOUT_MS = 30_000;
+
+function withFbaTimeout<T>(promise: Promise<T>): Promise<T> {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('FBA computation timeout')), FBA_TIMEOUT_MS)
+  );
+  return Promise.race([promise, timeout]);
+}
+
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
@@ -47,10 +57,16 @@ function asStringArray(value: unknown): string[] {
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || `fba_${Date.now().toString(36)}`;
 
+  // ── Body size limit (1MB) ──
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+  if (contentLength > 1_000_000) {
+    return errorResponse('Request too large', 413, { requestId }, getCorsHeaders(request));
+  }
+
   // CSRF protection: validate Content-Type
   const contentType = request.headers.get('content-type');
   if (!contentType?.includes('application/json')) {
-    return NextResponse.json({ ok: false, error: 'Invalid Content-Type. Expected application/json', requestId }, { status: 415, headers: getCorsHeaders(request) });
+    return errorResponse('Invalid Content-Type. Expected application/json', 415, { requestId }, getCorsHeaders(request));
   }
 
   let body: unknown;
@@ -58,10 +74,10 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch (err) {
     console.warn(JSON.stringify({ level: 'warn', message: 'FBA: invalid JSON body', requestId, error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
-    return NextResponse.json({ ok: false, error: 'Invalid FBA request payload', requestId }, { status: 400, headers: getCorsHeaders(request) });
+    return errorResponse('Invalid FBA request payload', 400, { requestId }, getCorsHeaders(request));
   }
   if (!body || typeof body !== 'object') {
-    return NextResponse.json({ ok: false, error: 'Invalid FBA request payload', requestId }, { status: 400, headers: getCorsHeaders(request) });
+    return errorResponse('Invalid FBA request payload', 400, { requestId }, getCorsHeaders(request));
   }
   const input = body as Record<string, unknown>;
 
@@ -84,7 +100,7 @@ export async function POST(request: Request) {
         },
       };
 
-      const result = await solveAuthorityCommunityFBA(payload);
+      const result = await withFbaTimeout(solveAuthorityCommunityFBA(payload));
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-community',
         validityTier: 'demo',
@@ -139,7 +155,7 @@ export async function POST(request: Request) {
       const maxIterations = asNumber(input.maxIterations, 100);
       const tolerance = asNumber(input.tolerance, 1e-6);
 
-      const result = await steadyCom(parsedSpecies, sharedMetabolites, maxIterations, tolerance);
+      const result = await withFbaTimeout(steadyCom(parsedSpecies, sharedMetabolites, maxIterations, tolerance));
 
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-steadycom',
@@ -171,7 +187,7 @@ export async function POST(request: Request) {
           { status: 400, headers: getCorsHeaders(request) },
         );
       }
-      const result = await solveDynamicFBA(
+      const result = await withFbaTimeout(solveDynamicFBA(
         reactions,
         objectiveId,
         {
@@ -179,7 +195,7 @@ export async function POST(request: Request) {
           oxygenUptake: asNumber(input.oxygenUptake, 12),
           knockouts: asKnockouts(input.knockouts),
         },
-      );
+      ));
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-custom',
         outputAssumptions: [
@@ -211,7 +227,7 @@ export async function POST(request: Request) {
     // ── FVA ─────────────────────────────────────────────────────────
     if (action === 'fva') {
       const model = buildAuthorityFBAModel(baseRequest);
-      const baseResult = await solveLP(model);
+      const baseResult = await withFbaTimeout(solveLP(model));
       if (baseResult.status !== 'optimal') {
         return NextResponse.json(
           { ok: false, error: 'Base FBA solve failed — model infeasible for FVA', requestId },
@@ -219,7 +235,7 @@ export async function POST(request: Request) {
         );
       }
       const reactionIds = asStringArray(input.reactionIds);
-      const fvaResult = await runFVA(model, baseResult.objectiveValue, reactionIds.length > 0 ? reactionIds : undefined);
+      const fvaResult = await withFbaTimeout(runFVA(model, baseResult.objectiveValue, reactionIds.length > 0 ? reactionIds : undefined));
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-fva',
         outputAssumptions: [
@@ -241,7 +257,7 @@ export async function POST(request: Request) {
     // ── pFBA ────────────────────────────────────────────────────────
     if (action === 'pfba') {
       const model = buildAuthorityFBAModel(baseRequest);
-      const pfbaResult = await runPFBA(model);
+      const pfbaResult = await withFbaTimeout(runPFBA(model));
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-pfba',
         outputAssumptions: [
@@ -276,12 +292,12 @@ export async function POST(request: Request) {
       }
       const geneKnockouts = getKnockoutReactions(genes, gprRules);
       const allKnockouts = Array.from(new Set([...knockouts, ...geneKnockouts]));
-      const result = await solveExpandedFBA({
+      const result = await withFbaTimeout(solveExpandedFBA({
         objective: objective === 'atp' ? 'biomass' : objective,
         glucoseUptake,
         oxygenUptake,
         knockouts: allKnockouts,
-      });
+      }));
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-knockout',
         outputAssumptions: [
@@ -333,14 +349,14 @@ export async function POST(request: Request) {
     // ── OptKnock (bilevel knockout strategy) ────────────────────────
     if (action === 'optknock') {
       const { runOptKnock } = await import('../../../src/server/fbaOptKnock');
-      const optknockResult = await runOptKnock({
+      const optknockResult = await withFbaTimeout(runOptKnock({
         reactions: (input.reactions as import('../../../src/server/fbaOptKnock').OptKnockReaction[]) ?? [],
         objectiveId: (input.objectiveId as string) ?? 'BIOMASS',
         productReactionId: (input.productReactionId as string) ?? 'PRODUCT',
       }, {
         maxKnockouts: asNumber(input.maxKnockouts, 3),
         growthFraction: asNumber(input.growthFraction, 0.01),
-      });
+      }));
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-optknock',
         outputAssumptions: [
@@ -360,7 +376,7 @@ export async function POST(request: Request) {
     }
 
     // ── Standard FBA (default) ──────────────────────────────────────
-    const result = await solveAuthorityFBA(baseRequest);
+    const result = await withFbaTimeout(solveAuthorityFBA(baseRequest));
     const provenanceEntry = createProvenanceEntry({
       toolId: 'fbasim-single',
       outputAssumptions: [
@@ -387,13 +403,6 @@ export async function POST(request: Request) {
       error: errorMsg,
       timestamp: new Date().toISOString(),
     }));
-    return NextResponse.json(
-      {
-        ok: false,
-        error: 'FBA engine error',
-        requestId,
-      },
-      { status: 500, headers: getCorsHeaders(request) },
-    );
+    return errorResponse('FBA engine error', 500, { requestId }, getCorsHeaders(request));
   }
 }

@@ -200,6 +200,7 @@ export async function middleware(req: NextRequest) {
     const config = getRateLimitConfig(pathname);
     return NextResponse.json(
       {
+        ok: false,
         error: 'Rate limit exceeded',
         retryAfterMs: rateLimit.resetMs,
         requestId,
@@ -220,6 +221,7 @@ export async function middleware(req: NextRequest) {
   if (isProtectedRoute(pathname) && !(await isAuthenticated(req, isHighSecurityRoute(pathname)))) {
     return NextResponse.json(
       {
+        ok: false,
         error: 'Authentication required',
         message: 'Provide a valid API key via X-API-Key header or Authorization: Bearer token.',
         requestId,

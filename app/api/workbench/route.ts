@@ -5,6 +5,7 @@ import { deriveAnalyzeCompatibilityProjection } from '../../../src/domain/workfl
 import type { WorkflowArtifact } from '../../../src/domain/workflowArtifact';
 import { sanitizeWorkbenchState } from '../../../src/store/workbenchValidation';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
+import { errorResponse } from '../../../src/utils/apiErrors';
 import { evaluateClaimSurfacePolicy } from '../../../src/services/trustPolicyEngine';
 import {
   getBackendMeta,
@@ -147,10 +148,7 @@ export async function GET(request: Request) {
   // to prevent unauthenticated data access.
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json(
-      { ok: false, error: 'Authentication required' },
-      { status: 401, headers: getCorsHeaders(request) },
-    );
+    return errorResponse('Authentication required', 401, undefined, getCorsHeaders(request));
   }
 
   const { artifactId, projectId, actorId } = getProjectScope(request);
@@ -159,7 +157,7 @@ export async function GET(request: Request) {
   const explicitScope = useArtifactScope ? { forceExplicit: true as const } : undefined;
 
   if (artifactId && !(await projectStateExists(artifactId, explicitScope))) {
-    return NextResponse.json({ ok: false, error: 'Workflow artifact not found' }, { status: 404, headers: getCorsHeaders(request) });
+    return errorResponse('Workflow artifact not found', 404, undefined, getCorsHeaders(request));
   }
 
   // ── Project membership verification ──
@@ -224,44 +222,32 @@ export async function PUT(request: Request) {
     'http://localhost:3001',
   ];
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
-    return NextResponse.json(
-      { ok: false, error: 'Forbidden: invalid origin' },
-      { status: 403, headers: getCorsHeaders(request) },
-    );
+    return errorResponse('Forbidden: invalid origin', 403, undefined, getCorsHeaders(request));
   }
 
   // ── CSRF: require JSON content type ──
   const putContentType = request.headers.get('content-type') ?? '';
   if (!putContentType.includes('application/json')) {
-    return NextResponse.json(
-      { ok: false, error: 'Invalid content type' },
-      { status: 415, headers: getCorsHeaders(request) },
-    );
+    return errorResponse('Invalid content type', 415, undefined, getCorsHeaders(request));
   }
 
   // ── Body size limit (1MB) ──
   const contentLength = parseInt(request.headers.get('content-length') ?? '0', 10);
   if (contentLength > 1_000_000) {
-    return NextResponse.json(
-      { ok: false, error: 'Request body too large' },
-      { status: 413, headers: getCorsHeaders(request) },
-    );
+    return errorResponse('Request body too large', 413, undefined, getCorsHeaders(request));
   }
 
   const { artifactId: scopedArtifactId, projectId: scopedProjectId, actorId } = getProjectScope(request);
   const body = await request.json().catch(() => null);
   const incoming = sanitizeWorkbenchState(body?.state);
   if (!incoming) {
-    return NextResponse.json({ ok: false, error: 'Invalid workbench payload' }, { status: 400, headers: getCorsHeaders(request) });
+    return errorResponse('Invalid workbench payload', 400, undefined, getCorsHeaders(request));
   }
 
   // ── State payload size guard (500KB) ──
   const stateJson = JSON.stringify(incoming);
   if (stateJson.length > 500_000) {
-    return NextResponse.json(
-      { ok: false, error: 'State payload too large' },
-      { status: 413, headers: getCorsHeaders(request) },
-    );
+    return errorResponse('State payload too large', 413, undefined, getCorsHeaders(request));
   }
 
   await getWorkbenchDb();
@@ -271,13 +257,7 @@ export async function PUT(request: Request) {
     || normalizeNonEmptyId(incoming.workflowArtifact?.id)
     || (incoming.workflowArtifact ? `artifact-${randomUUID()}` : undefined);
   if (needsArtifactScope && !resolvedArtifactId) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: 'Artifact-scoped persistence could not resolve a stable artifact ID',
-      },
-      { status: 500 },
-    );
+    return errorResponse('Artifact-scoped persistence could not resolve a stable artifact ID', 500);
   }
   const scopeId: string = needsArtifactScope
     ? resolvedArtifactId!
