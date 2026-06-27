@@ -170,8 +170,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.error('[api/esm2] error:', error);
     return NextResponse.json(
-      { ok: false, error: String(error), requestId },
+      { ok: false, error: 'Internal server error', requestId },
       { status: 500, headers: getCorsHeaders(req) },
     );
   }

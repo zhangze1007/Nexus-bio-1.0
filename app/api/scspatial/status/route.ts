@@ -34,8 +34,9 @@ export async function GET(request: Request) {
 
     if (!resp.ok) {
       const errText = await resp.text();
+      console.error('[api/scspatial/status] Python backend error:', errText);
       return NextResponse.json(
-        { ok: false, error: `Python backend returned ${resp.status}`, detail: errText },
+        { ok: false, error: `Python backend returned ${resp.status}` },
         { status: resp.status },
       );
     }

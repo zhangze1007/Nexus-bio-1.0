@@ -43,12 +43,13 @@ async function probeDatabase(): Promise<HealthCheckResult> {
       lastChecked: new Date().toISOString(),
     };
   } catch (err) {
+    console.error('[api/admin/health] Database probe error:', err);
     return {
       name: "Database",
       status: "down",
       latencyMs: Math.round(performance.now() - start),
       lastChecked: new Date().toISOString(),
-      detail: err instanceof Error ? err.message : "Unknown error",
+      detail: "Database connection failed",
     };
   }
 }
@@ -84,12 +85,13 @@ async function probeGroq(): Promise<HealthCheckResult> {
       detail: `HTTP ${res.status}`,
     };
   } catch (err) {
+    console.error('[api/admin/health] Groq probe error:', err);
     return {
       name: "Groq",
       status: "down",
       latencyMs: Math.round(performance.now() - start),
       lastChecked: new Date().toISOString(),
-      detail: err instanceof Error ? err.message : "Network error",
+      detail: "Groq API unreachable",
     };
   }
 }
@@ -124,12 +126,13 @@ async function probeGemini(): Promise<HealthCheckResult> {
       detail: `HTTP ${res.status}`,
     };
   } catch (err) {
+    console.error('[api/admin/health] Gemini probe error:', err);
     return {
       name: "Gemini",
       status: "down",
       latencyMs: Math.round(performance.now() - start),
       lastChecked: new Date().toISOString(),
-      detail: err instanceof Error ? err.message : "Network error",
+      detail: "Gemini API unreachable",
     };
   }
 }
@@ -292,7 +295,7 @@ export async function GET(req: Request) {
       { status: 200, headers: corsHeaders },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500, headers: corsHeaders });
+    console.error('[api/admin/health] GET error:', err);
+    return NextResponse.json({ ok: false, error: "Internal server error" }, { status: 500, headers: corsHeaders });
   }
 }

@@ -115,8 +115,9 @@ export async function POST(req: NextRequest) {
     }, { status: 503, headers: getCorsHeaders(req) });
 
   } catch (error) {
+    console.error('[api/alphafold3] error:', error);
     return NextResponse.json(
-      { ok: false, error: String(error), requestId },
+      { ok: false, error: 'Internal server error', requestId },
       { status: 500, headers: getCorsHeaders(req) },
     );
   }

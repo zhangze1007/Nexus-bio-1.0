@@ -386,15 +386,10 @@ export async function POST(request: Request) {
       error: errorMsg,
       timestamp: new Date().toISOString(),
     }));
-    // Expose the error type to the client (solver errors are safe to share;
-    // stack traces and internal paths are not).
-    const clientMessage = errorMsg.includes('solve') || errorMsg.includes('infeasible') || errorMsg.includes('unbounded')
-      ? `FBA solve failed: ${errorMsg}`
-      : `FBA engine error: ${errorMsg}`;
     return NextResponse.json(
       {
         ok: false,
-        error: clientMessage,
+        error: 'FBA engine error',
         requestId,
       },
       { status: 500, headers: getCorsHeaders(request) },

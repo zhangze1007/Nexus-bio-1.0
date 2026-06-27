@@ -137,7 +137,7 @@ export async function POST(request: Request) {
         if (!resp.ok) {
           const errText = await resp.text();
           console.error('Python backend ingest-sidecar error:', errText);
-          return jsonError('Python backend analysis failed', 502, errText);
+          return jsonError('Python backend analysis failed', 502);
         }
 
         const artifact = await resp.json() as ScSpatialNormalizedArtifact;

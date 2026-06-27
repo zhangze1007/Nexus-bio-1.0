@@ -33,9 +33,9 @@ export async function GET(req: Request) {
       headers: getCorsHeaders(req),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error('[api/admin/seed] GET error:', error);
     return NextResponse.json(
-      { error: "Failed to get seed status", detail: message },
+      { error: "Failed to get seed status" },
       { status: 500, headers: getCorsHeaders(req) },
     );
   }
@@ -81,9 +81,9 @@ export async function POST(req: Request) {
       { status: 400, headers: getCorsHeaders(req) },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error('[api/admin/seed] POST error:', error);
     return NextResponse.json(
-      { error: "Seed operation failed", detail: message },
+      { error: "Seed operation failed" },
       { status: 500, headers: getCorsHeaders(req) },
     );
   }

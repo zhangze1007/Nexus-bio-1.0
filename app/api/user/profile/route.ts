@@ -26,8 +26,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ user });
   } catch (err) {
+    console.error('[api/user/profile] GET error:', err);
     return NextResponse.json(
-      { error: 'Failed to fetch profile', detail: String(err) },
+      { error: 'Failed to fetch profile' },
       { status: 500 },
     );
   }
@@ -78,8 +79,9 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ user });
   } catch (err) {
+    console.error('[api/user/profile] PUT error:', err);
     return NextResponse.json(
-      { error: 'Failed to update profile', detail: String(err) },
+      { error: 'Failed to update profile' },
       { status: 500 },
     );
   }
