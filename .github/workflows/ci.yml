@@ -32,13 +32,8 @@ jobs:
       - name: Typecheck (tsc --noEmit)
         run: npx tsc --noEmit
 
-      - name: Run unit tests
-        run: npx jest --verbose 2>&1
-        env:
-          CI: true
-
       - name: Run unit tests with coverage
-        run: npx jest --coverage
+        run: npx jest --verbose --coverage 2>&1
         env:
           CI: true
 
