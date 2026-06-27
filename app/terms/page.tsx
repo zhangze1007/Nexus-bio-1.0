@@ -251,7 +251,56 @@ export default function TermsPage() {
             fontFamily: 'monospace',
           }}
         >
-          9. Contact
+          9. Synthetic Biology Research
+        </h2>
+        <p>
+          This platform is designed for legitimate synthetic biology research. Users agree not to use
+          this platform for:
+        </p>
+        <p>
+          Development of biological weapons or harmful organisms
+        </p>
+        <p>
+          Research that violates local or international biosecurity regulations
+        </p>
+        <p>
+          Any activity that could cause environmental harm through engineered organisms
+        </p>
+        <p>
+          Users are responsible for ensuring their research complies with all applicable biosafety
+          regulations, including institutional biosafety committee (IBC) approvals where required.
+        </p>
+
+        <h2
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '13px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            margin: '2.5rem 0 0.75rem',
+            fontFamily: 'monospace',
+          }}
+        >
+          10. Export Control
+        </h2>
+        <p>
+          Some synthetic biology tools and data may be subject to export control regulations. Users
+          are responsible for compliance with applicable export control laws.
+        </p>
+
+        <h2
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '13px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            margin: '2.5rem 0 0.75rem',
+            fontFamily: 'monospace',
+          }}
+        >
+          11. Contact
         </h2>
         <p>
           For questions regarding these Terms of Service, please contact us through the contact

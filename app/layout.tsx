@@ -11,6 +11,7 @@ import AuthProvider from '../src/components/auth/AuthProvider';
 import QueryProvider from '../src/components/providers/QueryProvider';
 import WebVitals from '../src/components/WebVitals';
 import WorkflowBanner from '../src/components/WorkflowBanner';
+import { ConsentBanner } from '../src/components/ConsentBanner';
 import { PostHogProvider } from '../src/components/analytics/PostHogProvider';
 import I18nProvider from '../src/components/i18n/I18nProvider';
 
@@ -57,6 +58,7 @@ export default async function RootLayout({
                 </Suspense>
                 <div id="root">
                   <WorkflowBanner />
+                  <ConsentBanner />
                   <RouteTransition>
                     <main id="main-content">{children}</main>
                   </RouteTransition>
