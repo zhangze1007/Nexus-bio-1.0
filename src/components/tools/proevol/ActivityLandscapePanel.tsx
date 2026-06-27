@@ -879,6 +879,18 @@ function FitnessSurface({
     return { geometry: geo, colors: colorArr };
   }, [cells, positions, cellLookup]);
 
+  // Dispose geometry on unmount or when dependencies change
+  const geometryRef = useRef<BufferGeometry | null>(null);
+  useEffect(() => {
+    geometryRef.current = geometry;
+    return () => {
+      if (geometryRef.current) {
+        geometryRef.current.dispose();
+        geometryRef.current = null;
+      }
+    };
+  }, [geometry]);
+
   return (
     <group rotation={[-0.5, 0.3, 0]}>
       <mesh ref={meshRef} geometry={geometry}>

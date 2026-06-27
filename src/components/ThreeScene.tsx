@@ -410,7 +410,7 @@ function glyphCfg(id: string, cc: number, nodeType?: string): GCfg {
   };
 }
 
-function GeoComp({ g, s }: { g: GeomKind; s: number }) {
+function GeoComp({ g, s, lod }: { g: GeomKind; s: number; lod?: boolean }) {
   switch (g) {
     case "oct":
       return <octahedronGeometry args={[s, 0]} />;
@@ -419,9 +419,9 @@ function GeoComp({ g, s }: { g: GeomKind; s: number }) {
     case "tetra":
       return <tetrahedronGeometry args={[s, 0]} />;
     case "icos":
-      return <icosahedronGeometry args={[s, 1]} />;
+      return <icosahedronGeometry args={[s, lod ? 0 : 1]} />;
     default:
-      return <sphereGeometry args={[s, 12, 12]} />;
+      return <sphereGeometry args={[s, lod ? 6 : 12, lod ? 6 : 12]} />;
   }
 }
 
@@ -534,6 +534,7 @@ const MolNode = React.memo(function MolNode({
   glowMultiplier = 1,
   stressIndex = 0,
   viewMode = "network",
+  lod = false,
 }: {
   node: PathwayNode;
   hov: boolean;
@@ -546,6 +547,7 @@ const MolNode = React.memo(function MolNode({
   glowMultiplier?: number;
   stressIndex?: number;
   viewMode?: SceneViewMode;
+  lod?: boolean;
 }) {
   const _flowSpeed = flowSpeed ?? 1;
   const nodeRadius = 0.32 + cc * 0.05;
@@ -624,20 +626,20 @@ const MolNode = React.memo(function MolNode({
     >
       <group ref={glyphGrp}>
         <mesh ref={bodyRef}>
-          <GeoComp g={cfg.geom} s={nodeRadius * activityScale * modeScale} />
+          <GeoComp g={cfg.geom} s={nodeRadius * activityScale * modeScale} lod={lod} />
           <meshLambertMaterial color={finalColor} emissive={finalColor} emissiveIntensity={0.12} depthWrite={true} />
         </mesh>
 
         {/* Invisible hitbox for reliable click detection */}
         <mesh visible={false}>
-          <sphereGeometry args={[0.8 * modeScale, 16, 16]} />
+          <sphereGeometry args={[0.8 * modeScale, lod ? 6 : 16, lod ? 6 : 16]} />
           <meshBasicMaterial color="white" transparent opacity={0} depthWrite={false} />
         </mesh>
 
         {/* Bottleneck anomaly glow — sharp red wireframe ring when substrate accumulates under stress */}
         {stressIndex > 0.5 && (node.risk_score ?? 0) > 0.5 && (
           <mesh>
-            <sphereGeometry args={[nodeRadius * 1.55 * modeScale, 16, 16]} />
+            <sphereGeometry args={[nodeRadius * 1.55 * modeScale, lod ? 8 : 16, lod ? 8 : 16]} />
             <meshBasicMaterial
               color="#FF2222"
               transparent
@@ -650,7 +652,7 @@ const MolNode = React.memo(function MolNode({
 
         {cfg.rr.map((r, i) => (
           <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
-            <torusGeometry args={[r * modeScale, 0.007, 4, 16]} />
+            <torusGeometry args={[r * modeScale, 0.007, lod ? 2 : 4, lod ? 8 : 16]} />
             <meshLambertMaterial
               color={finalColor}
               emissive={finalColor}
@@ -663,6 +665,8 @@ const MolNode = React.memo(function MolNode({
         ))}
       </group>
 
+      {/* LOD: skip labels for inactive nodes when node count is large */}
+      {(!lod || hov || sel) && (
       <Html position={[0, labelOffsetY, 0]} center style={{ pointerEvents: "none", whiteSpace: "nowrap" }}>
         <div
           style={{
@@ -682,6 +686,7 @@ const MolNode = React.memo(function MolNode({
           {lbl}
         </div>
       </Html>
+      )}
 
       {hov && !sel && (
         <Html distanceFactor={10} center style={{ pointerEvents: "none", zIndex: 100 }}>
@@ -1134,6 +1139,9 @@ function Scene({
     viewportSize.width,
   ]);
 
+  // LOD: reduce geometry detail and skip labels for large pathways
+  const lod = nodes.length > 50;
+
   const cc = useMemo(() => {
     const c: Record<string, number> = {};
     nodes.forEach((n) => {
@@ -1247,6 +1255,7 @@ function Scene({
             glowMultiplier={glowMultiplier}
             stressIndex={stressIndex}
             viewMode={viewMode}
+            lod={lod}
           />
         ))}
       </group>
