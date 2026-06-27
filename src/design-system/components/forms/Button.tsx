@@ -99,6 +99,8 @@ function Spinner({ size }: { size: ButtonSize }) {
   const spinnerSize = size === "sm" ? 12 : size === "md" ? 14 : 16;
   return (
     <span
+      role="status"
+      aria-label="Loading"
       style={{
         display: "inline-block",
         width: spinnerSize,

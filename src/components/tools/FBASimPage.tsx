@@ -268,6 +268,8 @@ export default React.memo(function FBASimPage() {
         />
       </div>
 
+      {/* ── Tab Results (aria-live for screen reader announcements) ── */}
+      <div aria-live="polite">
       {/* ── Flux Map Tab ── */}
       <ToolTabPanel tabId="flux" activeId={s.activeTab}>
         <FluxMapTab
@@ -452,6 +454,7 @@ export default React.memo(function FBASimPage() {
       <ToolTabPanel tabId="custom" activeId={s.activeTab}>
         <CustomModelPanel />
       </ToolTabPanel>
+      </div>
       <NextStepButton currentStepId="fbasim" />
     </ToolShell>
   );

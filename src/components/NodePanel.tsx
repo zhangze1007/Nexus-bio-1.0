@@ -720,7 +720,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
             }}
             ref={panelRef}
             role="dialog"
-            aria-modal="false"
+            aria-modal="true"
             aria-label={node.label}
           >
             {/* Header */}

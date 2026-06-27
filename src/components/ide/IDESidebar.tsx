@@ -226,7 +226,7 @@ export default function IDESidebar() {
                     fontSize: 10,
                     textTransform: "uppercase",
                     letterSpacing: "0.1em",
-                    color: "rgba(226,232,240,0.42)",
+                    color: "rgba(226,232,240,0.7)",
                     overflow: "hidden",
                     pointerEvents: collapsed ? "none" : "auto",
                   }}
@@ -328,7 +328,7 @@ export default function IDESidebar() {
                             style={{
                               fontFamily: SANS,
                               fontSize: 10,
-                              color: isActive ? "rgba(226,232,240,0.48)" : "rgba(226,232,240,0.42)",
+                              color: isActive ? "rgba(226,232,240,0.7)" : "rgba(226,232,240,0.7)",
                               lineHeight: 1.2,
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -362,7 +362,7 @@ export default function IDESidebar() {
                 fontSize: 10,
                 textTransform: "uppercase",
                 letterSpacing: "0.1em",
-                color: "rgba(226,232,240,0.42)",
+                color: "rgba(226,232,240,0.7)",
                 overflow: "hidden",
                 pointerEvents: collapsed ? "none" : "auto",
               }}
@@ -458,7 +458,7 @@ export default function IDESidebar() {
                         style={{
                           fontFamily: SANS,
                           fontSize: 10,
-                          color: isActive ? "rgba(226,232,240,0.48)" : "rgba(226,232,240,0.42)",
+                          color: isActive ? "rgba(226,232,240,0.7)" : "rgba(226,232,240,0.7)",
                           lineHeight: 1.2,
                           overflow: "hidden",
                           textOverflow: "ellipsis",

@@ -527,6 +527,8 @@ export function ClusteredHeatmap({
         ref={svgRef}
         width={width}
         height={height}
+        role="img"
+        aria-label="Clustered heatmap visualization"
         style={{ display: "block" }}
       />
     </div>

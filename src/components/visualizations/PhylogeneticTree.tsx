@@ -511,6 +511,8 @@ export function PhylogeneticTree({
         ref={svgRef}
         width={width}
         height={height}
+        role="img"
+        aria-label="Phylogenetic tree visualization"
         style={{ display: "block" }}
       />
     </div>
