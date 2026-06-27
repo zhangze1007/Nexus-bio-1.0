@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const limitParam = url.searchParams.get("limit");
     const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
 
-    if (limitParam && (Number.isNaN(limit) || limit < 1)) {
+    if (limitParam && (Number.isNaN(limit) || limit! < 1)) {
       return NextResponse.json(
         { error: "limit must be a positive integer" },
         { status: 400 },
