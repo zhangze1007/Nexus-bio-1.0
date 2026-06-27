@@ -29,6 +29,11 @@ describe("SkeletonLine", () => {
     expect(bones(container)).toHaveLength(1);
   });
 
+  it("renders nothing when count=0", () => {
+    const { container } = render(<SkeletonLine count={0} />);
+    expect(bones(container)).toHaveLength(0);
+  });
+
   it("renders the requested number of lines", () => {
     const { container } = render(<SkeletonLine count={4} />);
     // count>1 wraps in a group div; bones are children of that group
@@ -94,8 +99,9 @@ describe("SkeletonCard", () => {
   it("applies dark-theme base color", () => {
     render(<SkeletonCard />);
     const card = screen.getByTestId("skeleton-card");
-    // BASE_COLOR = #10131a — jsdom normalizes hex to rgb()
-    expect(card.style.background).toMatch(/rgb\(16,\s*19,\s*26\)/);
+    // THEME.BG_PANEL = #10131a — check hex or rgb normalization
+    const bg = card.style.background.toLowerCase();
+    expect(bg === "#10131a" || /rgb\(16,\s*19,\s*26\)/.test(bg)).toBe(true);
   });
 });
 
@@ -182,6 +188,7 @@ describe("shimmer animation & dark theme", () => {
       <>
         <SkeletonLine />
         <SkeletonCard />
+        <SkeletonTable />
         <SkeletonChart />
       </>,
     );
@@ -198,6 +205,7 @@ describe("shimmer animation & dark theme", () => {
         <SkeletonLine />
         <SkeletonCard />
         <SkeletonTable />
+        <SkeletonChart />
       </>,
     );
     const allBones = bones(container);

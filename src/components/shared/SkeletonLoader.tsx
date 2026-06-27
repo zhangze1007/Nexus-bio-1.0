@@ -1,20 +1,9 @@
 "use client";
+import { useMemo } from "react";
 import { THEME } from "../../theme";
 
-/* ── CSS shimmer keyframes (injected once) ────────────────────────── */
-let shimmerInjected = false;
-function ensureShimmerKeyframes() {
-  if (shimmerInjected || typeof document === "undefined") return;
-  const style = document.createElement("style");
-  style.textContent = `@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`;
-  document.head.appendChild(style);
-  shimmerInjected = true;
-}
-
-/* ── Shared constants ─────────────────────────────────────────────── */
-const BASE_COLOR = "#10131a";
-const SHIMMER_COLOR = "#1a1d24";
-const SHIMMER_GRADIENT = `linear-gradient(90deg, ${BASE_COLOR} 25%, ${SHIMMER_COLOR} 37%, ${BASE_COLOR} 63%)`;
+/* ── Shared constants (shimmer keyframes defined in globals.css) ──── */
+const SHIMMER_GRADIENT = `linear-gradient(90deg, ${THEME.BG_PANEL} 25%, ${THEME.PANEL_STRONG} 37%, ${THEME.BG_PANEL} 63%)`;
 const SHIMMER_STYLE: React.CSSProperties = {
   backgroundSize: "400% 100%",
   animation: "shimmer 1.6s ease-in-out infinite",
@@ -31,7 +20,6 @@ interface BoneProps {
 }
 
 function Bone({ width = "100%", height = "20px", borderRadius = THEME.R_SM, style, className }: BoneProps) {
-  ensureShimmerKeyframes();
   const w = typeof width === "number" ? `${width}px` : width;
   const h = typeof height === "number" ? `${height}px` : height;
   return (
@@ -64,7 +52,8 @@ export interface SkeletonLineProps {
 }
 
 export function SkeletonLine({ width = "100%", height = 14, count = 1, gap = 8 }: SkeletonLineProps) {
-  if (count <= 1) return <Bone width={width} height={height} borderRadius="4px" />;
+  if (count < 1) return null;
+  if (count === 1) return <Bone width={width} height={height} borderRadius="4px" />;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap }} data-testid="skeleton-line-group">
@@ -103,7 +92,7 @@ export function SkeletonCard({ width = "100%", height = 180, showHeader = true, 
         height,
         borderRadius: THEME.R_MD,
         border: `1px solid ${THEME.BORDER}`,
-        background: BASE_COLOR,
+        background: THEME.BG_PANEL,
         padding: THEME.SP_MD,
         display: "flex",
         flexDirection: "column",
@@ -117,7 +106,7 @@ export function SkeletonCard({ width = "100%", height = 180, showHeader = true, 
           <Bone width="55%" height={14} borderRadius="4px" />
         </div>
       )}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, marginTop: showHeader ? 4 : 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, marginTop: showHeader ? THEME.SP_XS : 0 }}>
         {Array.from({ length: bodyLines }, (_, i) => (
           <Bone
             key={i}
@@ -145,7 +134,8 @@ export interface SkeletonTableProps {
 }
 
 export function SkeletonTable({ columns = 4, rows = 5, width = "100%", showHeader = true }: SkeletonTableProps) {
-  const colTemplate = `repeat(${columns}, 1fr)`;
+  const safeColumns = Math.max(1, columns);
+  const colTemplate = `repeat(${safeColumns}, 1fr)`;
 
   return (
     <div
@@ -169,11 +159,11 @@ export function SkeletonTable({ columns = 4, rows = 5, width = "100%", showHeade
             gridTemplateColumns: colTemplate,
             gap: THEME.SP_MD,
             padding: `${THEME.SP_SM}px ${THEME.SP_MD}px`,
-            background: SHIMMER_COLOR,
+            background: THEME.PANEL_STRONG,
             borderBottom: `1px solid ${THEME.BORDER}`,
           }}
         >
-          {Array.from({ length: columns }, (_, i) => (
+          {Array.from({ length: safeColumns }, (_, i) => (
             <Bone key={i} width={`${60 + (i % 3) * 15}%`} height={12} borderRadius="4px" />
           ))}
         </div>
@@ -190,10 +180,10 @@ export function SkeletonTable({ columns = 4, rows = 5, width = "100%", showHeade
             gap: THEME.SP_MD,
             padding: `${10}px ${THEME.SP_MD}px`,
             borderBottom: r < rows - 1 ? `1px solid ${THEME.BORDER}` : "none",
-            background: r % 2 === 0 ? BASE_COLOR : "rgba(17,19,24,0.5)",
+            background: r % 2 === 0 ? THEME.BG_PANEL : "rgba(17,19,24,0.5)",
           }}
         >
-          {Array.from({ length: columns }, (_, c) => (
+          {Array.from({ length: safeColumns }, (_, c) => (
             <Bone
               key={c}
               width={`${50 + ((r + c) % 4) * 12}%`}
@@ -221,11 +211,15 @@ export interface SkeletonChartProps {
 }
 
 export function SkeletonChart({ width = "100%", height = 240, showAxes = true, bars = 6 }: SkeletonChartProps) {
-  /* Generate deterministic-ish bar heights that look like data */
-  const barHeights = Array.from({ length: bars }, (_, i) => {
-    const seed = ((i * 37 + 13) % 7) / 7; // simple hash 0..1
-    return 30 + seed * 55; // 30%–85%
-  });
+  /* Generate deterministic bar heights that look like data */
+  const barHeights = useMemo(
+    () =>
+      Array.from({ length: bars }, (_, i) => {
+        const seed = ((i * 37 + 13) % 19) / 19; // hash with larger prime for less repetition
+        return 30 + seed * 55; // 30%–82%
+      }),
+    [bars],
+  );
 
   return (
     <div
@@ -235,7 +229,7 @@ export function SkeletonChart({ width = "100%", height = 240, showAxes = true, b
         height,
         borderRadius: THEME.R_SM,
         border: `1px solid ${THEME.BORDER}`,
-        background: BASE_COLOR,
+        background: THEME.BG_PANEL,
         padding: THEME.SP_MD,
         display: "flex",
         flexDirection: "column",
