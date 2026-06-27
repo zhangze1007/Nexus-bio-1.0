@@ -75,14 +75,14 @@ describe("generateCacheKey", () => {
 describe("setCachedResponse and getCachedResponse", () => {
   test("round-trips a cached response", async () => {
     const key = generateCacheKey("q1", "model-1");
-    await setCachedResponse(key, "answer-1", 300, "model-1", 42);
+    await setCachedResponse(key, "answer-1", 300);
 
     const cached = await getCachedResponse(key);
     expect(cached).not.toBeNull();
     expect(cached!.response).toBe("answer-1");
-    expect(cached!.model).toBe("model-1");
-    expect(cached!.tokensUsed).toBe(42);
     expect(cached!.cacheKey).toBe(key);
+    expect(cached!.createdAt).toBeDefined();
+    expect(cached!.expiresAt).toBeDefined();
   });
 
   test("returns null for a cache miss", async () => {
@@ -93,7 +93,7 @@ describe("setCachedResponse and getCachedResponse", () => {
   test("returns null for an expired entry", async () => {
     const key = generateCacheKey("ttl-test", "m");
     // Set TTL of 1 second
-    await setCachedResponse(key, "short-lived", 1, "m");
+    await setCachedResponse(key, "short-lived", 1);
     // Wait for it to expire
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
@@ -103,22 +103,38 @@ describe("setCachedResponse and getCachedResponse", () => {
 
   test("overwrites an existing entry with the same key (upsert)", async () => {
     const key = generateCacheKey("overwrite", "m");
-    await setCachedResponse(key, "first", 300, "m", 10);
-    await setCachedResponse(key, "second", 300, "m", 20);
+    await setCachedResponse(key, "first", 300);
+    await setCachedResponse(key, "second", 300);
 
     const cached = await getCachedResponse(key);
     expect(cached).not.toBeNull();
     expect(cached!.response).toBe("second");
-    expect(cached!.tokensUsed).toBe(20);
   });
 
-  test("defaults model to 'unknown' and tokensUsed to 0 when omitted", async () => {
-    const key = generateCacheKey("defaults", "m");
-    await setCachedResponse(key, "data", 300);
+  test("expires_at is in the future by the requested TTL", async () => {
+    const key = generateCacheKey("ttl-check", "m");
+    const before = Date.now();
+    await setCachedResponse(key, "data", 600);
+    const after = Date.now();
 
     const cached = await getCachedResponse(key);
-    expect(cached!.model).toBe("unknown");
-    expect(cached!.tokensUsed).toBe(0);
+    expect(cached).not.toBeNull();
+    const expiresAt = new Date(cached!.expiresAt).getTime();
+    // expires_at should be ~600s from now (within a small margin)
+    expect(expiresAt).toBeGreaterThanOrEqual(before + 600_000);
+    expect(expiresAt).toBeLessThanOrEqual(after + 600_000 + 1000);
+  });
+
+  test("created_at is set to approximately the current time", async () => {
+    const key = generateCacheKey("created-check", "m");
+    const before = new Date().toISOString();
+    await setCachedResponse(key, "data", 300);
+    const after = new Date().toISOString();
+
+    const cached = await getCachedResponse(key);
+    expect(cached).not.toBeNull();
+    expect(cached!.createdAt >= before).toBe(true);
+    expect(cached!.createdAt <= after).toBe(true);
   });
 });
 

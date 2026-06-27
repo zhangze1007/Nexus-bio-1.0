@@ -5,7 +5,7 @@
  * Entries expire after a configurable TTL to avoid stale results while
  * still reducing redundant API calls during burst traffic.
  *
- * Schema: ai_cache (id, cache_key, response, model, tokens_used, created_at, expires_at)
+ * Schema: ai_cache (cache_key TEXT PK, response TEXT, model TEXT, tokens_used INTEGER, created_at TEXT, expires_at TEXT)
  */
 
 import { createHash } from "node:crypto";
@@ -14,7 +14,6 @@ import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
 // ── Types ──
 
 export interface CachedResponse {
-  id: string;
   cacheKey: string;
   response: string;
   model: string;
@@ -27,18 +26,13 @@ export interface CachedResponse {
 
 const CREATE_TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS ai_cache (
-    id          TEXT PRIMARY KEY,
-    cache_key   TEXT NOT NULL UNIQUE,
+    cache_key   TEXT PRIMARY KEY,
     response    TEXT NOT NULL,
     model       TEXT NOT NULL,
     tokens_used INTEGER NOT NULL DEFAULT 0,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     expires_at  TEXT NOT NULL
   )
-`;
-
-const CREATE_INDEX_SQL = `
-  CREATE INDEX IF NOT EXISTS idx_ai_cache_key ON ai_cache (cache_key)
 `;
 
 const CREATE_EXPIRY_INDEX_SQL = `
@@ -50,7 +44,6 @@ let schemaEnsured = false;
 async function ensureSchema(): Promise<void> {
   if (schemaEnsured) return;
   await sqlRun(CREATE_TABLE_SQL);
-  await sqlRun(CREATE_INDEX_SQL);
   await sqlRun(CREATE_EXPIRY_INDEX_SQL);
   schemaEnsured = true;
 }
@@ -96,7 +89,6 @@ export async function getCachedResponse(key: string): Promise<CachedResponse | n
   if (!row) return null;
 
   return {
-    id: row.id as string,
     cacheKey: row.cache_key as string,
     response: row.response as string,
     model: row.model as string,
@@ -109,28 +101,22 @@ export async function getCachedResponse(key: string): Promise<CachedResponse | n
 /**
  * Store a response in the cache with a TTL.
  * Uses upsert (INSERT OR REPLACE) so repeated calls with the same key
- * refresh the entry rather than failing on UNIQUE constraint.
+ * refresh the entry rather than failing on PRIMARY KEY constraint.
  */
 export async function setCachedResponse(
   key: string,
   response: string,
   ttlSeconds: number,
-  model = "unknown",
-  tokensUsed = 0,
 ): Promise<void> {
   await ensureSchema();
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString();
-  const id = createHash("sha256")
-    .update(`${key}:${now.toISOString()}`)
-    .digest("hex")
-    .slice(0, 32);
 
   await sqlRun(
-    `INSERT OR REPLACE INTO ai_cache (id, cache_key, response, model, tokens_used, created_at, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, key, response, model, tokensUsed, now.toISOString(), expiresAt],
+    `INSERT OR REPLACE INTO ai_cache (cache_key, response, model, tokens_used, created_at, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [key, response, "", 0, now.toISOString(), expiresAt],
   );
 }
 
