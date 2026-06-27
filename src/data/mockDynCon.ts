@@ -66,8 +66,19 @@ export const DEFAULT_PARAMS: BioreactorParams = {
   Ko: 0.2, // mg/L — Varma & Palsson 1994
   Yxs: 0.45, // g/g — Varma & Palsson 1994
   Yps: 0.38, // g/g — Heuristic: artemisinic acid theoretical yield from glucose (pathway-dependent)
-  kLa: 0.015, // h⁻¹ — Tuned for simulation scale; lab bioreactors typically 50-400 h⁻¹
-  // Garcia-Ochoa & Gomez 2009, Biotechnol Adv 27:153
+  /**
+   * Volumetric oxygen transfer coefficient (h⁻¹).
+   *
+   * **Placeholder** value tuned for stable simulation dynamics.
+   * Real kLa depends on reactor geometry (impeller type, vessel diameter),
+   * agitation speed, aeration rate, and broth rheology. Typical ranges:
+   *   - Lab-scale stirred tank: 50–400 h⁻¹
+   *   - Industrial bioreactors: 100–1000 h⁻¹
+   *
+   * Adjust when matching a specific reactor configuration.
+   * @see Garcia-Ochoa & Gomez 2009, Biotechnol Adv 27:153
+   */
+  kLa: 0.015,
   OstarSat: 8, // mg/L — Dissolved O₂ saturation at 30°C, 1 atm
   // Standard DO tables (7.5-8.5 mg/L at 25-30°C)
   feedConc: 400, // g/L — Glucose feed; Korz et al. 1995, J Biotechnol 39:59 (typical 400-500 g/L)

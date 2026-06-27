@@ -230,6 +230,14 @@ export const metabolicMachine = createMachine({
           target: "simulating",
           actions: assign({ stateEnteredAt: () => Date.now() }),
         },
+        SET_PARAM: {
+          actions: assign({
+            params: ({ context, event }) => ({
+              ...context.params,
+              [event.key]: event.value,
+            }),
+          }),
+        },
         TICK: {
           actions: assign({
             readouts: ({ event }) => event.readouts,

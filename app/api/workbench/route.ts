@@ -296,7 +296,7 @@ export async function PUT(request: Request) {
     });
   }
   const current = await readProjectState(scopeId, explicitScope);
-  if (incoming.revision < current.revision) {
+  if (incoming.revision !== current.revision) {
     const [backend, members, experiments, audit, history] = await Promise.all([
       getBackendMeta(scopeId, actorId, explicitScope),
       listProjectMembers(scopeId, 24, explicitScope),

@@ -172,7 +172,7 @@ export function buildAnalyzeArtifactFromStructuredAnalysis(
 }
 
 // ── Re-export buildCanonicalSlice for the persist middleware ──
-import { buildCanonicalSlice, createInitialWorkflowControl } from "./slices/sharedHelpers";
+import { buildCanonicalSlice, buildWorkflowControlSnapshot, createInitialWorkflowControl } from "./slices/sharedHelpers";
 
 // ── Composed store ──
 export const useWorkbenchStore = create<WorkbenchState>()(
@@ -199,17 +199,21 @@ export const useWorkbenchStore = create<WorkbenchState>()(
       partialize: (state) => buildCanonicalSlice(state),
       merge: (persistedState, currentState) => {
         const sanitized = sanitizeWorkbenchState(persistedState);
-        return sanitized
-          ? {
-              ...currentState,
-              ...sanitized,
-              activeArtifactId: sanitized.activeArtifactId ?? sanitized.workflowArtifact?.id ?? null,
-              analyzeArtifact: sanitized.workflowArtifact
-                ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
-                : sanitized.analyzeArtifact,
-              workflowControl: sanitized.workflowControl,
-            }
-          : currentState;
+        if (!sanitized) return currentState;
+        const merged = {
+          ...currentState,
+          ...sanitized,
+          activeArtifactId: sanitized.activeArtifactId ?? sanitized.workflowArtifact?.id ?? null,
+          analyzeArtifact: sanitized.workflowArtifact
+            ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
+            : sanitized.analyzeArtifact,
+        };
+        // Recompute workflowControl from merged state so it reflects the
+        // latest tool payloads and run artifacts after hydration.
+        if (sanitized.workflowControl) {
+          merged.workflowControl = buildWorkflowControlSnapshot(merged);
+        }
+        return merged;
       },
     },
   ),
