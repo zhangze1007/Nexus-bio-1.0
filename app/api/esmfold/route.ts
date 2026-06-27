@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
       { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=86400, s-maxage=604800' } },
     );
   } catch (error) {
+    console.error('[api/esmfold] Error:', error);
     const errorMsg = error instanceof Error ? error.message : String(error);
 
     // If ESMFold API is unavailable, return a helpful error
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { ok: false, error: errorMsg, requestId },
+      { ok: false, error: 'An internal error occurred', requestId },
       { status: 500, headers: getCorsHeaders(req) },
     );
   }

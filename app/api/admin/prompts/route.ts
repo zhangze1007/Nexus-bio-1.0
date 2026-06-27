@@ -52,9 +52,9 @@ export async function GET(req: Request) {
       { status: 200, headers: corsHeaders },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
+    console.error('[api/admin/prompts] GET error:', err);
     return NextResponse.json(
-      { error: message },
+      { error: 'An internal error occurred' },
       { status: 500, headers: corsHeaders },
     );
   }
@@ -105,9 +105,9 @@ export async function POST(req: Request) {
       { status: 201, headers: corsHeaders },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
+    console.error('[api/admin/prompts] POST error:', err);
     return NextResponse.json(
-      { error: message },
+      { error: 'An internal error occurred' },
       { status: 500, headers: corsHeaders },
     );
   }
@@ -140,10 +140,11 @@ export async function PATCH(req: Request) {
       { status: 200, headers: corsHeaders },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    const status = message.includes('not found') ? 404 : 500;
+    console.error('[api/admin/prompts] PATCH error:', err);
+    const rawMessage = err instanceof Error ? err.message : '';
+    const status = rawMessage.includes('not found') ? 404 : 500;
     return NextResponse.json(
-      { error: message },
+      { error: 'An internal error occurred' },
       { status, headers: corsHeaders },
     );
   }

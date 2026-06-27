@@ -49,9 +49,9 @@ export async function POST(req: Request) {
       { status: 200, headers: corsHeaders },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
+    console.error('[api/admin/retention] POST error:', err);
     return NextResponse.json(
-      { error: message },
+      { error: 'An internal error occurred' },
       { status: 500, headers: corsHeaders },
     );
   }
@@ -83,9 +83,9 @@ export async function GET(req: Request) {
       { status: 200, headers: corsHeaders },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
+    console.error('[api/admin/retention] GET error:', err);
     return NextResponse.json(
-      { error: message },
+      { error: 'An internal error occurred' },
       { status: 500, headers: corsHeaders },
     );
   }

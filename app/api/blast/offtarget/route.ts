@@ -77,9 +77,9 @@ export async function POST(req: NextRequest) {
       { headers: { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=300' } },
     );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'BLAST off-target proxy failed';
+    console.error('[api/blast/offtarget] Error:', err);
     return NextResponse.json(
-      { ok: false, error: msg },
+      { ok: false, error: 'An internal error occurred' },
       { status: 502, headers: getCorsHeaders(req) },
     );
   }

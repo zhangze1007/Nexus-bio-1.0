@@ -20,24 +20,9 @@ import {
 import { tryGroq, tryGemini } from "../../../src/services/analyze/providerChain";
 import { getCorsHeaders, handleOptions } from "../../../src/utils/cors";
 import type { ConversationTurn } from "../../../src/services/analyze/types";
+import { checkRateLimit } from "../../../src/utils/rateLimit";
 
 export const runtime = "nodejs";
-
-// ── Rate limiter ──────────────────────────────────────────────────────
-
-const rateLimit = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string, maxPerMinute = 15): boolean {
-  const now = Date.now();
-  const entry = rateLimit.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimit.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= maxPerMinute) return false;
-  entry.count++;
-  return true;
-}
 
 // ── SSE helpers ───────────────────────────────────────────────────────
 
@@ -66,7 +51,7 @@ export async function POST(req: NextRequest) {
     req.headers.get("x-forwarded-for") ??
     req.headers.get("x-real-ip") ??
     "unknown";
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip, '/api/copilot')).allowed) {
     return new Response(
       JSON.stringify({ ok: false, error: "Rate limit exceeded" }),
       {
@@ -264,9 +249,10 @@ export async function POST(req: NextRequest) {
         sse.send({ type: "done", data: { conversationId: convId } });
         sse.close();
       } catch (err) {
+        console.error('[api/copilot] Error:', err);
         sse.send({
           type: "error",
-          data: err instanceof Error ? err.message : "Internal server error",
+          data: "An internal error occurred",
         });
         sse.close();
       }

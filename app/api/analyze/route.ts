@@ -45,24 +45,10 @@ import {
 } from '../../../src/services/analyze/promptBuilder';
 import { tryGroq, tryGemini } from '../../../src/services/analyze/providerChain';
 import { enrichAxonOutput, type EnrichResult } from '../../../src/services/analyze/outputEnricher';
+import { checkRateLimit } from '../../../src/utils/rateLimit';
 
 export const runtime = 'edge';
 export const maxDuration = 30;
-
-// ── In-memory rate limiter (token bucket per IP) ──
-const rateLimit = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string, maxPerMinute = 10): boolean {
-  const now = Date.now();
-  const entry = rateLimit.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimit.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= maxPerMinute) return false;
-  entry.count++;
-  return true;
-}
 
 function jsonResponse(body: unknown, status = 200, req?: Request) {
   return new NextResponse(JSON.stringify(body), {
@@ -111,7 +97,7 @@ export async function POST(req: NextRequest) {
 
   // ── Rate limiting ──
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip, '/api/analyze')).allowed) {
     return errorResponse('Rate limit exceeded. Try again in 60 seconds.', 429, undefined, {
       'Retry-After': '60',
       ...getCorsHeaders(req),

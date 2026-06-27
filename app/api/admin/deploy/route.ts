@@ -23,8 +23,8 @@ export async function GET() {
     const status = await getDeploymentStatus();
     return NextResponse.json({ ok: true, ...status }, { status: 200 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error('[api/admin/deploy] GET error:', err);
+    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
   }
 }
 
@@ -47,7 +47,7 @@ export async function POST() {
       { status: 200 },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error('[api/admin/deploy] POST error:', err);
+    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
   }
 }

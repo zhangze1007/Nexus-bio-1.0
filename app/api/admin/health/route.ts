@@ -63,7 +63,7 @@ async function probeGroq(): Promise<HealthCheckResult> {
       status: "down",
       latencyMs: 0,
       lastChecked: new Date().toISOString(),
-      detail: "GROQ_API_KEY not configured",
+      detail: "AI provider not configured",
     };
   }
   try {
@@ -105,7 +105,7 @@ async function probeGemini(): Promise<HealthCheckResult> {
       status: "down",
       latencyMs: 0,
       lastChecked: new Date().toISOString(),
-      detail: "GEMINI_API_KEY not configured",
+      detail: "Fallback AI provider not configured",
     };
   }
   try {

@@ -75,8 +75,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await trainModel(trainingData, body.config ?? {});
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Training failed";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error('[api/admin/ml/train] POST error:', err);
+    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
   }
 }
 
@@ -87,7 +87,7 @@ export async function GET(): Promise<NextResponse> {
     const models = await listModels();
     return NextResponse.json({ ok: true, models });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to list models";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error('[api/admin/ml/train] GET error:', err);
+    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
   }
 }
