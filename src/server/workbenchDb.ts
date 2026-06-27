@@ -658,7 +658,13 @@ export async function writeProjectState(
   const resolvedActorId = resolveActorId(actorId);
   const timestamp = now();
 
-  // Collect all statements into a single atomic batch
+  // Collect all statements into a single atomic batch.
+  // The DELETE-then-INSERT pattern for run_artifact_index and experiment_records
+  // MUST remain in the same sqlBatch call — splitting them would create a crash
+  // window where data is permanently lost if the process dies between statements.
+  // sqlBatch uses client.batch(..., "write") which wraps all statements in a
+  // single SQLite transaction (BEGIN ... COMMIT), so either all succeed or all
+  // roll back on failure.
   const statements: InStatement[] = [
     ...buildEnsureActorStatements(resolvedActorId),
     ...buildEnsureProjectStatements(resolvedProjectId, resolvedActorId, state),
@@ -684,6 +690,8 @@ export async function writeProjectState(
         timestamp,
       ],
     },
+    // WARNING: The DELETE + INSERT pairs below are atomic ONLY because they share
+    // this sqlBatch call. Never extract them into separate sqlBatch/sqlRun calls.
     { sql: "DELETE FROM project_run_artifact_index WHERE project_id = ?", args: [resolvedProjectId] },
     { sql: "DELETE FROM experiment_records WHERE project_id = ?", args: [resolvedProjectId] },
     ...buildInsertRunArtifactStatements(resolvedProjectId, state.revision, state.runArtifacts),

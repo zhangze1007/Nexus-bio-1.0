@@ -127,6 +127,10 @@ export const useUIStore = create<UIState>()(
 
     setRendererMode: (mode) => set({ rendererMode: mode }),
 
+    /** @deprecated Prefer `useFluidPointer()` ref-based hook for 60Hz pointer reads.
+     *  This setter still exists for the global mouse handler that writes pointer state,
+     *  but components that only READ fluidPointer should use the ref hook instead to
+     *  avoid triggering re-renders on every frame. */
     setFluidPointer: (p) => set({ fluidPointer: p }),
 
     toggleDevMode: () => set((s) => ({ devMode: !s.devMode })),
