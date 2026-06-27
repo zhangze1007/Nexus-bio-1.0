@@ -1,0 +1,301 @@
+/**
+ * Zapier Webhook Trigger Client for Nexus-Bio.
+ *
+ * Manages webhook triggers that allow Zapier Zaps to receive events
+ * from Nexus-Bio (e.g. experiment completed, FBA result ready, inventory updated).
+ * Uses libSQL via the shared Turso client for persistent storage.
+ *
+ * When firing, POSTs a Zapier-compatible JSON payload to each active
+ * webhook URL for the given event type.
+ *
+ * Pure TypeScript -- no runtime dependencies beyond @libsql/client.
+ */
+
+import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface ZapierTrigger {
+  id: string;
+  event_type: string;
+  webhook_url: string;
+  active: number;
+  created_at: string;
+}
+
+export interface RegisterTriggerInput {
+  eventType: string;
+  webhookUrl: string;
+}
+
+export interface ZapierWebhookPayload {
+  event_type: string;
+  timestamp: string;
+  data: Record<string, unknown>;
+  source: string;
+}
+
+export interface FireResult {
+  url: string;
+  status: number;
+  ok: boolean;
+  error?: string;
+}
+
+export type ZapierEventType =
+  | "experiment.completed"
+  | "experiment.failed"
+  | "fba.result_ready"
+  | "fba.error"
+  | "inventory.created"
+  | "inventory.updated"
+  | "inventory.deleted"
+  | "analysis.completed"
+  | "analysis.error"
+  | "protein.fold_ready"
+  | "workflow.state_changed";
+
+// ---------------------------------------------------------------------------
+// Schema bootstrap
+// ---------------------------------------------------------------------------
+
+const CREATE_TABLE_SQL = `
+  CREATE TABLE IF NOT EXISTS zapier_triggers (
+    id           TEXT PRIMARY KEY,
+    event_type   TEXT NOT NULL,
+    webhook_url  TEXT NOT NULL,
+    active       INTEGER NOT NULL DEFAULT 1,
+    created_at   TEXT NOT NULL
+  )
+`;
+
+const CREATE_INDEX_SQL = `
+  CREATE INDEX IF NOT EXISTS idx_zapier_triggers_event_type
+  ON zapier_triggers (event_type)
+`;
+
+let schemaInitialized = false;
+
+async function ensureSchema(): Promise<void> {
+  if (schemaInitialized) return;
+  await sqlRun(CREATE_TABLE_SQL);
+  await sqlRun(CREATE_INDEX_SQL);
+  schemaInitialized = true;
+}
+
+/** Reset the schema-initialization flag (for testing). */
+export function resetSchemaFlag(): void {
+  schemaInitialized = false;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function generateId(): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 10);
+  return `zap_${timestamp}_${random}`;
+}
+
+function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function rowToTrigger(row: Record<string, unknown>): ZapierTrigger {
+  return {
+    id: String(row.id),
+    event_type: String(row.event_type),
+    webhook_url: String(row.webhook_url),
+    active: Number(row.active),
+    created_at: String(row.created_at),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Register a new Zapier webhook trigger.
+ *
+ * @param input  Event type and webhook URL.
+ * @returns The newly created trigger record.
+ * @throws {Error} If eventType or webhookUrl are invalid.
+ */
+export async function registerZapierTrigger(
+  input: RegisterTriggerInput,
+): Promise<ZapierTrigger> {
+  const { eventType, webhookUrl } = input;
+
+  if (!eventType || !eventType.trim()) {
+    throw new Error("eventType is required and must be non-empty");
+  }
+  if (!webhookUrl || !isValidUrl(webhookUrl)) {
+    throw new Error("webhookUrl must be a valid http(s) URL");
+  }
+
+  await ensureSchema();
+
+  const id = generateId();
+  const createdAt = new Date().toISOString();
+
+  await sqlRun(
+    "INSERT INTO zapier_triggers (id, event_type, webhook_url, active, created_at) VALUES (?, ?, ?, 1, ?)",
+    [id, eventType.trim(), webhookUrl.trim(), createdAt],
+  );
+
+  return {
+    id,
+    event_type: eventType.trim(),
+    webhook_url: webhookUrl.trim(),
+    active: 1,
+    created_at: createdAt,
+  };
+}
+
+/**
+ * Remove (delete) a trigger by its id.
+ *
+ * @param id  The trigger id to remove.
+ * @returns `true` if a row was deleted, `false` if no trigger matched.
+ */
+export async function removeZapierTrigger(id: string): Promise<boolean> {
+  if (!id || !id.trim()) {
+    throw new Error("id is required");
+  }
+
+  await ensureSchema();
+
+  const result = await sqlRun("DELETE FROM zapier_triggers WHERE id = ?", [
+    id.trim(),
+  ]);
+  return result.rowsAffected > 0;
+}
+
+/**
+ * List all Zapier triggers, optionally filtered by event type.
+ *
+ * @param eventType  If provided, only return triggers for this event type.
+ * @returns Array of trigger records ordered by created_at descending.
+ */
+export async function listZapierTriggers(
+  eventType?: string,
+): Promise<ZapierTrigger[]> {
+  await ensureSchema();
+
+  let rows: Record<string, unknown>[];
+  if (eventType) {
+    rows = await sqlAll(
+      "SELECT * FROM zapier_triggers WHERE event_type = ? ORDER BY created_at DESC",
+      [eventType],
+    );
+  } else {
+    rows = await sqlAll(
+      "SELECT * FROM zapier_triggers ORDER BY created_at DESC",
+    );
+  }
+
+  return rows.map(rowToTrigger);
+}
+
+/**
+ * Fire all active Zapier triggers for a given event type.
+ *
+ * POSTs a Zapier-compatible JSON payload to each active webhook URL.
+ * The payload format follows Zapier's catch hook conventions:
+ * {
+ *   event_type: string,
+ *   timestamp: ISO 8601,
+ *   source: "nexus-bio",
+ *   data: { ... }
+ * }
+ *
+ * All webhook calls are made in parallel. Results indicate per-URL
+ * success/failure without throwing on individual failures.
+ *
+ * @param eventType  The event type to fire triggers for.
+ * @param payload    Arbitrary data to include in the webhook body.
+ * @returns Array of per-webhook results.
+ */
+export async function fireZapierTriggers(
+  eventType: string,
+  payload: Record<string, unknown>,
+): Promise<FireResult[]> {
+  if (!eventType || !eventType.trim()) {
+    throw new Error("eventType is required and must be non-empty");
+  }
+
+  await ensureSchema();
+
+  const rows = await sqlAll(
+    "SELECT * FROM zapier_triggers WHERE event_type = ? AND active = 1",
+    [eventType.trim()],
+  );
+
+  const triggers = rows.map(rowToTrigger);
+
+  if (triggers.length === 0) {
+    return [];
+  }
+
+  const webhookPayload: ZapierWebhookPayload = {
+    event_type: eventType.trim(),
+    timestamp: new Date().toISOString(),
+    data: payload,
+    source: "nexus-bio",
+  };
+
+  const results = await Promise.allSettled(
+    triggers.map(async (trigger): Promise<FireResult> => {
+      try {
+        const response = await fetch(trigger.webhook_url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookPayload),
+        });
+
+        return {
+          url: trigger.webhook_url,
+          status: response.status,
+          ok: response.ok,
+        };
+      } catch (err) {
+        return {
+          url: trigger.webhook_url,
+          status: 0,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }),
+  );
+
+  return results.map((result) => {
+    if (result.status === "fulfilled") {
+      return result.value;
+    }
+    // Promise.allsettled rejected — should not happen given our inner try/catch
+    return {
+      url: "unknown",
+      status: 0,
+      ok: false,
+      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+    };
+  });
+}
+
+/**
+ * Drop the zapier_triggers table (for testing only).
+ */
+export async function dropTable(): Promise<void> {
+  await sqlRun("DROP TABLE IF EXISTS zapier_triggers");
+  schemaInitialized = false;
+}
