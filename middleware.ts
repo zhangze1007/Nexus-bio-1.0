@@ -37,6 +37,17 @@ const PROTECTED_ROUTES = [
   '/api/files',
   '/api/workbench',
   '/api/scspatial',
+  '/api/admin',
+  '/api/gdpr',
+  '/api/billing',
+  '/api/health/env',
+];
+
+/** Routes that require API key auth (same-origin trust NOT sufficient) */
+const HIGH_SECURITY_ROUTES = [
+  '/api/admin',
+  '/api/gdpr',
+  '/api/health/env',
 ];
 
 /** Routes that are public (no auth needed) */
@@ -115,18 +126,27 @@ function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some(route => pathname.startsWith(route));
 }
 
+function isHighSecurityRoute(pathname: string): boolean {
+  return HIGH_SECURITY_ROUTES.some(route => pathname.startsWith(route));
+}
+
 /**
  * Check if the request is authenticated.
  *
  * Supports three auth methods:
- *   1. Same-origin (Sec-Fetch-Site: same-origin) — trusted browser requests
+ *   1. Same-origin (Sec-Fetch-Site: same-origin) — trusted browser requests (NOT for high-security routes)
  *   2. nxb_ prefixed API keys — SHA-256 hashed and validated against DB
  *   3. Legacy NEXUS_API_KEY env var — direct string comparison via X-API-Key or Bearer
+ *
+ * @param highSecurity - If true, skip same-origin trust (admin, GDPR, health/env routes)
  */
-async function isAuthenticated(req: NextRequest): Promise<boolean> {
-  // Same-origin requests are trusted (browser-initiated from the app)
-  const secFetchSite = req.headers.get('sec-fetch-site');
-  if (secFetchSite === 'same-origin') return true;
+async function isAuthenticated(req: NextRequest, highSecurity = false): Promise<boolean> {
+  // Same-origin requests are trusted for regular routes (browser-initiated from the app)
+  // High-security routes (admin, GDPR, health/env) always require explicit credentials
+  if (!highSecurity) {
+    const secFetchSite = req.headers.get('sec-fetch-site');
+    if (secFetchSite === 'same-origin') return true;
+  }
 
   const providedKey = req.headers.get('x-api-key');
 
@@ -197,7 +217,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // ── Authentication ──
-  if (isProtectedRoute(pathname) && !(await isAuthenticated(req))) {
+  if (isProtectedRoute(pathname) && !(await isAuthenticated(req, isHighSecurityRoute(pathname)))) {
     return NextResponse.json(
       {
         error: 'Authentication required',
