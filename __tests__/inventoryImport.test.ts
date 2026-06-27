@@ -1,7 +1,7 @@
 /**
  * Tests for inventory CSV import service.
  *
- * Mocks `@/src/lib/db` to control sqlAll / sqlRun return values
+ * Mocks `@/src/server/libsqlDb` to control sqlAll / sqlRun return values
  * without requiring a real database connection.
  */
 
@@ -10,7 +10,7 @@
 const mockSqlAll = jest.fn();
 const mockSqlRun = jest.fn();
 
-jest.mock("@/src/lib/db", () => ({
+jest.mock("@/src/server/libsqlDb", () => ({
   sqlAll: (...args: unknown[]) => mockSqlAll(...args),
   sqlRun: (...args: unknown[]) => mockSqlRun(...args),
   sqlGet: (...args: unknown[]) => mockSqlAll(...args).then((r: unknown[]) => r?.[0]),
@@ -25,6 +25,9 @@ import {
 } from "../src/services/inventory/inventoryImport";
 
 // ── Helpers ────────────────────────────────────────────────────────────
+
+const TEST_PROJECT_ID = "proj-test-001";
+const TEST_USER_ID = "user-test-001";
 
 /** Default empty-table mock: no existing items in the DB. */
 function mockEmptyTable() {
@@ -133,7 +136,7 @@ describe("importPrimersFromCSV", () => {
       "pBR322_fwd,ATCGATCGATCG,bla\n" +
       "pBR322_rev,CGATCGATCGAT,bla";
 
-    const result = await importPrimersFromCSV(csv);
+    const result = await importPrimersFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(2);
     expect(result.skipped).toBe(0);
@@ -149,7 +152,7 @@ describe("importPrimersFromCSV", () => {
       "validPrimer,ATCGATCG\n" +
       ",CGATCGAT"; // missing name
 
-    const result = await importPrimersFromCSV(csv);
+    const result = await importPrimersFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(1);
     expect(result.errors).toHaveLength(1);
@@ -165,7 +168,7 @@ describe("importPrimersFromCSV", () => {
       "existing_primer,ATCGATCG\n" +
       "new_primer,CGATCGAT";
 
-    const result = await importPrimersFromCSV(csv);
+    const result = await importPrimersFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(1);
     expect(result.skipped).toBe(1);
@@ -180,7 +183,7 @@ describe("importPrimersFromCSV", () => {
       "dupPrimer,ATCGATCG\n" +
       "dupPrimer,CGATCGAT";
 
-    const result = await importPrimersFromCSV(csv);
+    const result = await importPrimersFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(1);
     expect(result.skipped).toBe(1);
@@ -191,7 +194,7 @@ describe("importPrimersFromCSV", () => {
 
     const csv = "foo,bar\nbaz,qux";
 
-    const result = await importPrimersFromCSV(csv);
+    const result = await importPrimersFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(0);
     expect(result.errors.length).toBeGreaterThan(0);
@@ -199,7 +202,7 @@ describe("importPrimersFromCSV", () => {
   });
 
   it("returns error when CSV is empty", async () => {
-    const result = await importPrimersFromCSV("");
+    const result = await importPrimersFromCSV("", TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(0);
     expect(result.errors.length).toBeGreaterThan(0);
@@ -210,10 +213,7 @@ describe("importPrimersFromCSV", () => {
 
     const csv = "Name,Sequence\np001,ATCG";
 
-    await importPrimersFromCSV(csv, {
-      projectId: "proj-test",
-      createdBy: "user-1",
-    });
+    await importPrimersFromCSV(csv, "proj-test", "user-1");
 
     const insertSql = mockSqlRun.mock.calls[0][0] as string;
     const insertArgs = mockSqlRun.mock.calls[0][1] as unknown[];
@@ -240,7 +240,7 @@ describe("importStrainsFromCSV", () => {
       "BL21(DE3),F- ompT hsdS(rB- mB-) gal dcm,Escherichia coli\n" +
       "DH5alpha,F- Φ80lacZΔM15 Δ(lacZYA-argF),Escherichia coli";
 
-    const result = await importStrainsFromCSV(csv);
+    const result = await importStrainsFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(2);
     expect(result.skipped).toBe(0);
@@ -256,7 +256,7 @@ describe("importStrainsFromCSV", () => {
       "strain name,genotype,marker(s)\n" +
       "MG1655,wild-type,KanR";
 
-    const result = await importStrainsFromCSV(csv);
+    const result = await importStrainsFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(1);
     const insertSql = mockSqlRun.mock.calls[0][0] as string;
@@ -271,7 +271,7 @@ describe("importStrainsFromCSV", () => {
       "BL21(DE3),Escherichia coli\n" +
       "NEB 10-beta,Escherichia coli";
 
-    const result = await importStrainsFromCSV(csv);
+    const result = await importStrainsFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(1);
     expect(result.skipped).toBe(1);
@@ -293,7 +293,7 @@ describe("importPlasmidsFromCSV", () => {
       "pET28a,pBR322,Kanamycin,T7\n" +
       "pUC19,pBR322,Ampicillin,lac";
 
-    const result = await importPlasmidsFromCSV(csv);
+    const result = await importPlasmidsFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(2);
     expect(result.skipped).toBe(0);
@@ -308,7 +308,7 @@ describe("importPlasmidsFromCSV", () => {
       "Name,Backbone,Insert Length (bp)\n" +
       "pCustom,pET,5400";
 
-    const result = await importPlasmidsFromCSV(csv);
+    const result = await importPlasmidsFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(1);
     const insertArgs = mockSqlRun.mock.calls[0][1] as unknown[];
@@ -321,7 +321,7 @@ describe("importPlasmidsFromCSV", () => {
 
     const csv = "Backbone,Resistance\npBR322,Amp";
 
-    const result = await importPlasmidsFromCSV(csv);
+    const result = await importPlasmidsFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(0);
     expect(result.errors.length).toBeGreaterThan(0);
@@ -342,7 +342,7 @@ describe("DB error handling", () => {
 
     const csv = "Name,Sequence\nprimerA,ATCG";
 
-    const result = await importPrimersFromCSV(csv);
+    const result = await importPrimersFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(0);
     expect(result.errors).toHaveLength(1);
@@ -362,7 +362,7 @@ describe("DB error handling", () => {
       "primerA,ATCG\n" +
       "primerB,CGAT";
 
-    const result = await importPrimersFromCSV(csv);
+    const result = await importPrimersFromCSV(csv, TEST_PROJECT_ID, TEST_USER_ID);
 
     expect(result.imported).toBe(1);
     expect(result.errors).toHaveLength(1);

@@ -13,10 +13,7 @@ type ImportType = (typeof VALID_TYPES)[number];
 
 const IMPORTERS: Record<
   ImportType,
-  (
-    csv: string,
-    opts: { projectId?: string; createdBy?: string },
-  ) => Promise<{ imported: number; skipped: number; errors: string[] }>
+  (csv: string, projectId: string, userId: string) => Promise<{ imported: number; skipped: number; errors: string[] }>
 > = {
   primers: importPrimersFromCSV,
   strains: importStrainsFromCSV,
@@ -59,11 +56,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate projectId and createdBy (now required)
+    if (!projectId || typeof projectId !== "string") {
+      return NextResponse.json(
+        { error: "projectId is required" },
+        { status: 400 },
+      );
+    }
+    if (!createdBy || typeof createdBy !== "string") {
+      return NextResponse.json(
+        { error: "createdBy is required" },
+        { status: 400 },
+      );
+    }
+
     const importer = IMPORTERS[type as ImportType];
-    const result = await importer(csvContent, {
-      projectId: projectId || undefined,
-      createdBy: createdBy || undefined,
-    });
+    const result = await importer(csvContent, projectId, createdBy);
 
     const status = result.errors.length > 0 && result.imported === 0 ? 422 : 200;
 

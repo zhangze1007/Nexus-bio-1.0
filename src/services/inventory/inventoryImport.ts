@@ -13,7 +13,7 @@
  *   - Returns structured ImportResult with counts and per-row error messages
  */
 
-import { sqlAll, sqlRun } from "@/src/lib/db";
+import { sqlAll, sqlRun } from "@/src/server/libsqlDb";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -420,7 +420,8 @@ async function fetchExistingNames(table: string): Promise<Set<string>> {
 async function importFromCSV(
   csvContent: string,
   type: ImportableType,
-  options: { projectId?: string; createdBy?: string } = {},
+  projectId: string,
+  userId: string,
 ): Promise<ImportResult> {
   const table = TABLE_MAP[type];
   const result: ImportResult = { imported: 0, skipped: 0, errors: [] };
@@ -505,16 +506,16 @@ async function importFromCSV(
       }
     }
 
-    // Inject projectId / createdBy if provided
-    if (options.projectId && !record.projectId) {
+    // Always stamp projectId and userId
+    if (!columns.includes("project_id")) {
       columns.push("project_id");
       placeholders.push("?");
-      values.push(options.projectId);
+      values.push(projectId);
     }
-    if (options.createdBy && !record.createdBy) {
+    if (!columns.includes("created_by")) {
       columns.push("created_by");
       placeholders.push("?");
-      values.push(options.createdBy);
+      values.push(userId);
     }
 
     try {
@@ -543,14 +544,16 @@ async function importFromCSV(
  *             modification_5prime, pair_id, concentration_uM, vendor, notes
  *
  * @param csvContent  Raw CSV text with a header row.
- * @param options     Optional projectId and createdBy to stamp on inserted rows.
+ * @param projectId   Project ID to stamp on inserted rows.
+ * @param userId      User ID to stamp as created_by on inserted rows.
  * @returns ImportResult with imported / skipped / errors counts.
  */
 export async function importPrimersFromCSV(
   csvContent: string,
-  options: { projectId?: string; createdBy?: string } = {},
+  projectId: string,
+  userId: string,
 ): Promise<ImportResult> {
-  return importFromCSV(csvContent, "primers", options);
+  return importFromCSV(csvContent, "primers", projectId, userId);
 }
 
 /**
@@ -562,14 +565,16 @@ export async function importPrimersFromCSV(
  *             freezer_location_id, box_position, notes
  *
  * @param csvContent  Raw CSV text with a header row.
- * @param options     Optional projectId and createdBy to stamp on inserted rows.
+ * @param projectId   Project ID to stamp on inserted rows.
+ * @param userId      User ID to stamp as created_by on inserted rows.
  * @returns ImportResult with imported / skipped / errors counts.
  */
 export async function importStrainsFromCSV(
   csvContent: string,
-  options: { projectId?: string; createdBy?: string } = {},
+  projectId: string,
+  userId: string,
 ): Promise<ImportResult> {
-  return importFromCSV(csvContent, "strains", options);
+  return importFromCSV(csvContent, "strains", projectId, userId);
 }
 
 /**
@@ -582,12 +587,14 @@ export async function importStrainsFromCSV(
  *             sequence_verified, tags, notes
  *
  * @param csvContent  Raw CSV text with a header row.
- * @param options     Optional projectId and createdBy to stamp on inserted rows.
+ * @param projectId   Project ID to stamp on inserted rows.
+ * @param userId      User ID to stamp as created_by on inserted rows.
  * @returns ImportResult with imported / skipped / errors counts.
  */
 export async function importPlasmidsFromCSV(
   csvContent: string,
-  options: { projectId?: string; createdBy?: string } = {},
+  projectId: string,
+  userId: string,
 ): Promise<ImportResult> {
-  return importFromCSV(csvContent, "plasmids", options);
+  return importFromCSV(csvContent, "plasmids", projectId, userId);
 }
