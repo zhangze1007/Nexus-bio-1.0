@@ -297,8 +297,8 @@ describe('StreamingPipeline', () => {
       const pipeline = new StreamingPipeline();
       const slowStage: PipelineStage = {
         name: 'slow',
-        process: async (data: number) => {
-          return new Promise((resolve) => setTimeout(() => resolve(data + 1), 50));
+        process: async (data: unknown) => {
+          return new Promise((resolve) => setTimeout(() => resolve((data as number) + 1), 50));
         },
       };
       pipeline.addStage(slowStage);
@@ -452,14 +452,14 @@ describe('composeStages', () => {
   it('composes stages with async processing', async () => {
     const asyncDouble: PipelineStage = {
       name: 'async-double',
-      process: async (data: number) => {
-        return new Promise((resolve) => setTimeout(() => resolve(data * 2), 10));
+      process: async (data: unknown) => {
+        return new Promise((resolve) => setTimeout(() => resolve((data as number) * 2), 10));
       },
     };
     const asyncAdd: PipelineStage = {
       name: 'async-add',
-      process: async (data: number) => {
-        return new Promise((resolve) => setTimeout(() => resolve(data + 3), 10));
+      process: async (data: unknown) => {
+        return new Promise((resolve) => setTimeout(() => resolve((data as number) + 3), 10));
       },
     };
 
@@ -472,7 +472,7 @@ describe('composeStages', () => {
   it('propagates errors through composition', async () => {
     const ok: PipelineStage = {
       name: 'ok',
-      process: async (data: number) => data + 1,
+      process: async (data: unknown) => (data as number) + 1,
     };
     const fail: PipelineStage = {
       name: 'fail',

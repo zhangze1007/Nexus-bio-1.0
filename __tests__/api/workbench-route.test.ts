@@ -76,7 +76,7 @@ import { GET, PUT } from '../../app/api/workbench/route';
 import { auth } from '../../src/lib/auth';
 import { readProjectState, writeProjectState, listProjectMembers } from '../../src/server/workbenchDb';
 
-const mockAuth = auth as jest.MockedFunction<typeof auth>;
+const mockAuth = auth as jest.Mock;
 const mockReadProjectState = readProjectState as jest.MockedFunction<typeof readProjectState>;
 const mockWriteProjectState = writeProjectState as jest.MockedFunction<typeof writeProjectState>;
 const mockListProjectMembers = listProjectMembers as jest.MockedFunction<typeof listProjectMembers>;

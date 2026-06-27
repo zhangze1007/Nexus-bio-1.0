@@ -312,7 +312,7 @@ describe('Integration', () => {
     // Add a pipeline stage that extracts metric values
     const extractStage: PipelineStage = {
       name: 'extract',
-      process: async (data: { metric: string; value: number }) => data,
+      process: async (data: unknown) => data,
     };
     stack.pipeline.addStage(extractStage);
 

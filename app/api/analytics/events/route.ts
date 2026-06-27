@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { trackEvent, getEventStats, getUserActivity } from "@/services/business/analyticsService";
+import { trackEvent, getEventStats, getUserActivity } from "@/src/services/business/analyticsService";
 
 export const runtime = "nodejs";
 

@@ -50,7 +50,7 @@ export async function predict(request: PredictionRequest): Promise<PredictionRes
   }
 
   // Run inference
-  const results = await session.run(feeds);
+  const results = await session.run(feeds as Record<string, import("onnxruntime-web").Tensor>);
   const latencyMs = performance.now() - startTime;
 
   // Extract outputs

@@ -31,7 +31,7 @@ export interface ForwardResult {
 }
 
 export class VAEInference {
-  private session: InstanceType<OrtModule["InferenceSession"]> | null = null;
+  private session: OrtSession | null = null;
   private latentDim: number;
   private rng: SeededRNG;
 

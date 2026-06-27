@@ -14,6 +14,7 @@ jest.mock('../../src/services/axonDomainClassifier', () => ({
     category: 'scientific-pathway',
     reason: 'pathway intent',
     signals: ['pathway'],
+    shouldPlan: true,
     allowProseAnswer: true,
     allowBiosynthesisPrompt: true,
   })),
@@ -78,6 +79,7 @@ beforeEach(() => {
     category: 'scientific-pathway',
     reason: 'pathway intent',
     signals: ['pathway'],
+    shouldPlan: true,
     allowProseAnswer: true,
     allowBiosynthesisPrompt: true,
   });
@@ -286,6 +288,9 @@ describe('POST /api/analyze', () => {
         category: 'off-domain',
         reason: 'political content',
         signals: ['politics'],
+        shouldPlan: false,
+        allowBiosynthesisPrompt: false,
+        allowProseAnswer: false,
       });
 
       const req = createAnalyzeRequest({

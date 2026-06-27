@@ -43,6 +43,10 @@ export interface TimelineEvent {
   event_type: string;
   details: string;
   timestamp: number;
+  /** Data key (present for data events from lab_experiment_data). */
+  key?: string;
+  /** Data value (present for data events from lab_experiment_data). */
+  value?: string;
 }
 
 // ─── Schema ──────────────────────────────────────────────────────
@@ -132,6 +136,8 @@ function rowToTimelineEvent(row: Record<string, unknown>): TimelineEvent {
     event_type: row.event_type as string,
     details: row.details as string,
     timestamp: Number(row.timestamp),
+    key: row.key as string | undefined,
+    value: row.value as string | undefined,
   };
 }
 
@@ -232,9 +238,9 @@ export async function updateExperimentStatus(
 
   // Determine timestamp updates
   const isTerminal = status === "completed" || status === "failed" || status === "aborted";
-  const startedAt =
-    status === "running" && !experiment.started_at ? ts : experiment.started_at;
-  const completedAt = isTerminal ? ts : experiment.completed_at;
+  const startedAt: number | null =
+    status === "running" && !experiment.started_at ? ts : (experiment.started_at as number | null);
+  const completedAt: number | null = isTerminal ? ts : (experiment.completed_at as number | null);
 
   await sqlBatch([
     {
