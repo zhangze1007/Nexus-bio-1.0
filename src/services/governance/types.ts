@@ -44,6 +44,13 @@ export interface RetentionStatusEntry {
   archivedRecords: number;
 }
 
+export interface ArchiveResult {
+  entityType: string;
+  archivedCount: number;
+  cutoffDate: string;
+  errors: string[];
+}
+
 // ── GDPR Requests ────────────────────────────────────────────────────
 
 export type GDPRRequestType = 'deletion' | 'export' | 'access';
