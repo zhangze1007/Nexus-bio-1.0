@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../src/lib/auth';
 import { getStripe } from '../../../../src/services/billing/stripeClient';
 
+export const runtime = 'nodejs';
+
 export async function POST(_request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {

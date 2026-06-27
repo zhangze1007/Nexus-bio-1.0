@@ -17,6 +17,8 @@ import {
   validateReferralCode,
 } from "../../../src/services/referral/referralService";
 
+export const runtime = 'nodejs';
+
 function json(body: unknown, status = 200) {
   return NextResponse.json(body, { status });
 }

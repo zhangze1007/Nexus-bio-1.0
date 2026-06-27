@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '../../../../src/services/billing/stripeClient';
 import type Stripe from 'stripe';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
   if (!stripe) {

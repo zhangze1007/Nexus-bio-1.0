@@ -3,6 +3,8 @@ import { auth } from '../../../../src/lib/auth';
 import { getStripe, PRICING_TIERS } from '../../../../src/services/billing/stripeClient';
 import type { Tier } from '../../../../src/services/billing/stripeClient';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {

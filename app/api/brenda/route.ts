@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 // Sidecar configuration
 const SIDECAR_URL = process.env.BRENDA_SIDECAR_URL || 'http://localhost:5002';
 const SIDECAR_TIMEOUT = 15000; // 15 seconds (BRENDA queries can be slow)

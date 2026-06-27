@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const runtime = 'nodejs';
+
 /**
  * Next.js proxy route for ViennaRNA folding backend.
  *

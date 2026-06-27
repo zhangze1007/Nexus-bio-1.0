@@ -15,9 +15,8 @@ const PYTHON_BACKEND = process.env.SCSPATIAL_PYTHON_BACKEND?.replace(/\/+$/, '')
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const jobId = url.searchParams.get('jobId');
-
-  if (!jobId) {
-    return NextResponse.json({ ok: false, error: 'jobId parameter required' }, { status: 400 });
+  if (!jobId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId)) {
+    return NextResponse.json({ ok: false, error: "Invalid jobId format" }, { status: 400 });
   }
 
   if (!PYTHON_BACKEND) {

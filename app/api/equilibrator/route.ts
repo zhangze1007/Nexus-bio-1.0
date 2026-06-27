@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 // Sidecar configuration
 const SIDECAR_URL = process.env.EQUILIBRATOR_SIDECAR_URL || 'http://localhost:5001';
 const SIDECAR_TIMEOUT = 10000; // 10 seconds

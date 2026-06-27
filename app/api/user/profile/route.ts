@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../src/lib/auth';
 import { sqlAll, sqlRun } from '../../../../src/lib/db';
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/user/profile — Fetch current user's profile
  * PUT /api/user/profile — Update profile fields (institution, research_area, orcid, bio)

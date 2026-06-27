@@ -53,10 +53,10 @@ export interface SkeletonLineProps {
 
 export function SkeletonLine({ width = "100%", height = 14, count = 1, gap = 8 }: SkeletonLineProps) {
   if (count < 1) return null;
-  if (count === 1) return <Bone width={width} height={height} borderRadius="4px" />;
+  if (count === 1) return <div role="status" aria-label="Loading"><Bone width={width} height={height} borderRadius="4px" /></div>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap }} data-testid="skeleton-line-group">
+    <div role="status" aria-label="Loading" style={{ display: "flex", flexDirection: "column", gap }} data-testid="skeleton-line-group">
       {Array.from({ length: count }, (_, i) => (
         <Bone
           key={i}
@@ -86,6 +86,8 @@ export interface SkeletonCardProps {
 export function SkeletonCard({ width = "100%", height = 180, showHeader = true, bodyLines = 3 }: SkeletonCardProps) {
   return (
     <div
+      role="status"
+      aria-label="Loading"
       data-testid="skeleton-card"
       style={{
         width: typeof width === "number" ? `${width}px` : width,
@@ -139,6 +141,8 @@ export function SkeletonTable({ columns = 4, rows = 5, width = "100%", showHeade
 
   return (
     <div
+      role="status"
+      aria-label="Loading"
       data-testid="skeleton-table"
       style={{
         width: typeof width === "number" ? `${width}px` : width,
@@ -223,6 +227,8 @@ export function SkeletonChart({ width = "100%", height = 240, showAxes = true, b
 
   return (
     <div
+      role="status"
+      aria-label="Loading"
       data-testid="skeleton-chart"
       style={{
         width: typeof width === "number" ? `${width}px` : width,
