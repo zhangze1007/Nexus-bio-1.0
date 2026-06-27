@@ -1,0 +1,260 @@
+openapi: 3.0.3
+info:
+  title: Nexus-Bio API
+  version: 1.0.0
+  description: API routes for the Nexus-Bio synthetic biology platform.
+
+servers:
+  - url: https://nexus-bio-1-0.vercel.app
+
+paths:
+  /api/analyze:
+    post:
+      summary: AI Analysis Endpoint
+      description: |
+        Primary AI endpoint. Routes through Groq (primary) then Gemini (fallback).
+        Accepts a user prompt and returns an AI-generated analysis.
+      operationId: analyze
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - prompt
+              properties:
+                prompt:
+                  type: string
+                  description: The analysis prompt or question.
+                  example: "Design a pathway for artemisinin biosynthesis"
+                model:
+                  type: string
+                  description: Optional model override.
+      responses:
+        '200':
+          description: Successful analysis.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    description: AI-generated response text.
+                  model:
+                    type: string
+                    description: Model that generated the response.
+                  provider:
+                    type: string
+                    description: Provider used (groq or gemini).
+        '503':
+          description: All AI providers unavailable.
+
+  /api/fba:
+    post:
+      summary: Flux Balance Analysis
+      description: |
+        Runs flux balance analysis (simplex LP solver) on a metabolic network.
+        Supports single-species and community FBA with knockout/OE strategies.
+      operationId: runFba
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reactions
+                - objective
+              properties:
+                reactions:
+                  type: array
+                  description: List of metabolic reactions with stoichiometry.
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      stoichiometry:
+                        type: object
+                        additionalProperties:
+                          type: number
+                      reversible:
+                        type: boolean
+                      lowerBound:
+                        type: number
+                      upperBound:
+                        type: number
+                objective:
+                  type: string
+                  description: Reaction ID to maximize.
+                knockouts:
+                  type: array
+                  description: Reaction IDs to knock out.
+                  items:
+                    type: string
+                overexpressions:
+                  type: array
+                  description: Reaction IDs with overexpression bounds.
+                  items:
+                    type: object
+                    properties:
+                      reactionId:
+                        type: string
+                      factor:
+                        type: number
+      responses:
+        '200':
+          description: FBA solution.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  objectiveValue:
+                    type: number
+                    description: Optimal objective value.
+                  fluxes:
+                    type: object
+                    additionalProperties:
+                      type: number
+                    description: Reaction ID to flux value mapping.
+                  shadowPrices:
+                    type: object
+                    additionalProperties:
+                      type: number
+                    description: Metabolite shadow prices.
+                  carbonEfficiency:
+                    type: number
+                    description: Carbon utilization efficiency.
+                  status:
+                    type: string
+                    enum: [optimal, infeasible, unbounded]
+        '400':
+          description: Invalid input.
+        '500':
+          description: Solver error.
+
+  /api/workbench:
+    get:
+      summary: Get Workbench State
+      description: Retrieves the current workbench project state including experiment ledger and audit trail.
+      operationId: getWorkbench
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Workbench project ID.
+      responses:
+        '200':
+          description: Workbench state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkbenchState'
+        '404':
+          description: Project not found.
+    put:
+      summary: Update Workbench State
+      description: |
+        Updates workbench state with revision conflict detection.
+        The request must include the current revision number.
+      operationId: updateWorkbench
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkbenchUpdate'
+      responses:
+        '200':
+          description: Workbench updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkbenchState'
+        '409':
+          description: Revision conflict — state was modified since last read.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Revision conflict"
+                  currentRevision:
+                    type: integer
+
+components:
+  schemas:
+    WorkbenchState:
+      type: object
+      properties:
+        projectId:
+          type: string
+        revision:
+          type: integer
+        experiments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              status:
+                type: string
+                enum: [pending, running, completed, failed]
+              createdAt:
+                type: string
+                format: date-time
+              updatedAt:
+                type: string
+                format: date-time
+        auditTrail:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              actor:
+                type: string
+              action:
+                type: string
+              details:
+                type: string
+
+    WorkbenchUpdate:
+      type: object
+      required:
+        - projectId
+        - revision
+      properties:
+        projectId:
+          type: string
+        revision:
+          type: integer
+          description: Current revision number for conflict detection.
+        experiments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              status:
+                type: string
+                enum: [pending, running, completed, failed]
+              data:
+                type: object
