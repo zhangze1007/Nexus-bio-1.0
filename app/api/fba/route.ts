@@ -10,6 +10,7 @@ import { createProvenanceEntry } from '../../../src/utils/provenance';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 export async function OPTIONS(req: Request) {

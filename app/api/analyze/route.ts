@@ -47,6 +47,7 @@ import { tryGroq, tryGemini } from '../../../src/services/analyze/providerChain'
 import { enrichAxonOutput, type EnrichResult } from '../../../src/services/analyze/outputEnricher';
 
 export const runtime = 'edge';
+export const maxDuration = 30;
 
 // ── In-memory rate limiter (token bucket per IP) ──
 const rateLimit = new Map<string, { count: number; resetAt: number }>();

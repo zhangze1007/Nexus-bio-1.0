@@ -1,3 +1,7 @@
+// NOTE: This custom server with Socket.IO only works on self-hosted Node.js.
+// On Vercel, the serverless deployment ignores this file.
+// Real-time features (WebSocket) are non-functional on Vercel.
+
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
 import next from 'next';
