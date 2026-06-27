@@ -13,7 +13,10 @@
  * VALIDITY_TIER: real (UPGMA from src/utils/clustering, Euclidean distance)
  */
 
-import * as d3 from "d3";
+import { interpolateRgb } from "d3-interpolate";
+import { scaleLinear, type ScaleLinear } from "d3-scale";
+import { select } from "d3-selection";
+import { zoom } from "d3-zoom";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type ClusterNode,
@@ -57,12 +60,11 @@ const VIRIDIS_STOPS: Array<[number, string]> = [
   [1.0, "#fde725"],
 ];
 
-function viridisScale(domain: [number, number]): d3.ScaleLinear<string, string> {
-  return d3
-    .scaleLinear<string, number>()
+function viridisScale(domain: [number, number]): ScaleLinear<string, string> {
+  return scaleLinear<string, number>()
     .domain(VIRIDIS_STOPS.map(([d]) => domain[0] + d * (domain[1] - domain[0])))
     .range(VIRIDIS_STOPS.map(([, c]) => c))
-    .interpolate(d3.interpolateRgb.gamma(2.2));
+    .interpolate(interpolateRgb.gamma(2.2));
 }
 
 // ── Margins ──────────────────────────────────────────────────────────────────
@@ -151,7 +153,7 @@ export function ClusteredHeatmap({
   const renderChart = useCallback(() => {
     if (!svgRef.current || !isValid || !rowRoot || !colRoot) return;
 
-    const svg = d3.select(svgRef.current);
+    const svg = select(svgRef.current);
     svg.selectAll("*").remove();
 
     // Background
@@ -165,8 +167,7 @@ export function ClusteredHeatmap({
     const g = svg.append("g");
 
     // ── Zoom ───────────────────────────────────────────────────────────────
-    const zoomBehavior = d3
-      .zoom<SVGSVGElement, unknown>()
+    const zoomBehavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.5, 8])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
@@ -181,8 +182,7 @@ export function ClusteredHeatmap({
       .attr("transform", `translate(${MARGIN.left - DENDROGRAM_SIZE - 4}, ${MARGIN.top})`);
 
     const rowMaxDist = getMaxDistance(rowRoot);
-    const rowXScale = d3
-      .scaleLinear()
+    const rowXScale = scaleLinear()
       .domain([0, rowMaxDist])
       .range([DENDROGRAM_SIZE, 0]);
 
@@ -225,8 +225,7 @@ export function ClusteredHeatmap({
       .attr("transform", `translate(${MARGIN.left}, ${MARGIN.top - DENDROGRAM_SIZE - 4})`);
 
     const colMaxDist = getMaxDistance(colRoot);
-    const colYScale = d3
-      .scaleLinear()
+    const colYScale = scaleLinear()
       .domain([0, colMaxDist])
       .range([DENDROGRAM_SIZE, 0]);
 

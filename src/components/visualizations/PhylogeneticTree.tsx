@@ -14,7 +14,11 @@
  * Dark theme follows Nexus-Bio design tokens.
  */
 
-import * as d3 from "d3";
+import { hierarchy, type HierarchyNode } from "d3-hierarchy";
+import { scaleLinear, scalePoint } from "d3-scale";
+import { zoom } from "d3-zoom";
+import { select } from "d3-selection";
+import { symbol, symbolDiamond } from "d3-shape";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { THEME } from "../../theme";
 import {
@@ -59,8 +63,8 @@ interface TreeNode {
 
 // ── Build d3 hierarchy-compatible structure ───────────────────────────────────
 
-function buildHierarchyData(node: PhyloNode): d3.HierarchyNode<PhyloNode> {
-  const root = d3.hierarchy<PhyloNode>(node, (d) =>
+function buildHierarchyData(node: PhyloNode): HierarchyNode<PhyloNode> {
+  const root = hierarchy<PhyloNode>(node, (d) =>
     d.children.length > 0 ? d.children : null,
   );
   return root;
@@ -100,7 +104,7 @@ export function PhylogeneticTree({
     if (!parseResult) return { nodes: [], links: [] };
 
     const root = buildHierarchyData(parseResult.root);
-    const leaves: Array<d3.HierarchyNode<PhyloNode>> = [];
+    const leaves: Array<HierarchyNode<PhyloNode>> = [];
     root.each((n) => {
       if (n.children === undefined || n.children.length === 0) {
         leaves.push(n);
@@ -111,8 +115,7 @@ export function PhylogeneticTree({
     const innerH = height - margin.top - margin.bottom;
 
     // y-scale: distribute leaves evenly
-    const yScale = d3
-      .scalePoint<string>()
+    const yScale = scalePoint<string>()
       .domain(leaves.map((l) => l.data.name || `node-${l.depth}`))
       .range([0, innerH])
       .padding(0.5);
@@ -122,11 +125,11 @@ export function PhylogeneticTree({
       ? (root.height ?? 0)
       : parseResult.maxRootDistance || 1;
 
-    const xScale = d3.scaleLinear().domain([0, maxX]).range([0, innerW]);
+    const xScale = scaleLinear().domain([0, maxX]).range([0, innerW]);
 
     // Compute positions
     const nodePositions: Map<
-      d3.HierarchyNode<PhyloNode>,
+      HierarchyNode<PhyloNode>,
       { x: number; y: number }
     > = new Map();
 
@@ -146,7 +149,7 @@ export function PhylogeneticTree({
 
     // Second pass: assign y to internal nodes (midpoint of children)
     function assignInternalY(
-      node: d3.HierarchyNode<PhyloNode>,
+      node: HierarchyNode<PhyloNode>,
     ): number {
       if (node.children && node.children.length > 0) {
         const childYs = node.children.map((c) => assignInternalY(c));
@@ -213,7 +216,7 @@ export function PhylogeneticTree({
   useEffect(() => {
     if (!svgRef.current || !parseResult) return;
 
-    const svg = d3.select(svgRef.current);
+    const svg = select(svgRef.current);
     svg.selectAll("*").remove();
 
     const g = svg
@@ -221,8 +224,7 @@ export function PhylogeneticTree({
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Zoom
-    const zoomBehavior = d3
-      .zoom<SVGSVGElement, unknown>()
+    const zoomBehavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.3, 5])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
@@ -300,9 +302,8 @@ export function PhylogeneticTree({
           .append("path")
           .attr(
             "d",
-            d3
-              .symbol<unknown>()
-              .type(d3.symbolDiamond)
+            symbol<unknown>()
+              .type(symbolDiamond)
               .size(40)(undefined) as string,
           )
           .attr("transform", `translate(${node.x},${node.y})`)

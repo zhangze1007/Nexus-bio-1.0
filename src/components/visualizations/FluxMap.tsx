@@ -10,7 +10,9 @@
  * can be reused across FBA, community FBA, and any other flux solver output.
  */
 
-import * as d3 from "d3";
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, type SimulationLinkDatum, type SimulationNodeDatum } from "d3-force";
+import { select } from "d3-selection";
+import { zoom, zoomIdentity } from "d3-zoom";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { THEME, TOOL_RESULT_PALETTE } from "../../theme";
 
@@ -68,7 +70,7 @@ const FLUX_ZERO = "#333"; // gray
 
 // ── Force layout helper ──────────────────────────────────────────────────────
 
-interface LayoutNode extends d3.SimulationNodeDatum {
+interface LayoutNode extends SimulationNodeDatum {
   id: string;
   name: string;
   isMetabolite: boolean;
@@ -76,7 +78,7 @@ interface LayoutNode extends d3.SimulationNodeDatum {
   radius: number;
 }
 
-interface LayoutLink extends d3.SimulationLinkDatum<LayoutNode> {
+interface LayoutLink extends SimulationLinkDatum<LayoutNode> {
   reactionId: string;
   reactionName: string;
   subsystem?: string;
@@ -183,21 +185,19 @@ export function FluxMap({
       target: typeof l.target === "object" ? l.target.id : l.target,
     }));
 
-    const simulation = d3
-      .forceSimulation<LayoutNode>(simNodes)
+    const simulation = forceSimulation<LayoutNode>(simNodes)
       .force(
         "link",
-        d3
-          .forceLink<LayoutNode, LayoutLink>(simLinks)
+        forceLink<LayoutNode, LayoutLink>(simLinks)
           .id((d) => d.id)
           .distance(80)
           .strength(0.4),
       )
-      .force("charge", d3.forceManyBody().strength(-300))
-      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("charge", forceManyBody().strength(-300))
+      .force("center", forceCenter(width / 2, height / 2))
       .force(
         "collide",
-        d3.forceCollide().radius((d) => (d as LayoutNode).radius + 8),
+        forceCollide().radius((d) => (d as LayoutNode).radius + 8),
       )
       .stop();
 
@@ -279,25 +279,24 @@ export function FluxMap({
     const svg = svgRef.current;
     if (!svg) return;
 
-    const zoomGroup = d3.select(svg).select<SVGGElement>("[data-zoom-group]");
+    const zoomGroup = select(svg).select<SVGGElement>("[data-zoom-group]");
     if (zoomGroup.empty()) return;
 
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
+    const zoomBehavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.3, 4])
       .on("zoom", (event) => {
         zoomGroup.attr("transform", event.transform);
       });
 
-    d3.select(svg).call(zoom);
+    select(svg).call(zoomBehavior);
 
     // Double-click to reset
-    d3.select(svg).on("dblclick.zoom", () => {
-      d3.select(svg).transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+    select(svg).on("dblclick.zoom", () => {
+      select(svg).transition().duration(300).call(zoomBehavior.transform, zoomIdentity);
     });
 
     return () => {
-      d3.select(svg).on(".zoom", null);
+      select(svg).on(".zoom", null);
     };
   }, []);
 
