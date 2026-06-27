@@ -4,6 +4,9 @@ import { THEME } from "../../theme";
 /**
  * Skeleton loading placeholder — shimmer animation.
  * Use for async content while data is loading.
+ *
+ * For more advanced variants (SkeletonCard, SkeletonTable, SkeletonChart),
+ * see SkeletonLoader.tsx in the same directory.
  */
 export function Skeleton({
   width = "100%",
@@ -31,6 +34,8 @@ export function Skeleton({
     animation: "shimmer 1.5s ease-in-out infinite",
     ...style,
   };
+
+  if (count < 1) return null;
 
   if (count > 1) {
     return (
