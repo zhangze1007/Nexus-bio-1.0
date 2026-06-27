@@ -52,10 +52,9 @@ describe('errorResponse', () => {
   it('returns JSON body with ok:false and error message', async () => {
     const response = errorResponse('Something went wrong', 500);
     const body = await response.json();
-    expect(body).toEqual({
-      ok: false,
-      error: 'Something went wrong',
-    });
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe('Something went wrong');
+    expect(body.requestId).toBeDefined();
   });
 
   it('includes extra fields in the body', async () => {
@@ -93,7 +92,9 @@ describe('errorResponse', () => {
   it('works with empty extra object', async () => {
     const response = errorResponse('Error', 500, {});
     const body = await response.json();
-    expect(body).toEqual({ ok: false, error: 'Error' });
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe('Error');
+    expect(body.requestId).toBeDefined();
   });
 
   it('works with empty headers object', () => {

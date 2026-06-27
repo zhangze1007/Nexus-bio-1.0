@@ -2,6 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
+  setupFiles: ['<rootDir>/jest.setup.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/e2e/', '/sdks/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
@@ -19,9 +20,9 @@ module.exports = {
       presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
     }],
   },
-  // Allow babel-jest to transform ESM-only otplib and crypto dependencies
+  // Allow babel-jest to transform ESM-only dependencies
   transformIgnorePatterns: [
-    'node_modules/(?!(@otplib|@scure|@noble|otplib)/)',
+    'node_modules/(?!(@otplib|@scure|@noble|otplib|d3|d3-.*|internmap|delaunator|robust-predicates)/)',
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

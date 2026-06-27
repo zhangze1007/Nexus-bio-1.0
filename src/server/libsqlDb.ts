@@ -11,7 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { type Client, createClient, type InArgs, type InStatement } from "@libsql/client";
 
-const LOCAL_DB_PATH = path.join(process.cwd(), ".nexus", "workbench.db");
+const LOCAL_DB_PATH = process.env.NEXUS_DB_PATH || path.join(process.cwd(), ".nexus", "workbench.db");
 
 let singletonClient: Client | null = null;
 
