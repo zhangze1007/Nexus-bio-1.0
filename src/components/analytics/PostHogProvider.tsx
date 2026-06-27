@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import posthog from "posthog-js";
-import { PostHogProvider as Provider } from "posthog-js/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * PostHog analytics provider for Nexus-Bio.
@@ -12,59 +10,70 @@ import { PostHogProvider as Provider } from "posthog-js/react";
  * or consent is denied, PostHog is never initialised — zero network
  * requests, zero cookies, zero tracking.
  *
- * Consent can be set by a cookie-banner component:
- *   document.cookie = 'ph_analytics_consent=true; max-age=31536000; path=/';
+ * Performance: posthog-js (~80KB gzipped) is dynamically imported only
+ * after consent is confirmed, avoiding unnecessary bundle download.
  */
 
 const CONSENT_COOKIE = "ph_analytics_consent";
 
 function hasAnalyticsConsent(): boolean {
   if (typeof document === "undefined") return false;
-  // Treat missing consent cookie as "no consent" (opt-in model)
   return document.cookie.split(";").some((c) => c.trim().startsWith(`${CONSENT_COOKIE}=true`));
 }
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+export function PostHogProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
+  const providerRef = useRef<React.ComponentType<{ children: ReactNode }> | null>(null);
+  const posthogRef = useRef<unknown>(null);
 
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    if (!key) {
-      // No key configured — nothing to do. All analytics calls will be
-      // silently ignored because posthog-js is never initialised.
-      return;
-    }
+    if (!key) return;
+    if (!hasAnalyticsConsent()) return;
 
-    if (!hasAnalyticsConsent()) {
-      // GDPR: user has not consented — do not initialise.
-      // Optionally, we can remember they were offered consent:
-      return;
-    }
+    let cancelled = false;
 
-    if (typeof window !== "undefined" && !posthog.__loaded) {
-      posthog.init(key, {
-        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
-        capture_pageview: false, // We capture pageviews manually via useAnalytics().page()
-        capture_pageleave: true,
-        autocapture: true,
-        // Respect Do Not Track
-        respect_dnt: true,
-        // Do not persist anything if user hasn't consented (belt-and-suspenders)
-        persistence: "localStorage+cookie",
-        loaded: (ph) => {
-          // In development, disable autocapture to reduce noise
-          if (process.env.NODE_ENV === "development") {
-            ph.opt_out_capturing();
-            // Re-enable so dev can opt-in manually via console:
-            //   posthog.opt_in_capturing()
-          }
+    import("posthog-js").then(({ default: posthog }) => {
+      if (cancelled) return;
+
+      if (typeof window !== "undefined" && !posthog.__loaded) {
+        posthog.init(key, {
+          api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
+          capture_pageview: false,
+          capture_pageleave: true,
+          autocapture: true,
+          respect_dnt: true,
+          persistence: "localStorage+cookie",
+          loaded: (ph: { opt_out_capturing: () => void }) => {
+            if (process.env.NODE_ENV === "development") {
+              ph.opt_out_capturing();
+            }
+            posthogRef.current = posthog;
+            // Dynamic import the React provider
+            import("posthog-js/react").then(({ PostHogProvider: PHP }) => {
+              if (cancelled) return;
+              providerRef.current = PHP as unknown as React.ComponentType<{ children: ReactNode }>;
+              setReady(true);
+            });
+          },
+        });
+      } else if (posthog.__loaded) {
+        posthogRef.current = posthog;
+        import("posthog-js/react").then(({ PostHogProvider: PHP }) => {
+          if (cancelled) return;
+          providerRef.current = PHP as unknown as React.ComponentType<{ children: ReactNode }>;
           setReady(true);
-        },
-      });
-    } else if (posthog.__loaded) {
-      setReady(true);
-    }
+        });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  return <Provider client={posthog}>{children}</Provider>;
+  if (!ready || !providerRef.current) return <>{children}</>;
+
+  const Provider = providerRef.current;
+  return <Provider>{children}</Provider>;
 }
