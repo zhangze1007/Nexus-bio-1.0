@@ -92,7 +92,7 @@ export async function ensureExperimentTrackerSchema(): Promise<void> {
       args: [],
     },
     {
-      sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_experiment_data_key
+      sql: `CREATE INDEX IF NOT EXISTS idx_lab_experiment_data_key
             ON lab_experiment_data(experiment_id, key)`,
       args: [],
     },
@@ -133,8 +133,8 @@ function rowToTimelineEvent(row: Record<string, unknown>): TimelineEvent {
   return {
     id: row.id as string,
     experiment_id: row.experiment_id as string,
-    event_type: row.event_type as string,
-    details: row.details as string,
+    event_type: row.key as string,
+    details: row.value as string,
     timestamp: Number(row.timestamp),
     key: row.key as string | undefined,
     value: row.value as string | undefined,

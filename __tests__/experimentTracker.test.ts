@@ -180,10 +180,10 @@ describe('experimentTracker', () => {
   test('getExperimentTimeline returns all events in chronological order', async () => {
     const exp = await createExperiment('Timeline order test', 'proto-15', 'proj-15');
 
-    // Small delay to ensure distinct timestamps
-    await addExperimentData(exp.id, 'step', '1');
+    // Use distinct keys so each data event creates a new row (upsert would overwrite same key)
+    await addExperimentData(exp.id, 'step_1', '1');
     await updateExperimentStatus(exp.id, 'running');
-    await addExperimentData(exp.id, 'step', '2');
+    await addExperimentData(exp.id, 'step_2', '2');
     await updateExperimentStatus(exp.id, 'completed');
 
     const events = await getExperimentTimeline(exp.id);

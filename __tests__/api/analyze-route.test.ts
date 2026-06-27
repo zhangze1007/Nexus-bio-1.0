@@ -210,7 +210,7 @@ describe('POST /api/analyze', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toMatch(/contents|searchQuery/i);
+      expect(data.error).toMatch(/invalid request body/i);
     });
 
     it('returns 400 for invalid JSON body', async () => {

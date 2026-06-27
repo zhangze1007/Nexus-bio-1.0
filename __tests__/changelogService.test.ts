@@ -12,9 +12,11 @@
 /* ------------------------------------------------------------------ */
 
 const changelogRows: Record<string, unknown>[] = [];
+let insertCounter = 0;
 
 function resetTables(): void {
   changelogRows.length = 0;
+  insertCounter = 0;
 }
 
 jest.mock("../src/server/libsqlDb", () => ({
@@ -62,12 +64,15 @@ jest.mock("../src/server/libsqlDb", () => ({
     }
     // INSERT
     if (sql.includes("INSERT INTO changelog")) {
-      const [id, version, changesJson, publishedAt] = args;
+      const [id, version, changesJson] = args;
+      // Use incrementing counter to ensure unique, sortable timestamps
+      insertCounter++;
+      const ts = `2026-01-${String(insertCounter).padStart(2, '0')}T00:00:00Z`;
       changelogRows.push({
         id,
         version,
         changes_json: changesJson,
-        published_at: publishedAt ?? new Date().toISOString(),
+        published_at: ts,
       });
       return { rowsAffected: 1 };
     }

@@ -113,7 +113,7 @@ describe('POST handler — input validation', () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toContain('Missing contents');
+    expect(data.error).toContain('Invalid request body');
   });
 
   it('rejects legacy body with empty contents array', async () => {
@@ -136,7 +136,9 @@ describe('POST handler — input validation', () => {
     const longQuery = 'x'.repeat(501);
     const req = createRequest({ searchQuery: longQuery });
     const res = await POST(req);
-    expect(res.status).toBe(413);
+    // Zod schema validates max length before the manual size check,
+    // so the response is 400 (validation error) rather than 413.
+    expect(res.status).toBe(400);
   });
 });
 

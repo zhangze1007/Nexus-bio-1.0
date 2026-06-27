@@ -122,11 +122,11 @@ function buildZip(entries: ZipEntry[]): Buffer {
 
 /** Known user-id column names per table. */
 const TABLE_USER_COLUMNS: Record<string, string> = {
-  projects: 'actor_id',
-  experiment_records: 'actor_id',
-  project_history: 'actor_id',
-  project_run_artifact_index: 'actor_id',
-  sync_audit: 'actor_id',
+  workbench_projects: 'actor_id',
+  workbench_experiments: 'actor_id',
+  workbench_history: 'actor_id',
+  workbench_artifacts: 'actor_id',
+  audit_log: 'actor_id',
   gdpr_requests: 'user_id',
 };
 
