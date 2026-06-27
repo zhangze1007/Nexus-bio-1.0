@@ -58,9 +58,9 @@ describe('getCorsHeaders', () => {
   it('returns primary origin when no request is provided', () => {
     const headers = getCorsHeaders();
     expect(headers['Access-Control-Allow-Origin']).toBe('https://nexus-bio-1-0.vercel.app');
-    expect(headers['Access-Control-Allow-Methods']).toBe('GET, POST, PUT, OPTIONS');
+    expect(headers['Access-Control-Allow-Methods']).toBe('GET, POST, PUT, PATCH, OPTIONS');
     expect(headers['Access-Control-Allow-Headers']).toBe(
-      'Content-Type, x-workbench-actor-id, x-workbench-project-id',
+      'Content-Type, x-workbench-actor-id, x-workbench-project-id, X-API-Version, Deprecation, Sunset',
     );
   });
 
@@ -118,7 +118,7 @@ describe('handleOptions', () => {
   it('includes CORS headers in the response', () => {
     const res = handleOptions();
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://nexus-bio-1-0.vercel.app');
-    expect(res.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, PUT, OPTIONS');
+    expect(res.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, PUT, PATCH, OPTIONS');
   });
 
   it('passes request origin to getCorsHeaders', () => {
