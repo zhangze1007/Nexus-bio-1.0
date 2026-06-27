@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { auth } from '../../../src/lib/auth';
 import { deriveAnalyzeCompatibilityProjection } from '../../../src/domain/workflowArtifactAdapters';
 import type { WorkflowArtifact } from '../../../src/domain/workflowArtifact';
 import { sanitizeWorkbenchState } from '../../../src/store/workbenchValidation';
@@ -140,6 +141,18 @@ function tagUnverifiedPayloads(
 }
 
 export async function GET(request: Request) {
+  // ── Authentication ──
+  // Verify the request has a valid session. The middleware handles transport-level
+  // auth (API key, same-origin), but the handler must also verify user identity
+  // to prevent unauthenticated data access.
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { ok: false, error: 'Authentication required' },
+      { status: 401, headers: getCorsHeaders(request) },
+    );
+  }
+
   const { artifactId, projectId, actorId } = getProjectScope(request);
   await getWorkbenchDb();
   const useArtifactScope = Boolean(artifactId);
@@ -147,6 +160,22 @@ export async function GET(request: Request) {
 
   if (artifactId && !(await projectStateExists(artifactId, explicitScope))) {
     return NextResponse.json({ ok: false, error: 'Workflow artifact not found' }, { status: 404, headers: getCorsHeaders(request) });
+  }
+
+  // ── Project membership verification ──
+  // When a specific project or artifact is requested, verify the requesting actor
+  // is a member. This prevents users from reading other users' projects by forging
+  // the x-workbench-project-id header. Skip for the default shared project scope
+  // (no explicit project/artifact ID) to allow first-time access.
+  const scopeId = artifactId ?? projectId;
+  if (scopeId && actorId) {
+    const members = await listProjectMembers(scopeId, 64, explicitScope);
+    if (members.length > 0 && !members.some(m => m.actorId === actorId)) {
+      return NextResponse.json(
+        { ok: false, error: 'Access denied' },
+        { status: 403, headers: getCorsHeaders(request) },
+      );
+    }
   }
 
   const state = await readProjectState(artifactId ?? projectId, explicitScope);
