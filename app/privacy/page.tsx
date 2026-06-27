@@ -73,12 +73,12 @@ export default function PrivacyPage() {
             marginBottom: '3rem',
           }}
         >
-          Last updated: March 2026
+          Last updated: June 2026
         </p>
 
         <p>
           Nexus-Bio is committed to protecting your privacy. This policy explains what information
-          we collect and how we use it.
+          we collect, how we use it, and how you can exercise your data rights under GDPR.
         </p>
 
         <h2
@@ -95,9 +95,12 @@ export default function PrivacyPage() {
           1. Information We Collect
         </h2>
         <p>
-          Nexus-Bio does not require account creation and does not collect personal information such
-          as your name or email address. When you use the Service, text you submit for analysis is
-          processed by Google Gemini AI and is subject to Google&apos;s privacy policy.
+          We store project data, experiment records, and audit logs in a server-side SQLite database
+          to support the workbench feature. Project data includes pathway designs, experiment
+          parameters, and run artifacts. Audit logs record sync events and project history for
+          traceability. We use PostHog for anonymous usage analytics to improve the platform. UI
+          preferences such as panel layout and theme settings are stored locally in your browser
+          via localStorage and never leave your device.
         </p>
 
         <h2
@@ -114,8 +117,12 @@ export default function PrivacyPage() {
           2. How We Use Your Data
         </h2>
         <p>
-          Text and files you submit are sent to the Google Gemini API solely to generate pathway
-          visualizations. We do not store, log, or share your submitted content on our servers.
+          Research queries you submit are processed by Groq (primary) and Google Gemini (fallback)
+          AI APIs to generate pathway analyses, literature summaries, and scientific insights.
+          Submitted text is sent to these providers solely to fulfill your request and is subject to
+          their respective privacy policies. We do not sell or share your data with third parties
+          for advertising purposes. PostHog analytics data is anonymized and used only to understand
+          aggregate usage patterns and improve the platform.
         </p>
 
         <h2
@@ -132,9 +139,10 @@ export default function PrivacyPage() {
           3. Third-Party Services
         </h2>
         <p>
-          We use the following third-party services: Google Gemini AI for content analysis, and the
-          NCBI PubMed API for literature search. These services have their own privacy policies
-          which govern how they handle data.
+          We use the following third-party services: Groq and Google Gemini for AI-powered research
+          analysis, PostHog for anonymous analytics, and external scientific databases (PubChem,
+          AlphaFold, KEGG, NCBI) for data retrieval. Each service has its own privacy policy
+          governing how it handles data.
         </p>
 
         <h2
@@ -148,11 +156,13 @@ export default function PrivacyPage() {
             fontFamily: 'monospace',
           }}
         >
-          4. Cookies
+          4. Cookies and Session Management
         </h2>
         <p>
-          Nexus-Bio does not use tracking cookies or analytics tools that collect personal
-          information.
+          We use cookies for session management to maintain your authenticated state across page
+          loads. These cookies are essential for the workbench sync feature and are not used for
+          tracking or advertising. You may disable cookies in your browser settings, though this
+          may limit workbench functionality.
         </p>
 
         <h2
@@ -166,7 +176,27 @@ export default function PrivacyPage() {
             fontFamily: 'monospace',
           }}
         >
-          5. Changes to This Policy
+          5. Your Data Rights (GDPR)
+        </h2>
+        <p>
+          Under the General Data Protection Regulation, you have the right to request access to,
+          correction of, or deletion of your personal data. You can also request a portable export
+          of your data. To exercise these rights, use the GDPR endpoints available through the
+          platform API or contact us directly. We will respond to verified requests within 30 days.
+        </p>
+
+        <h2
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '13px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            margin: '2.5rem 0 0.75rem',
+            fontFamily: 'monospace',
+          }}
+        >
+          6. Changes to This Policy
         </h2>
         <p>
           We may update this Privacy Policy from time to time. We will notify users of significant
@@ -184,11 +214,11 @@ export default function PrivacyPage() {
             fontFamily: 'monospace',
           }}
         >
-          6. Contact
+          7. Contact
         </h2>
         <p>
-          For privacy-related inquiries, please reach out through the contact section on our main
-          page.
+          For privacy-related inquiries or data deletion requests, please email
+          fuchanze@gmail.com or use the contact form on our main page.
         </p>
 
         <div
