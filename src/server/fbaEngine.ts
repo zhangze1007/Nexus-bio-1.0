@@ -153,8 +153,9 @@ const ECOLI_NETWORK: NetworkSpec = {
     const glc = vars.GLCpts ?? 0;
     const biomass = vars.BIOMASS ?? 0;
     const product = vars.PRODUCT ?? 0;
+    /** ATP yield from glycolysis per glucose: GAPD produces 1 ATP, PYK produces 1 ATP, PFK consumes 1 ATP. PDH is excluded as it produces NADH, not ATP. */
     const atpYield =
-      glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0) + (vars.PDH ?? 0) * 0.5) / glc : 0;
+      glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0)) / glc : 0;
     const carbonEfficiency = glc > 1e-9 ? ((biomass * 4.6 + product * 6) / (glc * 6)) * 100 : 0;
     const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;

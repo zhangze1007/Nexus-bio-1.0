@@ -398,7 +398,7 @@ export function simulateCFPS(constructs: GeneConstruct[], params: CFSParameters)
           originalKtlK.push(c.K_tl);
           return {
             ...c,
-            ...(hasBrendaKm ? { K_tl: params.brendaKm! * 1000 } : {}), // mM → nM
+            ...(hasBrendaKm ? { K_tl: params.brendaKm! * 1e6 } : {}), // mM → nM (1 mM = 1e6 nM)
             ...(hasBrendaKcat ? { k_tl: params.brendaKcat! * 60 } : {}), // 1/s → 1/min (rate per ribosome)
           };
         })
