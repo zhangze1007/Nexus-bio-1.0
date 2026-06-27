@@ -230,7 +230,7 @@ function ActionBtn({
         ? {
             background: "rgba(232,163,161,0.18)",
             border: "rgba(232,163,161,0.34)",
-            color: "rgba(255,238,238,0.88)",
+            color: "rgba(255,238,238,0.08)",
           }
         : {
             background: "rgba(255,255,255,0.12)",
