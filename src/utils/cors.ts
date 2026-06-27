@@ -19,7 +19,7 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
   }
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, x-workbench-actor-id, x-workbench-project-id",
   };
 }
