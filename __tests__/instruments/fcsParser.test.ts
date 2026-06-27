@@ -277,7 +277,7 @@ describe('parseFcs', () => {
 
   it('accepts ArrayBuffer input', () => {
     const file = buildFcsFile('FCS2.0', SIMPLE_PARAMS, SIMPLE_EVENTS);
-    const buffer = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength);
+    const buffer = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer;
     const result = parseFcs(buffer);
 
     expect(result.parameters).toEqual(['FSC', 'SSC', 'FL1']);

@@ -218,7 +218,7 @@ describe("simulateGoldenGate", () => {
 
     const result = simulateGoldenGate(seq, "BsaI");
     // At minimum, it should find 2 BsaI sites and produce fragments
-    expect(result.fragments || result.assembled).toBeDefined();
+    expect(result.assembled).toBeDefined();
   });
 });
 

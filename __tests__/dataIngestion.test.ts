@@ -182,7 +182,7 @@ describe('ingestFCSData', () => {
       [150, 250, 350],
       [400, 500, 600],
     ]);
-    const result = ingestFCSData(fcsBytes.buffer);
+    const result = ingestFCSData(fcsBytes.buffer as ArrayBuffer);
     expect(result.format).toBe('fcs');
     expect(result.error).toBeUndefined();
     expect(result.records).toBe(3);
@@ -192,7 +192,7 @@ describe('ingestFCSData', () => {
 
   it('returns error for zero-event FCS file (parser rejects $TOT=0)', () => {
     const fcsBytes = buildFcsFile('FCS2.0', ['FSC', 'SSC'], []);
-    const result = ingestFCSData(fcsBytes.buffer);
+    const result = ingestFCSData(fcsBytes.buffer as ArrayBuffer);
     expect(result.format).toBe('fcs');
     // The FCS parser throws when $TOT is 0 — ingestion catches and wraps it
     expect(result.error).toBeDefined();
@@ -207,7 +207,7 @@ describe('ingestFCSData', () => {
 
   it('returns error for non-FCS binary data', () => {
     const junk = new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05]);
-    const result = ingestFCSData(junk.buffer);
+    const result = ingestFCSData(junk.buffer as ArrayBuffer);
     expect(result.error).toMatch(/valid FCS header/i);
     expect(result.data).toBeNull();
   });
@@ -216,7 +216,7 @@ describe('ingestFCSData', () => {
     const fcsBytes = buildFcsFile('FCS3.0', ['FSC', 'SSC'], [[1, 2]], {
       '$INST': 'Test Cytometer',
     });
-    const result = ingestFCSData(fcsBytes.buffer);
+    const result = ingestFCSData(fcsBytes.buffer as ArrayBuffer);
     expect(result.metadata['$INST']).toBe('Test Cytometer');
     expect(result.metadata.numParameters).toBe('2');
   });
@@ -242,7 +242,7 @@ describe('autoDetectAndIngest', () => {
     const fcsBytes = buildFcsFile('FCS3.0', ['FSC', 'SSC', 'FL1'], [
       [10, 20, 30],
     ]);
-    const result = autoDetectAndIngest(fcsBytes.buffer, 'sample_001.fcs');
+    const result = autoDetectAndIngest(fcsBytes.buffer as ArrayBuffer, 'sample_001.fcs');
     expect(result.format).toBe('fcs');
     expect(result.records).toBe(1);
     expect(result.error).toBeUndefined();
@@ -264,7 +264,7 @@ describe('autoDetectAndIngest', () => {
 
   it('detects FCS from ArrayBuffer header even without extension', () => {
     const fcsBytes = buildFcsFile('FCS2.0', ['FSC'], [[42]]);
-    const result = autoDetectAndIngest(fcsBytes.buffer, 'data.bin');
+    const result = autoDetectAndIngest(fcsBytes.buffer as ArrayBuffer, 'data.bin');
     expect(result.format).toBe('fcs');
     expect(result.records).toBe(1);
   });
@@ -292,7 +292,7 @@ describe('autoDetectAndIngest', () => {
         bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
       }
     }
-    const buf = new Uint8Array(bytes).buffer;
+    const buf = new Uint8Array(bytes).buffer as ArrayBuffer;
     const result = autoDetectAndIngest(buf, 'plate.csv');
     expect(result.format).toBe('plate-reader');
     expect(result.records).toBeGreaterThan(0);

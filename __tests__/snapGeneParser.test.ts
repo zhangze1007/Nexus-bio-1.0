@@ -205,7 +205,7 @@ function buildSnapGeneFile(
     }
   }
 
-  return concat(...parts).buffer;
+  return concat(...parts).buffer as ArrayBuffer;
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
@@ -232,18 +232,18 @@ describe("isSnapGeneFile", () => {
     writeUint32BE(buffer as unknown as Uint8Array, 1, 14);
     // Write wrong magic
     buffer.set(ascii("NotSnap!"), 5);
-    expect(isSnapGeneFile(buffer.buffer)).toBe(false);
+    expect(isSnapGeneFile(buffer.buffer as ArrayBuffer)).toBe(false);
   });
 
   it("returns false when leading byte is not 0x09", () => {
     const buffer = buildSnapGeneFile("ATCG");
     const bytes = new Uint8Array(buffer);
     bytes[0] = 0x00; // corrupt leading byte
-    expect(isSnapGeneFile(bytes.buffer)).toBe(false);
+    expect(isSnapGeneFile(bytes.buffer as ArrayBuffer)).toBe(false);
   });
 
   it("returns false for a plain text file", () => {
-    const buffer = ascii("This is not a SnapGene file").buffer;
+    const buffer = ascii("This is not a SnapGene file").buffer as ArrayBuffer;
     expect(isSnapGeneFile(buffer)).toBe(false);
   });
 });
@@ -391,7 +391,7 @@ describe("parseSnapGene", () => {
     const buffer = buildSnapGeneFile("ATCG");
     const bytes = new Uint8Array(buffer);
     bytes[0] = 0xff;
-    expect(() => parseSnapGene(bytes.buffer)).toThrow("expected leading byte 0x09");
+    expect(() => parseSnapGene(bytes.buffer as ArrayBuffer)).toThrow("expected leading byte 0x09");
   });
 
   it("throws on wrong magic bytes", () => {
@@ -402,7 +402,7 @@ describe("parseSnapGene", () => {
     writeUint16BE(buffer as unknown as Uint8Array, 13, 1);
     writeUint16BE(buffer as unknown as Uint8Array, 15, 1);
     writeUint16BE(buffer as unknown as Uint8Array, 17, 1);
-    expect(() => parseSnapGene(buffer.buffer)).toThrow('expected magic "SnapGene"');
+    expect(() => parseSnapGene(buffer.buffer as ArrayBuffer)).toThrow('expected magic "SnapGene"');
   });
 
   it("throws when buffer is too small", () => {

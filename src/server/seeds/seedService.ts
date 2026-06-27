@@ -208,7 +208,7 @@ async function seedCodonUsage(): Promise<number> {
   const statements: InStatement[] = [];
   let count = 0;
 
-  const codonData = codonUsageJson as Record<string, Record<string, [string, number][]>>;
+  const codonData = codonUsageJson as unknown as Record<string, Record<string, [string, number][]>>;
 
   for (const [organism, aminoAcids] of Object.entries(codonData)) {
     for (const [aminoAcid, codons] of Object.entries(aminoAcids)) {
