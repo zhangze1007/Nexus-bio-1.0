@@ -1,3 +1,11 @@
+/**
+ * ThreeScene — 3D metabolic pathway visualization system.
+ *
+ * Renders an interactive WebGL canvas using @react-three/fiber with GLSL shaders,
+ * instanced node meshes, animated edge particles, and a pastel accent palette.
+ * Supports orbit controls, node selection, and real-time FBA flux overlay.
+ */
+
 "use client";
 
 import { Html, Line, OrbitControls } from "@react-three/drei";

@@ -2,13 +2,17 @@
  * Thermodynamics calculations.
  * Extracted from ThermodynamicsPanel for testability and reuse.
  *
+ * Implements the delta-G group contribution method (Mavrovouniotis, 1990; Alberty, 2003)
+ * for estimating standard transformed Gibbs free energies of biochemical reactions.
+ *
  * @scientific_provenance
  * VALIDITY_TIER: real (calcDeltaG, calcKeq, calcMassBalance)
  *
- * References:
- *   - Alberty (2003) Thermodynamics of Biochemical Reactions
- *   - eQuilibrator 3 (Beber et al. 2022, Nucleic Acids Research)
- *   - Eyring (1935) The Activated Complex in Chemical Reactions
+ * @references
+ * - Mavrovouniotis, M.L. (1990). Group contributions for estimating standard gibbs energies of formation of biochemical compounds in aqueous solution. Biotechnol. Bioeng. 36(10), 1070-1082.
+ * - Alberty, R.A. (2003). Thermodynamics of Biochemical Reactions. Wiley-Interscience.
+ * - Beber, M.E. et al. (2022). eQuilibrator 3.0: a database solution for thermodynamic constant estimation. Nucleic Acids Res. 50(D1), D603-D609.
+ * - Eyring, H. (1935). The Activated Complex in Chemical Reactions. J. Chem. Phys. 3(2), 107-115.
  */
 
 import { R as R_GAS, T_REF } from "../services/thermoEngine";

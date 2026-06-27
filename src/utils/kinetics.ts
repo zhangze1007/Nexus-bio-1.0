@@ -1,12 +1,19 @@
 /**
  * Michaelis-Menten kinetics and ODE solver.
  *
+ * Implements Michaelis-Menten kinetics (Michaelis & Menten, 1913) with
+ * Dormand-Prince RK4 integration for time-course simulations.
+ *
  * Delegates to kineticsEngine.ts for:
  *   - Multi-inhibition velocity models (competitive, uncompetitive, mixed, substrate)
  *   - Dormand-Prince adaptive RK4(5) ODE solver
  *
  * Backward compatibility: existing callers of mmVelocity and runRK4
  * continue to work with identical signatures and return types.
+ *
+ * @references
+ * - Michaelis, L. & Menten, M.L. (1913). Die Kinetik der Invertinwirkung. Biochem. Z. 49, 333-369.
+ * - Dormand, J.R. & Prince, P.J. (1980). A family of embedded Runge-Kutta formulae. J. Comput. Appl. Math. 6(1), 19-26.
  */
 
 import { competitiveInhibition, type EnzymeKinetics, simulateEnzymeSystem } from "../services/kineticsEngine";

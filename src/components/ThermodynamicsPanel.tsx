@@ -1,3 +1,11 @@
+/**
+ * ThermodynamicsPanel — Delta-G group contribution analysis panel.
+ *
+ * Calculates transformed Gibbs free energy, equilibrium constants, and pathway
+ * feasibility using the group contribution method. Renders waterfall delta-G
+ * cascade visualizations with ATP step highlights and mass balance checks.
+ */
+
 "use client";
 
 import { Database, Info, Loader2, Play, RotateCcw, Zap } from "lucide-react";

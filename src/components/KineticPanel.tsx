@@ -1,3 +1,11 @@
+/**
+ * KineticPanel — Michaelis-Menten kinetics and RK4 ODE simulation panel.
+ *
+ * Provides interactive enzyme kinetics analysis with competitive, uncompetitive,
+ * mixed, and substrate inhibition models. Runs Dormand-Prince adaptive RK4(5)
+ * ODE integration for time-course simulations and parameter estimation.
+ */
+
 "use client";
 
 import { Info, Loader2, Play, Plus, RotateCcw, Trash2 } from "lucide-react";

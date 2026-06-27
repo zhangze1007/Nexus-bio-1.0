@@ -1,3 +1,12 @@
+/**
+ * NodePanel — 3-tab scientific workbench for pathway nodes.
+ *
+ * Tab 1 (Overview) shows summary, evidence trace, and external IDs.
+ * Tab 2 (Structure) switches between AlphaFold protein viewer, PubChem 3D conformer,
+ * and microscopy images depending on node type. Tab 3 (Analysis) renders KineticPanel
+ * for enzymes or ThermodynamicsPanel for metabolites.
+ */
+
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";

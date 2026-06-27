@@ -1,3 +1,14 @@
+/**
+ * Flux Balance Analysis engine.
+ *
+ * Implements FBA (Orth et al., 2010) with a simplex LP solver for single-species
+ * and community metabolic models. Supports biomass, ATP, and product objectives
+ * with gene knockout and overexpression strategies.
+ *
+ * @references
+ * - Orth, J.D., Thiele, I. & Palsson, B.O. (2010). What is flux balance analysis? Nat. Biotechnol. 28(3), 245-248.
+ */
+
 import { IJO1366_METABOLITES, IJO1366_REACTIONS, IJO1366_STATS } from "../data/iJO1366Subset";
 import { type CommunityFBAOutput, type FBAOutput, SHARED_METABOLITES } from "../data/mockFBA";
 import type { BiGGReaction } from "../services/database/biggClient";
@@ -57,6 +68,17 @@ function round(value: number, digits = 4) {
 }
 
 import { clamp } from "../utils/math";
+
+/** Carbon content of E. coli biomass: mol C per g dry weight (Neidhardt et al., 1990) */
+const BIOMASS_CARBON_CONTENT_ECOLI = 4.6;
+/** Carbon content of yeast biomass: mol C per g dry weight */
+const BIOMASS_CARBON_CONTENT_YEAST = 4.2;
+/** Carbon atoms per mol glucose */
+const GLUCOSE_CARBON = 6;
+/** Product carbon content for E. coli product (mol C per mol product) */
+const PRODUCT_CARBON_ECOLI = 6;
+/** Product carbon content for yeast product (mol C per mol product) */
+const PRODUCT_CARBON_YEAST = 5.6;
 
 const ECOLI_NETWORK: NetworkSpec = {
   species: "ecoli",
@@ -156,7 +178,7 @@ const ECOLI_NETWORK: NetworkSpec = {
     /** ATP yield from glycolysis per glucose: GAPD produces 1 ATP, PYK produces 1 ATP, PFK consumes 1 ATP. PDH is excluded as it produces NADH, not ATP. */
     const atpYield =
       glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0)) / glc : 0;
-    const carbonEfficiency = glc > 1e-9 ? ((biomass * 4.6 + product * 6) / (glc * 6)) * 100 : 0;
+    const carbonEfficiency = glc > 1e-9 ? ((biomass * BIOMASS_CARBON_CONTENT_ECOLI + product * PRODUCT_CARBON_ECOLI) / (glc * GLUCOSE_CARBON)) * 100 : 0;
     const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {
@@ -293,7 +315,7 @@ const YEAST_NETWORK: NetworkSpec = {
     const product = vars.PRODUCT_y ?? 0;
     const atpYield =
       glc > 1e-9 ? ((vars.TPI ?? 0) + (vars.ADH ?? 0) * 0.4 + (vars.IDH ?? 0) - (vars.PFK_y ?? 0)) / glc : 0;
-    const carbonEfficiency = glc > 1e-9 ? ((biomass * 4.2 + product * 5.6) / (glc * 6)) * 100 : 0;
+    const carbonEfficiency = glc > 1e-9 ? ((biomass * BIOMASS_CARBON_CONTENT_YEAST + product * PRODUCT_CARBON_YEAST) / (glc * GLUCOSE_CARBON)) * 100 : 0;
     const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {
