@@ -4,6 +4,7 @@ module.exports = {
   testEnvironment: 'jsdom',
   testPathIgnorePatterns: ['/node_modules/', '/e2e/', '/sdks/'],
   moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
