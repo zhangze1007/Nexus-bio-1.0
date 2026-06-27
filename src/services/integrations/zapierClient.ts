@@ -11,7 +11,7 @@
  * Pure TypeScript -- no runtime dependencies beyond @libsql/client.
  */
 
-import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
+import { sqlAll, sqlRun } from "../../server/libsqlDb";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,38 +24,6 @@ export interface ZapierTrigger {
   active: number;
   created_at: string;
 }
-
-export interface RegisterTriggerInput {
-  eventType: string;
-  webhookUrl: string;
-}
-
-export interface ZapierWebhookPayload {
-  event_type: string;
-  timestamp: string;
-  data: Record<string, unknown>;
-  source: string;
-}
-
-export interface FireResult {
-  url: string;
-  status: number;
-  ok: boolean;
-  error?: string;
-}
-
-export type ZapierEventType =
-  | "experiment.completed"
-  | "experiment.failed"
-  | "fba.result_ready"
-  | "fba.error"
-  | "inventory.created"
-  | "inventory.updated"
-  | "inventory.deleted"
-  | "analysis.completed"
-  | "analysis.error"
-  | "protein.fold_ready"
-  | "workflow.state_changed";
 
 // ---------------------------------------------------------------------------
 // Schema bootstrap
@@ -126,15 +94,15 @@ function rowToTrigger(row: Record<string, unknown>): ZapierTrigger {
 /**
  * Register a new Zapier webhook trigger.
  *
- * @param input  Event type and webhook URL.
- * @returns The newly created trigger record.
+ * @param eventType  The event type to subscribe to.
+ * @param webhookUrl  The Zapier webhook URL to POST to.
+ * @returns The newly created trigger id.
  * @throws {Error} If eventType or webhookUrl are invalid.
  */
 export async function registerZapierTrigger(
-  input: RegisterTriggerInput,
-): Promise<ZapierTrigger> {
-  const { eventType, webhookUrl } = input;
-
+  eventType: string,
+  webhookUrl: string,
+): Promise<string> {
   if (!eventType || !eventType.trim()) {
     throw new Error("eventType is required and must be non-empty");
   }
@@ -152,56 +120,35 @@ export async function registerZapierTrigger(
     [id, eventType.trim(), webhookUrl.trim(), createdAt],
   );
 
-  return {
-    id,
-    event_type: eventType.trim(),
-    webhook_url: webhookUrl.trim(),
-    active: 1,
-    created_at: createdAt,
-  };
+  return id;
 }
 
 /**
  * Remove (delete) a trigger by its id.
  *
  * @param id  The trigger id to remove.
- * @returns `true` if a row was deleted, `false` if no trigger matched.
  */
-export async function removeZapierTrigger(id: string): Promise<boolean> {
+export async function removeZapierTrigger(id: string): Promise<void> {
   if (!id || !id.trim()) {
     throw new Error("id is required");
   }
 
   await ensureSchema();
 
-  const result = await sqlRun("DELETE FROM zapier_triggers WHERE id = ?", [
-    id.trim(),
-  ]);
-  return result.rowsAffected > 0;
+  await sqlRun("DELETE FROM zapier_triggers WHERE id = ?", [id.trim()]);
 }
 
 /**
- * List all Zapier triggers, optionally filtered by event type.
+ * List all Zapier triggers.
  *
- * @param eventType  If provided, only return triggers for this event type.
  * @returns Array of trigger records ordered by created_at descending.
  */
-export async function listZapierTriggers(
-  eventType?: string,
-): Promise<ZapierTrigger[]> {
+export async function listZapierTriggers(): Promise<ZapierTrigger[]> {
   await ensureSchema();
 
-  let rows: Record<string, unknown>[];
-  if (eventType) {
-    rows = await sqlAll(
-      "SELECT * FROM zapier_triggers WHERE event_type = ? ORDER BY created_at DESC",
-      [eventType],
-    );
-  } else {
-    rows = await sqlAll(
-      "SELECT * FROM zapier_triggers ORDER BY created_at DESC",
-    );
-  }
+  const rows = await sqlAll(
+    "SELECT * FROM zapier_triggers ORDER BY created_at DESC",
+  );
 
   return rows.map(rowToTrigger);
 }
@@ -210,25 +157,16 @@ export async function listZapierTriggers(
  * Fire all active Zapier triggers for a given event type.
  *
  * POSTs a Zapier-compatible JSON payload to each active webhook URL.
- * The payload format follows Zapier's catch hook conventions:
- * {
- *   event_type: string,
- *   timestamp: ISO 8601,
- *   source: "nexus-bio",
- *   data: { ... }
- * }
- *
- * All webhook calls are made in parallel. Results indicate per-URL
- * success/failure without throwing on individual failures.
+ * All webhook calls are made in parallel. Failures are swallowed so
+ * one broken webhook does not block the others.
  *
  * @param eventType  The event type to fire triggers for.
  * @param payload    Arbitrary data to include in the webhook body.
- * @returns Array of per-webhook results.
  */
 export async function fireZapierTriggers(
   eventType: string,
   payload: Record<string, unknown>,
-): Promise<FireResult[]> {
+): Promise<void> {
   if (!eventType || !eventType.trim()) {
     throw new Error("eventType is required and must be non-empty");
   }
@@ -243,53 +181,25 @@ export async function fireZapierTriggers(
   const triggers = rows.map(rowToTrigger);
 
   if (triggers.length === 0) {
-    return [];
+    return;
   }
 
-  const webhookPayload: ZapierWebhookPayload = {
+  const webhookPayload = {
     event_type: eventType.trim(),
     timestamp: new Date().toISOString(),
     data: payload,
     source: "nexus-bio",
   };
 
-  const results = await Promise.allSettled(
-    triggers.map(async (trigger): Promise<FireResult> => {
-      try {
-        const response = await fetch(trigger.webhook_url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(webhookPayload),
-        });
-
-        return {
-          url: trigger.webhook_url,
-          status: response.status,
-          ok: response.ok,
-        };
-      } catch (err) {
-        return {
-          url: trigger.webhook_url,
-          status: 0,
-          ok: false,
-          error: err instanceof Error ? err.message : String(err),
-        };
-      }
+  await Promise.allSettled(
+    triggers.map(async (trigger) => {
+      await fetch(trigger.webhook_url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(webhookPayload),
+      });
     }),
   );
-
-  return results.map((result) => {
-    if (result.status === "fulfilled") {
-      return result.value;
-    }
-    // Promise.allsettled rejected — should not happen given our inner try/catch
-    return {
-      url: "unknown",
-      status: 0,
-      ok: false,
-      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
-    };
-  });
 }
 
 /**

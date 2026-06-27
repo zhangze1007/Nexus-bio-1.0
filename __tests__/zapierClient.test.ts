@@ -28,76 +28,73 @@ describe("zapierClient", () => {
 
   // ---- registerZapierTrigger ----
 
-  test("registerZapierTrigger inserts a trigger and returns it", async () => {
-    const trigger = await registerZapierTrigger({
-      eventType: "experiment.completed",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/123/abc/",
-    });
-
-    expect(trigger.id).toMatch(/^zap_/);
-    expect(trigger.event_type).toBe("experiment.completed");
-    expect(trigger.webhook_url).toBe(
+  test("registerZapierTrigger inserts a trigger and returns its id", async () => {
+    const id = await registerZapierTrigger(
+      "experiment.completed",
       "https://hooks.zapier.com/hooks/catch/123/abc/",
     );
-    expect(trigger.active).toBe(1);
-    expect(trigger.created_at).toBeTruthy();
+
+    expect(id).toMatch(/^zap_/);
+    expect(typeof id).toBe("string");
+
+    const all = await listZapierTriggers();
+    expect(all).toHaveLength(1);
+    expect(all[0].id).toBe(id);
+    expect(all[0].event_type).toBe("experiment.completed");
+    expect(all[0].webhook_url).toBe(
+      "https://hooks.zapier.com/hooks/catch/123/abc/",
+    );
+    expect(all[0].active).toBe(1);
+    expect(all[0].created_at).toBeTruthy();
   });
 
   test("registerZapierTrigger trims whitespace from eventType and webhookUrl", async () => {
-    const trigger = await registerZapierTrigger({
-      eventType: "  fba.result_ready  ",
-      webhookUrl: "  https://hooks.zapier.com/hooks/catch/456/  ",
-    });
+    const id = await registerZapierTrigger(
+      "  fba.result_ready  ",
+      "  https://hooks.zapier.com/hooks/catch/456/  ",
+    );
 
-    expect(trigger.event_type).toBe("fba.result_ready");
-    expect(trigger.webhook_url).toBe("https://hooks.zapier.com/hooks/catch/456/");
+    const all = await listZapierTriggers();
+    const trigger = all.find((t) => t.id === id);
+    expect(trigger).toBeDefined();
+    expect(trigger!.event_type).toBe("fba.result_ready");
+    expect(trigger!.webhook_url).toBe("https://hooks.zapier.com/hooks/catch/456/");
   });
 
   test("registerZapierTrigger throws on empty eventType", async () => {
     await expect(
-      registerZapierTrigger({
-        eventType: "",
-        webhookUrl: "https://hooks.zapier.com/hooks/catch/1/",
-      }),
+      registerZapierTrigger("", "https://hooks.zapier.com/hooks/catch/1/"),
     ).rejects.toThrow("eventType is required");
   });
 
   test("registerZapierTrigger throws on invalid webhookUrl", async () => {
     await expect(
-      registerZapierTrigger({
-        eventType: "test.event",
-        webhookUrl: "not-a-url",
-      }),
+      registerZapierTrigger("test.event", "not-a-url"),
     ).rejects.toThrow("webhookUrl must be a valid http(s) URL");
   });
 
   test("registerZapierTrigger rejects ftp:// URLs", async () => {
     await expect(
-      registerZapierTrigger({
-        eventType: "test.event",
-        webhookUrl: "ftp://files.example.com/hook",
-      }),
+      registerZapierTrigger("test.event", "ftp://files.example.com/hook"),
     ).rejects.toThrow("webhookUrl must be a valid http(s) URL");
   });
 
   // ---- removeZapierTrigger ----
 
-  test("removeZapierTrigger deletes an existing trigger and returns true", async () => {
-    const trigger = await registerZapierTrigger({
-      eventType: "inventory.created",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/del/",
-    });
+  test("removeZapierTrigger deletes an existing trigger", async () => {
+    const id = await registerZapierTrigger(
+      "inventory.created",
+      "https://hooks.zapier.com/hooks/catch/del/",
+    );
 
-    const removed = await removeZapierTrigger(trigger.id);
-    expect(removed).toBe(true);
+    await removeZapierTrigger(id);
 
     const remaining = await listZapierTriggers();
     expect(remaining).toHaveLength(0);
   });
 
-  test("removeZapierTrigger returns false for nonexistent id", async () => {
-    const removed = await removeZapierTrigger("zap_nonexistent");
-    expect(removed).toBe(false);
+  test("removeZapierTrigger is a no-op for nonexistent id (does not throw)", async () => {
+    await expect(removeZapierTrigger("zap_nonexistent")).resolves.toBeUndefined();
   });
 
   test("removeZapierTrigger throws on empty id", async () => {
@@ -107,43 +104,14 @@ describe("zapierClient", () => {
   // ---- listZapierTriggers ----
 
   test("listZapierTriggers returns all triggers ordered by created_at descending", async () => {
-    await registerZapierTrigger({
-      eventType: "a.event",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/1/",
-    });
-    await registerZapierTrigger({
-      eventType: "b.event",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/2/",
-    });
-    await registerZapierTrigger({
-      eventType: "a.event",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/3/",
-    });
+    await registerZapierTrigger("a.event", "https://hooks.zapier.com/hooks/catch/1/");
+    await registerZapierTrigger("b.event", "https://hooks.zapier.com/hooks/catch/2/");
+    await registerZapierTrigger("a.event", "https://hooks.zapier.com/hooks/catch/3/");
 
     const all = await listZapierTriggers();
     expect(all).toHaveLength(3);
+    // Most recently created first
     expect(all[0].webhook_url).toBe("https://hooks.zapier.com/hooks/catch/3/");
-  });
-
-  test("listZapierTriggers filters by eventType", async () => {
-    await registerZapierTrigger({
-      eventType: "fba.result_ready",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/fba1/",
-    });
-    await registerZapierTrigger({
-      eventType: "experiment.completed",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/exp/",
-    });
-    await registerZapierTrigger({
-      eventType: "fba.result_ready",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/fba2/",
-    });
-
-    const fbaTriggers = await listZapierTriggers("fba.result_ready");
-    expect(fbaTriggers).toHaveLength(2);
-    expect(
-      fbaTriggers.every((t) => t.event_type === "fba.result_ready"),
-    ).toBe(true);
   });
 
   test("listZapierTriggers returns empty array when no triggers exist", async () => {
@@ -154,29 +122,25 @@ describe("zapierClient", () => {
   // ---- fireZapierTriggers ----
 
   test("fireZapierTriggers POSTs Zapier-compatible payload to each active webhook", async () => {
-    await registerZapierTrigger({
-      eventType: "experiment.completed",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/hook1/",
-    });
-    await registerZapierTrigger({
-      eventType: "experiment.completed",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/hook2/",
-    });
+    await registerZapierTrigger(
+      "experiment.completed",
+      "https://hooks.zapier.com/hooks/catch/hook1/",
+    );
+    await registerZapierTrigger(
+      "experiment.completed",
+      "https://hooks.zapier.com/hooks/catch/hook2/",
+    );
 
     mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
     } as Response);
 
-    const results = await fireZapierTriggers("experiment.completed", {
-      experimentId: "exp-42",
-    });
+    await fireZapierTriggers("experiment.completed", { experimentId: "exp-42" });
 
-    expect(results).toHaveLength(2);
-    expect(results.every((r) => r.ok)).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(2);
 
-    // Verify payload structure
+    // Verify payload structure on first call
     const firstCall = mockFetch.mock.calls[0];
     const body = JSON.parse(firstCall[1].body);
     expect(body.event_type).toBe("experiment.completed");
@@ -187,45 +151,50 @@ describe("zapierClient", () => {
     expect(firstCall[1].headers["Content-Type"]).toBe("application/json");
   });
 
-  test("fireZapierTriggers returns empty array when no active triggers match", async () => {
-    const results = await fireZapierTriggers("no.such.event", { x: 1 });
-    expect(results).toEqual([]);
+  test("fireZapierTriggers does nothing when no active triggers match", async () => {
+    await fireZapierTriggers("no.such.event", { x: 1 });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test("fireZapierTriggers does not fire inactive triggers", async () => {
-    const trigger = await registerZapierTrigger({
-      eventType: "analysis.completed",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/inactive/",
-    });
-
-    // Deactivate by removing and re-creating as inactive scenario:
-    // We can't deactivate directly, but removeZapierTrigger removes it entirely.
-    await removeZapierTrigger(trigger.id);
+  test("fireZapierTriggers does not fire triggers for a different event type", async () => {
+    await registerZapierTrigger(
+      "fba.result_ready",
+      "https://hooks.zapier.com/hooks/catch/fba/",
+    );
+    await registerZapierTrigger(
+      "experiment.completed",
+      "https://hooks.zapier.com/hooks/catch/exp/",
+    );
 
     mockFetch.mockResolvedValue({ ok: true, status: 200 } as Response);
 
-    const results = await fireZapierTriggers("analysis.completed", {
-      result: "ok",
-    });
-    expect(results).toEqual([]);
-    expect(mockFetch).not.toHaveBeenCalled();
+    await fireZapierTriggers("fba.result_ready", { flux: 42 });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const calledUrl = mockFetch.mock.calls[0][0];
+    expect(calledUrl).toBe("https://hooks.zapier.com/hooks/catch/fba/");
   });
 
-  test("fireZapierTriggers returns error result when fetch fails", async () => {
-    await registerZapierTrigger({
-      eventType: "fba.error",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/fail/",
-    });
+  test("fireZapierTriggers silently swallows fetch errors so other webhooks still fire", async () => {
+    await registerZapierTrigger(
+      "analysis.completed",
+      "https://hooks.zapier.com/hooks/catch/fail/",
+    );
+    await registerZapierTrigger(
+      "analysis.completed",
+      "https://hooks.zapier.com/hooks/catch/ok/",
+    );
 
-    mockFetch.mockRejectedValue(new Error("Network timeout"));
+    mockFetch
+      .mockRejectedValueOnce(new Error("Network timeout"))
+      .mockResolvedValueOnce({ ok: true, status: 200 } as Response);
 
-    const results = await fireZapierTriggers("fba.error", { error: "bad input" });
+    // Should not throw even though the first webhook fails
+    await expect(
+      fireZapierTriggers("analysis.completed", { result: "ok" }),
+    ).resolves.toBeUndefined();
 
-    expect(results).toHaveLength(1);
-    expect(results[0].ok).toBe(false);
-    expect(results[0].error).toBe("Network timeout");
-    expect(results[0].status).toBe(0);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
   test("fireZapierTriggers throws on empty eventType", async () => {
@@ -237,14 +206,27 @@ describe("zapierClient", () => {
   // ---- unique ids ----
 
   test("registerZapierTrigger generates unique ids for successive calls", async () => {
-    const t1 = await registerZapierTrigger({
-      eventType: "test",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/u1/",
-    });
-    const t2 = await registerZapierTrigger({
-      eventType: "test",
-      webhookUrl: "https://hooks.zapier.com/hooks/catch/u2/",
-    });
-    expect(t1.id).not.toBe(t2.id);
+    const id1 = await registerZapierTrigger("test", "https://hooks.zapier.com/hooks/catch/u1/");
+    const id2 = await registerZapierTrigger("test", "https://hooks.zapier.com/hooks/catch/u2/");
+    expect(id1).not.toBe(id2);
+  });
+
+  // ---- multiple triggers per event ----
+
+  test("multiple triggers for the same event type are all stored independently", async () => {
+    await registerZapierTrigger("experiment.completed", "https://hooks.zapier.com/hooks/catch/a/");
+    await registerZapierTrigger("experiment.completed", "https://hooks.zapier.com/hooks/catch/b/");
+    await registerZapierTrigger("experiment.completed", "https://hooks.zapier.com/hooks/catch/c/");
+
+    const all = await listZapierTriggers();
+    expect(all).toHaveLength(3);
+    expect(all.every((t) => t.event_type === "experiment.completed")).toBe(true);
+
+    const urls = all.map((t) => t.webhook_url).sort();
+    expect(urls).toEqual([
+      "https://hooks.zapier.com/hooks/catch/a/",
+      "https://hooks.zapier.com/hooks/catch/b/",
+      "https://hooks.zapier.com/hooks/catch/c/",
+    ]);
   });
 });
