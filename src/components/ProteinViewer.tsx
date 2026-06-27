@@ -148,6 +148,10 @@ export default function ProteinViewer({
     return () => {
       cancelled = true;
       abortCtrl.abort();
+      if (viewerRef.current) {
+        viewerRef.current.clear();
+        viewerRef.current = null;
+      }
     };
   }, [pdbId, alphafoldId, useAF, renderMode]);
 

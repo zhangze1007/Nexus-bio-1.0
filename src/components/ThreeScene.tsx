@@ -9,7 +9,7 @@
 "use client";
 
 import { Html, Line, OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, type RootState } from "@react-three/fiber";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ACESFilmicToneMapping,
@@ -421,7 +421,7 @@ function GeoComp({ g, s }: { g: GeomKind; s: number }) {
     case "icos":
       return <icosahedronGeometry args={[s, 1]} />;
     default:
-      return <sphereGeometry args={[s, 24, 24]} />;
+      return <sphereGeometry args={[s, 12, 12]} />;
   }
 }
 
@@ -650,7 +650,7 @@ const MolNode = React.memo(function MolNode({
 
         {cfg.rr.map((r, i) => (
           <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
-            <torusGeometry args={[r * modeScale, 0.007, 4, 40]} />
+            <torusGeometry args={[r * modeScale, 0.007, 4, 16]} />
             <meshLambertMaterial
               color={finalColor}
               emissive={finalColor}
@@ -1321,12 +1321,31 @@ export default function ThreeScene({
   const [retryKey, setRetryKey] = useState(0);
   const mountedRef = useRef(true);
   const roughnessTexture = useMemo(() => createProceduralTexture(), []);
+  const rafRef = useRef(0);
+  const storeRef = useRef<RootState | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
+  }, []);
+
+  // Visibility-based render pausing: stop animation when tab is hidden
+  useEffect(() => {
+    const handleVisibility = () => {
+      const state = storeRef.current;
+      if (!state) return;
+      if (document.hidden) {
+        cancelAnimationFrame(rafRef.current);
+        state.set({ frameloop: "demand" });
+      } else {
+        state.set({ frameloop: "always" });
+        state.advance(performance.now());
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   // GPU resource cleanup: dispose texture on unmount
@@ -1835,6 +1854,7 @@ export default function ThreeScene({
           dpr={[1, 1.5]}
           performance={{ min: 0.5 }}
           style={{ background: "transparent", pointerEvents: "auto" }}
+          onCreated={(state) => { storeRef.current = state; }}
         >
           <ResizeHandler />
           <Scene

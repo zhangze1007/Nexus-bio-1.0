@@ -4,7 +4,8 @@ import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Minus, Plus } from "lucide-react";
 import { type KeyboardEvent, type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
+import { Object3D } from "three";
+import type { InstancedMesh } from "three";
 import { THEME } from "../../../theme";
 import type { ScSpatialPointDatum, ScSpatialQueryResponse } from "../../../types/scspatial";
 import { computeConvexHull, expandHull, hexPath } from "../../../utils/vizUtils";
@@ -900,8 +901,8 @@ function InstancedPointCloud({
   color: string;
   onSelectCell: (cellId: string | null) => void;
 }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const tempObject = useMemo(() => new THREE.Object3D(), []);
+  const meshRef = useRef<InstancedMesh>(null);
+  const tempObject = useMemo(() => new Object3D(), []);
 
   useEffect(() => {
     if (!meshRef.current) return;
