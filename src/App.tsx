@@ -20,6 +20,13 @@ import { BarChart3, Dna, Linkedin, ShieldCheck, Zap } from "lucide-react";
 import styles from "./App.module.css";
 import { THEME } from "./theme";
 
+// Marketing sections (embedded in homepage)
+import FeatureGrid from "./components/marketing/FeatureGrid";
+import PricingTable from "./components/marketing/PricingTable";
+import StatsSection from "./components/marketing/StatsSection";
+import TestimonialSection from "./components/marketing/TestimonialSection";
+import CTASection from "./components/marketing/CTASection";
+
 const H = THEME.SANS;
 const MONO = THEME.MONO;
 
@@ -86,6 +93,31 @@ export default function App() {
         {/* ── ENGINE ARCHITECTURE ── */}
         <Reveal>
           <FeaturesArchitecture />
+        </Reveal>
+
+        {/* ── TOOLS GRID ── */}
+        <Reveal>
+          <FeatureGrid />
+        </Reveal>
+
+        {/* ── STATS ── */}
+        <Reveal>
+          <StatsSection />
+        </Reveal>
+
+        {/* ── TESTIMONIALS ── */}
+        <Reveal>
+          <TestimonialSection />
+        </Reveal>
+
+        {/* ── PRICING ── */}
+        <Reveal>
+          <PricingTable compact />
+        </Reveal>
+
+        {/* ── CTA ── */}
+        <Reveal>
+          <CTASection />
         </Reveal>
 
         {/* ── CONTACT ── */}
