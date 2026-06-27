@@ -23,7 +23,6 @@ import { THEME } from "./theme";
 // Marketing sections (embedded in homepage)
 import FeatureGrid from "./components/marketing/FeatureGrid";
 import PricingTable from "./components/marketing/PricingTable";
-import StatsSection from "./components/marketing/StatsSection";
 import TestimonialSection from "./components/marketing/TestimonialSection";
 import CTASection from "./components/marketing/CTASection";
 
@@ -98,11 +97,6 @@ export default function App() {
         {/* ── TOOLS GRID ── */}
         <Reveal>
           <FeatureGrid />
-        </Reveal>
-
-        {/* ── STATS ── */}
-        <Reveal>
-          <StatsSection />
         </Reveal>
 
         {/* ── TESTIMONIALS ── */}

@@ -14,6 +14,9 @@
 import { runMD } from '../../src/services/protein/mdIntegrator';
 import type { BackboneAtom } from '../../src/services/protein/backboneGenerator';
 
+// MD simulations can be slow in CI — increase timeout
+jest.setTimeout(30_000);
+
 /** Helper: create a BackboneAtom */
 function atom(
   x: number,
