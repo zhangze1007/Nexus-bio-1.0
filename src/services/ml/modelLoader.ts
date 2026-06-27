@@ -8,10 +8,13 @@
 
 import type { ModelMetadata } from "./types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let ort: any = null;
+type OrtModule = Awaited<typeof import("onnxruntime-web")>;
+// InferenceSession is a namespace with a static create() factory, not a class.
+// The return type of create() is the session instance type.
+type OrtSession = Awaited<ReturnType<OrtModule["InferenceSession"]["create"]>>;
+let ort: OrtModule | null = null;
 
-async function getOrt() {
+async function getOrt(): Promise<OrtModule> {
   if (!ort) {
     ort = await import("onnxruntime-web");
     // Single-threaded WASM — avoids SharedArrayBuffer / COOP/COEP requirements
@@ -21,8 +24,7 @@ async function getOrt() {
 }
 
 // Cache of loaded InferenceSession instances keyed by model ID
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sessions = new Map<string, any>();
+const sessions = new Map<string, OrtSession>();
 
 /**
  * Load (or return cached) ONNX InferenceSession for the given model.

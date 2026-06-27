@@ -109,7 +109,7 @@ export interface PipelineStage {
   /** Human-readable stage name (used for identification and ordering) */
   name: string;
   /** Async processing function that transforms data */
-  process: (data: any) => Promise<any>;
+  process: (data: unknown) => Promise<unknown>;
 }
 
 /**

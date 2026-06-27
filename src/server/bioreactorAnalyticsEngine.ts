@@ -240,8 +240,9 @@ function detectMultivariateAnomalies(
     const row: number[] = [];
     let valid = true;
     for (const ch of channels) {
-      const val = (data[i] as unknown as Record<string, unknown>)[ch] as number | undefined;
-      if (val === undefined) {
+      const point = data[i] as unknown as Record<string, unknown>;
+      const val = point[ch];
+      if (typeof val !== "number" || !Number.isFinite(val)) {
         valid = false;
         break;
       }

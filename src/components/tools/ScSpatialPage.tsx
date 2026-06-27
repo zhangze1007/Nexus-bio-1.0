@@ -167,11 +167,9 @@ export default React.memo(function ScSpatialPage() {
     if (clusterNames.length === 0) return;
 
     // If Python backend provided pre-computed ligrec results, use them directly
-    const analysis = (query as unknown as Record<string, unknown>).analysis as
-      | { ligrec?: Record<string, unknown> }
-      | undefined;
+    const analysis = query.analysis;
     if (analysis?.ligrec) {
-      setPrecomputedLigrec(analysis.ligrec);
+      setPrecomputedLigrec(analysis.ligrec as Record<string, unknown>);
       setCommResult(null); // Clear any previous client-side result
       return;
     }
@@ -997,7 +995,7 @@ export default React.memo(function ScSpatialPage() {
               onSetNeighborK={setNeighborK}
               onAnalysisParamChange={handleAnalysisParamChange}
               spatialFormat={
-                query ? (((query as unknown as Record<string, unknown>).spatialFormat as string) ?? null) : null
+                query?.spatialFormat ?? null
               }
             />
 
@@ -1013,13 +1011,7 @@ export default React.memo(function ScSpatialPage() {
                 showNeighbors={showNeighbors}
                 neighborK={neighborK}
                 heImageData={
-                  query
-                    ? (((query as unknown as Record<string, unknown>).heImage as {
-                        data: string;
-                        scaleFactor: number;
-                        spotDiameter: number;
-                      } | null) ?? null)
-                    : null
+                  query?.heImage ?? null
                 }
               />
 

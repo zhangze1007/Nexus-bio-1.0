@@ -104,12 +104,13 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
 
   // Wire pipeline to detector: when pipeline processes data, check for anomalies
   const originalProcess = pipeline.process.bind(pipeline);
-  pipeline.process = async (data: any) => {
+  pipeline.process = async (data: unknown) => {
     const result = await originalProcess(data);
 
     // Check for anomalies if data has metric and value
-    if (data && typeof data.metric === "string" && typeof data.value === "number") {
-      const anomalies = detector.check({ metric: data.metric, value: data.value });
+    const d = data as Record<string, unknown> | null;
+    if (d && typeof d.metric === "string" && typeof d.value === "number") {
+      const anomalies = detector.check({ metric: d.metric, value: d.value });
       for (const anomaly of anomalies) {
         server.publish("anomalies", anomaly);
       }
@@ -122,8 +123,9 @@ export function createStreamingStack(options?: StreamingStackOptions): Streaming
   const originalProcessNext = pipeline.processNext.bind(pipeline);
   pipeline.processNext = async () => {
     const result = await originalProcessNext();
-    if (result !== undefined && result && typeof result.metric === "string" && typeof result.value === "number") {
-      const anomalies = detector.check({ metric: result.metric, value: result.value });
+    const r = result as Record<string, unknown> | undefined;
+    if (r && typeof r.metric === "string" && typeof r.value === "number") {
+      const anomalies = detector.check({ metric: r.metric, value: r.value });
       for (const anomaly of anomalies) {
         server.publish("anomalies", anomaly);
       }
@@ -173,10 +175,13 @@ export function createDefaultStreamingStack(): StreamingStack {
 
   stack.pipeline.addStage({
     name: "timestamp",
-    process: async (data) => ({
-      ...data,
-      timestamp: data.timestamp || Date.now(),
-    }),
+    process: async (data) => {
+      const d = data as Record<string, unknown>;
+      return {
+        ...d,
+        timestamp: (d && typeof d === "object" ? d.timestamp : undefined) || Date.now(),
+      };
+    },
   });
 
   // Add default anomaly rules

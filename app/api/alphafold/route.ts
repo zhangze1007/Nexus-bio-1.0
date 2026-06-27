@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 import { errorResponse } from '../../../src/utils/apiErrors';
 
+interface ProteinChain {
+  sequence: string;
+  id?: string;
+}
+
+interface Ligand {
+  smiles: string;
+  id?: string;
+}
+
+interface ComplexRequestBody {
+  mode?: "complex";
+  proteins?: ProteinChain[];
+  ligands?: Ligand[];
+  dna?: string;
+  rna?: string;
+}
+
+interface DockRequestBody {
+  mode: "dock";
+  proteinPdb: string;
+  ligandSmiles: string;
+}
+
+type AlphafoldRequestBody = ComplexRequestBody | DockRequestBody;
+
 export const runtime = 'edge';
 
 const MIN_VALID_PDB_LENGTH = 100;
@@ -114,13 +140,13 @@ export async function POST(req: NextRequest) {
   const jsonHeaders = { 'Content-Type': 'application/json', ...getCorsHeaders(req) };
 
   try {
-    const body = await req.json();
-    const { mode = "complex" } = body;
+    const body: AlphafoldRequestBody = await req.json();
+    const mode = body.mode ?? "complex";
 
     if (mode === "dock") {
-      return handleDock(body, jsonHeaders, requestId);
+      return handleDock(body as DockRequestBody, jsonHeaders, requestId);
     }
-    return handleComplex(body, jsonHeaders, requestId);
+    return handleComplex(body as ComplexRequestBody, jsonHeaders, requestId);
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: "Internal server error", requestId },
@@ -138,7 +164,7 @@ export async function POST(req: NextRequest) {
  *   3. Local heuristic — concatenate individual chains with linker
  */
 async function handleComplex(
-  body: any,
+  body: ComplexRequestBody,
   headers: Record<string, string>,
   requestId: string,
 ) {
@@ -180,7 +206,7 @@ async function handleComplex(
   if (esm3Backend) {
     try {
       // Concatenate sequences for multi-chain prediction
-      const allSequences = (proteins || []).map((p: any) => p.sequence);
+      const allSequences = (proteins || []).map((p: ProteinChain) => p.sequence);
       if (dna) allSequences.push(dna);
       if (rna) allSequences.push(rna);
 
@@ -216,7 +242,7 @@ async function handleComplex(
   }
 
   // Local heuristic: generate a multi-chain PDB with linker
-  const chains = (proteins || []).map((p: any) => p.sequence);
+  const chains = (proteins || []).map((p: ProteinChain) => p.sequence);
   if (dna) chains.push(dna);
   if (rna) chains.push(rna);
 
@@ -247,7 +273,7 @@ async function handleComplex(
  *   2. Local heuristic — place ligand near protein centroid
  */
 async function handleDock(
-  body: any,
+  body: DockRequestBody,
   headers: Record<string, string>,
   requestId: string,
 ) {

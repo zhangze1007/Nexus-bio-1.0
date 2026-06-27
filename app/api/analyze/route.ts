@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { classifyAxonDomain } from '../../../src/services/axonDomainClassifier';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 import { errorResponse } from '../../../src/utils/apiErrors';
+import { AnalyzeRequestSchema, validateSchema } from '../../../src/schemas';
 
 // ── Re-export all public symbols for tests and the gemini legacy alias ──
 export {
@@ -131,6 +132,16 @@ export async function POST(req: NextRequest) {
   } catch {
     log.warn('Invalid JSON body', { requestId, ip });
     return jsonResponse({ error: 'Invalid JSON body', requestId }, 400, req);
+  }
+
+  // ── Zod envelope validation ──
+  const envelopeCheck = validateSchema(AnalyzeRequestSchema, rawBody);
+  if (!envelopeCheck.ok) {
+    return jsonResponse(
+      { error: 'Invalid request body', details: envelopeCheck.errors, requestId },
+      400,
+      req,
+    );
   }
 
   // ── Dynamic search query mode ──

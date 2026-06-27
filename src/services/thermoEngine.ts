@@ -344,8 +344,13 @@ export async function fetchEquilibratorDeltaG(compoundName: string): Promise<Equ
 
     if (compounds.length === 0) return null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const firstHit = compounds[0] as any;
+    interface EquilibratorCompound {
+      model_ids?: string[];
+      id?: string;
+      kegg_id?: string;
+      name?: string;
+    }
+    const firstHit = compounds[0] as EquilibratorCompound;
     const compoundId: string | undefined = firstHit?.model_ids?.[0] ?? firstHit?.id ?? firstHit?.kegg_id;
 
     if (!compoundId) return null;

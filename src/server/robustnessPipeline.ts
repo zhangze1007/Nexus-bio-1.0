@@ -33,6 +33,25 @@ import {
 import { computeRobustness, type MonteCarloTrial, type RobustnessReport } from "./robustnessScore";
 import { computeSensitivity, type SensitivityReport } from "./sensitivityAnalysis";
 
+/**
+ * Convert CellFreeNominalParams to the flat Record<string, number> that
+ * cellFreeODE expects. This avoids `as unknown as` casts throughout the pipeline.
+ */
+function toParamRecord(params: CellFreeNominalParams): Record<string, number> {
+  return {
+    k_tx: params.k_tx,
+    k_tl: params.k_tl,
+    d_mRNA: params.d_mRNA,
+    d_protein: params.d_protein,
+    K_tl: params.K_tl,
+    energy_decay: params.energy_decay,
+    Rnap_activity: params.Rnap_activity,
+    AA_conc: params.AA_conc,
+    DNA_conc: params.DNA_conc,
+    temperature: params.temperature,
+  };
+}
+
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
 export interface IdealSimulation {
@@ -127,7 +146,7 @@ function cellFreeODE(
  * Run ideal simulation with nominal parameters, no noise.
  */
 function runIdealSimulation(nominalParams: CellFreeNominalParams = DEFAULT_CELL_FREE_NOMINAL): IdealSimulation {
-  const params = { ...nominalParams } as unknown as Record<string, number>;
+  const params = toParamRecord(nominalParams);
   const result = cellFreeODE(params);
 
   // Find time to half-max
@@ -215,7 +234,7 @@ function runOptimizer(
   nominalParams: CellFreeNominalParams = DEFAULT_CELL_FREE_NOMINAL,
 ): { robustness: RobustnessReport; sensitivity: SensitivityReport } {
   // Sensitivity analysis: perturb each parameter by ±5%
-  const nominal = { ...nominalParams } as unknown as Record<string, number>;
+  const nominal = toParamRecord(nominalParams);
   const sensitivity = computeSensitivity((params) => {
     const result = cellFreeODE(params);
     return result.yield;

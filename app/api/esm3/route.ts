@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   const requestId = `esm3_${Date.now().toString(36)}`;
 
   try {
-    const body = await req.json();
+    const body: ESM3RequestBody = await req.json();
     const { mode = "generate" } = body;
 
     if (mode === "fold") {
@@ -56,7 +56,26 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function handleFold(body: any, req: NextRequest, requestId: string) {
+interface ESM3FoldBody {
+  mode?: string;
+  sequence?: unknown;
+  fullAtom?: boolean;
+}
+
+interface ESM3GenerateBody {
+  mode?: string;
+  function?: string;
+  fold?: string;
+  targetLength?: number;
+  numSequences?: number;
+  temperature?: number;
+  fixedResidues?: Array<{ position: number; aminoAcid: string }>;
+  scaffold?: string;
+}
+
+type ESM3RequestBody = ESM3FoldBody | ESM3GenerateBody;
+
+async function handleFold(body: ESM3FoldBody, req: NextRequest, requestId: string) {
   const { sequence, fullAtom = false } = body;
 
   if (!sequence || typeof sequence !== "string") {
@@ -144,7 +163,7 @@ async function handleFold(body: any, req: NextRequest, requestId: string) {
   );
 }
 
-async function handleGenerate(body: any, req: NextRequest, requestId: string) {
+async function handleGenerate(body: ESM3GenerateBody, req: NextRequest, requestId: string) {
   const {
     function: targetFunction,
     fold,
@@ -234,7 +253,7 @@ async function handleGenerate(body: any, req: NextRequest, requestId: string) {
     let sequence = "";
     for (let i = 0; i < targetLength; i++) {
       // Apply fixed residues
-      const fixed = fixedResidues?.find((f: any) => f.position === i);
+      const fixed = fixedResidues?.find((f) => f.position === i);
       if (fixed) {
         sequence += fixed.aminoAcid.toUpperCase();
         continue;

@@ -134,7 +134,7 @@ export class BufferQueue<T> {
  */
 export class StreamingPipeline {
   private stages: PipelineStage[] = [];
-  private buffer: BufferQueue<any>;
+  private buffer: BufferQueue<unknown>;
   private options: Required<PipelineOptions>;
 
   /**
@@ -161,7 +161,7 @@ export class StreamingPipeline {
    * @param data - The data item to enqueue
    * @returns `true` if accepted, `false` if the buffer is full
    */
-  submit(data: any): boolean {
+  submit(data: unknown): boolean {
     return this.buffer.enqueue(data);
   }
 
@@ -172,7 +172,7 @@ export class StreamingPipeline {
    *
    * @returns The transformed output, or `undefined` if nothing to process
    */
-  async processNext(): Promise<any> {
+  async processNext(): Promise<unknown> {
     const item = this.buffer.dequeue();
     if (item === undefined) return undefined;
     return this.processItem(item);
@@ -227,7 +227,7 @@ export class StreamingPipeline {
    * @param data - The input data to process
    * @returns The final transformed output
    */
-  async process(data: any): Promise<any> {
+  async process(data: unknown): Promise<unknown> {
     return this.processItem(data);
   }
 
@@ -248,8 +248,8 @@ export class StreamingPipeline {
     this.buffer.clear();
   }
 
-  private async processItem(data: any): Promise<any> {
-    let result = data;
+  private async processItem(data: unknown): Promise<unknown> {
+    let result: unknown = data;
     for (const stage of this.stages) {
       result = await stage.process(result);
     }
@@ -278,8 +278,8 @@ export class StreamingPipeline {
 export function composeStages(...stages: PipelineStage[]): PipelineStage {
   return {
     name: "composed",
-    process: async (data: any): Promise<any> => {
-      let result = data;
+    process: async (data: unknown): Promise<unknown> => {
+      let result: unknown = data;
       for (const stage of stages) {
         result = await stage.process(result);
       }

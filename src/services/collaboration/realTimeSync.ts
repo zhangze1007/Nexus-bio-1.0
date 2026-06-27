@@ -48,9 +48,13 @@ interface InternalChannel {
 }
 
 /** Global registry so channels survive hot-reloads in dev. */
+interface GlobalWithSyncChannels {
+  __NX_SYNC_CHANNELS__?: Map<string, InternalChannel>;
+}
+const g = globalThis as GlobalWithSyncChannels;
 const channels: Map<string, InternalChannel> =
-  (globalThis as any).__NX_SYNC_CHANNELS__ ??
-  ((globalThis as any).__NX_SYNC_CHANNELS__ = new Map());
+  g.__NX_SYNC_CHANNELS__ ??
+  (g.__NX_SYNC_CHANNELS__ = new Map());
 
 function getOrCreateChannel(projectId: string): InternalChannel {
   const existing = channels.get(projectId);

@@ -9,10 +9,11 @@
 import { SeededRNG } from "../utils/seededRng";
 
 /* ---- lazy-loaded ONNX Runtime (~10-20 MB, code-split from main bundle) ---- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let ort: any = null;
+type OrtModule = Awaited<typeof import("onnxruntime-web")>;
+type OrtSession = Awaited<ReturnType<OrtModule["InferenceSession"]["create"]>>;
+let ort: OrtModule | null = null;
 
-async function getOrt() {
+async function getOrt(): Promise<OrtModule> {
   if (!ort) ort = await import("onnxruntime-web");
   return ort;
 }
@@ -30,8 +31,7 @@ export interface ForwardResult {
 }
 
 export class VAEInference {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private session: any = null;
+  private session: InstanceType<OrtModule["InferenceSession"]> | null = null;
   private latentDim: number;
   private rng: SeededRNG;
 

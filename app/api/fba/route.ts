@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { solveAuthorityCommunityFBA, solveAuthorityFBA, buildAuthorityFBAModel, solveExpandedFBA, solveDynamicFBA, type CommunityFBARequest, type FBAObjective, type FBASpecies, type DynamicReaction } from '../../../src/server/fbaEngine';
+import { FBARequestSchema, validateSchema } from '../../../src/schemas';
 import { solveLP } from '../../../src/server/highsSolver';
 import { runFVA } from '../../../src/server/fbaFVA';
 import { runPFBA } from '../../../src/server/fbaPFBA';
@@ -81,6 +82,16 @@ export async function POST(request: Request) {
   if (!body || typeof body !== 'object') {
     return errorResponse('Invalid FBA request payload', 400, { requestId }, getCorsHeaders(request));
   }
+
+  // ── Zod envelope validation ──
+  const envelopeCheck = validateSchema(FBARequestSchema, body);
+  if (!envelopeCheck.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'Invalid FBA request', details: envelopeCheck.errors, requestId },
+      { status: 400, headers: getCorsHeaders(request) },
+    );
+  }
+
   const input = body as Record<string, unknown>;
 
   try {

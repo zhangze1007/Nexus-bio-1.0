@@ -40,7 +40,7 @@ export interface ExperimentStep {
   /** Description */
   description: string;
   /** Parameters */
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
 }
 
 export interface ExperimentProtocol {
@@ -126,7 +126,11 @@ export function exportOT2Protocol(protocol: ExperimentProtocol): OT2Protocol {
   };
 
   // Build OT-2 commands
-  const commands: any[] = [];
+  interface OT2Command {
+    command: string;
+    params: Record<string, unknown>;
+  }
+  const commands: OT2Command[] = [];
   let estimatedRunTime = 0;
 
   for (const step of protocol.steps) {
@@ -183,7 +187,7 @@ export function exportOT2Protocol(protocol: ExperimentProtocol): OT2Protocol {
             ],
           },
         });
-        estimatedRunTime += (step.duration || 300) * (step.params?.cycles || 1);
+        estimatedRunTime += (step.duration || 300) * (typeof step.params?.cycles === "number" ? step.params.cycles : 1);
         break;
 
       case "plate_read":

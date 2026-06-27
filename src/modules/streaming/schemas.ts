@@ -40,43 +40,44 @@ export interface DashboardState {
  * @returns The validated DashboardState
  * @throws {Error} If any field is missing, has wrong type, or status is invalid
  */
-export function validateDashboardState(data: any): DashboardState {
+export function validateDashboardState(data: unknown): DashboardState {
   if (data == null || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("DashboardState must be a non-null object");
   }
-  if (typeof data.timestamp !== "number") {
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.timestamp !== "number") {
     throw new Error("DashboardState.timestamp must be a number");
   }
   const validStatuses = ["healthy", "degraded", "critical"];
-  if (!validStatuses.includes(data.status)) {
+  if (!validStatuses.includes(obj.status as string)) {
     throw new Error(`DashboardState.status must be one of: ${validStatuses.join(", ")}`);
   }
-  if (typeof data.activeConnections !== "number") {
+  if (typeof obj.activeConnections !== "number") {
     throw new Error("DashboardState.activeConnections must be a number");
   }
-  if (!Array.isArray(data.activeTopics)) {
+  if (!Array.isArray(obj.activeTopics)) {
     throw new Error("DashboardState.activeTopics must be an array");
   }
-  for (let i = 0; i < data.activeTopics.length; i++) {
-    if (typeof data.activeTopics[i] !== "string") {
+  for (let i = 0; i < obj.activeTopics.length; i++) {
+    if (typeof obj.activeTopics[i] !== "string") {
       throw new Error(`DashboardState.activeTopics[${i}] must be a string`);
     }
   }
-  if (data.metrics == null || typeof data.metrics !== "object" || Array.isArray(data.metrics)) {
+  if (obj.metrics == null || typeof obj.metrics !== "object" || Array.isArray(obj.metrics)) {
     throw new Error("DashboardState.metrics must be a non-null object");
   }
-  for (const [key, value] of Object.entries(data.metrics)) {
+  for (const [key, value] of Object.entries(obj.metrics as Record<string, unknown>)) {
     if (typeof value !== "number") {
       throw new Error(`DashboardState.metrics.${key} must be a number`);
     }
   }
 
   return {
-    timestamp: data.timestamp,
-    status: data.status,
-    activeConnections: data.activeConnections,
-    activeTopics: data.activeTopics,
-    metrics: data.metrics,
+    timestamp: obj.timestamp as number,
+    status: obj.status as DashboardState["status"],
+    activeConnections: obj.activeConnections as number,
+    activeTopics: obj.activeTopics as string[],
+    metrics: obj.metrics as Record<string, number>,
   };
 }
 
@@ -99,7 +100,7 @@ export interface DashboardEvent {
   /** Human-readable description of the event */
   message: string;
   /** Optional additional data associated with the event */
-  data?: any;
+  data?: unknown;
 }
 
 /**
@@ -124,37 +125,38 @@ export interface DashboardEvents {
  * @returns The validated DashboardEvent
  * @throws {Error} If any field is missing, has wrong type, or enum value is invalid
  */
-export function validateDashboardEvent(data: any): DashboardEvent {
+export function validateDashboardEvent(data: unknown): DashboardEvent {
   if (data == null || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("DashboardEvent must be a non-null object");
   }
-  if (typeof data.id !== "string") {
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.id !== "string") {
     throw new Error("DashboardEvent.id must be a string");
   }
-  if (typeof data.timestamp !== "number") {
+  if (typeof obj.timestamp !== "number") {
     throw new Error("DashboardEvent.timestamp must be a number");
   }
   const validTypes = ["anomaly", "threshold", "connection", "subscription", "error"];
-  if (!validTypes.includes(data.type)) {
+  if (!validTypes.includes(obj.type as string)) {
     throw new Error(`DashboardEvent.type must be one of: ${validTypes.join(", ")}`);
   }
   const validSeverities = ["info", "warning", "error", "critical"];
-  if (!validSeverities.includes(data.severity)) {
+  if (!validSeverities.includes(obj.severity as string)) {
     throw new Error(`DashboardEvent.severity must be one of: ${validSeverities.join(", ")}`);
   }
-  if (typeof data.message !== "string") {
+  if (typeof obj.message !== "string") {
     throw new Error("DashboardEvent.message must be a string");
   }
 
   const event: DashboardEvent = {
-    id: data.id,
-    timestamp: data.timestamp,
-    type: data.type,
-    severity: data.severity,
-    message: data.message,
+    id: obj.id as string,
+    timestamp: obj.timestamp as number,
+    type: obj.type as DashboardEvent["type"],
+    severity: obj.severity as DashboardEvent["severity"],
+    message: obj.message as string,
   };
-  if (data.data !== undefined) {
-    event.data = data.data;
+  if (obj.data !== undefined) {
+    event.data = obj.data;
   }
   return event;
 }
@@ -207,43 +209,45 @@ export interface DashboardMetrics {
  * @returns The validated MetricCurve
  * @throws {Error} If any field is missing, has wrong type, or points contain invalid entries
  */
-export function validateMetricCurve(data: any): MetricCurve {
+export function validateMetricCurve(data: unknown): MetricCurve {
   if (data == null || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("MetricCurve must be a non-null object");
   }
-  if (typeof data.metric !== "string") {
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.metric !== "string") {
     throw new Error("MetricCurve.metric must be a string");
   }
-  if (!Array.isArray(data.points)) {
+  if (!Array.isArray(obj.points)) {
     throw new Error("MetricCurve.points must be an array");
   }
 
   // Validate each point
-  for (let i = 0; i < data.points.length; i++) {
-    const point = data.points[i];
+  for (let i = 0; i < obj.points.length; i++) {
+    const point = obj.points[i];
     if (point == null || typeof point !== "object") {
       throw new Error(`MetricCurve.points[${i}] must be a non-null object`);
     }
-    if (typeof point.timestamp !== "number") {
+    const pt = point as Record<string, unknown>;
+    if (typeof pt.timestamp !== "number") {
       throw new Error(`MetricCurve.points[${i}].timestamp must be a number`);
     }
-    if (typeof point.value !== "number") {
+    if (typeof pt.value !== "number") {
       throw new Error(`MetricCurve.points[${i}].value must be a number`);
     }
   }
 
   const curve: MetricCurve = {
-    metric: data.metric,
-    points: data.points,
+    metric: obj.metric as string,
+    points: obj.points as MetricPoint[],
   };
-  if (data.unit !== undefined) {
-    curve.unit = data.unit;
+  if (obj.unit !== undefined) {
+    curve.unit = obj.unit as string;
   }
-  if (data.min !== undefined) {
-    curve.min = data.min;
+  if (obj.min !== undefined) {
+    curve.min = obj.min as number;
   }
-  if (data.max !== undefined) {
-    curve.max = data.max;
+  if (obj.max !== undefined) {
+    curve.max = obj.max as number;
   }
   return curve;
 }
@@ -292,45 +296,46 @@ export interface DashboardAlerts {
  * @returns The validated DashboardAlert
  * @throws {Error} If any field is missing, has wrong type, or severity is invalid
  */
-export function validateDashboardAlert(data: any): DashboardAlert {
+export function validateDashboardAlert(data: unknown): DashboardAlert {
   if (data == null || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("DashboardAlert must be a non-null object");
   }
-  if (typeof data.id !== "string") {
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.id !== "string") {
     throw new Error("DashboardAlert.id must be a string");
   }
-  if (typeof data.timestamp !== "number") {
+  if (typeof obj.timestamp !== "number") {
     throw new Error("DashboardAlert.timestamp must be a number");
   }
-  if (typeof data.metric !== "string") {
+  if (typeof obj.metric !== "string") {
     throw new Error("DashboardAlert.metric must be a string");
   }
-  if (typeof data.value !== "number") {
+  if (typeof obj.value !== "number") {
     throw new Error("DashboardAlert.value must be a number");
   }
-  if (typeof data.threshold !== "number") {
+  if (typeof obj.threshold !== "number") {
     throw new Error("DashboardAlert.threshold must be a number");
   }
   const validSeverities = ["low", "medium", "high", "critical"];
-  if (!validSeverities.includes(data.severity)) {
+  if (!validSeverities.includes(obj.severity as string)) {
     throw new Error(`DashboardAlert.severity must be one of: ${validSeverities.join(", ")}`);
   }
-  if (typeof data.message !== "string") {
+  if (typeof obj.message !== "string") {
     throw new Error("DashboardAlert.message must be a string");
   }
-  if (typeof data.acknowledged !== "boolean") {
+  if (typeof obj.acknowledged !== "boolean") {
     throw new Error("DashboardAlert.acknowledged must be a boolean");
   }
 
   return {
-    id: data.id,
-    timestamp: data.timestamp,
-    metric: data.metric,
-    value: data.value,
-    threshold: data.threshold,
-    severity: data.severity,
-    message: data.message,
-    acknowledged: data.acknowledged,
+    id: obj.id as string,
+    timestamp: obj.timestamp as number,
+    metric: obj.metric as string,
+    value: obj.value as number,
+    threshold: obj.threshold as number,
+    severity: obj.severity as DashboardAlert["severity"],
+    message: obj.message as string,
+    acknowledged: obj.acknowledged as boolean,
   };
 }
 
@@ -345,9 +350,9 @@ export interface ModelOutput {
   /** Identifier of the model that produced this output */
   modelId: string;
   /** The input data fed to the model */
-  input: any;
+  input: unknown;
   /** The output data produced by the model */
-  output: any;
+  output: unknown;
   /** Optional confidence score (0-1 range, higher = more confident) */
   confidence?: number;
   /** Inference latency in milliseconds */
@@ -374,38 +379,39 @@ export interface DashboardModelOutputs {
  * @returns The validated ModelOutput
  * @throws {Error} If any field is missing or has wrong type
  */
-export function validateModelOutput(data: any): ModelOutput {
+export function validateModelOutput(data: unknown): ModelOutput {
   if (data == null || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("ModelOutput must be a non-null object");
   }
-  if (typeof data.timestamp !== "number") {
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.timestamp !== "number") {
     throw new Error("ModelOutput.timestamp must be a number");
   }
-  if (typeof data.modelId !== "string") {
+  if (typeof obj.modelId !== "string") {
     throw new Error("ModelOutput.modelId must be a string");
   }
-  if (data.input === undefined) {
+  if (obj.input === undefined) {
     throw new Error("ModelOutput.input is required");
   }
-  if (data.output === undefined) {
+  if (obj.output === undefined) {
     throw new Error("ModelOutput.output is required");
   }
-  if (typeof data.latencyMs !== "number") {
+  if (typeof obj.latencyMs !== "number") {
     throw new Error("ModelOutput.latencyMs must be a number");
   }
-  if (data.confidence !== undefined && typeof data.confidence !== "number") {
+  if (obj.confidence !== undefined && typeof obj.confidence !== "number") {
     throw new Error("ModelOutput.confidence must be a number when provided");
   }
 
   const result: ModelOutput = {
-    timestamp: data.timestamp,
-    modelId: data.modelId,
-    input: data.input,
-    output: data.output,
-    latencyMs: data.latencyMs,
+    timestamp: obj.timestamp as number,
+    modelId: obj.modelId as string,
+    input: obj.input,
+    output: obj.output,
+    latencyMs: obj.latencyMs as number,
   };
-  if (data.confidence !== undefined) {
-    result.confidence = data.confidence;
+  if (obj.confidence !== undefined) {
+    result.confidence = obj.confidence as number;
   }
   return result;
 }

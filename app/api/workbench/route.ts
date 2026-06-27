@@ -7,6 +7,7 @@ import { sanitizeWorkbenchState } from '../../../src/store/workbenchValidation';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 import { errorResponse } from '../../../src/utils/apiErrors';
 import { evaluateClaimSurfacePolicy } from '../../../src/services/trustPolicyEngine';
+import { WorkbenchPutSchema, validateSchema } from '../../../src/schemas';
 import {
   getBackendMeta,
   getWorkbenchDb,
@@ -239,6 +240,16 @@ export async function PUT(request: Request) {
 
   const { artifactId: scopedArtifactId, projectId: scopedProjectId, actorId } = getProjectScope(request);
   const body = await request.json().catch(() => null);
+
+  // ── Zod envelope validation ──
+  const envelopeCheck = validateSchema(WorkbenchPutSchema, body);
+  if (!envelopeCheck.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'Invalid workbench payload', details: envelopeCheck.errors },
+      { status: 400, headers: getCorsHeaders(request) },
+    );
+  }
+
   const incoming = sanitizeWorkbenchState(body?.state);
   if (!incoming) {
     return errorResponse('Invalid workbench payload', 400, undefined, getCorsHeaders(request));

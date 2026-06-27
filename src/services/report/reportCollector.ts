@@ -111,8 +111,8 @@ type AnyPayload = WorkbenchPayloadBase & {
   updatedAt: number;
 };
 
-function buildFBASection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as FBAWorkbenchPayload;
+function buildFBASection(payload: FBAWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -150,8 +150,8 @@ function buildFBASection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildCETHXSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as CETHXWorkbenchPayload;
+function buildCETHXSection(payload: CETHXWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const feasibilityLabel = r.gibbsFreeEnergy < 0 ? "thermodynamically favorable" : "thermodynamically unfavorable";
@@ -189,8 +189,8 @@ function buildCETHXSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildCatDesSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as CatalystWorkbenchPayload;
+function buildCatDesSection(payload: CatalystWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -231,8 +231,8 @@ function buildCatDesSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildCellFreeSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as CellFreeWorkbenchPayload;
+function buildCellFreeSection(payload: CellFreeWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -272,8 +272,8 @@ function buildCellFreeSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildDynConSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as DynConWorkbenchPayload;
+function buildDynConSection(payload: DynConWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
   const c = p.controller;
   const h = p.hill;
@@ -316,8 +316,8 @@ function buildDynConSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildMultiOSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as MultiOWorkbenchPayload;
+function buildMultiOSection(payload: MultiOWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -355,8 +355,8 @@ function buildMultiOSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildScSpatialSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as ScSpatialWorkbenchPayload;
+function buildScSpatialSection(payload: ScSpatialWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -406,8 +406,8 @@ function buildScSpatialSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildGenMIMSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as GenMIMWorkbenchPayload;
+function buildGenMIMSection(payload: GenMIMWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -444,8 +444,8 @@ function buildGenMIMSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildProEvolSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as ProEvolWorkbenchPayload;
+function buildProEvolSection(payload: ProEvolWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -485,8 +485,8 @@ function buildProEvolSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildGECAIRSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as GECAIRWorkbenchPayload;
+function buildGECAIRSection(payload: GECAIRWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -522,8 +522,8 @@ function buildGECAIRSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildPathDSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as PathDWorkbenchPayload;
+function buildPathDSection(payload: PathDWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -562,8 +562,8 @@ function buildPathDSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildDBTLSection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as DBTLWorkbenchPayload;
+function buildDBTLSection(payload: DBTLWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -601,8 +601,8 @@ function buildDBTLSection(payload: AnyPayload): ReportSection {
   };
 }
 
-function buildNEXAISection(payload: AnyPayload): ReportSection {
-  const p = payload as unknown as NEXAIWorkbenchPayload;
+function buildNEXAISection(payload: NEXAIWorkbenchPayload): ReportSection {
+  const p = payload;
   const r = p.result;
 
   const content = [
@@ -638,19 +638,19 @@ function buildNEXAISection(payload: AnyPayload): ReportSection {
 // ── Template Registry ───────────────────────────────────────────
 
 export const SECTION_TEMPLATES: Record<string, (payload: AnyPayload) => ReportSection> = {
-  fbasim: buildFBASection,
-  cethx: buildCETHXSection,
-  catdes: buildCatDesSection,
-  cellfree: buildCellFreeSection,
-  dyncon: buildDynConSection,
-  multio: buildMultiOSection,
-  scspatial: buildScSpatialSection,
-  genmim: buildGenMIMSection,
-  proevol: buildProEvolSection,
-  gecair: buildGECAIRSection,
-  pathd: buildPathDSection,
-  dbtlflow: buildDBTLSection,
-  nexai: buildNEXAISection,
+  fbasim: (p) => buildFBASection(p as FBAWorkbenchPayload),
+  cethx: (p) => buildCETHXSection(p as CETHXWorkbenchPayload),
+  catdes: (p) => buildCatDesSection(p as CatalystWorkbenchPayload),
+  cellfree: (p) => buildCellFreeSection(p as CellFreeWorkbenchPayload),
+  dyncon: (p) => buildDynConSection(p as DynConWorkbenchPayload),
+  multio: (p) => buildMultiOSection(p as MultiOWorkbenchPayload),
+  scspatial: (p) => buildScSpatialSection(p as ScSpatialWorkbenchPayload),
+  genmim: (p) => buildGenMIMSection(p as GenMIMWorkbenchPayload),
+  proevol: (p) => buildProEvolSection(p as ProEvolWorkbenchPayload),
+  gecair: (p) => buildGECAIRSection(p as GECAIRWorkbenchPayload),
+  pathd: (p) => buildPathDSection(p as PathDWorkbenchPayload),
+  dbtlflow: (p) => buildDBTLSection(p as DBTLWorkbenchPayload),
+  nexai: (p) => buildNEXAISection(p as NEXAIWorkbenchPayload),
 };
 
 /**

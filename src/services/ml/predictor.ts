@@ -55,14 +55,14 @@ export async function predict(request: PredictionRequest): Promise<PredictionRes
 
   // Extract outputs
   const outputs: Record<string, number | number[]> = {};
+  const resultMap = results as Record<string, { data: Float32Array }>;
   for (const [key, schema] of Object.entries(model.outputSchema)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tensor = (results as any)[key];
+    const tensor = resultMap[key];
     if (tensor) {
       if (schema.type === "number") {
-        outputs[key] = (tensor.data as Float32Array)[0];
+        outputs[key] = tensor.data[0];
       } else {
-        outputs[key] = Array.from(tensor.data as Float32Array);
+        outputs[key] = Array.from(tensor.data);
       }
     }
   }

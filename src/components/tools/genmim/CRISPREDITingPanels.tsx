@@ -102,7 +102,7 @@ export function PrimeEditingPanel({ geneSequence }: { geneSequence?: string }) {
           <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-xxs)", color: LABEL }}>Edit Type</span>
           <select
             value={editType}
-            onChange={(e) => setEditType(e.target.value as any)}
+            onChange={(e) => setEditType(e.target.value as "substitution" | "insertion" | "deletion")}
             style={{
               fontFamily: THEME.MONO,
               fontSize: "var(--nb-fs-sm)",
@@ -141,7 +141,7 @@ export function PrimeEditingPanel({ geneSequence }: { geneSequence?: string }) {
           <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-xxs)", color: LABEL }}>PE Version</span>
           <select
             value={peVersion}
-            onChange={(e) => setPeVersion(e.target.value as any)}
+            onChange={(e) => setPeVersion(e.target.value as "PE2" | "PE3" | "PEmax")}
             style={{
               fontFamily: THEME.MONO,
               fontSize: "var(--nb-fs-sm)",
@@ -522,7 +522,7 @@ export function EpigenomeEditingPanel({ geneSequence }: { geneSequence?: string 
           <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-xxs)", color: LABEL }}>Target Region</span>
           <select
             value={targetRegion}
-            onChange={(e) => setTargetRegion(e.target.value as any)}
+            onChange={(e) => setTargetRegion(e.target.value as "promoter" | "gene_body" | "enhancer")}
             style={{
               fontFamily: THEME.MONO,
               fontSize: "var(--nb-fs-sm)",
@@ -708,7 +708,7 @@ export function PASTEPanel() {
           <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-xxs)", color: LABEL }}>Organism</span>
           <select
             value={organism}
-            onChange={(e) => setOrganism(e.target.value as any)}
+            onChange={(e) => setOrganism(e.target.value as "human" | "mouse" | "ecoli")}
             style={{
               fontFamily: THEME.MONO,
               fontSize: "var(--nb-fs-sm)",
@@ -728,7 +728,7 @@ export function PASTEPanel() {
           <span style={{ fontFamily: THEME.SANS, fontSize: "var(--nb-fs-xxs)", color: LABEL }}>Integrase</span>
           <select
             value={integrase}
-            onChange={(e) => setIntegrase(e.target.value as any)}
+            onChange={(e) => setIntegrase(e.target.value as "Bxb1" | "phiC31" | "PhiBT1")}
             style={{
               fontFamily: THEME.MONO,
               fontSize: "var(--nb-fs-sm)",
