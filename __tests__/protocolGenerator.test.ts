@@ -1,230 +1,244 @@
-import { ProtocolGenerator } from '../src/utils/protocol-generator';
-import type {
-  DBTLIteration,
-  GibsonAssemblyPlan,
-  ProvenanceRecord,
-} from '../src/types';
+import {
+  generateOpentronsProtocol,
+  generateManualProtocol,
+  validateProtocol,
+  type ProtocolStep,
+} from '../src/services/instruments/protocolGenerator';
 
-function makeIteration(overrides: Partial<DBTLIteration> = {}): DBTLIteration {
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                   */
+/* -------------------------------------------------------------------------- */
+
+function step(overrides: Partial<ProtocolStep> = {}): ProtocolStep {
   return {
-    id: 1,
-    phase: 'Design',
-    hypothesis: 'Test increased mevalonate loading',
-    result: 120,
-    unit: 'mg/L',
-    passed: true,
+    type: 'transfer',
+    description: 'Transfer reagent A to plate',
+    reagent: 'LB broth',
+    volume: 50,
+    duration: 0,
+    temperature: 0,
     ...overrides,
   };
 }
 
-function makeGibsonPlan(fragmentCount: number): GibsonAssemblyPlan {
-  return {
-    targetName: 'pTest-construct',
-    targetLength: 3000,
-    fragments: Array.from({ length: fragmentCount }, (_, i) => ({
-      id: `frag_${i + 1}`,
-      index: i,
-      sequence: 'ATCG'.repeat(100),
-      length: 400,
-      overlapFwd: 'ATCG'.repeat(8),
-      overlapRev: 'CGAT'.repeat(8),
-      gcContent: 0.5,
-    })),
-    primers: [],
-    overlapLength: 30,
-    expectedTmRange: [60, 62],
-    tmSpread: 2,
-    warnings: [],
-    provenanceId: 'plan-uuid-0000',
-  };
-}
+/* -------------------------------------------------------------------------- */
+/*  generateOpentronsProtocol                                                 */
+/* -------------------------------------------------------------------------- */
 
-const provenance: ProvenanceRecord[] = [
-  {
-    uuid: 'uuid-aaa',
-    designId: 'plan-uuid-0000',
-    sampleType: 'fragment',
-    label: 'frag_1 (400 bp)',
-    well: 'A1',
-    slot: 4,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    uuid: 'uuid-bbb',
-    designId: 'plan-uuid-0000',
-    sampleType: 'fragment',
-    label: 'frag_2 (400 bp)',
-    well: 'B1',
-    slot: 4,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-];
-
-describe('ProtocolGenerator — Design phase', () => {
-  const gen = new ProtocolGenerator();
-  const protocol = gen.generate(makeIteration());
-
-  it('sets metadata with phase and iteration id', () => {
-    expect(protocol.api_version).toBe('2.15');
-    expect(protocol.metadata.protocolName).toMatch(/^DBTL-Design-1_/);
+describe('generateOpentronsProtocol', () => {
+  it('returns an empty-protocol stub when given zero steps', () => {
+    const out = generateOpentronsProtocol([]);
+    expect(out).toContain('Empty protocol');
+    expect(out).toContain("apiLevel': '2.15'");
+    expect(out).toContain('def run(');
   });
 
-  it('emits Python using pipette keys as variable names', () => {
-    // Validation would have thrown on generation if the emitter still used the
-    // full 'p20_single_gen2' instrument string as a Python variable name.
-    expect(protocol.python_code).toMatch(/^\s+p20 = protocol\.load_instrument\('p20_single_gen2',/m);
-    expect(protocol.python_code).toMatch(/^\s+p300 = protocol\.load_instrument\('p300_single_gen2',/m);
+  it('emits correct metadata header and labware declarations', () => {
+    const out = generateOpentronsProtocol([step()]);
+    expect(out).toContain("protocolName': 'Nexus-Bio Generated Protocol'");
+    expect(out).toContain("corning_96_wellplate_360ul_flat");
+    expect(out).toContain("opentrons_96_tiprack_20ul");
+    expect(out).toContain("p20_single_gen2");
   });
 
-  it('assigns each pipette its own tip rack', () => {
-    // p20 must receive the tiprack20 variable, p300 must receive tiprack300
-    const p20Line = protocol.python_code.match(/p20 = protocol\.load_instrument\('p20_single_gen2'.*tip_racks=\[(\w+)\]/);
-    const p300Line = protocol.python_code.match(/p300 = protocol\.load_instrument\('p300_single_gen2'.*tip_racks=\[(\w+)\]/);
-    expect(p20Line?.[1]).toBe('tiprack20');
-    expect(p300Line?.[1]).toBe('tiprack300');
-  });
-
-  it('resolves each aspirate/dispense to the declared source/destination well', () => {
-    // Prior implementation sent every aspirate to the first labware's well A1.
-    // We expect each source to resolve via wells_by_name with the true well id.
-    expect(protocol.python_code).toContain("tuberack_1.wells_by_name()['A1']");
-    expect(protocol.python_code).toContain("tuberack_1.wells_by_name()['A2']");
-    expect(protocol.python_code).toContain("tuberack_1.wells_by_name()['B1']");
-  });
-
-  it('is deterministic — identical inputs produce byte-identical Python', () => {
-    const again = gen.generate(makeIteration());
-    expect(again.python_code).toBe(protocol.python_code);
-  });
-
-  it('initialises source wells with finite volume trackers', () => {
-    expect(protocol.python_code).toContain("'reservoir_1:A1': 22000,");
-    expect(protocol.python_code).toContain("'tuberack_1:A1': 15000,");
-  });
-});
-
-describe('ProtocolGenerator — validation throws', () => {
-  const gen = new ProtocolGenerator();
-
-  it('rejects plate-scale requests beyond labware capacity', () => {
-    expect(() => gen.generatePlateScale(makeIteration(), 200)).toThrow(/exceeds/);
-  });
-
-  it('rejects non-positive wellCount', () => {
-    expect(() => gen.generatePlateScale(makeIteration(), 0)).toThrow(/positive integer/);
-  });
-});
-
-describe('ProtocolGenerator — Gibson Assembly', () => {
-  const gen = new ProtocolGenerator();
-
-  it('caps the fragment count at the 15-tube rack', () => {
-    expect(() => gen.generateGibsonAssembly(makeGibsonPlan(16), provenance)).toThrow(/tube rack capacity/);
-  });
-
-  it('lays fragments out row-major respecting the 3-row tube rack geometry', () => {
-    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(10), provenance);
-    const aspirateSources = protocol.pipetting_logic
-      .filter((s) => s.action === 'aspirate')
-      .map((s) => s.source);
-    // 15-tube rack is 3 rows × 5 cols. Row-major layout:
-    // frag 0 → A1, 1 → B1, 2 → C1, 3 → A2, …, 8 → C3, 9 → A4
-    expect(aspirateSources[0]).toBe('tuberack_1:A1');
-    expect(aspirateSources[3]).toBe('tuberack_1:A2');
-    expect(aspirateSources[8]).toBe('tuberack_1:C3');
-    expect(aspirateSources[9]).toBe('tuberack_1:A4');
-  });
-
-  it('emits a deterministic provenance block sorted by createdAt then uuid', () => {
-    const shuffled = [provenance[1], provenance[0]];
-    const a = gen.generateGibsonAssembly(makeGibsonPlan(2), provenance);
-    const b = gen.generateGibsonAssembly(makeGibsonPlan(2), shuffled);
-    expect(a.python_code).toBe(b.python_code);
-  });
-
-  it('loads the temperature module when a tempplate role is declared', () => {
-    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(3), provenance);
-    expect(protocol.python_code).toMatch(/temp_mod = protocol\.load_module\('temperature module gen2', 10\)/);
-    expect(protocol.python_code).toContain('temp_mod.set_temperature(50)');
-  });
-});
-
-describe('ProtocolGenerator — plate scale', () => {
-  const gen = new ProtocolGenerator();
-
-  it('fans destinations out across the plate row-major', () => {
-    const protocol = gen.generatePlateScale(makeIteration(), 8);
-    const destinations = protocol.pipetting_logic.map((s) => s.destination);
-    // Each original step is replicated 8 times across A1..H1
-    expect(destinations.slice(0, 8)).toEqual([
-      'plate_1:A1', 'plate_1:B1', 'plate_1:C1', 'plate_1:D1',
-      'plate_1:E1', 'plate_1:F1', 'plate_1:G1', 'plate_1:H1',
+  it('translates a transfer step into a pipette.transfer call', () => {
+    const out = generateOpentronsProtocol([
+      step({ volume: 25, description: 'Move DNA template' }),
     ]);
+    expect(out).toContain('pipette.transfer(25');
+    expect(out).toContain('Step 1: Move DNA template');
   });
 
-  it('handles wellCount of 1', () => {
-    const protocol = gen.generatePlateScale(makeIteration(), 1);
-    expect(protocol.pipetting_logic.length).toBeGreaterThan(0);
-    expect(protocol.pipetting_logic[0].destination).toBe('plate_1:A1');
+  it('translates a mix step into a pipette.mix call with cycle count', () => {
+    const out = generateOpentronsProtocol([
+      step({ type: 'mix', volume: 100, duration: 15, description: 'Vortex mix' }),
+    ]);
+    // 15 sec / 5 = 3 cycles, but min is 3
+    expect(out).toContain('pipette.mix(3, 100');
   });
 
-  it('handles wellCount of 96', () => {
-    const protocol = gen.generatePlateScale(makeIteration(), 96);
-    expect(protocol.pipetting_logic.length).toBeGreaterThan(0);
+  it('translates an incubate step into a temperature module block', () => {
+    const out = generateOpentronsProtocol([
+      step({ type: 'incubate', temperature: 37, duration: 300, description: 'Incubate at 37C' }),
+    ]);
+    expect(out).toContain("load_module('temperature module gen2'");
+    expect(out).toContain('temp_mod.set_temperature(37)');
+    expect(out).toContain('protocol.delay(minutes=5)');
+    expect(out).toContain('temp_mod.deactivate()');
+  });
+
+  it('translates a wait step into a protocol.delay call', () => {
+    const out = generateOpentronsProtocol([
+      step({ type: 'wait', duration: 120, description: 'Rest period' }),
+    ]);
+    expect(out).toContain('protocol.delay(minutes=2)');
+    expect(out).toContain('Step 1: Rest period');
+  });
+
+  it('uses a generic transfer fallback for unknown step types', () => {
+    const out = generateOpentronsProtocol([
+      step({ type: 'custom_step', description: 'Unknown action' }),
+    ]);
+    expect(out).toContain('pipette.transfer(');
+    expect(out).toContain('Step 1: Unknown action');
+  });
+
+  it('assigns sequential well positions across multiple steps', () => {
+    const steps: ProtocolStep[] = [
+      step({ description: 'Step A' }),
+      step({ description: 'Step B' }),
+      step({ description: 'Step C' }),
+    ];
+    const out = generateOpentronsProtocol(steps);
+    // First transfer goes from A1 -> B1, second from B1 -> C1, etc.
+    expect(out).toContain("source_plate['A1']");
+    expect(out).toContain("dest_plate['B1']");
+    expect(out).toContain("source_plate['B1']");
+    expect(out).toContain("dest_plate['C1']");
   });
 });
 
-describe('ProtocolGenerator — all phases', () => {
-  const gen = new ProtocolGenerator();
+/* -------------------------------------------------------------------------- */
+/*  generateManualProtocol                                                    */
+/* -------------------------------------------------------------------------- */
 
-  it('generates Build phase protocol', () => {
-    const protocol = gen.generate(makeIteration({ phase: 'Build' }));
-    expect(protocol.metadata.protocolName).toMatch(/Build/);
-    expect(protocol.python_code).toBeDefined();
+describe('generateManualProtocol', () => {
+  it('returns a placeholder message when given zero steps', () => {
+    const out = generateManualProtocol([]);
+    expect(out).toContain('No steps defined');
   });
 
-  it('generates Test phase protocol', () => {
-    const protocol = gen.generate(makeIteration({ phase: 'Test' }));
-    expect(protocol.metadata.protocolName).toMatch(/Test/);
-    expect(protocol.python_code).toBeDefined();
+  it('includes the header with date and step count', () => {
+    const out = generateManualProtocol([step(), step()]);
+    expect(out).toMatch(/Manual Protocol/);
+    expect(out).toMatch(/Total steps: 2/);
   });
 
-  it('generates Learn phase protocol', () => {
-    const protocol = gen.generate(makeIteration({ phase: 'Learn' }));
-    expect(protocol.metadata.protocolName).toMatch(/Learn/);
-    expect(protocol.python_code).toBeDefined();
+  it('formats each step with type, description, reagent, and volume', () => {
+    const out = generateManualProtocol([
+      step({ type: 'pipette', description: 'Add antibiotic', reagent: 'Ampicillin', volume: 10 }),
+    ]);
+    expect(out).toContain('Step 1  [PIPETTE]');
+    expect(out).toContain('Add antibiotic');
+    expect(out).toContain('Ampicillin');
+    expect(out).toContain('10 uL');
   });
 
-  it('handles failed iteration', () => {
-    const protocol = gen.generate(makeIteration({ passed: false, result: 50 }));
-    expect(protocol.python_code).toBeDefined();
+  it('formats duration in human-readable units', () => {
+    const out = generateManualProtocol([
+      step({ type: 'incubate', description: 'Shake flask', duration: 150 }),
+    ]);
+    // 150 sec = 2 min 30 sec
+    expect(out).toContain('2 min 30 sec');
   });
 
-  it('handles different units', () => {
-    const protocol = gen.generate(makeIteration({ unit: 'g/L' }));
-    expect(protocol.python_code).toBeDefined();
+  it('formats temperature when provided', () => {
+    const out = generateManualProtocol([
+      step({ type: 'heat', description: 'Heat shock', temperature: 42 }),
+    ]);
+    expect(out).toContain('42 °C');
   });
 
-  it('Gibson assembly with 2 fragments', () => {
-    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(2), provenance);
-    expect(protocol.python_code).toBeDefined();
-    expect(protocol.pipetting_logic.length).toBeGreaterThan(0);
+  it('omits volume, duration, and temperature lines when zero or not applicable', () => {
+    const out = generateManualProtocol([
+      step({ volume: 0, duration: 0, temperature: 0 }),
+    ]);
+    expect(out).not.toMatch(/Volume/);
+    expect(out).not.toMatch(/Duration/);
+    expect(out).not.toMatch(/Temperature/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/*  validateProtocol                                                          */
+/* -------------------------------------------------------------------------- */
+
+describe('validateProtocol', () => {
+  it('rejects an empty steps array', () => {
+    const result = validateProtocol([]);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatch(/at least one step/);
   });
 
-  it('Gibson assembly with 15 fragments (max)', () => {
-    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(15), provenance);
-    expect(protocol.python_code).toBeDefined();
+  it('accepts a single well-formed step', () => {
+    const result = validateProtocol([step()]);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
   });
 
-  it('Gibson assembly with empty provenance', () => {
-    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(3), []);
-    expect(protocol.python_code).toBeDefined();
+  it('rejects a step with empty type', () => {
+    const result = validateProtocol([step({ type: '' })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/type.*required/);
   });
 
-  it('Gibson assembly with warnings in plan', () => {
-    const plan = makeGibsonPlan(3);
-    plan.warnings = ['Low GC content in fragment 2', 'High Tm spread'];
-    const protocol = gen.generateGibsonAssembly(plan, provenance);
-    expect(protocol.python_code).toBeDefined();
+  it('rejects a step with an unrecognised type', () => {
+    const result = validateProtocol([step({ type: 'laser_blast' })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/Unrecognised type/);
+  });
+
+  it('rejects a step with empty description', () => {
+    const result = validateProtocol([step({ description: '' })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/description.*required/);
+  });
+
+  it('rejects a step with empty reagent', () => {
+    const result = validateProtocol([step({ reagent: '' })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/reagent.*required/);
+  });
+
+  it('rejects negative volume', () => {
+    const result = validateProtocol([step({ volume: -5 })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/non-negative/);
+  });
+
+  it('rejects volume exceeding 1000 uL', () => {
+    const result = validateProtocol([step({ volume: 1500 })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/exceeds maximum/);
+  });
+
+  it('rejects negative duration', () => {
+    const result = validateProtocol([step({ duration: -10 })]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatch(/duration.*non-negative/);
+  });
+
+  it('rejects temperature outside -20 to 150 range (excluding 0)', () => {
+    const tooHot = validateProtocol([step({ temperature: 200 })]);
+    expect(tooHot.valid).toBe(false);
+    expect(tooHot.errors[0]).toMatch(/between -20 and 150/);
+
+    const tooCold = validateProtocol([step({ temperature: -50 })]);
+    expect(tooCold.valid).toBe(false);
+    expect(tooCold.errors[0]).toMatch(/between -20 and 150/);
+  });
+
+  it('allows temperature of 0 (room temperature / not set)', () => {
+    const result = validateProtocol([step({ temperature: 0 })]);
+    expect(result.valid).toBe(true);
+  });
+
+  it('detects consecutive duplicate steps', () => {
+    const dupes = validateProtocol([
+      step({ reagent: 'Buffer', volume: 100, type: 'transfer' }),
+      step({ reagent: 'Buffer', volume: 100, type: 'transfer' }),
+    ]);
+    expect(dupes.valid).toBe(false);
+    expect(dupes.errors[0]).toMatch(/Consecutive duplicate/);
+  });
+
+  it('reports multiple errors at once across different steps', () => {
+    const result = validateProtocol([
+      step({ type: '', description: '', reagent: '' }),
+      step({ volume: -1, duration: -1, temperature: 999 }),
+    ]);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(4);
   });
 });
