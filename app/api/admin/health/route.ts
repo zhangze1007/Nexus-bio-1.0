@@ -111,8 +111,12 @@ async function probeGemini(): Promise<HealthCheckResult> {
   try {
     // List models — lightweight, no token cost
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
-      { method: "GET", signal: AbortSignal.timeout(5000) },
+      "https://generativelanguage.googleapis.com/v1beta/models",
+      {
+        method: "GET",
+        headers: { "x-goog-api-key": apiKey },
+        signal: AbortSignal.timeout(5000),
+      },
     );
     const latencyMs = Math.round(performance.now() - start);
     if (res.ok) {

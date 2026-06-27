@@ -9,6 +9,7 @@ import { steadyCom, type SteadyComSpecies } from '../../../src/server/fbaSteadyC
 import { createProvenanceEntry } from '../../../src/utils/provenance';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 import { errorResponse } from '../../../src/utils/apiErrors';
+import { createLogger } from '../../../src/utils/logger';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -56,6 +57,7 @@ function asStringArray(value: unknown): string[] {
 
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || `fba_${Date.now().toString(36)}`;
+  const log = createLogger('fba-route');
 
   // ── Body size limit (1MB) ──
   const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch (err) {
-    console.warn(JSON.stringify({ level: 'warn', message: 'FBA: invalid JSON body', requestId, error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    log.warn('FBA: invalid JSON body', { requestId, error: err instanceof Error ? err.message : String(err) });
     return errorResponse('Invalid FBA request payload', 400, { requestId }, getCorsHeaders(request));
   }
   if (!body || typeof body !== 'object') {
@@ -396,13 +398,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, mode: 'single', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(JSON.stringify({
-      level: 'error',
-      message: 'FBA route failed',
-      requestId,
-      error: errorMsg,
-      timestamp: new Date().toISOString(),
-    }));
+    log.error('FBA route failed', { requestId, error: errorMsg });
     return errorResponse('FBA engine error', 500, { requestId }, getCorsHeaders(request));
   }
 }

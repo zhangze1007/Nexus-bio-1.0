@@ -98,7 +98,8 @@ interface ErrorBody {
 
 /**
  * Unified error response helper for all API routes.
- * Returns JSON with shape { ok: false, error: string, code?: string }.
+ * Returns JSON with shape { ok: false, error: string, code?: string, requestId: string }.
+ * Auto-generates a requestId if not provided in `extra`.
  */
 export function errorResponse(
   message: string,
@@ -106,6 +107,7 @@ export function errorResponse(
   extra?: Record<string, unknown>,
   headers?: Record<string, string>,
 ) {
-  const body: ErrorBody = { ok: false, error: message, ...extra };
+  const requestId = (extra?.requestId as string) || crypto.randomUUID();
+  const body: ErrorBody = { ok: false, error: message, requestId, ...extra };
   return NextResponse.json(body, { status, headers });
 }

@@ -46,6 +46,7 @@ import {
 import { tryGroq, tryGemini } from '../../../src/services/analyze/providerChain';
 import { enrichAxonOutput, type EnrichResult } from '../../../src/services/analyze/outputEnricher';
 import { checkRateLimit } from '../../../src/utils/rateLimit';
+import { createLogger } from '../../../src/utils/logger';
 
 export const runtime = 'edge';
 export const maxDuration = 30;
@@ -94,6 +95,7 @@ export async function OPTIONS(req: Request) {
 
 export async function POST(req: NextRequest) {
   const requestId = req.headers.get('x-request-id') || `anon_${Date.now().toString(36)}`;
+  const log = createLogger('analyze-route');
 
   // ── Body size limit (1MB) ──
   const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
@@ -104,7 +106,7 @@ export async function POST(req: NextRequest) {
   // ── Rate limiting ──
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
   if (!(await checkRateLimit(ip, '/api/analyze')).allowed) {
-    return errorResponse('Rate limit exceeded. Try again in 60 seconds.', 429, undefined, {
+    return errorResponse('Rate limit exceeded. Try again in 60 seconds.', 429, { requestId }, {
       'Retry-After': '60',
       ...getCorsHeaders(req),
     });
@@ -113,21 +115,21 @@ export async function POST(req: NextRequest) {
   // ── CSRF: require JSON content type ──
   const contentType = req.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) {
-    return errorResponse('Invalid content type', 415, undefined, getCorsHeaders(req));
+    return errorResponse('Invalid content type', 415, { requestId }, getCorsHeaders(req));
   }
 
   const groqKey = process.env.GROQ_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
 
   if (!groqKey && !geminiKey) {
-    return errorResponse('No API keys configured', 500, undefined, getCorsHeaders(req));
+    return errorResponse('No API keys configured', 500, { requestId }, getCorsHeaders(req));
   }
 
   let rawBody: Record<string, unknown>;
   try {
     rawBody = await req.json();
   } catch {
-    console.warn(JSON.stringify({ level: 'warn', message: 'Invalid JSON body', requestId, ip, timestamp: new Date().toISOString() }));
+    log.warn('Invalid JSON body', { requestId, ip });
     return jsonResponse({ error: 'Invalid JSON body', requestId }, 400, req);
   }
 
@@ -196,7 +198,7 @@ export async function POST(req: NextRequest) {
 
   if (rawSearchQuery) {
     if (rawSearchQuery.length > MAX_SEARCH_QUERY_CHARS) {
-      return errorResponse(`searchQuery exceeds ${MAX_SEARCH_QUERY_CHARS} characters`, 413, undefined, getCorsHeaders(req));
+      return errorResponse(`searchQuery exceeds ${MAX_SEARCH_QUERY_CHARS} characters`, 413, { requestId }, getCorsHeaders(req));
     }
     const safeQuery = sanitizePromptInput(rawSearchQuery, MAX_SEARCH_QUERY_CHARS).value;
     if (useBiosynthesisPrompt) {
@@ -217,12 +219,12 @@ export async function POST(req: NextRequest) {
     body = rawBody as GeminiRequestBody;
 
     if (!body?.contents || !Array.isArray(body.contents) || body.contents.length === 0) {
-      return errorResponse('Missing contents array or searchQuery', 400, undefined, getCorsHeaders(req));
+      return errorResponse('Missing contents array or searchQuery', 400, { requestId }, getCorsHeaders(req));
     }
 
     const extracted = extractPrompt(body);
     if (!extracted) {
-      return errorResponse('No prompt text found', 400, undefined, getCorsHeaders(req));
+      return errorResponse('No prompt text found', 400, { requestId }, getCorsHeaders(req));
     }
 
     const cleaned = sanitizePromptInput(extracted, MAX_PROMPT_CHARS);
@@ -234,13 +236,13 @@ export async function POST(req: NextRequest) {
 
   // Final hard cap — withSystemPrompt adds the Axon header on top.
   if (prompt.length > MAX_PROMPT_CHARS + AXON_SYSTEM_PROMPT.length + 64) {
-    return errorResponse(`Prompt exceeds ${MAX_PROMPT_CHARS} characters after assembly`, 413, undefined, getCorsHeaders(req));
+    return errorResponse(`Prompt exceeds ${MAX_PROMPT_CHARS} characters after assembly`, 413, { requestId }, getCorsHeaders(req));
   }
 
   const textOnlyRequest = rawSearchQuery ? true : isTextOnlyRequest(body);
 
   if (!rawSearchQuery && hasMultimodalContent(body) && !geminiKey) {
-    return errorResponse('This request includes non-text content such as an image or file and requires GEMINI_API_KEY. Please configure it in your environment variables.', 503, undefined, getCorsHeaders(req));
+    return errorResponse('This request includes non-text content such as an image or file and requires GEMINI_API_KEY. Please configure it in your environment variables.', 503, { requestId }, getCorsHeaders(req));
   }
 
   const buildMeta = (provider: 'groq' | 'gemini', enriched: EnrichResult) => {
@@ -298,5 +300,5 @@ export async function POST(req: NextRequest) {
   }
 
   // ── All providers failed ──
-  return errorResponse('All AI providers are currently unavailable. Please try again in a moment.', 503, undefined, getCorsHeaders(req));
+  return errorResponse('All AI providers are currently unavailable. Please try again in a moment.', 503, { requestId }, getCorsHeaders(req));
 }
