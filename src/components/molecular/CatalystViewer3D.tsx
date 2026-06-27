@@ -476,7 +476,7 @@ export default function CatalystViewer3D({
                 width: 10,
                 height: 10,
                 borderRadius: "50%",
-                background: "#fff",
+                background: "#a3a3a3",
                 position: "absolute",
                 top: 3,
                 left: useAlphaFold ? 19 : 3,

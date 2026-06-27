@@ -222,8 +222,8 @@ function ActionBtn({
       }
     : tone === "primary"
       ? {
-          background: "rgba(255,255,255,0.88)",
-          border: "rgba(255,255,255,0.88)",
+          background: "rgba(255,255,255,0.08)",
+          border: "rgba(255,255,255,0.08)",
           color: THEME.PANEL_STRONG,
         }
       : tone === "stress"

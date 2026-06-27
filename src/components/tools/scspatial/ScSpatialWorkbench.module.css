@@ -4,20 +4,20 @@
    dashboard. Data colors still follow the CVD-safe Nexus-Bio accent palette. */
 
 .root {
-  --sc-bg: #f3f6f8;
-  --sc-surface: #ffffff;
-  --sc-surface-muted: #fafafa;
-  --sc-surface-sunken: #f6f7f9;
-  --sc-inset: #fafbfc;
-  --sc-border: #e5e7eb;
-  --sc-border-strong: #d1d5db;
-  --sc-border-rule: #000000;
-  --sc-value: #111827;
-  --sc-label: #4b5563;
-  --sc-muted: #6b7280;
-  --sc-accent: #2563eb;
-  --sc-accent-soft: #eff6ff;
-  --sc-accent-border: #bfdbfe;
+  --sc-bg: #0d0f14;
+  --sc-surface: #10131a;
+  --sc-surface-muted: #161a24;
+  --sc-surface-sunken: #0a0c10;
+  --sc-inset: #0d0f14;
+  --sc-border: rgba(255, 255, 255, 0.07);
+  --sc-border-strong: rgba(255, 255, 255, 0.12);
+  --sc-border-rule: #ffffff;
+  --sc-value: #e2e8f0;
+  --sc-label: rgba(226, 232, 240, 0.78);
+  --sc-muted: rgba(226, 232, 240, 0.56);
+  --sc-accent: #afc3d6;
+  --sc-accent-soft: rgba(175, 195, 214, 0.12);
+  --sc-accent-border: rgba(175, 195, 214, 0.24);
   --sc-risk-low: #16a34a;
   --sc-risk-medium: #d97706;
   --sc-risk-high: #dc2626;
@@ -102,7 +102,7 @@
   padding: 2px 8px;
   border: 1px solid var(--sc-border-strong);
   border-radius: 4px;
-  background: #f3f4f6;
+  background: #1a1d24;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
@@ -198,7 +198,7 @@
   padding: 2px 8px;
   border: 1px solid var(--sc-border-strong);
   border-radius: 4px;
-  background: #f3f4f6;
+  background: #1a1d24;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -207,21 +207,21 @@
 }
 
 .badgeReal {
-  background: #dcfce7;
-  border-color: #86efac;
-  color: #15803d;
+  background: #182a1e;
+  border-color: rgba(134, 239, 172, 0.3);
+  color: #86efac;
 }
 
 .badgePartial {
-  background: #fef3c7;
-  border-color: #fcd34d;
-  color: #a16207;
+  background: #2a2418;
+  border-color: rgba(252, 211, 77, 0.3);
+  color: #fcd34d;
 }
 
 .badgeDemo {
-  background: #dbeafe;
-  border-color: #93c5fd;
-  color: #1d4ed8;
+  background: #181e2a;
+  border-color: rgba(147, 197, 253, 0.3);
+  color: #93c5fd;
 }
 
 /* ── Layout grid ────────────────────────────────────────────────── */
@@ -279,7 +279,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #374151;
+  color: rgba(226, 232, 240, 0.78);
 }
 
 .fieldLabel {
@@ -367,7 +367,7 @@
 .toggleActive {
   background: var(--sc-accent-soft);
   border-color: var(--sc-accent);
-  color: #1d4ed8;
+  color: #93c5fd;
 }
 
 .buttonRow,
@@ -610,7 +610,7 @@
   padding: 10px;
   border: 1px solid var(--sc-border-strong);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(6px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   font-family: var(--font-sans);
@@ -890,7 +890,7 @@
 }
 
 .sciTable thead {
-  background: #f3f4f6;
+  background: #1a1d24;
   border-bottom: 1px solid var(--sc-border-strong);
 }
 
@@ -926,7 +926,7 @@
 .sciTable td.gene {
   font-family: var(--font-mono);
   font-size: 9px;
-  color: #1d4ed8;
+  color: #93c5fd;
 }
 
 /* Leading edge bar chart */
@@ -959,7 +959,7 @@
 }
 
 .leadingEdgeBar.muted {
-  background: #d1d5db;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .pillList {
@@ -1066,9 +1066,9 @@
 
 .errorBanner {
   padding: 6px 12px;
-  background: #fef2f2;
-  border-bottom: 1px solid #fecaca;
-  color: #991b1b;
+  background: #2a1818;
+  border-bottom: 1px solid rgba(254, 202, 202, 0.2);
+  color: #fca5a5;
   font-family: var(--font-sans);
   font-size: 11px;
 }
@@ -1084,7 +1084,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #374151;
+  color: rgba(226, 232, 240, 0.78);
 }
 
 .stepNumber {
@@ -1245,7 +1245,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #1d4ed8;
+  color: #93c5fd;
 }
 
 .nextStepText {
@@ -1253,7 +1253,7 @@
   font-family: var(--font-sans);
   font-size: 11px;
   line-height: 1.45;
-  color: #1e3a8a;
+  color: #93c5fd;
 }
 
 .groupDetails {
@@ -1278,7 +1278,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #374151;
+  color: rgba(226, 232, 240, 0.78);
   user-select: none;
 }
 
@@ -1302,7 +1302,7 @@
   margin-right: 8px;
   padding: 1px 6px;
   border-radius: 10px;
-  background: #f3f4f6;
+  background: #1a1d24;
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 700;

@@ -167,7 +167,7 @@ export function MultiOEmbeddingTab(props: EmbeddingTabProps) {
                     width: "16px",
                     height: "16px",
                     borderRadius: "50%",
-                    background: "#fff",
+                    background: "#a3a3a3",
                     transition: "left 0.2s",
                   }}
                 />

@@ -538,7 +538,7 @@ pre,
   height: var(--nb-slider-thumb-size);
   margin-top: calc((var(--nb-slider-track-height) - var(--nb-slider-thumb-size)) / 2);
   border-radius: 50%;
-  background: #e2e8f0;
+  background: #3a3f4b;
   border: 2px solid #afc3d6; /* sky accent */
   box-shadow:
     0 1px 4px rgba(0, 0, 0, 0.2),
@@ -569,7 +569,7 @@ pre,
   width: var(--nb-slider-thumb-size);
   height: var(--nb-slider-thumb-size);
   border-radius: 50%;
-  background: #e2e8f0;
+  background: #3a3f4b;
   border: 2px solid #afc3d6;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   cursor: grab;
@@ -616,7 +616,7 @@ pre,
   height: 14px;
   margin-top: -5px;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: #3a3f4b;
   border: 2px solid #afc3d6;
   box-shadow:
     0 1px 4px rgba(0, 0, 0, 0.2),
@@ -634,7 +634,7 @@ pre,
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: #3a3f4b;
   border: 2px solid #afc3d6;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }

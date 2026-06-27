@@ -441,7 +441,7 @@ export default function ProteinViewer({
                   width: "12px",
                   height: "12px",
                   borderRadius: "50%",
-                  background: "#fff",
+                  background: "#a3a3a3",
                   position: "absolute",
                   top: "3px",
                   left: useAF ? "19px" : "3px",

@@ -430,8 +430,8 @@ export default React.memo(function ScSpatialPage() {
               flex: 1,
               overflow: "auto",
               padding: "20px",
-              background: "#f3f6f8",
-              color: "#111827",
+              background: "#0d0f14",
+              color: "#e2e8f0",
               fontFamily: THEME.SANS,
             }}
           >
@@ -445,7 +445,7 @@ export default React.memo(function ScSpatialPage() {
                   fontWeight: 700,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
-                  color: "#111827",
+                  color: "#e2e8f0",
                 }}
               >
                 Cell-Cell Communication
@@ -466,7 +466,7 @@ export default React.memo(function ScSpatialPage() {
                 style={{
                   padding: 32,
                   textAlign: "center",
-                  color: "#6b7280",
+                  color: "rgba(226,232,240,0.45)",
                   fontFamily: THEME.SANS,
                   fontSize: 13,
                 }}
@@ -494,9 +494,9 @@ export default React.memo(function ScSpatialPage() {
                 <div
                   style={{
                     padding: 20,
-                    border: "2px solid #d1d5db",
+                    border: "2px solid rgba(255,255,255,0.12)",
                     borderRadius: 4,
-                    background: "#ffffff",
+                    background: "#10131a",
                   }}
                 >
                   <h4
@@ -507,7 +507,7 @@ export default React.memo(function ScSpatialPage() {
                       fontWeight: 700,
                       letterSpacing: "0.12em",
                       textTransform: "uppercase",
-                      color: "#374151",
+                      color: "rgba(226,232,240,0.78)",
                     }}
                   >
                     Ligand-Receptor Results (squidpy)
@@ -516,8 +516,8 @@ export default React.memo(function ScSpatialPage() {
                     style={{
                       fontFamily: THEME.MONO,
                       fontSize: 11,
-                      color: "#374151",
-                      background: "#f6f7f9",
+                      color: "rgba(226,232,240,0.78)",
+                      background: "#161a24",
                       padding: 12,
                       borderRadius: 4,
                       border: "1px solid #e5e7eb",
@@ -536,7 +536,7 @@ export default React.memo(function ScSpatialPage() {
                 style={{
                   padding: 32,
                   textAlign: "center",
-                  color: "#6b7280",
+                  color: "rgba(226,232,240,0.45)",
                   fontFamily: THEME.SANS,
                   fontSize: 13,
                 }}
@@ -587,9 +587,9 @@ export default React.memo(function ScSpatialPage() {
                   <div
                     style={{
                       gridColumn: "1 / -1",
-                      border: "2px solid #d1d5db",
+                      border: "2px solid rgba(255,255,255,0.12)",
                       borderRadius: 4,
-                      background: "#ffffff",
+                      background: "#10131a",
                       padding: 12,
                     }}
                   >
@@ -696,7 +696,7 @@ export default React.memo(function ScSpatialPage() {
                                   y={pos.y + 1}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
-                                  style={{ fontSize: 9, fontFamily: THEME.MONO, fontWeight: 600, fill: "#111827" }}
+                                  style={{ fontSize: 9, fontFamily: THEME.MONO, fontWeight: 600, fill: "#e2e8f0" }}
                                 >
                                   {cluster.length > 8 ? cluster.slice(0, 7) + "..." : cluster}
                                 </text>
@@ -705,25 +705,25 @@ export default React.memo(function ScSpatialPage() {
                           })}
                           {/* Legend */}
                           <g transform="translate(420, 10)" style={{ fontSize: 9, fontFamily: THEME.MONO }}>
-                            <rect x={0} y={0} width={130} height={90} rx={4} fill="#fafafa" stroke="#e5e7eb" />
+                            <rect x={0} y={0} width={130} height={90} rx={4} fill="#161a24" stroke="rgba(255,255,255,0.12)" />
                             <circle cx={12} cy={16} r={5} fill="#BFDCCD" stroke="#3b82f6" strokeWidth={1.5} />
-                            <text x={22} y={19} fill="#4b5563">
+                            <text x={22} y={19} fill="rgba(226,232,240,0.56)">
                               Sender
                             </text>
                             <circle cx={12} cy={34} r={5} fill="#BFDCCD" stroke="#ef4444" strokeWidth={1.5} />
-                            <text x={22} y={37} fill="#4b5563">
+                            <text x={22} y={37} fill="rgba(226,232,240,0.56)">
                               Receiver
                             </text>
                             <circle cx={12} cy={52} r={5} fill="#BFDCCD" stroke="#a855f7" strokeWidth={1.5} />
-                            <text x={22} y={55} fill="#4b5563">
+                            <text x={22} y={55} fill="rgba(226,232,240,0.56)">
                               Mediator
                             </text>
                             <line x1={6} y1={70} x2={18} y2={70} stroke="#60a5fa" strokeWidth={2} />
-                            <text x={22} y={73} fill="#4b5563">
+                            <text x={22} y={73} fill="rgba(226,232,240,0.56)">
                               Signaling
                             </text>
                             <line x1={6} y1={84} x2={18} y2={84} stroke="#f87171" strokeWidth={2} />
-                            <text x={22} y={87} fill="#4b5563">
+                            <text x={22} y={87} fill="rgba(226,232,240,0.56)">
                               Inhibition
                             </text>
                           </g>
@@ -737,9 +737,9 @@ export default React.memo(function ScSpatialPage() {
                   {/* ── Centrality Summary ─────────────────────── */}
                   <div
                     style={{
-                      border: "2px solid #d1d5db",
+                      border: "2px solid rgba(255,255,255,0.12)",
                       borderRadius: 4,
-                      background: "#ffffff",
+                      background: "#10131a",
                       padding: 12,
                     }}
                   >
@@ -774,7 +774,7 @@ export default React.memo(function ScSpatialPage() {
                                     borderRadius: 2,
                                     background: colorForCluster(i),
                                     display: "inline-block",
-                                    border: "1px solid #d1d5db",
+                                    border: "1px solid rgba(255,255,255,0.12)",
                                   }}
                                 />
                                 {cluster}
@@ -820,9 +820,9 @@ export default React.memo(function ScSpatialPage() {
                   {/* ── Pathway Summary ────────────────────────── */}
                   <div
                     style={{
-                      border: "2px solid #d1d5db",
+                      border: "2px solid rgba(255,255,255,0.12)",
                       borderRadius: 4,
-                      background: "#ffffff",
+                      background: "#10131a",
                       padding: 12,
                     }}
                   >
@@ -863,9 +863,9 @@ export default React.memo(function ScSpatialPage() {
                 {/* ── Top Interactions Table ────────────────────── */}
                 <div
                   style={{
-                    border: "2px solid #d1d5db",
+                    border: "2px solid rgba(255,255,255,0.12)",
                     borderRadius: 4,
-                    background: "#ffffff",
+                    background: "#10131a",
                     padding: 12,
                   }}
                 >
@@ -887,7 +887,7 @@ export default React.memo(function ScSpatialPage() {
                       <tbody>
                         {commResult.topInteractions.map((inter, idx) => (
                           <tr key={`${inter.ligand}-${inter.receptor}-${inter.sender}-${inter.receiver}-${idx}`}>
-                            <td style={{ padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10, color: "#6b7280" }}>
+                            <td style={{ padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10, color: "rgba(226,232,240,0.45)" }}>
                               {idx + 1}
                             </td>
                             <td style={{ padding: "4px 8px", fontWeight: 500 }}>{inter.ligand}</td>
@@ -909,7 +909,7 @@ export default React.memo(function ScSpatialPage() {
                                     width: 50,
                                     height: 5,
                                     borderRadius: 3,
-                                    background: "#e5e7eb",
+                                    background: "rgba(255,255,255,0.12)",
                                     overflow: "hidden",
                                   }}
                                 >
@@ -944,7 +944,7 @@ export default React.memo(function ScSpatialPage() {
                       fontFamily: THEME.SANS,
                       fontSize: 11,
                       fontStyle: "italic",
-                      color: "#4b5563",
+                      color: "rgba(226,232,240,0.56)",
                       lineHeight: 1.5,
                     }}
                   >
@@ -1043,8 +1043,8 @@ export default React.memo(function ScSpatialPage() {
                 gap: "8px",
                 padding: "8px 12px",
                 flexShrink: 0,
-                borderTop: "1px solid #d1d5db",
-                background: "#ffffff",
+                borderTop: "1px solid rgba(255,255,255,0.12)",
+                background: "#10131a",
               }}
             >
               <span className={`${styles.readyIndicator} ${readyClass(validity, loadState)}`}>
@@ -1055,11 +1055,11 @@ export default React.memo(function ScSpatialPage() {
                 style={{
                   fontFamily: THEME.MONO,
                   fontSize: "var(--nb-fs-xs)",
-                  color: "#4b5563",
+                  color: "rgba(226,232,240,0.56)",
                   padding: "2px 8px",
                   borderRadius: "6px",
-                  background: "#f6f7f9",
-                  border: "1px solid #d1d5db",
+                  background: "#161a24",
+                  border: "1px solid rgba(255,255,255,0.12)",
                 }}
               >
                 {artifactChipLabel}

@@ -41,14 +41,14 @@ export default function TermsPage() {
             style={{
               width: '24px',
               height: '24px',
-              background: '#fff',
+              background: '#0a0a0a',
               borderRadius: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '12px',
               fontWeight: 'bold',
-              color: '#000',
+              color: '#e2e8f0',
             }}
           >
             N

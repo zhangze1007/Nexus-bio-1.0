@@ -755,7 +755,7 @@ export default function PDBExplorer() {
                     width: "14px",
                     height: "14px",
                     borderRadius: "50%",
-                    background: "#fff",
+                    background: "#a3a3a3",
                     position: "absolute",
                     top: "3px",
                     left: useAlphaFold ? "19px" : "3px",

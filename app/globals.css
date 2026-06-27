@@ -270,7 +270,7 @@
 }
 
 .nb-workbench-launch-card__signal[data-signal='live'] {
-  background: #d1e7e1;
+  background: #1a2a24;
   color: rgba(209,231,225,0.42);
   box-shadow:
     0 0 0 3px rgba(209,231,225,0.08),
@@ -283,7 +283,7 @@
 }
 
 .nb-workbench-launch-card__signal[data-signal='revisit'] {
-  background: #e5d0aa;
+  background: #2a2418;
   color: rgba(229,208,170,0.34);
   box-shadow:
     0 0 0 3px rgba(229,208,170,0.07),
