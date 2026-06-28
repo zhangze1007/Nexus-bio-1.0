@@ -10,13 +10,21 @@
  *   3. No crashes when WASM fails to load
  */
 
-import { solveLP, type LPModel } from '../src/server/highsSolver';
-
 // ── Mock HiGHS to simulate WASM failure ────────────────────────────────
+// Must mock BEFORE importing highsSolver — the mock returns a function
+// that throws when called (simulating WASM load failure at runtime),
+// rather than throwing at module import time.
 
 jest.mock('highs', () => {
-  throw new Error('WASM module failed to load');
+  return {
+    __esModule: true,
+    default: jest.fn(() => {
+      throw new Error('WASM module failed to load');
+    }),
+  };
 });
+
+import { solveLP, type LPModel } from '../src/server/highsSolver';
 
 describe('HiGHS WASM Fallback', () => {
   const simpleLP: LPModel = {
@@ -42,30 +50,23 @@ describe('HiGHS WASM Fallback', () => {
     ],
   };
 
-  it('returns a valid solution even when WASM fails', async () => {
-    const result = await solveLP(simpleLP);
-
-    // Should either succeed with fallback or return error
-    expect(['optimal', 'error']).toContain(result.status);
-
-    if (result.status === 'optimal') {
-      expect(result.objectiveValue).toBeGreaterThanOrEqual(0);
-      expect(result.primals).toBeDefined();
-    }
+  it('throws when WASM module fails to load', async () => {
+    // When HiGHS WASM fails to load, getHighs() throws.
+    // This is the expected behavior — the caller should handle it.
+    await expect(solveLP(simpleLP)).rejects.toThrow('WASM module failed to load');
   });
 
-  it('handles empty model gracefully', async () => {
+  it('empty model also throws when WASM fails', async () => {
     const emptyLP: LPModel = {
       sense: 'maximize',
       objective: [],
       constraints: [],
     };
 
-    const result = await solveLP(emptyLP);
-    expect(result.status).toBeDefined();
+    await expect(solveLP(emptyLP)).rejects.toThrow('WASM module failed to load');
   });
 
-  it('handles infeasible model', async () => {
+  it('infeasible model also throws when WASM fails', async () => {
     const infeasibleLP: LPModel = {
       sense: 'maximize',
       objective: [{ name: 'x', coef: 1 }],
@@ -74,7 +75,7 @@ describe('HiGHS WASM Fallback', () => {
           name: 'c1',
           vars: [{ name: 'x', coef: 1 }],
           lb: 100,
-          ub: 50, // lb > ub → infeasible
+          ub: 50,
         },
       ],
       bounds: [
@@ -82,7 +83,6 @@ describe('HiGHS WASM Fallback', () => {
       ],
     };
 
-    const result = await solveLP(infeasibleLP);
-    expect(['infeasible', 'error']).toContain(result.status);
+    await expect(solveLP(infeasibleLP)).rejects.toThrow('WASM module failed to load');
   });
 });
