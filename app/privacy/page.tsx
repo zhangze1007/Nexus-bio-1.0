@@ -176,7 +176,18 @@ export default function PrivacyPage() {
             fontFamily: 'monospace',
           }}
         >
-          5. Your Data Rights (GDPR)
+          5. Legal Basis for Processing (GDPR Art. 6)
+        </h2>
+        <p>
+          We process personal data on the following legal bases: (a) <strong>Consent</strong> — when you
+          explicitly agree to analytics or marketing communications; (b) <strong>Legitimate interest</strong> —
+          to maintain and improve the platform, prevent abuse, and ensure security; (c) <strong>Contractual
+          necessity</strong> — to provide the services you request, including workbench state persistence
+          and AI-powered analysis. You may withdraw consent at any time without affecting the lawfulness
+          of processing based on consent before its withdrawal.
+        </p>
+
+        <h2
         </h2>
         <p>
           Under the General Data Protection Regulation, you have the right to request access to,

@@ -22,7 +22,7 @@ import {
   type Group,
   type InstancedMesh,
   type Mesh,
-  type MeshPhysicalMaterial,
+  type MeshLambertMaterial,
   Object3D,
   PerspectiveCamera,
   Points,
@@ -594,12 +594,12 @@ const MolNode = React.memo(function MolNode({
     }
     if (ring.current) {
       ring.current.rotation.z += fdt * 0.1;
-      const mat = ring.current.material as MeshPhysicalMaterial;
+      const mat = ring.current.material as MeshLambertMaterial;
       const to = hov || sel ? 0.35 : 0.07;
       mat.opacity += (to - mat.opacity) * dt * 3;
     }
     if (bodyRef.current) {
-      const mat = bodyRef.current.material as MeshPhysicalMaterial;
+      const mat = bodyRef.current.material as MeshLambertMaterial;
       const targetEmissive = sel ? 0.4 : hov ? 0.2 : 0.03;
       mat.emissiveIntensity += (targetEmissive - mat.emissiveIntensity) * dt * 6;
     }

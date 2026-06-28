@@ -504,6 +504,9 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
     knockouts: request.yeast.knockouts ?? [],
   });
 
+  // Community FBA cross-feeding estimation (HEURISTIC — not derived from stoichiometric models)
+  // Scaling factors (1.6, 2.4, 1.4, 2, 0.018) are empirical approximations for visualization.
+  // For quantitative community FBA, use dynamic FBA (dFBA) or SteadyCom instead.
   const exchangeFluxes = SHARED_METABOLITES.map((metabolite) => {
     const exporter = metabolite.exporterStrain === "ecoli" ? ecoli : yeast;
     const importer = metabolite.importerStrain === "ecoli" ? ecoli : yeast;

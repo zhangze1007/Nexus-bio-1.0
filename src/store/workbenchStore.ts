@@ -22,6 +22,7 @@ export type { WorkbenchState } from "./slices/types";
 let _persistTimer: ReturnType<typeof setTimeout> | null = null;
 let _pendingPersist: { name: string; value: string } | null = null;
 const PERSIST_DEBOUNCE_MS = 500;
+const PERSIST_MAX_BYTES = 4 * 1024 * 1024; // 4 MB guard (R-13)
 
 function createDebouncedStorage() {
   if (typeof window === "undefined") {
@@ -42,7 +43,10 @@ function createDebouncedStorage() {
       }
       if (_pendingPersist) {
         try {
-          localStorage.setItem(_pendingPersist.name, _pendingPersist.value);
+          // R-13: same 4 MB guard on the unload flush path
+          if (_pendingPersist.value.length <= PERSIST_MAX_BYTES) {
+            localStorage.setItem(_pendingPersist.name, _pendingPersist.value);
+          }
         } catch {
           /* quota exceeded */
         }
@@ -58,7 +62,14 @@ function createDebouncedStorage() {
       _pendingPersist = { name, value };
       _persistTimer = setTimeout(() => {
         try {
-          localStorage.setItem(name, value);
+          // R-13: guard against oversized writes that freeze the main thread
+          if (value.length > PERSIST_MAX_BYTES) {
+            console.warn(
+              `[workbenchStore] Skipping persist — payload ${(value.length / 1024 / 1024).toFixed(1)} MB exceeds ${PERSIST_MAX_BYTES / 1024 / 1024} MB limit.`,
+            );
+          } else {
+            localStorage.setItem(name, value);
+          }
         } catch {
           /* quota exceeded */
         }

@@ -57,6 +57,7 @@ interface UIState {
 
   // ── Actions ──────────────────────────────────────────────────────────
   setSelectedNode: (node: PathwayNode | null) => void;
+  clearSelectedNode: () => void;
   setAiPathway: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
   resetPathway: () => void;
   openAuditTrail: (nodeId: string) => void;
@@ -112,6 +113,8 @@ export const useUIStore = create<UIState>()(
     // ── Actions ────────────────────────────────────────────────────────
 
     setSelectedNode: (node) => set({ selectedNode: node, sidebarOpen: node !== null }),
+
+    clearSelectedNode: () => set({ selectedNode: null }),
 
     setAiPathway: (nodes, edges) => set({ aiNodes: nodes, aiEdges: edges, selectedNode: null }),
 

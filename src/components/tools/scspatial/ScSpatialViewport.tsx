@@ -860,6 +860,7 @@ function SpatialPointCloud({
     <div className={styles.viewportStage}>
       <Canvas
         className={styles.viewportCanvas}
+        dpr={[1, 1.5]}
         camera={{ position: [0, 8, 16], fov: 42 }}
         onCreated={({ gl }) => {
           canvasRef.current = gl.domElement;
