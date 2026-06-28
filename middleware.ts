@@ -177,18 +177,46 @@ async function isAuthenticated(req: NextRequest, highSecurity = false): Promise<
   return false;
 }
 
-// ── Request ID ────────────────────────────────────────────────────────
+// ── Request ID & CSP Nonce ─────────────────────────────────────────────
 function generateRequestId(): string {
   return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Generate a cryptographic nonce for CSP (R-17). */
+function generateNonce(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array));
 }
 
 // ── Middleware ─────────────────────────────────────────────────────────
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const nonce = generateNonce();
 
-  // Only run on API routes
+  // ── CSP nonce for all routes (R-17) ──
+  // Generate nonce and set CSP header. Next.js 14+ reads x-nonce header.
+  const cspHeader = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' cdnjs.cloudflare.com 3Dmol.org`,
+    `style-src 'self' 'nonce-${nonce}'`,
+    "font-src 'self'",
+    "img-src 'self' data: blob: https: upload.wikimedia.org cellimagelibrary.org idr.openmicroscopy.org",
+    "connect-src 'self' https://eutils.ncbi.nlm.nih.gov https://www.ebi.ac.uk https://api.semanticscholar.org https://api.openalex.org https://api.core.ac.uk https://europepmc.org https://doi.org https://nexus-bio-1-0.vercel.app https://nexus-bio.org https://*.turso.io *.sentry.io",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join('; ');
+
+  // For page routes, set CSP and pass nonce
   if (!pathname.startsWith('/api/')) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set('Content-Security-Policy', cspHeader);
+    response.headers.set('x-nonce', nonce);
+    return response;
   }
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()

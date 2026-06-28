@@ -40,29 +40,7 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              /* script-src: no unsafe-eval (verified Three.js/R3F/Sentry don't use eval/Function).
-                 unsafe-inline required for Next.js hydration + Sentry error boundary inline scripts.
-                 R-17: TODO migrate to nonce-based CSP when Next.js supports it natively. */
-              "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com 3Dmol.org",
-              /* style-src: unsafe-inline required for React style={{}} prop and Next.js CSS-in-JS. */
-              "style-src 'self' 'unsafe-inline'",
-              "font-src 'self'",
-              "img-src 'self' data: blob: https: upload.wikimedia.org cellimagelibrary.org idr.openmicroscopy.org",
-              /* connect-src: client-side fetch targets (SemanticSearch, Sentry, etc.).
-                 Server-side proxied APIs (KEGG, AlphaFold, PubChem) don't need entries here. */
-              "connect-src 'self' https://eutils.ncbi.nlm.nih.gov https://www.ebi.ac.uk https://api.semanticscholar.org https://api.openalex.org https://api.core.ac.uk https://europepmc.org https://doi.org https://nexus-bio-1-0.vercel.app https://nexus-bio.org https://*.turso.io *.sentry.io",
-              "frame-src 'none'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join('; '),
-          },
+          /* CSP is now set dynamically in middleware.ts with nonce-based script-src (R-17) */
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
