@@ -317,7 +317,7 @@ function buildInsertProjectHistoryStatements(
   return [
     {
       sql: `
-      INSERT OR REPLACE INTO project_history (
+      INSERT INTO project_history (
         project_id, revision, actor_id, project_title, target_product,
         analyze_title, analyze_generated_at, run_artifact_count,
         mutation_at, updated_at, state_json
@@ -668,6 +668,7 @@ export async function writeProjectState(
           state_json = excluded.state_json,
           last_actor_id = excluded.last_actor_id,
           updated_at = excluded.updated_at
+        WHERE project_state.revision < excluded.revision
       `,
       args: [
         resolvedProjectId,

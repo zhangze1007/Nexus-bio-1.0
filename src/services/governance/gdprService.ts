@@ -126,6 +126,9 @@ const TABLE_USER_COLUMNS: Record<string, string> = {
   workbench_experiments: "actor_id",
   workbench_history: "actor_id",
   workbench_artifacts: "actor_id",
+  project_members: "actor_id",
+  project_state: "last_actor_id",
+  experiment_records: "actor_id",
   audit_log: "actor_id",
   gdpr_requests: "user_id",
 };

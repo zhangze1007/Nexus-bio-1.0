@@ -188,6 +188,17 @@ export default function PrivacyPage() {
         </p>
 
         <h2
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '13px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            margin: '2.5rem 0 0.75rem',
+            fontFamily: 'monospace',
+          }}
+        >
+          6. Your Data Rights (GDPR)
         </h2>
         <p>
           Under the General Data Protection Regulation, you have the right to request access to,
