@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
+import { errorResponse } from '../../../src/utils/apiErrors';
 
 export const runtime = 'edge';
 
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
       const sanitized = compound.replace(/[^a-zA-Z0-9\s\-]/g, '').slice(0, 100);
       const res = await fetch(`${KEGG_BASE}/find/compound/${encodeURIComponent(sanitized)}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) {
-        return NextResponse.json({ ok: false, error: 'KEGG compound search failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
+        return errorResponse('KEGG compound search failed', 502, { status: res.status }, corsHeaders(req));
       }
       const text = await res.text();
       const results = text
@@ -58,11 +59,11 @@ export async function GET(req: NextRequest) {
     // Mode 2: Get pathways linked to a compound ID
     if (pathway) {
       if (!/^C\d{5}$/.test(pathway)) {
-        return NextResponse.json({ ok: false, error: 'Invalid KEGG compound ID (expected C#####)' }, { status: 400, headers: corsHeaders(req) });
+        return errorResponse('Invalid KEGG compound ID (expected C#####)', 400, undefined, corsHeaders(req));
       }
       const res = await fetch(`${KEGG_BASE}/link/pathway/${pathway}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) {
-        return NextResponse.json({ ok: false, error: 'KEGG pathway link failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
+        return errorResponse('KEGG pathway link failed', 502, { status: res.status }, corsHeaders(req));
       }
       const text = await res.text();
       const pathways = text
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
       if (/^\d+\.\d+\.\d+\.\d+(-)?$/.test(reaction)) {
         const linkRes = await fetch(`${KEGG_BASE}/link/reaction/ec:${reaction}`, { signal: AbortSignal.timeout(10000) });
         if (!linkRes.ok) {
-          return NextResponse.json({ ok: false, error: 'KEGG EC→reaction link failed', status: linkRes.status }, { status: 502, headers: corsHeaders(req) });
+          return errorResponse('KEGG EC→reaction link failed', 502, { status: linkRes.status }, corsHeaders(req));
         }
         const linkText = await linkRes.text();
         const ids = linkText
@@ -101,12 +102,12 @@ export async function GET(req: NextRequest) {
         }
         reactionId = ids[0];
       } else if (!/^R\d{5}$/.test(reaction)) {
-        return NextResponse.json({ ok: false, error: 'Invalid KEGG reaction ID (expected R##### or EC number)' }, { status: 400, headers: corsHeaders(req) });
+        return errorResponse('Invalid KEGG reaction ID (expected R##### or EC number)', 400, undefined, corsHeaders(req));
       }
 
       const res = await fetch(`${KEGG_BASE}/get/${reactionId}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) {
-        return NextResponse.json({ ok: false, error: 'KEGG reaction fetch failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
+        return errorResponse('KEGG reaction fetch failed', 502, { status: res.status }, corsHeaders(req));
       }
       const text = await res.text();
 
@@ -130,15 +131,9 @@ export async function GET(req: NextRequest) {
       }, { headers: corsHeaders(req) });
     }
 
-    return NextResponse.json(
-      { ok: false, error: 'Missing parameter. Use ?compound=<name>, ?pathway=<C#####>, or ?reaction=<R#####>' },
-      { status: 400, headers: corsHeaders(req) },
-    );
+    return errorResponse('Missing parameter. Use ?compound=<name>, ?pathway=<C#####>, or ?reaction=<R#####>', 400, undefined, corsHeaders(req));
   } catch (err) {
     console.error('KEGG proxy error:', err);
-    return NextResponse.json(
-      { ok: false, error: 'KEGG proxy error' },
-      { status: 502, headers: corsHeaders(req) },
-    );
+    return errorResponse('KEGG proxy error', 502, undefined, corsHeaders(req));
   }
 }

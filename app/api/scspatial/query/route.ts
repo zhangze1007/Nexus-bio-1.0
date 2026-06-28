@@ -3,6 +3,7 @@ import { buildScSpatialQueryResponse } from '../../../../src/server/scspatialAna
 import { readScSpatialArtifact } from '../../../../src/server/scspatialArtifactStore';
 import type { ScSpatialQueryRequest, ScSpatialViewMode } from '../../../../src/types/scspatial';
 import { getCorsHeaders, handleOptions } from '../../../../src/utils/cors';
+import { errorResponse } from '../../../../src/utils/apiErrors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,19 +37,15 @@ function asString(value: unknown) {
   return typeof value === 'string' ? value : '';
 }
 
-function jsonError(error: string, status = 400, detail?: string, req?: Request) {
-  return NextResponse.json({ ok: false, error, detail }, { status, headers: getCorsHeaders(req) });
-}
-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object') {
-    return jsonError('Invalid SCSPATIAL query payload', 400, undefined, request);
+    return errorResponse('Invalid SCSPATIAL query payload', 400, undefined, getCorsHeaders(request));
   }
 
   const artifactId = asString((body as Record<string, unknown>).artifactId);
   if (!artifactId) {
-    return jsonError('artifactId is required', 400, undefined, request);
+    return errorResponse('artifactId is required', 400, undefined, getCorsHeaders(request));
   }
 
   // ── Proxy to Python backend ──────────────────────────────────────
@@ -69,7 +66,7 @@ export async function POST(request: Request) {
       if (resp.status !== 404) {
         const errText = await resp.text();
         console.error('Python backend query error:', errText);
-        return jsonError('Python backend query failed', 502, errText, request);
+        return errorResponse('Python backend query failed', 502, { detail: errText }, getCorsHeaders(request));
       }
     } catch (err) {
       console.error('Python backend unreachable for query:', err);
@@ -80,7 +77,7 @@ export async function POST(request: Request) {
   // ── Fallback: local TypeScript engine ────────────────────────────
   const artifact = await readScSpatialArtifact(artifactId);
   if (!artifact) {
-    return jsonError('SCSPATIAL artifact not found', 404, undefined, request);
+    return errorResponse('SCSPATIAL artifact not found', 404, undefined, getCorsHeaders(request));
   }
 
   try {
@@ -96,11 +93,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ...query }, { headers: getCorsHeaders(request) });
   } catch (error) {
     console.error('SCSPATIAL query error:', error);
-    return jsonError(
+    return errorResponse(
       'SCSPATIAL query failed',
       500,
       undefined,
-      request,
+      getCorsHeaders(request),
     );
   }
 }

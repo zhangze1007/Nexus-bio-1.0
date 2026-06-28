@@ -9,6 +9,7 @@
 
 import { NextResponse } from "next/server";
 import { getCorsHeaders, handleOptions } from "../../../../src/utils/cors";
+import { errorResponse } from "../../../../src/utils/apiErrors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -300,6 +301,6 @@ export async function GET(req: Request) {
     );
   } catch (err) {
     console.error('[api/admin/health] GET error:', err);
-    return NextResponse.json({ ok: false, error: "Internal server error" }, { status: 500, headers: corsHeaders });
+    return errorResponse("Internal server error", 500, undefined, corsHeaders);
   }
 }

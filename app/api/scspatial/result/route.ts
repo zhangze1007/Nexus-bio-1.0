@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { errorResponse } from '../../../../src/utils/apiErrors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,14 +17,11 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const jobId = url.searchParams.get('jobId');
   if (!jobId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId)) {
-    return NextResponse.json({ ok: false, error: "Invalid jobId format" }, { status: 400 });
+    return errorResponse("Invalid jobId format", 400);
   }
 
   if (!PYTHON_BACKEND) {
-    return NextResponse.json(
-      { ok: false, error: 'Python backend not configured' },
-      { status: 503 },
-    );
+    return errorResponse('Python backend not configured', 503);
   }
 
   try {
@@ -31,18 +29,12 @@ export async function GET(request: Request) {
 
     if (!resp.ok) {
       const errText = await resp.text();
-      return NextResponse.json(
-        { ok: false, error: `Python backend returned ${resp.status}`, detail: errText },
-        { status: resp.status },
-      );
+      return errorResponse(`Python backend returned ${resp.status}`, resp.status, { detail: errText });
     }
 
     const data = await resp.json();
     return NextResponse.json(data);
   } catch (err) {
-    return NextResponse.json(
-      { ok: false, error: 'Python backend unreachable' },
-      { status: 502 },
-    );
+    return errorResponse('Python backend unreachable', 502);
   }
 }

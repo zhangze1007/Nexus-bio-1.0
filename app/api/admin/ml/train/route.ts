@@ -12,6 +12,7 @@ import {
   type TrainingData,
   type TrainingConfig,
 } from "../../../../../src/services/ml/modelTraining";
+import { errorResponse } from "../../../../../src/utils/apiErrors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,39 +28,27 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return errorResponse("Invalid JSON body", 400);
   }
 
   // ── Validate trainingData ──
   const td = body.trainingData;
   if (!td || !Array.isArray(td.featureNames) || !Array.isArray(td.rows)) {
-    return NextResponse.json(
-      { ok: false, error: "trainingData must have featureNames (string[]) and rows (array)" },
-      { status: 400 },
-    );
+    return errorResponse("trainingData must have featureNames (string[]) and rows (array)", 400);
   }
 
   if (td.featureNames.length === 0) {
-    return NextResponse.json(
-      { ok: false, error: "featureNames must not be empty" },
-      { status: 400 },
-    );
+    return errorResponse("featureNames must not be empty", 400);
   }
 
   if (td.rows.length === 0) {
-    return NextResponse.json(
-      { ok: false, error: "training rows must not be empty" },
-      { status: 400 },
-    );
+    return errorResponse("training rows must not be empty", 400);
   }
 
   for (let i = 0; i < td.rows.length; i++) {
     const row = td.rows[i];
     if (!row.features || typeof row.target !== "number") {
-      return NextResponse.json(
-        { ok: false, error: `Row ${i}: must have features (object) and target (number)` },
-        { status: 400 },
-      );
+      return errorResponse(`Row ${i}: must have features (object) and target (number)`, 400);
     }
   }
 
@@ -76,7 +65,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     console.error('[api/admin/ml/train] POST error:', err);
-    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
+    return errorResponse('An internal error occurred', 500);
   }
 }
 
@@ -88,6 +77,6 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ ok: true, models });
   } catch (err) {
     console.error('[api/admin/ml/train] GET error:', err);
-    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
+    return errorResponse('An internal error occurred', 500);
   }
 }

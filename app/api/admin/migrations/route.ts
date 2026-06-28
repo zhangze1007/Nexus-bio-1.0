@@ -15,6 +15,7 @@ import {
   getMigrationStatus,
   rollbackMigration,
 } from "../../../../src/server/migrations/migrationRunner";
+import { errorResponse } from "../../../../src/utils/apiErrors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export async function GET() {
     return NextResponse.json({ ok: true, migrations: status });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return errorResponse(message, 500);
   }
 }
 
@@ -42,21 +43,15 @@ export async function POST(req: NextRequest) {
     if (action === "rollback") {
       const name = (body as Record<string, unknown>).name;
       if (typeof name !== "string" || name.trim().length === 0) {
-        return NextResponse.json(
-          { ok: false, error: "Missing or invalid 'name' field for rollback" },
-          { status: 400 },
-        );
+        return errorResponse("Missing or invalid 'name' field for rollback", 400);
       }
       await rollbackMigration(name.trim());
       return NextResponse.json({ ok: true, message: `Migration "${name}" rolled back` });
     }
 
-    return NextResponse.json(
-      { ok: false, error: "Invalid action. Use 'run' or 'rollback'." },
-      { status: 400 },
-    );
+    return errorResponse("Invalid action. Use 'run' or 'rollback'.", 400);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return errorResponse(message, 500);
   }
 }

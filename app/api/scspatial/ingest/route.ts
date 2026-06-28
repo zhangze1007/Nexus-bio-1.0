@@ -9,6 +9,7 @@ import { createDemoScSpatialArtifact } from '../../../../src/server/scspatialDem
 import { runScSpatialSidecar } from '../../../../src/server/scspatialSidecar';
 import type { ScSpatialIngestConfig, ScSpatialNormalizedArtifact, ScSpatialQueryRequest, ScSpatialViewMode } from '../../../../src/types/scspatial';
 import { getCorsHeaders, handleOptions } from '../../../../src/utils/cors';
+import { errorResponse } from '../../../../src/utils/apiErrors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,10 +19,6 @@ const PYTHON_BACKEND = process.env.SCSPATIAL_PYTHON_BACKEND?.replace(/\/+$/, '')
 
 export async function OPTIONS(req: Request) {
   return handleOptions(req);
-}
-
-function jsonError(error: string, status = 400, detail?: string, req?: Request) {
-  return NextResponse.json({ ok: false, error, detail }, { status, headers: getCorsHeaders(req) });
 }
 
 function parseConfig(raw: FormDataEntryValue | null): ScSpatialIngestConfig {
@@ -42,7 +39,7 @@ export async function POST(request: Request) {
     if (contentType.includes('application/json')) {
       const body = await request.json().catch(() => null);
       if (body?.mode !== 'demo') {
-        return jsonError('Expected multipart h5ad upload or JSON body {"mode":"demo"}', 400, undefined, request);
+        return errorResponse('Expected multipart h5ad upload or JSON body {"mode":"demo"}', 400, undefined, getCorsHeaders(request));
       }
 
       // If Python backend is available, use its demo endpoint
@@ -104,20 +101,20 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get('file');
     if (!(file instanceof File)) {
-      return jsonError('A file is required under the "file" field', 400, undefined, request);
+      return errorResponse('A file is required under the "file" field', 400, undefined, getCorsHeaders(request));
     }
     const fnameLower = file.name.toLowerCase();
     if (!fnameLower.endsWith('.h5ad') && !fnameLower.endsWith('.zip')) {
-      return jsonError('SCSPATIAL ingest accepts .h5ad files or .zip (Space Ranger output)', 400, undefined, request);
+      return errorResponse('SCSPATIAL ingest accepts .h5ad files or .zip (Space Ranger output)', 400, undefined, getCorsHeaders(request));
     }
 
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
     if (file.size > MAX_FILE_SIZE) {
-      return jsonError(
+      return errorResponse(
         `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Maximum is 50 MB.`,
         413,
         undefined,
-        request,
+        getCorsHeaders(request),
       );
     }
 
@@ -144,7 +141,7 @@ export async function POST(request: Request) {
         if (!resp.ok) {
           const errText = await resp.text();
           console.error('Python backend ingest-sidecar error:', errText);
-          return jsonError('Python backend analysis failed', 502, undefined, request);
+          return errorResponse('Python backend analysis failed', 502, undefined, getCorsHeaders(request));
         }
 
         const artifact = await resp.json() as ScSpatialNormalizedArtifact;
@@ -165,7 +162,7 @@ export async function POST(request: Request) {
         }, { headers: getCorsHeaders(request) });
       } catch (err) {
         console.error('Python backend unreachable:', err);
-        return jsonError('Python analysis backend is unavailable', 502, undefined, request);
+        return errorResponse('Python analysis backend is unavailable', 502, undefined, getCorsHeaders(request));
       }
     }
 
@@ -205,11 +202,11 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error('SCSPATIAL ingest error:', error);
-    return jsonError(
+    return errorResponse(
       'SCSPATIAL ingest failed',
       500,
       undefined,
-      request,
+      getCorsHeaders(request),
     );
   }
 }

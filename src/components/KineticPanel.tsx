@@ -10,6 +10,7 @@
 
 import { Info, Loader2, Play, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { solveRK4 } from "../utils/odeSolver";
 import {
   competitiveInhibition,
   estimateParameters,
@@ -98,7 +99,7 @@ function inhibitionLabel(type: InhibitionType): string {
   }
 }
 
-// ── Local ODE simulation (RK4, supports all inhibition models) ──
+// ── ODE simulation using shared solver (R-28) ──
 
 function simulateODE(
   S0: number,
@@ -112,36 +113,28 @@ function simulateODE(
   if (steps <= 0 || duration <= 0) {
     return { time: [0], substrate: [S0], product: [P0], velocity: [velocityFn(Math.max(0, S0))] };
   }
-  const dt = duration / steps;
-  const time: number[] = [0];
-  const substrate: number[] = [S0];
-  const product: number[] = [P0];
-  const velocity: number[] = [velocityFn(Math.max(0, S0))];
 
-  let S = S0,
-    P = P0;
-  for (let i = 0; i < steps; i++) {
-    const dS = (s: number) => -velocityFn(Math.max(0, s)) + formationRate;
-    const dP = (_s: number, p: number) => velocityFn(Math.max(0, _s)) - degradationRate * Math.max(0, p);
+  const solution = solveRK4(
+    {
+      fn: (_t, y) => {
+        const s = Math.max(0, y[0]);
+        const p = Math.max(0, y[1]);
+        const dS = -velocityFn(s) + formationRate;
+        const dP = velocityFn(s) - degradationRate * p;
+        return [dS, dP];
+      },
+      initial: [S0, P0],
+      tStart: 0,
+      tEnd: duration,
+    },
+    { steps, clampToZero: true },
+  );
 
-    const k1s = dS(S),
-      k1p = dP(S, P);
-    const k2s = dS(S + (dt / 2) * k1s),
-      k2p = dP(S + (dt / 2) * k1s, P + (dt / 2) * k1p);
-    const k3s = dS(S + (dt / 2) * k2s),
-      k3p = dP(S + (dt / 2) * k2s, P + (dt / 2) * k2p);
-    const k4s = dS(S + dt * k3s),
-      k4p = dP(S + dt * k3s, P + dt * k3p);
+  const time = solution.time.map((t) => parseFloat(t.toFixed(3)));
+  const substrate = solution.states[0].map((v) => parseFloat(v.toFixed(4)));
+  const product = solution.states[1].map((v) => parseFloat(v.toFixed(4)));
+  const velocity = substrate.map((s) => parseFloat(velocityFn(Math.max(0, s)).toFixed(4)));
 
-    S = Math.max(0, S + (dt / 6) * (k1s + 2 * k2s + 2 * k3s + k4s));
-    P = Math.max(0, P + (dt / 6) * (k1p + 2 * k2p + 2 * k3p + k4p));
-
-    const t = (i + 1) * dt;
-    time.push(parseFloat(t.toFixed(3)));
-    substrate.push(parseFloat(S.toFixed(4)));
-    product.push(parseFloat(P.toFixed(4)));
-    velocity.push(parseFloat(velocityFn(Math.max(0, S)).toFixed(4)));
-  }
   return { time, substrate, product, velocity };
 }
 

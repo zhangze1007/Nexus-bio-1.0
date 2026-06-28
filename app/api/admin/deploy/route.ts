@@ -10,6 +10,7 @@ import {
   getDeploymentStatus,
   validateDeployment,
 } from "../../../../src/services/infra/deploymentService";
+import { errorResponse } from "../../../../src/utils/apiErrors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function GET() {
     return NextResponse.json({ ok: true, ...status }, { status: 200 });
   } catch (err) {
     console.error('[api/admin/deploy] GET error:', err);
-    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
+    return errorResponse('An internal error occurred', 500);
   }
 }
 
@@ -48,6 +49,6 @@ export async function POST() {
     );
   } catch (err) {
     console.error('[api/admin/deploy] POST error:', err);
-    return NextResponse.json({ ok: false, error: 'An internal error occurred' }, { status: 500 });
+    return errorResponse('An internal error occurred', 500);
   }
 }

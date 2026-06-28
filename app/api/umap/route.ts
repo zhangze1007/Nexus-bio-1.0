@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "../../../src/utils/apiErrors";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -21,20 +22,14 @@ const MOFA_BACKEND = process.env.MOFA_PYTHON_BACKEND?.replace(/\/+$/, "") || "";
 
 export async function POST(request: Request) {
   if (!MOFA_BACKEND) {
-    return NextResponse.json(
-      { ok: false, error: "MOFA_PYTHON_BACKEND not configured", detail: "Set MOFA_PYTHON_BACKEND env var to the Railway backend URL." },
-      { status: 503 },
-    );
+    return errorResponse("MOFA_PYTHON_BACKEND not configured", 503, { detail: "Set MOFA_PYTHON_BACKEND env var to the Railway backend URL." });
   }
 
   try {
     const body = await request.json();
 
     if (!body?.data || !Array.isArray(body.data)) {
-      return NextResponse.json(
-        { ok: false, error: "Missing required 'data' field (number[][])" },
-        { status: 400 },
-      );
+      return errorResponse("Missing required 'data' field (number[][])", 400);
     }
 
     const resp = await fetch(`${MOFA_BACKEND}/umap`, {
@@ -50,16 +45,13 @@ export async function POST(request: Request) {
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "Unknown error");
-      return NextResponse.json(
-        { ok: false, error: `UMAP backend returned ${resp.status}`, detail: errText },
-        { status: 502 },
-      );
+      return errorResponse(`UMAP backend returned ${resp.status}`, 502, { detail: errText });
     }
 
     const data = await resp.json();
     return NextResponse.json({ ok: true, ...data });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "UMAP proxy failed";
-    return NextResponse.json({ ok: false, error: msg }, { status: 502 });
+    return errorResponse(msg, 502);
   }
 }
