@@ -55,162 +55,81 @@ export interface ValidationResult {
 type ToolExecutor = (input: unknown) => Promise<unknown>;
 
 /**
- * Each registered tool gets a lightweight executor that transforms the
- * input into a structured output.  These are deterministic simulations —
- * real tool pages run heavier logic on the client, but the pipeline
- * validates data flow and dependency satisfaction.
+ * Real tool executors — each calls the actual server-side engine.
+ *
+ * NOTE: The previous implementation used hardcoded mock data.
+ * This has been replaced with real engine calls to ensure
+ * pipeline results are scientifically valid.
+ *
+ * For single-tool execution, use POST /api/pipeline/{toolId} instead.
  */
 const TOOL_EXECUTORS: Record<string, ToolExecutor> = {
-  pathd: async (input) => {
-    const target = (input as Record<string, unknown>)?.targetProduct ?? "unknown";
-    return {
-      pathwayCandidates: [{ id: "route-1", steps: 6, deltaG: -42.3 }],
-      nodeCount: 7,
-      targetProduct: target,
-      evidenceLinked: 3,
-    };
-  },
-
   fbasim: async (input) => {
-    const hasPathway = (input as Record<string, unknown>)?.pathwayCandidates;
-    return {
-      feasible: !!hasPathway,
-      topFluxes: { biomass: 0.87, product: 0.32 },
-      objective: "biomass",
-      shadowPrices: { atp: 0.012, nadh: 0.008 },
-      sensitivityCoefficients: { atp: 0.05 },
-    };
+    const { solveAuthorityFBA } = await import("../../server/fbaEngine");
+    const p = (input ?? {}) as Record<string, unknown>;
+    return solveAuthorityFBA({
+      species: (p.species as "ecoli" | "yeast") ?? "ecoli",
+      objective: (p.objective as "biomass" | "atp" | "product") ?? "biomass",
+      glucoseUptake: (p.glucoseUptake as number) ?? 10,
+      oxygenUptake: (p.oxygenUptake as number) ?? 20,
+      knockouts: (p.knockouts as string[]) ?? [],
+    });
   },
 
-  cethx: async (_input) => ({
-    gibbsFreeEnergy: [-12.4, -8.7, -22.1, -5.3, -18.9],
-    efficiency: 0.73,
-    limitingStep: 3,
-    atpYield: 14,
-  }),
+  cethx: async (input) => {
+    const { runThermodynamicPipeline } = await import("../../server/cethxPipeline");
+    return runThermodynamicPipeline(input as Parameters<typeof runThermodynamicPipeline>[0]);
+  },
 
   catdes: async (input) => {
-    const hasFluxes = (input as Record<string, unknown>)?.topFluxes;
-    return {
-      bestSequenceScore: hasFluxes ? 0.91 : 0.45,
-      bestCAI: 0.78,
-      isViable: !!hasFluxes,
-      candidateCount: 24,
-      totalMetabolicDrain: 0.12,
-    };
+    const { identifyBottlenecks } = await import("../CatalystDesignerEngine");
+    return identifyBottlenecks(input as Parameters<typeof identifyBottlenecks>[0]);
   },
-
-  proevol: async (_input) => ({
-    fitnessImproved: true,
-    diversityIndex: 0.67,
-    bestVariant: "V3-T142S-A218G",
-    roundNumber: 3,
-  }),
 
   dyncon: async (input) => {
-    const hasScore = (input as Record<string, unknown>)?.bestSequenceScore;
-    return {
-      stable: !!hasScore,
-      productTiter: 3.42,
-      doRmse: 0.031,
-      convergenceTime: 48,
-    };
+    const { runControlDesignPipeline } = await import("../../server/dynconPipeline");
+    return runControlDesignPipeline(input as Parameters<typeof runControlDesignPipeline>[0]);
   },
 
-  gecair: async (_input) => ({
-    outputLevel: 0.72,
-    gateType: "AND",
-    truthTable: [
-      { A: 0, B: 0, Y: 0 },
-      { A: 0, B: 1, Y: 0 },
-      { A: 1, B: 0, Y: 0 },
-      { A: 1, B: 1, Y: 1 },
-    ],
-  }),
-
-  genmim: async (_input) => ({
-    topGenes: ["b0001", "b0002", "b0003"],
-    viabilityScore: 0.94,
-    genomeReduction: 0.12,
-  }),
-
-  cellfree: async (input) => {
-    const hasTiter = (input as Record<string, unknown>)?.productTiter;
-    return {
-      confidence: hasTiter ? 0.82 : 0.31,
-      expressionYield: 2.8,
-      isResourceLimited: false,
-      invivoExpression: 1.9,
-    };
+  gecair: async (input) => {
+    const { runCircuitReasoner } = await import("../../server/circuitReasonerPipeline");
+    return runCircuitReasoner(input as Parameters<typeof runCircuitReasoner>[0]);
   },
 
-  dbtlflow: async (input) => {
-    const hasConf = (input as Record<string, unknown>)?.confidence;
-    return {
-      passRate: hasConf ? 0.75 : 0.2,
-      feedback: { learnedMetrics: { kcat: 12.4, km: 0.33 } },
-      iteration: 1,
-    };
+  genmim: async (input) => {
+    const { runMinimizationPipeline } = await import("../../server/genmimPipeline");
+    return runMinimizationPipeline(input as Parameters<typeof runMinimizationPipeline>[0]);
   },
 
-  multio: async (_input) => ({
-    bottleneckGene: "YNL071W",
-    bottleneckConfidence: 0.68,
-    factors: 5,
-  }),
-
-  scspatial: async (_input) => ({
-    clusters: 8,
-    moranI: 0.42,
-    significantGenes: 34,
-  }),
-
-  nexai: async (_input) => ({
-    citations: 12,
-    confidence: 0.74,
-    synthesis: "Curated literature summary for the target pathway.",
-  }),
-
-  "metabolic-eng": async (input) => {
-    // Alias for pathd — shares executor semantics
-    return TOOL_EXECUTORS.pathd(input);
+  multio: async (input) => {
+    const { runMultiOmicsPipeline } = await import("../../server/multioPipeline");
+    return runMultiOmicsPipeline(input as Parameters<typeof runMultiOmicsPipeline>[0]);
   },
 
-  inversefolding: async (_input) => ({
-    sequences: ["MKTAYIAKQRQISFVKSH"],
-    confidence: 0.85,
-  }),
+  scspatial: async (input) => {
+    const { runScSpatialPipeline } = await import("../../server/scspatialPipeline");
+    return runScSpatialPipeline(input as Parameters<typeof runScSpatialPipeline>[0]);
+  },
 
-  multiplexcrispr: async (_input) => ({
-    strategies: [{ genes: ["b0001", "b0002"], fitness: 0.91 }],
-    librarySize: 8,
-  }),
-
-  pathwaydiscovery: async (_input) => ({
-    pathways: [{ id: "novel-1", steps: 5, score: 0.77 }],
-    bestDeltaG: -35.2,
-  }),
-
-  digitaltwin: async (_input) => ({
-    currentState: { volume: 1.2, biomass: 4.8, glucose: 2.1 },
-    uncertainty: 0.06,
-  }),
-
-  sequence: async (_input) => ({
-    gcContent: 0.52,
-    length: 1200,
-    features: 3,
-  }),
-
-  inventory: async (_input) => ({
-    totalItems: 42,
-    categories: { strains: 12, plasmids: 8, primers: 15, chemicals: 7 },
-  }),
+  nexai: async (input) => {
+    const { runResearchPipeline } = await import("../../server/nexaiPipeline");
+    const p = (input ?? {}) as Record<string, unknown>;
+    return runResearchPipeline(
+      (p.question as Parameters<typeof runResearchPipeline>[0]) ?? { topic: "", subtopics: [] },
+      (p.papers as Parameters<typeof runResearchPipeline>[1]) ?? [],
+    );
+  },
 };
 
-/** Get the executor for a tool, falling back to a passthrough. */
+/** Get the executor for a tool, returning error for unregistered tools. */
 function getExecutor(toolId: string): ToolExecutor {
-  return TOOL_EXECUTORS[toolId] ?? (async (input) => ({ passthrough: true, input }));
+  const executor = TOOL_EXECUTORS[toolId];
+  if (!executor) {
+    throw new Error(
+      `Tool "${toolId}" does not have a server-side pipeline executor. Use POST /api/pipeline/${toolId} for single-tool execution.`
+    );
+  }
+  return executor;
 }
 
 // ── Public API ───────────────────────────────────────────────────────────
