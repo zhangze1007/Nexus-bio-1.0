@@ -84,6 +84,7 @@ jobs:
         env:
           BASE_URL: http://localhost:3000
           AUTH_SECRET: ci-e2e-placeholder-secret-for-testing-only
+          NEXUS_API_KEY: e2e-test-key
 
   python-ref:
     name: Python Reference Implementation

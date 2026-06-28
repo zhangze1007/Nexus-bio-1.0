@@ -144,11 +144,12 @@ function tagUnverifiedPayloads(
 
 export async function GET(request: Request) {
   // ── Authentication ──
-  // Verify the request has a valid session. The middleware handles transport-level
-  // auth (API key, same-origin), but the handler must also verify user identity
-  // to prevent unauthenticated data access.
+  // The middleware already validated transport-level auth (API key, same-origin).
+  // Here we resolve the user identity: session preferred, API key fallback.
   const session = await auth();
-  if (!session?.user?.id) {
+  const hasApiKey = Boolean(request.headers.get('x-api-key'));
+  const userId = session?.user?.id ?? (hasApiKey ? 'api-key-user' : null);
+  if (!userId) {
     return errorResponse('Authentication required', 401, undefined, getCorsHeaders(request));
   }
 
