@@ -97,20 +97,17 @@ describe('FBA Performance Benchmarks', () => {
   });
 
   it('Community FBA (ecoli + yeast) completes in <10s', async () => {
-    const { solveCommunityFBA } = await import('../../src/server/fbaEngine');
+    const { solveAuthorityCommunityFBA } = await import('../../src/server/fbaEngine');
 
     const time = await measureTime(async () => {
-      await solveCommunityFBA({
+      await solveAuthorityCommunityFBA({
+        objective: 'biomass',
         ecoli: {
-          species: 'ecoli',
-          objective: 'biomass',
           glucoseUptake: 10,
           oxygenUptake: 20,
           knockouts: [],
         },
         yeast: {
-          species: 'yeast',
-          objective: 'biomass',
           glucoseUptake: 10,
           oxygenUptake: 20,
           knockouts: [],
