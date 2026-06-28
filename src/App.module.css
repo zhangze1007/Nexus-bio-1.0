@@ -1,14 +1,14 @@
 /* ── App Shell ── */
 .shell {
-  background: #000;
-  color: #fff;
+  background: #050505;
+  color: rgba(250, 246, 240, 0.96);
   min-height: 100vh;
 }
 
 /* ── Metrics Strip ── */
 .metrics {
   padding: 48px clamp(16px, 4vw, 40px);
-  background: #000;
+  background: #050505;
   border-top: 0.5px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -27,14 +27,14 @@
 .metricValue {
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 700;
-  color: #fff;
+  color: rgba(250, 246, 240, 0.96);
   letter-spacing: -0.03em;
   line-height: 1;
 }
 
 .metricLabel {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(217, 225, 235, 0.45);
   margin-top: 8px;
   letter-spacing: 0.02em;
 }
@@ -42,7 +42,7 @@
 /* ── CTA Band ── */
 .ctaBand {
   padding: 56px clamp(16px, 4vw, 40px);
-  background: #000;
+  background: #050505;
   text-align: center;
 }
 
@@ -62,7 +62,7 @@
   padding: 12px 28px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.9);
-  color: #0a0a0a;
+  color: #0d0f14;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -89,7 +89,7 @@
   padding: 12px 28px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(250, 246, 240, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 14px;
   font-weight: 500;
@@ -113,7 +113,7 @@
 /* ── Contact Section ── */
 .contact {
   padding: clamp(64px, 10vw, 112px) clamp(16px, 4vw, 40px);
-  background: #000;
+  background: #050505;
 }
 
 .contactInner {
@@ -124,7 +124,7 @@
 .sectionHeading {
   font-size: clamp(1.8rem, 3.5vw, 2.8rem);
   font-weight: 700;
-  color: #fff;
+  color: rgba(250, 246, 240, 0.96);
   letter-spacing: -0.025em;
   line-height: 1.1;
   margin: 0 0 14px;
@@ -132,7 +132,7 @@
 
 .sectionSub {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(217, 225, 235, 0.45);
   margin: 0;
   line-height: 1.65;
   max-width: 420px;
@@ -237,7 +237,7 @@
 }
 
 .footerLink:hover {
-  color: #fff;
+  color: rgba(250, 246, 240, 0.96);
 }
 
 .footerLink:focus-visible {

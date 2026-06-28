@@ -42,7 +42,7 @@
   font-size: clamp(4rem, 11vw, 9.5rem);
   line-height: 0.95;
   letter-spacing: -0.03em;
-  color: #fff;
+  color: rgba(250, 246, 240, 0.96);
   margin: 0 0 clamp(32px, 5vw, 56px);
   text-shadow: 0 0 120px rgba(255, 255, 255, 0.06);
 }
@@ -84,7 +84,7 @@
   outline-offset: 2px;
   font-size: 15px;
   font-weight: 400;
-  color: #e2e8f0;
+  color: rgba(217, 225, 235, 0.68);
 }
 
 .searchInput::placeholder {
@@ -114,7 +114,7 @@
 
 .searchButtonActive {
   background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
+  color: rgba(217, 225, 235, 0.68);
 }
 
 .searchButtonInactive {
