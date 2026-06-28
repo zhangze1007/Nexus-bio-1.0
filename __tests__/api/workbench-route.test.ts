@@ -113,6 +113,8 @@ const minimalValidState = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Reset mock implementations (clearAllMocks doesn't do this)
+  mockListProjectMembers.mockResolvedValue([] as never);
 });
 
 // ── Tests ──

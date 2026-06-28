@@ -53,17 +53,19 @@ describe('Eyring Kinetics', () => {
   describe('michaelisMentenRate', () => {
     it('returns Vmax * S / (Km + S)', () => {
       const rate = michaelisMentenRate(100, 1e-6, 1, 1);
-      // v = (100 * 1e-6 * 1) / (1 + 1) = 5e-5
-      expect(rate).toBeCloseTo(5e-5, 8);
+      // v = (100 * 1e-6 * 1000 * 1) / (1 + 1) = 0.05 mM/s (enzymeConc converted M→mM)
+      expect(rate).toBeCloseTo(0.05, 8);
     });
 
     it('returns approximately Vmax when S >> Km', () => {
       const kcat = 100;
       const enzymeConc = 1e-6;
       const rate = michaelisMentenRate(kcat, enzymeConc, 1000, 0.1);
+      // enzymeConc is converted M→mM, so Vmax = kcat * enzymeConc * 1000
+      const vmaxMm = kcat * enzymeConc * 1000;
       // S/(Km+S) = 1000/1000.1 ≈ 0.9999, so rate ≈ 0.9999 * Vmax
-      expect(rate).toBeGreaterThan(kcat * enzymeConc * 0.99);
-      expect(rate).toBeLessThan(kcat * enzymeConc * 1.01);
+      expect(rate).toBeGreaterThan(vmaxMm * 0.99);
+      expect(rate).toBeLessThan(vmaxMm * 1.01);
     });
 
     it('returns 0 when S = 0', () => {
