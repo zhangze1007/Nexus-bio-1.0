@@ -11,7 +11,7 @@ export default function CTASection() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section className="py-24 lg:py-32 relative overflow-hidden" style={{ backgroundColor: THEME.BG_SHELL }}>
+    <section className="py-24 lg:py-32 relative overflow-hidden" style={{ backgroundColor: THEME.BG_CANVAS }}>
       {/* Background gradient orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -64,9 +64,9 @@ export default function CTASection() {
               className="group flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-semibold transition-all hover:scale-[1.03] hover:shadow-lg"
               style={{
                 fontFamily: THEME.SANS,
-                background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
-                color: THEME.BG_SHELL,
-                boxShadow: "0 4px 24px rgba(191, 220, 205, 0.2)",
+                background: "rgba(255,255,255,0.9)",
+                color: THEME.BG_CANVAS,
+                boxShadow: "0 4px 24px rgba(255,255,255,0.1)",
               }}
             >
               Get Started Free
