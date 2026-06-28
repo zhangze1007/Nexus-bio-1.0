@@ -146,7 +146,7 @@ All tool page simulations (FBA, kinetics, thermodynamics, etc.) work offline.
 │
 ├── src/
 │   ├── App.tsx                       Main application root
-│   ├── types.ts                      Core interfaces: PathwayNode, PathwayEdge, GeneratedPathway
+│   ├── types/                        Type definitions (split per domain)
 │   ├── components/
 │   │   ├── Hero.tsx
 │   │   ├── ThreeScene.tsx            3D pathway visualization (GLSL shaders, pastel palette)
@@ -414,7 +414,7 @@ Features: project versioning, experiment ledger, actor/member tracking, immutabl
 
 ### Unit Tests (Jest)
 
-- **Location:** `__tests__/` directory (76 test files)
+- **Location:** `__tests__/` directory (334 test files)
 - **Config:** `jest.config.cjs` — uses `ts-jest` preset with `jsdom` environment
 - **Run:** `npm test` (or `npx jest` for direct control)
 - **CI:** Tests run on every PR and push to main via `.github/workflows/ci.yml`

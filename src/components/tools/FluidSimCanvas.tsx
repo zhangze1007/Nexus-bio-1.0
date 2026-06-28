@@ -13,7 +13,7 @@
  */
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Color, type InstancedMesh, Object3D } from "three";
 import type { MachineState } from "../../machines/metabolicMachine";
 
@@ -168,10 +168,25 @@ interface FluidSimCanvasProps {
 }
 
 export default function FluidSimCanvas({ reactionRate, stressIndex, state }: FluidSimCanvasProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+    <div ref={containerRef} style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
       {/* Layer 0 — R3F metabolite instances */}
       <Canvas
+        frameloop={visible ? "always" : "demand"}
         camera={{ position: [0, 0, 16], fov: 55 }}
         dpr={[1, typeof window !== "undefined" && window.innerWidth < 1024 ? 1.2 : 1.5]}
         performance={{ min: 0.45 }}

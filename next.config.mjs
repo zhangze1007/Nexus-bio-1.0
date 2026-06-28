@@ -45,7 +45,8 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               /* script-src: no unsafe-eval (verified Three.js/R3F/Sentry don't use eval/Function).
-                 unsafe-inline required for Next.js hydration + Sentry error boundary inline scripts. */
+                 unsafe-inline required for Next.js hydration + Sentry error boundary inline scripts.
+                 R-17: TODO migrate to nonce-based CSP when Next.js supports it natively. */
               "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com 3Dmol.org",
               /* style-src: unsafe-inline required for React style={{}} prop and Next.js CSS-in-JS. */
               "style-src 'self' 'unsafe-inline'",
