@@ -1148,7 +1148,8 @@ export function runInverseFolding(input: InverseFoldingInput): InverseFoldingRes
   while (sequences.length < nSequences && attempts < maxAttempts) {
     attempts++;
 
-    const { sequence, perPositionScores } = sampleSequence(pssm, fixedPositions, undefined, temperature);
+    // Use different seed per attempt to generate diverse sequences
+    const { sequence, perPositionScores } = sampleSequence(pssm, fixedPositions, undefined, temperature, 42 + attempts);
 
     // Skip duplicates
     if (seenSequences.has(sequence)) continue;
