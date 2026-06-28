@@ -119,6 +119,53 @@ const TOOL_EXECUTORS: Record<string, ToolExecutor> = {
       (p.papers as Parameters<typeof runResearchPipeline>[1]) ?? [],
     );
   },
+
+  pathd: async (input) => {
+    const { runPathwayDiscovery } = await import("../../server/pathwayDiscoveryEngine");
+    const p = (input ?? {}) as Record<string, unknown>;
+    const targetName = (p.targetProduct as string) ?? "artemisinin";
+    return runPathwayDiscovery({
+      target: { id: `target-${targetName}`, name: targetName, functionalGroups: [], isPrecursor: false },
+      precursors: [
+        { id: "precursor-acetyl-coa", name: "Acetyl-CoA", functionalGroups: [], isPrecursor: true },
+        { id: "precursor-pyruvate", name: "Pyruvate", functionalGroups: [], isPrecursor: true },
+      ],
+      maxLength: (p.maxSteps as number) ?? 8,
+      topN: (p.maxCandidates as number) ?? 5,
+    });
+  },
+
+  dbtlflow: async (input) => {
+    // DBTL is a workflow tracker — returns iteration status
+    const p = (input ?? {}) as Record<string, unknown>;
+    return {
+      iteration: (p.iteration as number) ?? 1,
+      phase: (p.phase as string) ?? "design",
+      hypothesis: (p.hypothesis as string) ?? "Optimize pathway flux",
+      status: "active",
+      learnedMetrics: p.learnedMetrics ?? {},
+    };
+  },
+
+  cellfree: async (input) => {
+    const { runRobustnessPredictor } = await import("../../server/robustnessPipeline");
+    const p = (input ?? {}) as Record<string, unknown>;
+    return runRobustnessPredictor(
+      (p.singleCellData as Parameters<typeof runRobustnessPredictor>[0]) ?? [],
+      undefined,
+      (p.nTrials as number) ?? 200,
+    );
+  },
+
+  proevol: async (input) => {
+    const { runProteinDesignPipeline } = await import("../../server/proevolPipeline");
+    return runProteinDesignPipeline(input as Parameters<typeof runProteinDesignPipeline>[0]);
+  },
+
+  inversefolding: async (input) => {
+    const { runInverseFolding } = await import("../../server/inverseFoldingEngine");
+    return runInverseFolding(input as Parameters<typeof runInverseFolding>[0]);
+  },
 };
 
 /** Get the executor for a tool, returning error for unregistered tools. */
