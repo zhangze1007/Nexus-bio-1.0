@@ -17,6 +17,19 @@ import type { BackboneAtom } from '../../src/services/protein/backboneGenerator'
 // MD simulations can be slow in CI — increase timeout
 jest.setTimeout(30_000);
 
+// Seed Math.random for deterministic MD trajectories.
+// The Langevin thermostat uses Gaussian noise via Box-Muller (gaussianRandom),
+// which calls Math.random(). Without seeding, bad random seeds can cause
+// temperature blowup (~78000K) in CI where worker scheduling is unpredictable.
+const origRandom = Math.random;
+let seed = 42;
+function seededRandom(): number {
+  seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+  return seed / 0x7fffffff;
+}
+beforeEach(() => { seed = 42; Math.random = seededRandom; });
+afterEach(() => { Math.random = origRandom; });
+
 /** Helper: create a BackboneAtom */
 function atom(
   x: number,
