@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { TOOL_DATA_CONTRACTS } from "../domain/toolDataContract";
 import { advanceToStep, clearGoalContext, findStepIndex, type GoalContext, loadGoalContext } from "../lib/goal-context";
+import { useArtifactStore } from "../store/artifactStore";
 import { THEME } from "../theme";
 
 interface Props {
@@ -31,6 +33,23 @@ export default function NextStepButton({ currentStepId }: Props) {
       clearGoalContext();
       return;
     }
+
+    // Store upstream artifacts in sessionStorage for the next tool
+    const contract = TOOL_DATA_CONTRACTS[nextStep!.id];
+    if (contract) {
+      const artifacts = useArtifactStore.getState().getAllArtifacts();
+      const required: Record<string, unknown> = {};
+      for (const req of contract.requiredArtifacts) {
+        if (artifacts[req]) required[req] = artifacts[req];
+      }
+      for (const opt of contract.optionalArtifacts) {
+        if (artifacts[opt]) required[opt] = artifacts[opt];
+      }
+      if (Object.keys(required).length > 0) {
+        sessionStorage.setItem(`nexus-artifacts-${nextStep!.id}`, JSON.stringify(required));
+      }
+    }
+
     advanceToStep(currentIndex + 1);
     router.push(nextStep!.route);
   }
