@@ -46,7 +46,7 @@ function computeLayout(
 
   const pos = new Map<string, [number, number, number]>();
   nodes.forEach((node, i) => {
-    if (node.position && node.position.some((v) => v !== 0)) {
+    if (node.position?.some((v) => v !== 0)) {
       pos.set(node.id, [...node.position] as [number, number, number]);
     } else {
       const phi = i * 2.399963;
