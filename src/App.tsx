@@ -23,8 +23,6 @@ import { THEME } from "./theme";
 // Marketing sections (embedded in homepage)
 import FeatureGrid from "./components/marketing/FeatureGrid";
 import SocialProof from "./components/marketing/SocialProof";
-import PricingTable from "./components/marketing/PricingTable";
-import TestimonialSection from "./components/marketing/TestimonialSection";
 import CTASection from "./components/marketing/CTASection";
 
 const H = THEME.SANS;
@@ -78,18 +76,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* ── CTA BAND ── */}
-        <section className={styles.ctaBand}>
-          <div className={styles.ctaGroup}>
-            <a href="/tools" className={styles.ctaPrimary} style={{ fontFamily: H }}>
-              Explore Platform →
-            </a>
-            <a href="/tools/metabolic-eng" className={styles.ctaSecondary} style={{ fontFamily: H }}>
-              See it in Action
-            </a>
-          </div>
-        </section>
-
         {/* ── ENGINE ARCHITECTURE ── */}
         <Reveal>
           <FeaturesArchitecture />
@@ -103,16 +89,6 @@ export default function App() {
         {/* ── SOCIAL PROOF ── */}
         <Reveal>
           <SocialProof />
-        </Reveal>
-
-        {/* ── TESTIMONIALS ── */}
-        <Reveal>
-          <TestimonialSection />
-        </Reveal>
-
-        {/* ── PRICING ── */}
-        <Reveal>
-          <PricingTable compact />
         </Reveal>
 
         {/* ── CTA ── */}

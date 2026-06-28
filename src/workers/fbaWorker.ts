@@ -448,7 +448,7 @@ async function fetchFBAResults(params: SimParams): Promise<FBAReadouts | null> {
     fbaCache.params = paramsKey;
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     // Network error - return cached result if available
     return fbaCache.result;
   }

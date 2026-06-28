@@ -391,7 +391,9 @@ export default function LabelGenerator({ items, showPrintButton = true }: LabelG
                   justifyContent: "center",
                   overflow: "hidden",
                 }}
-                dangerouslySetInnerHTML={{ __html: barcodeSvg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') }}
+                dangerouslySetInnerHTML={{
+                  __html: barcodeSvg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ""),
+                }}
               />
 
               {/* Barcode text */}
