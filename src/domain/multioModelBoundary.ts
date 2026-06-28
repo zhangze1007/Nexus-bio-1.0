@@ -24,7 +24,7 @@ export const MULTIO_FORMAL_MODEL_SURFACES_BLOCKED: readonly ClaimSurface[] = [];
 export const MULTIO_MODEL_BOUNDARY: MultiOModelBoundary = {
   toolId: "multio",
   status: "real-multi-omics",
-  validityTier: "real",
+  validityTier: "partial",
   hasReferenceModelBackend: true,
   backendName: "MOFA+ variational Bayes (Python backend)",
   posteriorUncertaintyAvailable: true,

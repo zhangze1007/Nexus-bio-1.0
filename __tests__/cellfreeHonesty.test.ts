@@ -110,7 +110,7 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     expect(boundary).toMatchObject({
       toolId: 'cellfree',
       status: 'real-tx-tl-ode',
-      validityTier: 'real',
+      validityTier: 'partial',
       hasOdeStructure: true,
       hasTxTlTerms: true,
       hasResourceTerms: true,
@@ -143,10 +143,10 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     const assumptionById = new Map(assumptions.map((assumption) => [assumption.id, assumption]));
     const registryEntry = TOOL_DEFINITIONS.find((tool) => tool.id === 'cellfree');
 
-    expect(TOOL_VALIDITY.cellfree.level).toBe('real');
-    expect(TOOL_VALIDITY.cellfree.caption).toContain('Resource-aware TX-TL ODE structure exists');
-    expect(TOOL_VALIDITY.cellfree.caption).toContain('calibration');
-    expect(TOOL_VALIDITY.cellfree.caption).toContain('uncertainty');
+    expect(TOOL_VALIDITY.cellfree.level).toBe('partial');
+    expect(TOOL_VALIDITY.cellfree.caption).toContain('Resource-aware TX-TL ODE structure');
+    expect(TOOL_VALIDITY.cellfree.caption).toContain('NOT calibrated');
+    expect(TOOL_VALIDITY.cellfree.caption).toContain('literature-sourced');
     expect(registryEntry?.summary).toContain('parameter-sourcing limits');
     expect(registryEntry?.focus).toContain('heuristic IVIV estimates');
 
@@ -228,7 +228,7 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
 
     expect(cellfreePage).toContain('heuristic in-vitro-to-in-vivo');
     expect(registry).toContain('parameter-sourcing limits');
-    expect(validity).toContain('Resource-aware TX-TL ODE structure exists');
+    expect(validity).toContain('Resource-aware TX-TL ODE structure');
     expect(workflowRegistry).toContain('parameter sourcing, calibration, and uncertainty remain incomplete');
     expect(readme).toContain('heuristic expression estimates');
 

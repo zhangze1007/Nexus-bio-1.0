@@ -49,9 +49,9 @@ describe('TOOL_VALIDITY', () => {
     expect(TOOL_VALIDITY.nexai.level).toBe('real');
   });
 
-  it('cethx, multio, and fbasim are all marked as real', () => {
+  it('cethx and fbasim are marked as real, multio as partial', () => {
     expect(TOOL_VALIDITY.cethx.level).toBe('real');
-    expect(TOOL_VALIDITY.multio.level).toBe('real');
+    expect(TOOL_VALIDITY.multio.level).toBe('partial');
     expect(TOOL_VALIDITY.fbasim.level).toBe('real');
   });
 });

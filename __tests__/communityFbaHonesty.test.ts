@@ -99,10 +99,10 @@ describe('community FBA honesty boundary', () => {
       mode: 'community',
       status: 'supported-joint-community-lp',
       toolId: 'fbasim-community',
-      validityTier: 'real',
+      validityTier: 'partial',
       payloadAllowed: true,
     });
-    expect(communityBoundary.assumptionIds).toContain('fbasim-community.joint_lp_with_exchange_pools');
+    expect(communityBoundary.assumptionIds).toContain('fbasim-community.two_independent_lps');
     expect(communityBoundary.formalClaimSurfacesBlocked).toEqual([]);
     expect(isCommunityFbaFormalSurfaceBlocked('payload')).toBe(false);
     expect(isCommunityFbaFormalSurfaceBlocked('export')).toBe(false);
@@ -111,25 +111,25 @@ describe('community FBA honesty boundary', () => {
     expect(isCommunityFbaFormalSurfaceBlocked('external-handoff')).toBe(false);
   });
 
-  it('keeps fbasim-community assumptions honest about joint LP limitations', () => {
+  it('keeps fbasim-community assumptions honest about independent LP limitations', () => {
     const communityAssumptions = TOOL_ASSUMPTIONS['fbasim-community'];
-    const jointLpAssumption = communityAssumptions.find((assumption) =>
-      assumption.id === 'fbasim-community.joint_lp_with_exchange_pools',
+    const independentLpAssumption = communityAssumptions.find((assumption) =>
+      assumption.id === 'fbasim-community.two_independent_lps',
     );
 
-    expect(jointLpAssumption).toBeDefined();
-    expect(jointLpAssumption).toMatchObject({
+    expect(independentLpAssumption).toBeDefined();
+    expect(independentLpAssumption).toMatchObject({
       severity: 'info',
       toolId: 'fbasim-community',
     });
-    expect(jointLpAssumption?.statement.toLowerCase()).toContain('joint community lp');
+    expect(independentLpAssumption?.statement.toLowerCase()).toContain('independent');
   });
 
-  it('fbasim is real with joint community LP description', () => {
+  it('fbasim is real with honest community mode description', () => {
     expect(TOOL_VALIDITY.fbasim.level).toBe('real');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('Single-species FBA uses a real two-phase simplex LP');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('joint community LP');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('shared exchange metabolite pool constraints');
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('two-phase simplex LP');
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('independent LPs');
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('NOT a joint LP');
   });
 
   it('keeps demo community outputs off formal claim surfaces via fbasim policy tiers', () => {

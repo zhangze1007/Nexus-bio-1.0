@@ -189,11 +189,11 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
   // Sub-tier: community/two-species mode of fbasim (canonical, partial)
   "fbasim-community": [
     {
-      id: "fbasim-community.joint_lp_with_exchange_pools",
+      id: "fbasim-community.two_independent_lps",
       toolId: "fbasim-community",
       category: "mathematical",
       statement:
-        "Joint community LP with shared exchange metabolite pool constraints (4 metabolites) and weighted community biomass objective.",
+        "Two independent single-species LPs with heuristic cross-feeding scaling. NOT a joint community LP — exchange fluxes are post-hoc scaled, not LP decision variables.",
       severity: "info",
     },
     {

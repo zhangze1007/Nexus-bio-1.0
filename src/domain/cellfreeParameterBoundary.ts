@@ -29,7 +29,7 @@ export const CELLFREE_FORMAL_PARAMETER_SURFACES_BLOCKED: readonly ClaimSurface[]
 export const CELLFREE_PARAMETER_BOUNDARY: CellFreeParameterBoundary = {
   toolId: "cellfree",
   status: "real-tx-tl-ode",
-  validityTier: "real",
+  validityTier: "partial",
   hasOdeStructure: true,
   hasTxTlTerms: true,
   hasResourceTerms: true,

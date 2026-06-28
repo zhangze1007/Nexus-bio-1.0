@@ -88,7 +88,7 @@ describe('MultiO model honesty boundary', () => {
     expect(boundary).toMatchObject({
       toolId: 'multio',
       status: 'real-multi-omics',
-      validityTier: 'real',
+      validityTier: 'partial',
       hasReferenceModelBackend: true,
       backendName: 'MOFA+ variational Bayes (Python backend)',
       posteriorUncertaintyAvailable: true,
@@ -115,9 +115,9 @@ describe('MultiO model honesty boundary', () => {
     const assumptionById = new Map(assumptions.map((assumption) => [assumption.id, assumption]));
     const registryEntry = TOOL_DEFINITIONS.find((tool) => tool.id === 'multio');
 
-    expect(TOOL_VALIDITY.multio.level).toBe('real');
+    expect(TOOL_VALIDITY.multio.level).toBe('partial');
     expect(TOOL_VALIDITY.multio.caption).toContain('MOFA+');
-    expect(TOOL_VALIDITY.multio.caption).toContain('not a VAE');
+    expect(TOOL_VALIDITY.multio.caption).toContain('NOT a VAE');
     expect(TOOL_VALIDITY.multio.caption).toContain('synthetic demo data');
     expect(registryEntry?.tags).not.toContain('vae');
     expect(registryEntry?.tags).toContain('deterministic');
