@@ -1,0 +1,417 @@
+openapi: 3.0.3
+info:
+  title: Nexus-Bio API
+  description: |
+    Synthetic biology AI platform API. Provides pathway analysis, protein structure
+    prediction, metabolic modeling, and research assistance.
+  version: 1.0.0
+  contact:
+    name: Zhang Ze Foo
+    email: fuchanze@gmail.com
+    url: https://linkedin.com/in/zhangze-foo-3575ba359
+  license:
+    name: MIT
+
+servers:
+  - url: https://nexus-bio-1-0.vercel.app
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+paths:
+  /api/analyze:
+    post:
+      summary: AI Analysis
+      description: |
+        Primary AI endpoint. Analyzes research queries using Groq (primary) with
+        Gemini fallback. Returns structured analysis with citations.
+      operationId: analyze
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  description: Research query or analysis request
+                  example: "Design a pathway for artemisinin production in S. cerevisiae"
+                context:
+                  type: string
+                  description: Additional context for the analysis
+                mode:
+                  type: string
+                  enum: [analyze, search, explain]
+                  default: analyze
+      responses:
+        '200':
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+        '503':
+          description: AI providers unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/alphafold:
+    get:
+      summary: AlphaFold Structure Lookup
+      description: Fetch PDB structure from AlphaFold by UniProt ID.
+      operationId: alphafoldGet
+      tags: [Protein]
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{6,10}$'
+          description: UniProt ID
+          example: P00533
+      responses:
+        '200':
+          description: PDB structure
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Invalid ID
+        '404':
+          description: Structure not found
+    post:
+      summary: AlphaFold Complex Prediction
+      description: |
+        AF3-style complex prediction or DiffDock-style molecular docking.
+        Falls back to local heuristic if no backend is configured.
+      operationId: alphafoldPost
+      tags: [Protein]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlphafoldRequest'
+      responses:
+        '200':
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlphafoldResponse'
+
+  /api/pubchem:
+    get:
+      summary: PubChem Lookup
+      description: |
+        Fetch 3D SDF or molecular properties from PubChem.
+        Modes: by CID, by name, autocomplete suggestions.
+      operationId: pubchemGet
+      tags: [Chemistry]
+      parameters:
+        - name: cid
+          in: query
+          schema:
+            type: string
+          description: PubChem Compound ID
+          example: "68827"
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Compound name
+          example: "artemisinin"
+        - name: properties
+          in: query
+          schema:
+            type: string
+            enum: ["true"]
+          description: Return JSON properties instead of SDF
+        - name: suggest
+          in: query
+          schema:
+            type: string
+          description: Autocomplete query
+      responses:
+        '200':
+          description: SDF data or properties
+        '400':
+          description: Invalid parameters
+        '404':
+          description: Compound not found
+
+  /api/kegg:
+    get:
+      summary: KEGG Pathway Lookup
+      description: |
+        Query KEGG database for compounds, pathways, and reactions.
+        Modes: compound search, pathway links, reaction details.
+      operationId: keggGet
+      tags: [Database]
+      parameters:
+        - name: compound
+          in: query
+          schema:
+            type: string
+          description: Compound name to search
+          example: "glucose"
+        - name: pathway
+          in: query
+          schema:
+            type: string
+            pattern: '^C\d{5}$'
+          description: KEGG compound ID
+          example: "C00024"
+        - name: reaction
+          in: query
+          schema:
+            type: string
+          description: KEGG reaction ID or EC number
+          example: "R00238"
+      responses:
+        '200':
+          description: KEGG data
+        '400':
+          description: Invalid parameters
+        '502':
+          description: KEGG API error
+
+  /api/fba:
+    post:
+      summary: Flux Balance Analysis
+      description: |
+        Run FBA simulation for single-species or community metabolic models.
+        Supports biomass, ATP, and product objectives with gene knockouts.
+      operationId: fbaPost
+      tags: [Simulation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FBARequest'
+      responses:
+        '200':
+          description: FBA result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FBAResponse'
+
+  /api/workbench:
+    get:
+      summary: Get Workbench State
+      description: Retrieve current workbench state with audit trail.
+      operationId: workbenchGet
+      tags: [Workbench]
+      parameters:
+        - name: x-workbench-project-id
+          in: header
+          schema:
+            type: string
+          description: Project ID (optional)
+      responses:
+        '200':
+          description: Workbench state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkbenchResponse'
+        '401':
+          description: Authentication required
+    put:
+      summary: Update Workbench State
+      description: Save workbench state with revision conflict detection.
+      operationId: workbenchPut
+      tags: [Workbench]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkbenchPutRequest'
+      responses:
+        '200':
+          description: State saved
+        '409':
+          description: Revision conflict (stale data)
+
+  /api/gdpr/delete:
+    post:
+      summary: GDPR Deletion Request
+      description: Request deletion of user data (Article 17).
+      operationId: gdprDelete
+      tags: [Compliance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: Deletion request created
+        '401':
+          description: Authentication required
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+        code:
+          type: string
+        requestId:
+          type: string
+
+    AnalyzeResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        answer:
+          type: string
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              url:
+                type: string
+              snippet:
+                type: string
+
+    AlphafoldRequest:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [complex, dock]
+        proteins:
+          type: array
+          items:
+            type: object
+            properties:
+              sequence:
+                type: string
+              id:
+                type: string
+        ligands:
+          type: array
+          items:
+            type: object
+            properties:
+              smiles:
+                type: string
+              id:
+                type: string
+        proteinPdb:
+          type: string
+        ligandSmiles:
+          type: string
+
+    AlphafoldResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        pdb:
+          type: string
+        confidence:
+          type: array
+          items:
+            type: number
+        model:
+          type: string
+        warning:
+          type: string
+
+    FBARequest:
+      type: object
+      properties:
+        species:
+          type: string
+          enum: [ecoli, yeast]
+        objective:
+          type: string
+          enum: [biomass, atp, product]
+        glucoseUptake:
+          type: number
+        oxygenUptake:
+          type: number
+        knockouts:
+          type: array
+          items:
+            type: string
+
+    FBAResponse:
+      type: object
+      properties:
+        fluxes:
+          type: object
+        growthRate:
+          type: number
+        atpYield:
+          type: number
+        carbonEfficiency:
+          type: number
+        feasible:
+          type: boolean
+
+    WorkbenchResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        state:
+          type: object
+        backend:
+          type: object
+        members:
+          type: array
+        experiments:
+          type: array
+        audit:
+          type: array
+        history:
+          type: array
+
+    WorkbenchPutRequest:
+      type: object
+      properties:
+        state:
+          type: object
+        revision:
+          type: number

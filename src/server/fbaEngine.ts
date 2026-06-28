@@ -209,6 +209,19 @@ const ECOLI_NETWORK: NetworkSpec = {
   },
 };
 
+/**
+ * Yeast FBA network (R-30: SIMPLIFIED — no TCA cycle)
+ *
+ * This is a minimal glycolysis-only model for demonstration purposes.
+ * It does NOT include:
+ * - TCA cycle (citrate synthase, isocitrate dehydrogenase, α-ketoglutarate dehydrogenase, etc.)
+ * - Electron transport chain
+ * - Pentose phosphate pathway
+ * - Amino acid biosynthesis
+ *
+ * For quantitative yeast metabolic modeling, use the Yeast8 consensus model
+ * (Lu et al., 2019) or yEcoGSY (Sánchez et al., 2017).
+ */
 const YEAST_NETWORK: NetworkSpec = {
   species: "yeast",
   reactions: [
