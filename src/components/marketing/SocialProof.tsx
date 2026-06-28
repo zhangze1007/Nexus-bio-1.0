@@ -30,10 +30,7 @@ export default function SocialProof() {
           >
             Story
           </span>
-          <h2
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-          >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
             Built by a Researcher, for Researchers
           </h2>
         </motion.div>
@@ -52,13 +49,9 @@ export default function SocialProof() {
         >
           <div className="flex items-start gap-4 mb-6">
             <Quote size={24} style={{ color: THEME.LILAC, opacity: 0.5 }} />
-            <p
-              className="text-lg leading-relaxed"
-              style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}
-            >
-              Nexus-Bio was built in 48 hours by a Malaysian student on gap year,
-              on a tablet. It started as a tool to explore metabolic pathways and
-              grew into a full synthetic biology operating system with 14 integrated
+            <p className="text-lg leading-relaxed" style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}>
+              Nexus-Bio was built in 48 hours by a Malaysian student on gap year, on a tablet. It started as a tool to
+              explore metabolic pathways and grew into a full synthetic biology operating system with 14 integrated
               research tools.
             </p>
           </div>
@@ -72,16 +65,10 @@ export default function SocialProof() {
               <GraduationCap size={18} color={THEME.BG_CANVAS} />
             </div>
             <div>
-              <p
-                className="text-sm font-semibold"
-                style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}
-              >
+              <p className="text-sm font-semibold" style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}>
                 Zhang Ze Foo
               </p>
-              <p
-                className="text-xs"
-                style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}
-              >
+              <p className="text-xs" style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}>
                 STPM Student &middot; Malaysia
               </p>
             </div>
@@ -122,21 +109,11 @@ export default function SocialProof() {
                 border: `1px solid ${THEME.BORDER}`,
               }}
             >
-              <stat.icon
-                size={24}
-                className="mx-auto mb-3"
-                style={{ color: stat.color }}
-              />
-              <p
-                className="text-lg font-bold mb-1"
-                style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-              >
+              <stat.icon size={24} className="mx-auto mb-3" style={{ color: stat.color }} />
+              <p className="text-lg font-bold mb-1" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
                 {stat.value}
               </p>
-              <p
-                className="text-xs"
-                style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-              >
+              <p className="text-xs" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
                 {stat.label}
               </p>
             </motion.div>

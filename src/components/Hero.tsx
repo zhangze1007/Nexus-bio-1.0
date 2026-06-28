@@ -489,9 +489,7 @@ export default function Hero() {
                       className={styles.previewItem}
                       style={activeIndex === idx ? { background: THEME.BORDER } : undefined}
                     >
-                      <span style={{ fontFamily: SANS, fontSize: "13px", color: THEME.INK }}>
-                        {p.name}
-                      </span>
+                      <span style={{ fontFamily: SANS, fontSize: "13px", color: THEME.INK }}>{p.name}</span>
                       <span
                         style={{
                           marginLeft: "auto",
@@ -507,10 +505,7 @@ export default function Hero() {
                 })}
               {previewLoading && preview.length === 0 ? (
                 <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                  <Loader2
-                    size={12}
-                    style={{ color: THEME.INK, animation: "spin 1s linear infinite" }}
-                  />
+                  <Loader2 size={12} style={{ color: THEME.INK, animation: "spin 1s linear infinite" }} />
                   <span style={{ fontFamily: MONO, fontSize: "11px", color: "rgba(148,163,184,0.6)" }}>
                     Searching OpenAlex…
                   </span>
