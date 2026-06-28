@@ -28,6 +28,8 @@
  *     - Single-chain only (no complex interface design)
  */
 
+import { SeededRNG } from "../utils/seededRng";
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface BackboneAtom {
@@ -521,8 +523,14 @@ function computePSSM(
     const node = graph.nodes[i];
     const scores = new Array(20).fill(0);
 
-    // 1. BLOSUM62 background frequency (uniform prior)
-    const bgFreq = new Array(20).fill(1.0 / 20);
+    // 1. BLOSUM62 background frequency (from Robinson & Robinson, 1991)
+    // NOT uniform — reflects actual amino acid abundance in proteins
+    const bgFreq = [
+      0.078, 0.051, 0.045, 0.054, 0.024, // A, R, N, D, C
+      0.034, 0.054, 0.074, 0.026, 0.068, // Q, E, G, H, I
+      0.099, 0.058, 0.025, 0.047, 0.039, // L, K, M, F, P
+      0.057, 0.051, 0.013, 0.032, 0.073, // S, T, W, Y, V
+    ];
 
     // 2. Structural compatibility scoring
     for (let a = 0; a < 20; a++) {
@@ -596,7 +604,9 @@ function sampleSequence(
   fixedPositions?: number[],
   wildType?: string,
   temperature: number = 0.5,
+  seed: number = 42,
 ): { sequence: string; perPositionScores: number[] } {
+  const rng = new SeededRNG(seed);
   const n = pssm.length;
   let sequence = "";
   const perPositionScores: number[] = [];
@@ -610,7 +620,7 @@ function sampleSequence(
 
     // Sample from distribution
     const probs = pssm[i];
-    const r = Math.random();
+    const r = rng.next();
     let cumulative = 0;
     let selectedIdx = 0;
 
