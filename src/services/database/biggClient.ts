@@ -25,12 +25,35 @@ export interface FullBiGGModel {
   metaboliteCount: number;
 }
 
-const MOCK_ECOLI_MODEL: BiGGModel = {
-  bigg_id: "e_coli_core",
-  organism: "Escherichia coli str. K-12 substr. MG1655",
-  reaction_count: 95,
-  metabolite_count: 72,
-  gene_count: 137,
+const MOCK_MODELS: BiGGModel[] = [
+  {
+    bigg_id: "e_coli_core",
+    organism: "Escherichia coli str. K-12 substr. MG1655",
+    reaction_count: 95,
+    metabolite_count: 72,
+    gene_count: 137,
+  },
+  {
+    bigg_id: "iJO1366",
+    organism: "Escherichia coli str. K-12 substr. MG1655 (iJO1366)",
+    reaction_count: 2583,
+    metabolite_count: 1805,
+    gene_count: 1366,
+  },
+  {
+    bigg_id: "iMM904",
+    organism: "Saccharomyces cerevisiae (iMM904)",
+    reaction_count: 1577,
+    metabolite_count: 1228,
+    gene_count: 904,
+  },
+];
+
+/** Model ID mapping for common names */
+export const MODEL_IDS: Record<string, string> = {
+  ecoli_core: "e_coli_core",
+  ecoli_iJO1366: "iJO1366",
+  yeast_iMM904: "iMM904",
 };
 
 export async function listBiGGModels(): Promise<FallbackResult<BiGGModel[]>> {
@@ -41,19 +64,20 @@ export async function listBiGGModels(): Promise<FallbackResult<BiGGModel[]>> {
       const data = await res.json();
       return data.results ?? [];
     },
-    [MOCK_ECOLI_MODEL],
+    MOCK_MODELS,
     "BiGG",
   );
 }
 
 export async function getBiGGModel(modelId: string): Promise<FallbackResult<BiGGModel>> {
+  const fallback = MOCK_MODELS.find((m) => m.bigg_id === modelId) ?? MOCK_MODELS[0];
   return fetchWithFallback(
     async () => {
       const res = await fetch(`/api/bigg?type=model&id=${modelId}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`BiGG returned ${res.status}`);
       return res.json();
     },
-    MOCK_ECOLI_MODEL,
+    fallback,
     "BiGG",
   );
 }
