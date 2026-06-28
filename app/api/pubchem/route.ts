@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
         const propUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName/JSON`;
         const propRes = await fetch(propUrl, {
           headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
+          signal: AbortSignal.timeout(10000),
         });
         if (!propRes.ok) return errorResponse(`No properties for CID ${cid}`, 404, undefined, getCors(req));
         const propData = await propRes.text();
@@ -73,6 +74,7 @@ export async function GET(req: NextRequest) {
       try {
         const res = await fetch(attemptUrl, {
           headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
+          signal: AbortSignal.timeout(10000),
         });
         if (!res.ok) continue;
         const sdf = await res.text();
@@ -94,6 +96,7 @@ export async function GET(req: NextRequest) {
       const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(cleanName)}/cids/JSON`;
       const searchRes = await fetch(searchUrl, {
         headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!searchRes.ok) return errorResponse('Name not found in PubChem', 404, undefined, getCors(req));
@@ -112,6 +115,7 @@ export async function GET(req: NextRequest) {
         try {
           const sdfRes = await fetch(sdfUrl, {
             headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
+            signal: AbortSignal.timeout(10000),
           });
           if (!sdfRes.ok) continue;
           const sdf = await sdfRes.text();

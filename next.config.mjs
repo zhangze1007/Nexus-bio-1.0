@@ -16,10 +16,7 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'three', '@react-three/drei', 'xstate', '@xstate/react'],
   },
 
-  /* Skip type checking during build (done in CI) to reduce memory usage */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  /* Type checking runs in CI before build */
 
   /* Prevent native modules from being bundled into client code */
   serverExternalPackages: ['better-sqlite3', 'highs'],

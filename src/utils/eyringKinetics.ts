@@ -55,7 +55,9 @@ export function eyringRateConstant(deltaG_ddagger: number, temperature: number):
  */
 export function michaelisMentenRate(kcat: number, enzymeConc: number, substrate: number, km: number): number {
   if (km + substrate === 0) return 0;
-  return (kcat * enzymeConc * substrate) / (km + substrate);
+  // Convert enzymeConc from M to mM so result is in mM/s
+  const enzymeConcMm = enzymeConc * 1000;
+  return (kcat * enzymeConcMm * substrate) / (km + substrate);
 }
 
 /**

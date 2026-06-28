@@ -167,7 +167,6 @@ const ECOLI_NETWORK: NetworkSpec = {
     atp: [
       { name: "GAPD", coef: 1 },
       { name: "PYK", coef: 1 },
-      { name: "PDH", coef: 1.2 },
       { name: "BIOMASS", coef: 0.15 },
     ],
   },

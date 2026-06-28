@@ -95,7 +95,7 @@ export const THEME = {
   // ── Surface aliases (backward compat with PATHD_THEME lowercase) ──
   PAPER: "#0d0f14",
   PAPER_WARM: "#10131a",
-  PAPER_ELEVATED: "rgba(250,246,240,0.96)",
+  PAPER_ELEVATED: "rgba(255,255,255,0.06)",
   PAPER_BORDER: "rgba(255, 255, 255, 0.08)",
   PAPER_LABEL: "rgba(217, 225, 235, 0.68)",
   PAPER_VALUE: "rgba(250, 246, 240, 0.96)",
@@ -217,7 +217,7 @@ export const THEME = {
   /** @deprecated Use PAPER_WARM */
   paperWarm: "#10131a",
   /** @deprecated Use PAPER_ELEVATED */
-  paperElevated: "rgba(250,246,240,0.96)",
+  paperElevated: "rgba(255,255,255,0.06)",
   /** @deprecated Use PAPER_BORDER */
   paperBorder: "rgba(255, 255, 255, 0.08)",
   /** @deprecated Use PAPER_LABEL */

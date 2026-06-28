@@ -164,7 +164,7 @@
 .previewItem:hover,
 .previewItem:focus-visible {
   background: rgba(255, 255, 255, 0.04);
-  outline: none;
+  outline: 2px solid rgba(175, 195, 214, 0.52);
 }
 
 .previewTitle {
@@ -202,7 +202,7 @@
 .previewFooterButton:hover,
 .previewFooterButton:focus-visible {
   color: rgba(255, 255, 255, 0.8);
-  outline: none;
+  outline: 2px solid rgba(175, 195, 214, 0.52);
 }
 
 /* ── Tagline ── */

@@ -153,7 +153,9 @@ export async function GET(request: Request) {
     return errorResponse('Authentication required', 401, undefined, getCorsHeaders(request));
   }
 
-  const { artifactId, projectId, actorId } = getProjectScope(request);
+  const { artifactId, projectId } = getProjectScope(request);
+  // Use authenticated userId as actorId — never trust client-provided x-workbench-actor-id
+  const actorId = userId;
   await getWorkbenchDb();
   const useArtifactScope = Boolean(artifactId);
   const explicitScope = useArtifactScope ? { forceExplicit: true as const } : undefined;
@@ -210,11 +212,13 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  // ── Auth chain ──
-  // Requests reaching this handler have already passed middleware.ts authentication.
-  // middleware.ts checks: (1) Sec-Fetch-Site: same-origin, (2) X-API-Key header,
-  // (3) Authorization: Bearer token. Unauthenticated requests get a 401 before
-  // reaching this handler. Additional CSRF and payload validation follows below.
+  // ── Authentication ──
+  const session = await auth();
+  const hasApiKey = Boolean(request.headers.get('x-api-key'));
+  const userId = session?.user?.id ?? (hasApiKey ? 'api-key-user' : null);
+  if (!userId) {
+    return errorResponse('Authentication required', 401, undefined, getCorsHeaders(request));
+  }
 
   // ── Origin checking (CSRF protection) ──
   const origin = request.headers.get('origin') ?? '';
@@ -239,7 +243,9 @@ export async function PUT(request: Request) {
     return errorResponse('Request body too large', 413, undefined, getCorsHeaders(request));
   }
 
-  const { artifactId: scopedArtifactId, projectId: scopedProjectId, actorId } = getProjectScope(request);
+  const { artifactId: scopedArtifactId, projectId: scopedProjectId } = getProjectScope(request);
+  // Use authenticated userId as actorId — never trust client-provided x-workbench-actor-id
+  const actorId = userId;
   const body = await request.json().catch(() => null);
 
   // ── Zod envelope validation ──
@@ -275,6 +281,17 @@ export async function PUT(request: Request) {
     ? resolvedArtifactId!
     : incoming.project?.id ?? scopedProjectId ?? 'default-workbench';
   const explicitScope = needsArtifactScope ? { forceExplicit: true as const } : undefined;
+
+  // ── Project membership verification (R-19) ──
+  if (scopeId && actorId) {
+    const members = await listProjectMembers(scopeId, 64, explicitScope);
+    if (members.length > 0 && !members.some(m => m.actorId === actorId)) {
+      return NextResponse.json(
+        { ok: false, error: 'Access denied' },
+        { status: 403, headers: getCorsHeaders(request) },
+      );
+    }
+  }
   if (needsArtifactScope && process.env.NODE_ENV !== 'production') {
     console.info('[api/workbench] canonical artifact save request payload', {
       scopedArtifactId: scopedArtifactId ?? null,

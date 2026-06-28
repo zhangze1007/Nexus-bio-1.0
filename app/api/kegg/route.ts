@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
   try {
     // Mode 1: Search compound by name → list of KEGG compound IDs
     if (compound) {
-      const sanitized = compound.replace(/[^a-zA-Z0-9\s\-()]/g, '').slice(0, 100);
-      const res = await fetch(`${KEGG_BASE}/find/compound/${encodeURIComponent(sanitized)}`);
+      const sanitized = compound.replace(/[^a-zA-Z0-9\s\-]/g, '').slice(0, 100);
+      const res = await fetch(`${KEGG_BASE}/find/compound/${encodeURIComponent(sanitized)}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) {
         return NextResponse.json({ ok: false, error: 'KEGG compound search failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
       }
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       if (!/^C\d{5}$/.test(pathway)) {
         return NextResponse.json({ ok: false, error: 'Invalid KEGG compound ID (expected C#####)' }, { status: 400, headers: corsHeaders(req) });
       }
-      const res = await fetch(`${KEGG_BASE}/link/pathway/${pathway}`);
+      const res = await fetch(`${KEGG_BASE}/link/pathway/${pathway}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) {
         return NextResponse.json({ ok: false, error: 'KEGG pathway link failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
       }
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
 
       // If it's an EC number (e.g. "2.7.1.1"), resolve to a KEGG reaction ID first
       if (/^\d+\.\d+\.\d+\.\d+(-)?$/.test(reaction)) {
-        const linkRes = await fetch(`${KEGG_BASE}/link/reaction/ec:${reaction}`);
+        const linkRes = await fetch(`${KEGG_BASE}/link/reaction/ec:${reaction}`, { signal: AbortSignal.timeout(10000) });
         if (!linkRes.ok) {
           return NextResponse.json({ ok: false, error: 'KEGG EC→reaction link failed', status: linkRes.status }, { status: 502, headers: corsHeaders(req) });
         }
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ ok: false, error: 'Invalid KEGG reaction ID (expected R##### or EC number)' }, { status: 400, headers: corsHeaders(req) });
       }
 
-      const res = await fetch(`${KEGG_BASE}/get/${reactionId}`);
+      const res = await fetch(`${KEGG_BASE}/get/${reactionId}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) {
         return NextResponse.json({ ok: false, error: 'KEGG reaction fetch failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
       }

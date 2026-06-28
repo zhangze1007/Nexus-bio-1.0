@@ -141,9 +141,12 @@ function isHighSecurityRoute(pathname: string): boolean {
  * @param highSecurity - If true, skip same-origin trust (admin, GDPR, health/env routes)
  */
 async function isAuthenticated(req: NextRequest, highSecurity = false): Promise<boolean> {
-  // Same-origin requests are trusted for regular routes (browser-initiated from the app)
+  // Same-origin requests are trusted for GET/HEAD/OPTIONS only (read-only browser requests)
+  // State-changing methods (POST, PUT, DELETE, PATCH) always require explicit credentials
   // High-security routes (admin, GDPR, health/env) always require explicit credentials
-  if (!highSecurity) {
+  const method = req.method.toUpperCase();
+  const isReadOnly = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+  if (!highSecurity && isReadOnly) {
     const secFetchSite = req.headers.get('sec-fetch-site');
     if (secFetchSite === 'same-origin') return true;
   }

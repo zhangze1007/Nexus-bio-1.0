@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
     const apiUrl = `https://alphafold.ebi.ac.uk/api/prediction/${uniprotId}`;
     const apiRes = await fetch(apiUrl, {
       headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(8000),
     });
 
     if (apiRes.ok) {
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest) {
       const pdbUrl = entry?.pdbUrl;
 
       if (pdbUrl && isAllowedPdbUrl(pdbUrl)) {
-        const pdbRes = await fetch(pdbUrl);
+        const pdbRes = await fetch(pdbUrl, { signal: AbortSignal.timeout(8000) });
         if (pdbRes.ok) {
           const pdbData = await pdbRes.text();
           if (pdbData && pdbData.length > MIN_VALID_PDB_LENGTH) {
@@ -100,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     // Strategy 2: Try the legacy direct file URL as fallback
     const legacyUrl = `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.pdb`;
-    const legacyRes = await fetch(legacyUrl);
+    const legacyRes = await fetch(legacyUrl, { signal: AbortSignal.timeout(8000) });
 
     if (legacyRes.ok) {
       const pdbData = await legacyRes.text();
@@ -140,6 +141,13 @@ export async function POST(req: NextRequest) {
   const jsonHeaders = { 'Content-Type': 'application/json', ...getCorsHeaders(req) };
 
   try {
+    const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
+    if (contentLength > 500_000) {
+      return NextResponse.json(
+        { ok: false, error: "Request body too large (max 500KB)", requestId },
+        { status: 413, headers: jsonHeaders },
+      );
+    }
     const body: AlphafoldRequestBody = await req.json();
     const mode = body.mode ?? "complex";
 
