@@ -36,10 +36,10 @@ export default function MarketingNav() {
             <div
               className="flex items-center justify-center w-8 h-8 rounded-lg"
               style={{
-                background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 100%)",
+                background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
               }}
             >
-              <Dna size={16} color="#0d0f14" strokeWidth={2.5} />
+              <Dna size={16} color={THEME.BG_SHELL} strokeWidth={2.5} />
             </div>
             <span className="text-lg font-bold tracking-tight" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
               Nexus-Bio
@@ -73,8 +73,8 @@ export default function MarketingNav() {
               className="px-5 py-2 rounded-lg text-sm font-semibold transition-all hover:scale-[1.02]"
               style={{
                 fontFamily: THEME.SANS,
-                background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 100%)",
-                color: "#0d0f14",
+                background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
+                color: THEME.BG_SHELL,
               }}
             >
               Get Started
@@ -128,8 +128,8 @@ export default function MarketingNav() {
               className="block text-center px-5 py-2.5 rounded-lg text-sm font-semibold mt-2"
               style={{
                 fontFamily: THEME.SANS,
-                background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 100%)",
-                color: "#0d0f14",
+                background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
+                color: THEME.BG_SHELL,
               }}
               onClick={() => setMobileOpen(false)}
             >

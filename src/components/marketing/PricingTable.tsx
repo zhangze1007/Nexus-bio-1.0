@@ -99,8 +99,8 @@ function TierCard({ tier, index }: { tier: PricingTier; index: number }) {
           className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider"
           style={{
             fontFamily: THEME.MONO,
-            background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 100%)",
-            color: "#0d0f14",
+            background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
+            color: THEME.BG_SHELL,
           }}
         >
           {tier.badge}
@@ -157,8 +157,8 @@ function TierCard({ tier, index }: { tier: PricingTier; index: number }) {
           fontFamily: THEME.SANS,
           ...(tier.highlighted
             ? {
-                background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 100%)",
-                color: "#0d0f14",
+                background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
+                color: THEME.BG_SHELL,
                 boxShadow: "0 4px 24px rgba(191, 220, 205, 0.2)",
               }
             : {
@@ -179,7 +179,7 @@ export default function PricingTable({ compact = false }: { compact?: boolean })
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section className={compact ? "py-16" : "py-24 lg:py-32"} style={{ backgroundColor: "#0d0f14" }}>
+    <section className={compact ? "py-16" : "py-24 lg:py-32"} style={{ backgroundColor: THEME.BG_SHELL }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Header */}
         {!compact && (

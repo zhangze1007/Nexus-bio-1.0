@@ -333,7 +333,7 @@ export default function Hero() {
             <Search
               size={16}
               style={{
-                color: focused ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.45)",
+                color: focused ? THEME.INK : THEME.DIM,
                 flexShrink: 0,
                 transition: "color 0.2s",
               }}
@@ -394,7 +394,7 @@ export default function Hero() {
                   onMouseDown={() => router.push(`/start?q=${encodeURIComponent(query.trim())}`)}
                   className={styles.previewItem}
                   style={{
-                    ...(activeIndex === 0 ? { background: "rgba(255,255,255,0.08)" } : undefined),
+                    ...(activeIndex === 0 ? { background: THEME.BORDER } : undefined),
                     borderBottom: "1px solid rgba(255,255,255,0.06)",
                   }}
                 >
@@ -415,7 +415,7 @@ export default function Hero() {
                     >
                       {smartResult!.type}
                     </span>
-                    <span style={{ fontFamily: SANS, fontSize: "13px", color: "#fff" }}>
+                    <span style={{ fontFamily: SANS, fontSize: "13px", color: THEME.VALUE }}>
                       {smartResult!.displayLabel}
                     </span>
                     <span
@@ -423,7 +423,7 @@ export default function Hero() {
                         marginLeft: "auto",
                         fontSize: "10px",
                         fontFamily: MONO,
-                        color: "rgba(255,255,255,0.3)",
+                        color: THEME.INK_SOFT,
                       }}
                     >
                       {smartResult!.confidence}
@@ -456,15 +456,15 @@ export default function Hero() {
                         navigate(s);
                       }}
                       className={styles.previewItem}
-                      style={activeIndex === idx ? { background: "rgba(255,255,255,0.08)" } : undefined}
+                      style={activeIndex === idx ? { background: THEME.BORDER } : undefined}
                     >
-                      <span style={{ fontFamily: SANS, fontSize: "13px", color: "rgba(255,255,255,0.8)" }}>{s}</span>
+                      <span style={{ fontFamily: SANS, fontSize: "13px", color: THEME.INK }}>{s}</span>
                       <span
                         style={{
                           marginLeft: "auto",
                           fontSize: "10px",
                           fontFamily: MONO,
-                          color: "rgba(255,255,255,0.2)",
+                          color: THEME.DIM,
                         }}
                       >
                         ↗
@@ -487,9 +487,9 @@ export default function Hero() {
                         navigate(p.name);
                       }}
                       className={styles.previewItem}
-                      style={activeIndex === idx ? { background: "rgba(255,255,255,0.08)" } : undefined}
+                      style={activeIndex === idx ? { background: THEME.BORDER } : undefined}
                     >
-                      <span style={{ fontFamily: SANS, fontSize: "13px", color: "rgba(255,255,255,0.7)" }}>
+                      <span style={{ fontFamily: SANS, fontSize: "13px", color: THEME.INK }}>
                         {p.name}
                       </span>
                       <span
@@ -497,7 +497,7 @@ export default function Hero() {
                           marginLeft: "auto",
                           fontSize: "10px",
                           fontFamily: MONO,
-                          color: "rgba(255,255,255,0.2)",
+                          color: THEME.DIM,
                         }}
                       >
                         CID:{p.cid}
@@ -509,7 +509,7 @@ export default function Hero() {
                 <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "10px" }}>
                   <Loader2
                     size={12}
-                    style={{ color: "rgba(255,255,255,0.75)", animation: "spin 1s linear infinite" }}
+                    style={{ color: THEME.INK, animation: "spin 1s linear infinite" }}
                   />
                   <span style={{ fontFamily: MONO, fontSize: "11px", color: "rgba(148,163,184,0.6)" }}>
                     Searching OpenAlex…
@@ -524,7 +524,7 @@ export default function Hero() {
                     aria-selected={i === activeIndex}
                     onMouseDown={() => navigate(r.title)}
                     className={styles.previewItem}
-                    style={i === activeIndex ? { background: "rgba(255,255,255,0.08)" } : undefined}
+                    style={i === activeIndex ? { background: THEME.BORDER } : undefined}
                   >
                     <p className={styles.previewTitle} style={{ fontFamily: SANS }}>
                       {r.title}
@@ -547,7 +547,7 @@ export default function Hero() {
                   className={styles.previewFooterButton}
                   style={{
                     fontFamily: MONO,
-                    ...(activeIndex === preview.length ? { background: "rgba(255,255,255,0.08)" } : undefined),
+                    ...(activeIndex === preview.length ? { background: THEME.BORDER } : undefined),
                   }}
                 >
                   View all results for &ldquo;{query}&rdquo;

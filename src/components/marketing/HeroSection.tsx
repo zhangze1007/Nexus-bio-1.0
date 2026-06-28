@@ -9,21 +9,21 @@ export default function HeroSection() {
   return (
     <section
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{ backgroundColor: "#0d0f14" }}
+      style={{ backgroundColor: THEME.BG_SHELL }}
     >
       {/* Gradient background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]"
-          style={{ background: "radial-gradient(circle, #BFDCCD 0%, transparent 70%)" }}
+          style={{ background: `radial-gradient(circle, ${THEME.MINT} 0%, transparent 70%)` }}
         />
         <div
           className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full opacity-15 blur-[100px]"
-          style={{ background: "radial-gradient(circle, #CFC4E3 0%, transparent 70%)" }}
+          style={{ background: `radial-gradient(circle, ${THEME.LILAC} 0%, transparent 70%)` }}
         />
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-10 blur-[80px]"
-          style={{ background: "radial-gradient(circle, #AFC3D6 0%, transparent 70%)" }}
+          style={{ background: `radial-gradient(circle, ${THEME.SKY} 0%, transparent 70%)` }}
         />
       </div>
 
@@ -52,7 +52,7 @@ export default function HeroSection() {
             color: THEME.MINT,
           }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#BFDCCD] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: THEME.MINT }} />
           Open Source &middot; Built for Researchers
         </motion.div>
 
@@ -67,7 +67,7 @@ export default function HeroSection() {
           The Synthetic Biology{" "}
           <span
             style={{
-              background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 50%, #CFC4E3 100%)",
+              background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 50%, ${THEME.LILAC} 100%)`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -101,8 +101,8 @@ export default function HeroSection() {
             className="group flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-semibold transition-all hover:scale-[1.03] hover:shadow-lg"
             style={{
               fontFamily: THEME.SANS,
-              background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 100%)",
-              color: "#0d0f14",
+              background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
+              color: THEME.BG_SHELL,
               boxShadow: "0 4px 24px rgba(191, 220, 205, 0.2)",
             }}
           >

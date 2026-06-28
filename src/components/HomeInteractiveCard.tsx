@@ -3,9 +3,10 @@
 import { motion, type Variants } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
+import { THEME } from "../theme";
 
-const HEADER = "'Public Sans',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','Fira Code',monospace";
+const HEADER = THEME.SANS;
+const MONO = THEME.MONO;
 
 const cardVariants: Variants = {
   rest: {

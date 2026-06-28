@@ -36,10 +36,10 @@ export default function MarketingFooter() {
               <div
                 className="flex items-center justify-center w-8 h-8 rounded-lg"
                 style={{
-                  background: "linear-gradient(135deg, #BFDCCD 0%, #AFC3D6 100%)",
+                  background: `linear-gradient(135deg, ${THEME.MINT} 0%, ${THEME.SKY} 100%)`,
                 }}
               >
-                <Dna size={16} color="#0d0f14" strokeWidth={2.5} />
+                <Dna size={16} color={THEME.BG_SHELL} strokeWidth={2.5} />
               </div>
               <span
                 className="text-lg font-bold tracking-tight"

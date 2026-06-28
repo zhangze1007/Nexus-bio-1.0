@@ -312,7 +312,7 @@ function ModelStack({ models }: { models: EngineBlock["models"] }) {
               fontSize: "11px",
               fontWeight: 600,
               lineHeight: 1.4,
-              color: "rgba(255,255,255,0.84)",
+              color: THEME.INK,
               letterSpacing: "-0.01em",
             }}
           >
@@ -323,7 +323,7 @@ function ModelStack({ models }: { models: EngineBlock["models"] }) {
               fontFamily: HEADER,
               fontSize: "11px",
               lineHeight: 1.6,
-              color: "rgba(255,255,255,0.46)",
+              color: THEME.DIM,
               letterSpacing: "-0.005em",
             }}
           >
@@ -349,13 +349,13 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
       style={{ minHeight: "100%" }}
     >
       <HomeInteractiveCard
-        icon={<Icon size={16} style={{ color: "rgba(255,255,255,0.62)" }} />}
+        icon={<Icon size={16} style={{ color: THEME.LABEL }} />}
         label={block.label}
         title={block.title}
         description={block.description}
-        labelStyle={{ color: "rgba(255,255,255,0.50)", marginBottom: "7px" }}
+        labelStyle={{ color: THEME.DIM, marginBottom: "7px" }}
         titleStyle={{ fontSize: "17px", fontWeight: 650, marginBottom: "10px", letterSpacing: "-0.016em" }}
-        descriptionStyle={{ color: "rgba(255,255,255,0.4)" }}
+        descriptionStyle={{ color: THEME.DIM }}
         focusable
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -400,7 +400,7 @@ export default function FeaturesArchitecture() {
     <section
       id="architecture"
       ref={sectionRef}
-      style={{ padding: "clamp(64px,10vw,120px) clamp(16px,4vw,40px)", background: "#000" }}
+      style={{ padding: "clamp(64px,10vw,120px) clamp(16px,4vw,40px)", background: THEME.BG_CANVAS }}
     >
       <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
         <motion.div
@@ -414,7 +414,7 @@ export default function FeaturesArchitecture() {
               fontFamily: HEADER,
               fontSize: "clamp(1.8rem,3.5vw,2.8rem)",
               fontWeight: 700,
-              color: "#FFFFFF",
+              color: THEME.VALUE,
               letterSpacing: "-0.025em",
               lineHeight: 1.1,
               margin: "0 0 14px",
@@ -426,7 +426,7 @@ export default function FeaturesArchitecture() {
             style={{
               fontFamily: HEADER,
               fontSize: "14px",
-              color: "rgba(255,255,255,0.55)",
+              color: THEME.LABEL,
               margin: 0,
               lineHeight: 1.65,
               maxWidth: "760px",

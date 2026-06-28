@@ -207,7 +207,7 @@ export default function FeatureGrid() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section id="features" className="py-24 lg:py-32" style={{ backgroundColor: "#0d0f14" }}>
+    <section id="features" className="py-24 lg:py-32" style={{ backgroundColor: THEME.BG_SHELL }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Section header */}
         <motion.div
