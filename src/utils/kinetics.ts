@@ -18,6 +18,31 @@
 
 import { competitiveInhibition, type EnzymeKinetics, simulateEnzymeSystem } from "../services/kineticsEngine";
 
+// ── Hill Functions ──────────────────────────────────────────────────────
+/**
+ * Hill function for transcriptional inhibition.
+ * f(x) = K^n / (K^n + x^n)
+ *
+ * @param x - Repressor concentration
+ * @param K - Half-maximal repression concentration (Kd)
+ * @param n - Hill coefficient (cooperativity)
+ */
+export function hillInhibition(x: number, K = 0.5, n = 2): number {
+  return K ** n / (K ** n + x ** n);
+}
+
+/**
+ * Hill function for transcriptional activation.
+ * f(x) = x^n / (K^n + x^n)
+ *
+ * @param x - Activator concentration
+ * @param K - Half-maximal activation concentration (Kd)
+ * @param n - Hill coefficient (cooperativity)
+ */
+export function hillActivation(x: number, K = 0.5, n = 2): number {
+  return x ** n / (K ** n + x ** n);
+}
+
 export interface SimResult {
   time: number[];
   substrate: number[];

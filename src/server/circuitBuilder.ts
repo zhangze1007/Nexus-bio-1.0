@@ -22,7 +22,7 @@
  *     - No resource competition or ribosome allocation coupling
  */
 
-import { hillActivation, hillInhibition } from "../data/mockGECAIR";
+import { hillActivation, hillInhibition } from "../utils/kinetics";
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
