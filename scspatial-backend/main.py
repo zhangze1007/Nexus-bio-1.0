@@ -615,6 +615,8 @@ def _build_query_response(artifact: Dict[str, Any], request: QueryRequest) -> Di
             "ligrec": analysis.get("ligrec"),
             "paga": analysis.get("paga"),
         },
+        "heImage": artifact.get("heImage"),
+        "spatialFormat": artifact.get("spatialFormat", "none"),
     }
 
 
