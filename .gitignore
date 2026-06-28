@@ -55,3 +55,6 @@ next-env.d.ts
 __pycache__/
 *.pyc
 test-results/
+
+# Binary executables
+*.exe
