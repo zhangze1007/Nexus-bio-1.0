@@ -172,9 +172,9 @@ export async function listTriggers(eventType?: string): Promise<N8nTrigger[]> {
 
   let rows: Record<string, unknown>[];
   if (eventType) {
-    rows = await sqlAll("SELECT * FROM n8n_triggers WHERE event_type = ? ORDER BY created_at DESC", [eventType]);
+    rows = await sqlAll("SELECT * FROM n8n_triggers WHERE event_type = ? ORDER BY created_at DESC, rowid DESC", [eventType]);
   } else {
-    rows = await sqlAll("SELECT * FROM n8n_triggers ORDER BY created_at DESC");
+    rows = await sqlAll("SELECT * FROM n8n_triggers ORDER BY created_at DESC, rowid DESC");
   }
 
   return rows.map(rowToTrigger);
