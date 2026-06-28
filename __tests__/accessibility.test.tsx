@@ -45,7 +45,7 @@ describe("Focus indicators", () => {
       const cssPath = path.resolve(__dirname, "../src/index.css");
       const css = fs.readFileSync(cssPath, "utf-8");
       expect(css).toContain("*:focus-visible");
-      expect(css).toMatch(/outline:\s*2px solid #C8D8E8/);
+      expect(css).toMatch(/outline:\s*2px solid #c8d8e8/i);
     }
   });
 });
