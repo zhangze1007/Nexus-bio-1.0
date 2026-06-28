@@ -37,7 +37,7 @@ interface BiGGReactionResponse {
   gene_reaction_rule?: string;
 }
 
-const BIGG_BASE = 'https://bigg.ucsd.edu/api/v3';
+const BIGG_BASE = "https://bigg.ucsd.edu/api/v3";
 
 const modelCache = new Map<string, BiGGModel>();
 const reactionCache = new Map<string, BiGGReaction>();
@@ -103,7 +103,7 @@ export async function loadModel(modelId: string): Promise<BiGGModel> {
 
     for (const r of results) {
       const stoichiometry: Record<string, number> = {};
-      for (const met of (r.metabolites || [])) {
+      for (const met of r.metabolites || []) {
         const key = `${met.bigg_id}_${met.compartment_bigg_id}`;
         stoichiometry[key] = met.stoichiometry;
       }
@@ -149,7 +149,7 @@ export function biggToFBAFormat(model: BiGGModel): {
   metabolites: string[];
 } {
   return {
-    reactions: model.reactions.map(r => ({
+    reactions: model.reactions.map((r) => ({
       id: r.id,
       stoichiometry: r.stoichiometry,
       lowerBound: r.lowerBound,

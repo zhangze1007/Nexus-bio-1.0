@@ -20,14 +20,7 @@ interface EmptyStateProps {
  * Empty-state placeholder shown when a view has no data.
  * Displays an optional icon, title, description, and action button.
  */
-export default function EmptyState({
-  icon,
-  title,
-  description,
-  actionLabel,
-  onAction,
-  style,
-}: EmptyStateProps) {
+export default function EmptyState({ icon, title, description, actionLabel, onAction, style }: EmptyStateProps) {
   return (
     <div
       role="status"

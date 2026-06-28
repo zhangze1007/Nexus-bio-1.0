@@ -288,6 +288,7 @@ export function adaptPythonQueryResponse(py: PythonQueryResponse): ScSpatialQuer
     },
     analysis: py.analysis ?? undefined,
     heImage: py.heImage ?? undefined,
-    spatialFormat: (py.spatialFormat as import("../types/scspatial").ScSpatialNormalizedArtifact["spatialFormat"]) || undefined,
+    spatialFormat:
+      (py.spatialFormat as import("../types/scspatial").ScSpatialNormalizedArtifact["spatialFormat"]) || undefined,
   };
 }

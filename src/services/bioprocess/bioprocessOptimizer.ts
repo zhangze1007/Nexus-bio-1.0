@@ -121,14 +121,14 @@ export interface EconomicAnalysis {
 
 // ─── Kinetic Parameters ──────────────────────────────────────────
 
-const MU_MAX = 0.4;        // max specific growth rate (1/h)
-const KS = 1.0;            // Monod half-saturation constant (g/L)
-const OPT_TEMP = 37;       // optimal temperature for growth (degC)
-const TEMP_SIGMA = 5;      // temperature tolerance width (degC)
-const OPT_PH = 7.0;        // optimal pH
-const PH_SIGMA = 0.8;      // pH tolerance width
-const YIELD_BASE = 0.35;   // base biomass/substrate yield (g/g)
-const MAINTENANCE = 0.02;  // maintenance coefficient (1/h)
+const MU_MAX = 0.4; // max specific growth rate (1/h)
+const KS = 1.0; // Monod half-saturation constant (g/L)
+const OPT_TEMP = 37; // optimal temperature for growth (degC)
+const TEMP_SIGMA = 5; // temperature tolerance width (degC)
+const OPT_PH = 7.0; // optimal pH
+const PH_SIGMA = 0.8; // pH tolerance width
+const YIELD_BASE = 0.35; // base biomass/substrate yield (g/g)
+const MAINTENANCE = 0.02; // maintenance coefficient (1/h)
 const SUBSTRATE_FEED_CONC = 200; // feed substrate concentration (g/L)
 
 // ─── Monod Kinetics with Environmental Corrections ───────────────
@@ -138,16 +138,11 @@ const SUBSTRATE_FEED_CONC = 200; // feed substrate concentration (g/L)
  *
  * mu = muMax * S/(Ks+S) * fT(S) * fpH(S) * fDO(S)
  */
-function monodGrowthRate(
-  substrateConc: number,
-  temperature: number,
-  pH: number,
-  dissolvedO2: number,
-): number {
+function monodGrowthRate(substrateConc: number, temperature: number, pH: number, dissolvedO2: number): number {
   const s = Math.max(0, substrateConc);
 
   // Monod substrate limitation
-  const monod = MU_MAX * s / (KS + s);
+  const monod = (MU_MAX * s) / (KS + s);
 
   // Temperature correction: Gaussian around optimum
   const fT = Math.exp(-0.5 * Math.pow((temperature - OPT_TEMP) / TEMP_SIGMA, 2));
@@ -192,11 +187,7 @@ function effectiveYield(feedRate: number, volume: number): number {
  * @param nSteps      Number of integration steps, default 200
  * @returns           Final product concentration (g/L)
  */
-function simulateFedBatch(
-  params: FedBatchParams,
-  batchTime: number = 48,
-  nSteps: number = 200,
-): number {
+function simulateFedBatch(params: FedBatchParams, batchTime: number = 48, nSteps: number = 200): number {
   const dt = batchTime / nSteps;
   let volume = params.volume;
   let substrate = params.substrateConc;
@@ -320,10 +311,7 @@ export function optimizeFedBatch(
  * @param targetVolume  Production-scale volume (L)
  * @returns             ScaleUpResult with both methods
  */
-export function predictScaleUp(
-  labData: LabScaleData,
-  targetVolume: number,
-): ScaleUpResult {
+export function predictScaleUp(labData: LabScaleData, targetVolume: number): ScaleUpResult {
   const scaleRatio = targetVolume / labData.volume;
 
   // Geometric similarity: all linear dimensions scale as cube root of volume ratio
@@ -343,9 +331,7 @@ export function predictScaleUp(
   const scaledPV = pvPower / targetVolume;
   // Assume same vvm → vs scales with vessel height (lengthScale)
   const vsScale = lengthScale;
-  const kLaScaleFactor = Math.pow(scaledPV / labPV, 0.4)
-    * Math.pow(vsScale, 0.5)
-    * Math.pow(1 / lengthScale, 0.5);
+  const kLaScaleFactor = Math.pow(scaledPV / labPV, 0.4) * Math.pow(vsScale, 0.5) * Math.pow(1 / lengthScale, 0.5);
   const pvKLa = labData.kLa * kLaScaleFactor;
 
   // ── Method 2: Constant kLa ─────────────────────────────────────
@@ -353,16 +339,14 @@ export function predictScaleUp(
   // kLa_target = kLa_lab → (P/V)_target = (P/V)_lab * lengthScale^(-1/3) * vs^(-1.25)
   // More practically, solve numerically using the ratio:
   const vsTarget = lengthScale; // same vvm assumption
-  const pvRequired = labPV * Math.pow(lengthScale / vsTarget, 1 / 0.4)
-    * Math.pow(1 / lengthScale, -0.5 / 0.4);
+  const pvRequired = labPV * Math.pow(lengthScale / vsTarget, 1 / 0.4) * Math.pow(1 / lengthScale, -0.5 / 0.4);
 
   // Oversimplification corrected: use direct ratio
   // From kLa correlation: (P/V)2/(P/V)1 = (D2/D1)^1.25 * (vs1/vs2)^1.25
   // With same vvm: vs ratio ≈ lengthScale, D ratio = lengthScale
   const pvRatioFromKLa = Math.pow(lengthScale, 0.25);
   const kLaPower = labPV * pvRatioFromKLa * targetVolume;
-  const kLaSpeed = labData.agitationSpeed / Math.pow(scaleRatio, 2 / 3)
-    * Math.pow(pvRatioFromKLa, 1 / 3);
+  const kLaSpeed = (labData.agitationSpeed / Math.pow(scaleRatio, 2 / 3)) * Math.pow(pvRatioFromKLa, 1 / 3);
 
   return {
     constantPV: {
@@ -418,7 +402,7 @@ export function calculateEconomics(
   // ── Cost Breakdown ─────────────────────────────────────────────
   // Raw materials: substrate at ~$0.50/g, media components
   const substrateMass = substrateConc * volume;
-  const rawMaterials = substrateMass * 0.50 + volume * 2.0; // $0.50/g substrate + $2/L media
+  const rawMaterials = substrateMass * 0.5 + volume * 2.0; // $0.50/g substrate + $2/L media
 
   // Utilities: power, cooling, steam — scales with volume
   const utilities = volume * 0.8; // $0.80/L

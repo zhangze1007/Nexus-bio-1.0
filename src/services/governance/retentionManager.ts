@@ -9,14 +9,9 @@
  * - Archived records move to an archive table (still queryable, not active).
  */
 
-import { randomUUID } from 'node:crypto';
-import { sqlAll, sqlGet, sqlRun, sqlBatch } from '../../server/libsqlDb';
-import type {
-  RetentionPolicy,
-  RetentionEnforcementResult,
-  RetentionStatusEntry,
-  SoftDeletedRecord,
-} from './types';
+import { randomUUID } from "node:crypto";
+import { sqlAll, sqlGet, sqlRun, sqlBatch } from "../../server/libsqlDb";
+import type { RetentionPolicy, RetentionEnforcementResult, RetentionStatusEntry, SoftDeletedRecord } from "./types";
 
 // ── Table Initialization (idempotent) ────────────────────────────────
 
@@ -78,7 +73,7 @@ export class RetentionManager {
    */
   async enforceRetentionPolicy(
     policy: RetentionPolicy,
-    actorId: string = 'system',
+    actorId: string = "system",
   ): Promise<RetentionEnforcementResult> {
     const result: RetentionEnforcementResult = { archived: 0, deleted: 0, errors: [] };
     const now = new Date();
@@ -108,16 +103,13 @@ export class RetentionManager {
               [
                 randomUUID(),
                 policy.entityType,
-                String(record.id ?? ''),
+                String(record.id ?? ""),
                 JSON.stringify(record),
                 now.toISOString(),
                 actorId,
               ],
             );
-            await sqlRun(
-              `UPDATE ${policy.entityType} SET archived = 1 WHERE id = ?`,
-              [record.id],
-            );
+            await sqlRun(`UPDATE ${policy.entityType} SET archived = 1 WHERE id = ?`, [record.id]);
             result.archived++;
           } catch (rowErr) {
             result.errors.push(`Archive failed for ${policy.entityType}:${record.id}: ${String(rowErr)}`);
@@ -148,17 +140,14 @@ export class RetentionManager {
               [
                 randomUUID(),
                 policy.entityType,
-                String(record.id ?? ''),
+                String(record.id ?? ""),
                 JSON.stringify(record),
                 now.toISOString(),
                 recoverableUntil.toISOString(),
                 actorId,
               ],
             );
-            await sqlRun(
-              `UPDATE ${policy.entityType} SET soft_deleted = 1 WHERE id = ?`,
-              [record.id],
-            );
+            await sqlRun(`UPDATE ${policy.entityType} SET soft_deleted = 1 WHERE id = ?`, [record.id]);
             result.deleted++;
           } catch (rowErr) {
             result.errors.push(`Soft-delete failed for ${policy.entityType}:${record.id}: ${String(rowErr)}`);
@@ -177,7 +166,7 @@ export class RetentionManager {
           );
           for (const record of expired) {
             try {
-              await sqlRun('DELETE FROM soft_deleted_records WHERE id = ?', [record.id]);
+              await sqlRun("DELETE FROM soft_deleted_records WHERE id = ?", [record.id]);
             } catch (rowErr) {
               result.errors.push(`Permanent delete failed for record ${record.id}: ${String(rowErr)}`);
             }
@@ -200,10 +189,7 @@ export class RetentionManager {
    */
   async getRetentionStatus(orgId: string): Promise<RetentionStatusEntry[]> {
     // Get all policies for this org
-    const policies = await sqlAll(
-      'SELECT * FROM retention_policies WHERE org_id = ?',
-      [orgId],
-    );
+    const policies = await sqlAll("SELECT * FROM retention_policies WHERE org_id = ?", [orgId]);
 
     const entries: RetentionStatusEntry[] = [];
 
@@ -228,10 +214,9 @@ export class RetentionManager {
         const expiredRecords = Number(expiredRow?.cnt ?? 0);
 
         // Archived records
-        const archivedRow = await sqlGet(
-          `SELECT COUNT(*) as cnt FROM archived_records WHERE original_table = ?`,
-          [entityType],
-        );
+        const archivedRow = await sqlGet(`SELECT COUNT(*) as cnt FROM archived_records WHERE original_table = ?`, [
+          entityType,
+        ]);
         const archivedRecords = Number(archivedRow?.cnt ?? 0);
 
         entries.push({ entityType, totalRecords, expiredRecords, archivedRecords });

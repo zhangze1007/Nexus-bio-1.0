@@ -26,14 +26,14 @@
 export interface BackboneConfig {
   length: number;
   secondaryStructure: Array<{
-    type: 'helix' | 'sheet' | 'loop';
+    type: "helix" | "sheet" | "loop";
     start: number;
     end: number;
   }>;
 }
 
 export interface BackboneAtom {
-  atomName: 'N' | 'CA' | 'C' | 'O';
+  atomName: "N" | "CA" | "C" | "O";
   x: number;
   y: number;
   z: number;
@@ -67,17 +67,37 @@ const RAMACHANDRAN = {
 
 /** Standard 20 amino acid three-letter codes */
 export const AMINO_ACIDS = [
-  'ALA', 'ARG', 'ASN', 'ASP', 'CYS',
-  'GLN', 'GLU', 'GLY', 'HIS', 'ILE',
-  'LEU', 'LYS', 'MET', 'PHE', 'PRO',
-  'SER', 'THR', 'TRP', 'TYR', 'VAL',
+  "ALA",
+  "ARG",
+  "ASN",
+  "ASP",
+  "CYS",
+  "GLN",
+  "GLU",
+  "GLY",
+  "HIS",
+  "ILE",
+  "LEU",
+  "LYS",
+  "MET",
+  "PHE",
+  "PRO",
+  "SER",
+  "THR",
+  "TRP",
+  "TYR",
+  "VAL",
 ] as const;
 
 // ---------------------------------------------------------------------------
 // Vector math utilities
 // ---------------------------------------------------------------------------
 
-interface Vec3 { x: number; y: number; z: number }
+interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
 
 function degToRad(deg: number): number {
   return (deg * Math.PI) / 180;
@@ -156,14 +176,14 @@ function nerfPlace(a: Vec3, b: Vec3, c: Vec3, bondLength: number, bondAngleDeg: 
   // Build orthonormal frame at C
   const bcDir = vNormalize(vSub(c, b));
   const abDir = vNormalize(vSub(b, a));
-  const n = vNormalize(vCross(abDir, bcDir));   // normal to ABC plane
-  const nbc = vCross(n, bcDir);                  // completes right-handed frame
+  const n = vNormalize(vCross(abDir, bcDir)); // normal to ABC plane
+  const nbc = vCross(n, bcDir); // completes right-handed frame
 
   // D in local coordinates: x along -BC, y along nbc, z along n
   const localD: Vec3 = {
     x: -bondLength * Math.cos(theta),
-    y:  bondLength * Math.sin(theta) * Math.cos(phi),
-    z:  bondLength * Math.sin(theta) * Math.sin(phi),
+    y: bondLength * Math.sin(theta) * Math.cos(phi),
+    z: bondLength * Math.sin(theta) * Math.sin(phi),
   };
 
   // Transform to global frame
@@ -179,22 +199,19 @@ function nerfPlace(a: Vec3, b: Vec3, c: Vec3, bondLength: number, bondAngleDeg: 
 // ---------------------------------------------------------------------------
 
 /** Determine which secondary structure element a residue belongs to */
-function getSecondaryType(
-  residueIndex: number,
-  config: BackboneConfig,
-): 'helix' | 'sheet' | 'loop' {
+function getSecondaryType(residueIndex: number, config: BackboneConfig): "helix" | "sheet" | "loop" {
   for (const ss of config.secondaryStructure) {
     if (residueIndex >= ss.start && residueIndex <= ss.end) {
       return ss.type;
     }
   }
-  return 'loop';
+  return "loop";
 }
 
 /** Get Ramachandran angles for a given secondary structure type */
-function getPhiPsi(type: 'helix' | 'sheet' | 'loop', residueIndex: number): { phi: number; psi: number } {
-  if (type === 'helix') return RAMACHANDRAN.helix;
-  if (type === 'sheet') return RAMACHANDRAN.sheet;
+function getPhiPsi(type: "helix" | "sheet" | "loop", residueIndex: number): { phi: number; psi: number } {
+  if (type === "helix") return RAMACHANDRAN.helix;
+  if (type === "sheet") return RAMACHANDRAN.sheet;
   // Loop: deterministic pseudo-random angles in allowed Ramachandran region
   const seed = (residueIndex * 137 + 42) % 360;
   const phi = -180 + (seed % 120);
@@ -218,7 +235,7 @@ function placeOxygen(nPos: Vec3, caPos: Vec3, cPos: Vec3): Vec3 {
   //
   // Simpler approach: place O in the plane of N-CA-C, at 121 deg from CA
   const cToCa = vNormalize(vSub(caPos, cPos));
-  const cToN  = vNormalize(vSub(nPos, cPos));
+  const cToN = vNormalize(vSub(nPos, cPos));
   const planeN = vNormalize(vCross(cToCa, cToN));
 
   // Rotate cToCa by 121 deg around the plane normal to get O direction
@@ -280,10 +297,10 @@ export function generateBackbone(config: BackboneConfig): BackboneAtom[] {
   const o0 = placeOxygen(n0, ca0, c0);
 
   atoms.push(
-    { atomName: 'N',  ...n0,  residueIndex: 0, residueName: 'ALA' },
-    { atomName: 'CA', ...ca0, residueIndex: 0, residueName: 'ALA' },
-    { atomName: 'C',  ...c0,  residueIndex: 0, residueName: 'ALA' },
-    { atomName: 'O',  ...o0,  residueIndex: 0, residueName: 'ALA' },
+    { atomName: "N", ...n0, residueIndex: 0, residueName: "ALA" },
+    { atomName: "CA", ...ca0, residueIndex: 0, residueName: "ALA" },
+    { atomName: "C", ...c0, residueIndex: 0, residueName: "ALA" },
+    { atomName: "O", ...o0, residueIndex: 0, residueName: "ALA" },
   );
 
   // -----------------------------------------------------------------------
@@ -291,14 +308,14 @@ export function generateBackbone(config: BackboneConfig): BackboneAtom[] {
   // -----------------------------------------------------------------------
   for (let i = 1; i < config.length; i++) {
     const ssType = getSecondaryType(i, config);
-    const prevSS  = getSecondaryType(i - 1, config);
-    const { phi }  = getPhiPsi(ssType, i);
+    const prevSS = getSecondaryType(i - 1, config);
+    const { phi } = getPhiPsi(ssType, i);
     const { psi: prevPsi } = getPhiPsi(prevSS, i - 1);
 
     // Atoms of previous residue
-    const prevN  = atoms[(i - 1) * 4 + 0];
+    const prevN = atoms[(i - 1) * 4 + 0];
     const prevCA = atoms[(i - 1) * 4 + 1];
-    const prevC  = atoms[(i - 1) * 4 + 2];
+    const prevC = atoms[(i - 1) * 4 + 2];
 
     // Step 1: Place N(i) from N(i-1), CA(i-1), C(i-1)
     //   bond = C-N = 1.32, angle = CA-C-N = 116, torsion = psi(i-1)
@@ -337,10 +354,10 @@ export function generateBackbone(config: BackboneConfig): BackboneAtom[] {
     const newO = placeOxygen(newN, newCA, newC);
 
     atoms.push(
-      { atomName: 'N',  ...newN,  residueIndex: i, residueName: 'ALA' },
-      { atomName: 'CA', ...newCA, residueIndex: i, residueName: 'ALA' },
-      { atomName: 'C',  ...newC,  residueIndex: i, residueName: 'ALA' },
-      { atomName: 'O',  ...newO,  residueIndex: i, residueName: 'ALA' },
+      { atomName: "N", ...newN, residueIndex: i, residueName: "ALA" },
+      { atomName: "CA", ...newCA, residueIndex: i, residueName: "ALA" },
+      { atomName: "C", ...newC, residueIndex: i, residueName: "ALA" },
+      { atomName: "O", ...newO, residueIndex: i, residueName: "ALA" },
     );
   }
 
@@ -358,7 +375,7 @@ export function generateBackbone(config: BackboneConfig): BackboneAtom[] {
  * plus TER and END records.
  */
 export function backboneToPDB(atoms: BackboneAtom[]): string {
-  if (atoms.length === 0) return 'END\n';
+  if (atoms.length === 0) return "END\n";
 
   const lines: string[] = [];
   let serial = 1;
@@ -379,25 +396,23 @@ export function backboneToPDB(atoms: BackboneAtom[]): string {
     // 61-66 tempFactor (6.2f)
     // 77-78 element
 
-    const serialStr = String(serial).padStart(5, ' ');
-    const atomNameStr = atom.atomName.length < 4
-      ? ` ${atom.atomName}`.padEnd(4, ' ')
-      : atom.atomName;
-    const resNameStr = atom.residueName.padStart(3, ' ');
-    const resSeqStr = String(atom.residueIndex + 1).padStart(4, ' ');
-    const xStr = atom.x.toFixed(3).padStart(8, ' ');
-    const yStr = atom.y.toFixed(3).padStart(8, ' ');
-    const zStr = atom.z.toFixed(3).padStart(8, ' ');
-    const elemStr = atom.atomName[0].padStart(2, ' ');
+    const serialStr = String(serial).padStart(5, " ");
+    const atomNameStr = atom.atomName.length < 4 ? ` ${atom.atomName}`.padEnd(4, " ") : atom.atomName;
+    const resNameStr = atom.residueName.padStart(3, " ");
+    const resSeqStr = String(atom.residueIndex + 1).padStart(4, " ");
+    const xStr = atom.x.toFixed(3).padStart(8, " ");
+    const yStr = atom.y.toFixed(3).padStart(8, " ");
+    const zStr = atom.z.toFixed(3).padStart(8, " ");
+    const elemStr = atom.atomName[0].padStart(2, " ");
 
     lines.push(
-      `ATOM  ${serialStr} ${atomNameStr} ${resNameStr} A${resSeqStr}    ${xStr}${yStr}${zStr}  1.00  0.00          ${elemStr}`
+      `ATOM  ${serialStr} ${atomNameStr} ${resNameStr} A${resSeqStr}    ${xStr}${yStr}${zStr}  1.00  0.00          ${elemStr}`,
     );
     serial++;
   }
 
-  lines.push('TER');
-  lines.push('END');
+  lines.push("TER");
+  lines.push("END");
 
-  return lines.join('\n') + '\n';
+  return lines.join("\n") + "\n";
 }

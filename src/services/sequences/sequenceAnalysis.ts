@@ -40,22 +40,70 @@ export interface ORF {
  * Stop codons map to '*'.
  */
 const CODON_TABLE: Record<string, string> = {
-  UUU: 'F', UUC: 'F', UUA: 'L', UUG: 'L',
-  CUU: 'L', CUC: 'L', CUA: 'L', CUG: 'L',
-  AUU: 'I', AUC: 'I', AUA: 'I', AUG: 'M',
-  GUU: 'V', GUC: 'V', GUA: 'V', GUG: 'V',
-  UCU: 'S', UCC: 'S', UCA: 'S', UCG: 'S',
-  CCU: 'P', CCC: 'P', CCA: 'P', CCG: 'P',
-  ACU: 'T', ACC: 'T', ACA: 'T', ACG: 'T',
-  GCU: 'A', GCC: 'A', GCA: 'A', GCG: 'A',
-  UAU: 'Y', UAC: 'Y', UAA: '*', UAG: '*',
-  CAU: 'H', CAC: 'H', CAA: 'Q', CAG: 'Q',
-  AAU: 'N', AAC: 'N', AAA: 'K', AAG: 'K',
-  GAU: 'D', GAC: 'D', GAA: 'E', GAG: 'E',
-  UGU: 'C', UGC: 'C', UGA: '*', UGG: 'W',
-  CGU: 'R', CGC: 'R', CGA: 'R', CGG: 'R',
-  AGU: 'S', AGC: 'S', AGA: 'R', AGG: 'R',
-  GGU: 'G', GGC: 'G', GGA: 'G', GGG: 'G',
+  UUU: "F",
+  UUC: "F",
+  UUA: "L",
+  UUG: "L",
+  CUU: "L",
+  CUC: "L",
+  CUA: "L",
+  CUG: "L",
+  AUU: "I",
+  AUC: "I",
+  AUA: "I",
+  AUG: "M",
+  GUU: "V",
+  GUC: "V",
+  GUA: "V",
+  GUG: "V",
+  UCU: "S",
+  UCC: "S",
+  UCA: "S",
+  UCG: "S",
+  CCU: "P",
+  CCC: "P",
+  CCA: "P",
+  CCG: "P",
+  ACU: "T",
+  ACC: "T",
+  ACA: "T",
+  ACG: "T",
+  GCU: "A",
+  GCC: "A",
+  GCA: "A",
+  GCG: "A",
+  UAU: "Y",
+  UAC: "Y",
+  UAA: "*",
+  UAG: "*",
+  CAU: "H",
+  CAC: "H",
+  CAA: "Q",
+  CAG: "Q",
+  AAU: "N",
+  AAC: "N",
+  AAA: "K",
+  AAG: "K",
+  GAU: "D",
+  GAC: "D",
+  GAA: "E",
+  GAG: "E",
+  UGU: "C",
+  UGC: "C",
+  UGA: "*",
+  UGG: "W",
+  CGU: "R",
+  CGC: "R",
+  CGA: "R",
+  CGG: "R",
+  AGU: "S",
+  AGC: "S",
+  AGA: "R",
+  AGG: "R",
+  GGU: "G",
+  GGC: "G",
+  GGA: "G",
+  GGG: "G",
 };
 
 /**
@@ -68,7 +116,7 @@ const CODON_TABLE: Record<string, string> = {
  */
 const NUCLEOTIDE_MW: Record<string, number> = {
   A: 313.21,
-  T: 304.20,
+  T: 304.2,
   G: 329.21,
   C: 289.18,
 };
@@ -80,7 +128,10 @@ const FIVE_PRIME_PHOSPHATE_MW = 79.97;
 // ΔH in kcal/mol, ΔS in cal/(mol·K)
 // From SantaLucia J (1998), Table 1
 
-interface NNParams { dH: number; dS: number }
+interface NNParams {
+  dH: number;
+  dS: number;
+}
 
 const NN_PARAMS: Record<string, NNParams> = {
   AA: { dH: -7.9, dS: -22.2 },
@@ -111,17 +162,22 @@ const SELF_COMPENSALITY_CORRECTION_DS = -1.4; // cal/(mol·K)
 
 /** Normalize a DNA sequence to uppercase and replace U with T. */
 function normalizeDNA(seq: string): string {
-  return seq.toUpperCase().replace(/U/g, 'T');
+  return seq.toUpperCase().replace(/U/g, "T");
 }
 
 /** Complement a single DNA base. Non-standard bases map to 'N'. */
 function complementBase(b: string): string {
   switch (b) {
-    case 'A': return 'T';
-    case 'T': return 'A';
-    case 'G': return 'C';
-    case 'C': return 'G';
-    default: return 'N';
+    case "A":
+      return "T";
+    case "T":
+      return "A";
+    case "G":
+      return "C";
+    case "C":
+      return "G";
+    default:
+      return "N";
   }
 }
 
@@ -152,10 +208,10 @@ export function computeGC(sequence: string): number {
   let gc = 0;
   let total = 0;
   for (const base of normalized) {
-    if (base === 'G' || base === 'C') {
+    if (base === "G" || base === "C") {
       gc++;
       total++;
-    } else if (base === 'A' || base === 'T') {
+    } else if (base === "A" || base === "T") {
       total++;
     }
     // Skip non-standard bases (N, R, Y, etc.)
@@ -184,23 +240,19 @@ export function computeGC(sequence: string): number {
  * @param isSelfComp  Whether the oligo is self-complementary (default: auto-detect)
  * @returns Tm in degrees Celsius
  */
-export function computeTm(
-  sequence: string,
-  ct: number = 250e-9,
-  isSelfComp?: boolean,
-): number {
+export function computeTm(sequence: string, ct: number = 250e-9, isSelfComp?: boolean): number {
   const normalized = normalizeDNA(sequence);
 
   // Filter to only valid bases for nearest-neighbor calculation
-  const validBases = normalized.replace(/[^ATGC]/g, '');
+  const validBases = normalized.replace(/[^ATGC]/g, "");
 
   if (validBases.length < 2) {
     // Wallace rule fallback for very short sequences
     let at = 0;
     let gc = 0;
     for (const b of normalized) {
-      if (b === 'A' || b === 'T') at++;
-      else if (b === 'G' || b === 'C') gc++;
+      if (b === "A" || b === "T") at++;
+      else if (b === "G" || b === "C") gc++;
     }
     return 2 * at + 4 * gc;
   }
@@ -274,13 +326,13 @@ export function findORFs(sequence: string, minLength: number = 30): ORF[] {
   const normalized = normalizeDNA(sequence);
   const orfs: ORF[] = [];
 
-  const stopCodons = new Set(['TAA', 'TAG', 'TGA']);
+  const stopCodons = new Set(["TAA", "TAG", "TGA"]);
 
   for (let frame = 0; frame < 3; frame++) {
     let i = frame;
     while (i <= normalized.length - 3) {
       const codon = normalized.slice(i, i + 3);
-      if (codon === 'ATG') {
+      if (codon === "ATG") {
         // Found a start codon; scan for the next in-frame stop
         let j = i + 3;
         while (j <= normalized.length - 3) {
@@ -339,20 +391,20 @@ export function translateSequence(sequence: string): string {
  * and T-normalized.
  */
 function translateDNA(dna: string): string {
-  const rna = dna.replace(/T/g, 'U');
+  const rna = dna.replace(/T/g, "U");
   const peptides: string[] = [];
 
   for (let i = 0; i <= rna.length - 3; i += 3) {
     const codon = rna.slice(i, i + 3);
     const aa = CODON_TABLE[codon];
     if (aa === undefined) {
-      peptides.push('X'); // unknown amino acid
-    } else if (aa === '*') {
+      peptides.push("X"); // unknown amino acid
+    } else if (aa === "*") {
       break; // stop codon
     } else {
       peptides.push(aa);
     }
   }
 
-  return peptides.join('');
+  return peptides.join("");
 }

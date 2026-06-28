@@ -196,10 +196,7 @@ export async function assignVariant(
   }
 
   // Load experiment
-  const experiment = await sqlGet(
-    `SELECT variants, status FROM ab_experiments WHERE id = ?`,
-    [experimentId],
-  );
+  const experiment = await sqlGet(`SELECT variants, status FROM ab_experiments WHERE id = ?`, [experimentId]);
 
   if (!experiment) {
     throw new Error(`Experiment "${experimentId}" not found.`);
@@ -225,11 +222,7 @@ export async function assignVariant(
 /**
  * Record an outcome for a user in an experiment.
  */
-export async function recordOutcome(
-  experimentId: string,
-  userId: string,
-  outcome: string,
-): Promise<void> {
+export async function recordOutcome(experimentId: string, userId: string, outcome: string): Promise<void> {
   await ensureSchema();
 
   // Look up the user's assignment
@@ -240,9 +233,7 @@ export async function recordOutcome(
   );
 
   if (!assignment) {
-    throw new Error(
-      `User "${userId}" is not assigned to experiment "${experimentId}". Assign a variant first.`,
-    );
+    throw new Error(`User "${userId}" is not assigned to experiment "${experimentId}". Assign a variant first.`);
   }
 
   const now = new Date().toISOString();
@@ -260,10 +251,9 @@ export async function recordOutcome(
 export async function getResults(experimentId: string): Promise<ExperimentResults> {
   await ensureSchema();
 
-  const experiment = await sqlGet(
-    `SELECT id, name, status, variants, created_at FROM ab_experiments WHERE id = ?`,
-    [experimentId],
-  );
+  const experiment = await sqlGet(`SELECT id, name, status, variants, created_at FROM ab_experiments WHERE id = ?`, [
+    experimentId,
+  ]);
 
   if (!experiment) {
     throw new Error(`Experiment "${experimentId}" not found.`);

@@ -7,12 +7,7 @@
 
 import { randomUUID } from "node:crypto";
 import { sqlAll, sqlBatch, sqlGet, sqlRun } from "../../server/libsqlDb";
-import type {
-  Plugin,
-  PluginInstallation,
-  PluginManifest,
-  PluginStatus,
-} from "./types";
+import type { Plugin, PluginInstallation, PluginManifest, PluginStatus } from "./types";
 import { validateManifest } from "./pluginValidator";
 
 // ---------------------------------------------------------------------------
@@ -68,19 +63,12 @@ export class PluginRegistry {
    * Register a new plugin after validating its manifest.
    * New plugins always start in "draft" status.
    */
-  async register(
-    manifest: PluginManifest,
-    packageUrl: string,
-    userId: string,
-    orgId = "default",
-  ): Promise<Plugin> {
+  async register(manifest: PluginManifest, packageUrl: string, userId: string, orgId = "default"): Promise<Plugin> {
     await this.ensureTables();
 
     const validation = validateManifest(manifest);
     if (!validation.valid) {
-      throw new Error(
-        `Invalid manifest: ${validation.errors.join("; ")}`,
-      );
+      throw new Error(`Invalid manifest: ${validation.errors.join("; ")}`);
     }
 
     const id = `plug_${randomUUID().slice(0, 8)}`;
@@ -118,9 +106,7 @@ export class PluginRegistry {
   /**
    * List plugins, optionally filtered by orgId and/or status.
    */
-  async list(
-    options?: { orgId?: string; status?: string },
-  ): Promise<Plugin[]> {
+  async list(options?: { orgId?: string; status?: string }): Promise<Plugin[]> {
     await this.ensureTables();
 
     let sql = "SELECT * FROM plugins WHERE 1=1";
@@ -147,10 +133,7 @@ export class PluginRegistry {
    * Update mutable fields on a plugin record.
    * Only status, manifest, and packageUrl may be changed.
    */
-  async update(
-    id: string,
-    updates: Partial<Pick<Plugin, "status" | "manifest" | "packageUrl">>,
-  ): Promise<Plugin> {
+  async update(id: string, updates: Partial<Pick<Plugin, "status" | "manifest" | "packageUrl">>): Promise<Plugin> {
     await this.ensureTables();
 
     // Verify the plugin exists
@@ -169,9 +152,7 @@ export class PluginRegistry {
     if (updates.manifest !== undefined) {
       const validation = validateManifest(updates.manifest);
       if (!validation.valid) {
-        throw new Error(
-          `Invalid manifest: ${validation.errors.join("; ")}`,
-        );
+        throw new Error(`Invalid manifest: ${validation.errors.join("; ")}`);
       }
       setClauses.push("manifest = ?");
       args.push(JSON.stringify(updates.manifest));
@@ -186,10 +167,7 @@ export class PluginRegistry {
     }
 
     args.push(id);
-    await sqlRun(
-      `UPDATE plugins SET ${setClauses.join(", ")} WHERE id = ?`,
-      args,
-    );
+    await sqlRun(`UPDATE plugins SET ${setClauses.join(", ")} WHERE id = ?`, args);
 
     return { ...existing, ...updates };
   }
@@ -222,9 +200,7 @@ export class PluginRegistry {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
     if (plugin.status !== "active") {
-      throw new Error(
-        `Cannot install plugin "${pluginId}": status is "${plugin.status}", expected "active"`,
-      );
+      throw new Error(`Cannot install plugin "${pluginId}": status is "${plugin.status}", expected "active"`);
     }
 
     const id = `inst_${randomUUID().slice(0, 8)}`;
@@ -252,18 +228,12 @@ export class PluginRegistry {
   async uninstall(installationId: string): Promise<void> {
     await this.ensureTables();
 
-    const existing = await sqlGet(
-      "SELECT * FROM plugin_installations WHERE id = ?",
-      [installationId],
-    );
+    const existing = await sqlGet("SELECT * FROM plugin_installations WHERE id = ?", [installationId]);
     if (!existing) {
       throw new Error(`Installation not found: ${installationId}`);
     }
 
-    await sqlRun(
-      "DELETE FROM plugin_installations WHERE id = ?",
-      [installationId],
-    );
+    await sqlRun("DELETE FROM plugin_installations WHERE id = ?", [installationId]);
   }
 
   /**
@@ -272,10 +242,9 @@ export class PluginRegistry {
   async listInstalled(projectId: string): Promise<PluginInstallation[]> {
     await this.ensureTables();
 
-    const rows = await sqlAll(
-      "SELECT * FROM plugin_installations WHERE projectId = ? ORDER BY installedAt DESC",
-      [projectId],
-    );
+    const rows = await sqlAll("SELECT * FROM plugin_installations WHERE projectId = ? ORDER BY installedAt DESC", [
+      projectId,
+    ]);
 
     return rows.map(rowToInstallation);
   }
@@ -289,9 +258,7 @@ function rowToPlugin(row: Record<string, unknown>): Plugin {
   return {
     id: row.id as string,
     orgId: row.orgId as string,
-    manifest: typeof row.manifest === "string"
-      ? JSON.parse(row.manifest as string)
-      : (row.manifest as PluginManifest),
+    manifest: typeof row.manifest === "string" ? JSON.parse(row.manifest as string) : (row.manifest as PluginManifest),
     status: row.status as PluginStatus,
     packageUrl: row.packageUrl as string | undefined,
     createdBy: row.createdBy as string,

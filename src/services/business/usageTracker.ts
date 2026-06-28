@@ -61,7 +61,7 @@ export interface LimitCheck {
 
 export interface TimeRange {
   start: number; // Unix ms
-  end: number;   // Unix ms
+  end: number; // Unix ms
 }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -200,11 +200,7 @@ export async function getUsage(userId: string, timeRange: TimeRange): Promise<Us
  * Returns allowed (boolean), remaining units (-1 if unlimited), and
  * the timestamp when the monthly limit resets.
  */
-export async function checkLimit(
-  userId: string,
-  resource: string,
-  tier: Tier = "free",
-): Promise<LimitCheck> {
+export async function checkLimit(userId: string, resource: string, tier: Tier = "free"): Promise<LimitCheck> {
   await ensureUsageSchema();
 
   if (!userId || userId.trim().length === 0) {

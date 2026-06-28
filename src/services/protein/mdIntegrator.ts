@@ -21,14 +21,9 @@
  *   ENSEMBLE: NVT (canonical)
  */
 
-import type { BackboneAtom } from './backboneGenerator';
-import {
-  calculateEnergy,
-  calculateForces,
-  DEFAULT_FORCE_FIELD_PARAMS,
-  type ForceFieldParams,
-} from './forceField';
-import { calculateRMSD } from './rmsd';
+import type { BackboneAtom } from "./backboneGenerator";
+import { calculateEnergy, calculateForces, DEFAULT_FORCE_FIELD_PARAMS, type ForceFieldParams } from "./forceField";
+import { calculateRMSD } from "./rmsd";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -133,10 +128,7 @@ function gaussianRandom(): number {
  * Velocities in Å/fs, masses in amu.
  * Returns temperature in K.
  */
-function kineticTemperature(
-  velocities: Array<[number, number, number]>,
-  masses: number[],
-): number {
+function kineticTemperature(velocities: Array<[number, number, number]>, masses: number[]): number {
   let ke = 0; // amu*(Å/fs)²
   for (let i = 0; i < velocities.length; i++) {
     const v = velocities[i];
@@ -153,14 +145,8 @@ function kineticTemperature(
 /**
  * Convert forces from kJ/(mol*Å) to natural MD units (amu*Å/fs²).
  */
-function convertForcesToMD(
-  forces: Array<[number, number, number]>,
-): Array<[number, number, number]> {
-  return forces.map((f) => [
-    f[0] * KJ_MOL_A_TO_MD_FORCE,
-    f[1] * KJ_MOL_A_TO_MD_FORCE,
-    f[2] * KJ_MOL_A_TO_MD_FORCE,
-  ]);
+function convertForcesToMD(forces: Array<[number, number, number]>): Array<[number, number, number]> {
+  return forces.map((f) => [f[0] * KJ_MOL_A_TO_MD_FORCE, f[1] * KJ_MOL_A_TO_MD_FORCE, f[2] * KJ_MOL_A_TO_MD_FORCE]);
 }
 
 // ---------------------------------------------------------------------------
@@ -184,10 +170,7 @@ function convertForcesToMD(
  * @param config MD configuration
  * @returns MDResult with frames and statistics
  */
-export function runMD(
-  atoms: BackboneAtom[],
-  config?: MDConfig,
-): MDResult {
+export function runMD(atoms: BackboneAtom[], config?: MDConfig): MDResult {
   const cfg = { ...DEFAULT_MD_CONFIG, ...config };
   const ffParams: ForceFieldParams = DEFAULT_FORCE_FIELD_PARAMS;
 
@@ -210,7 +193,7 @@ export function runMD(
 
   // BAOAB coefficients
   const c = Math.exp(-gammaFs * dt); // O-step velocity scaling
-  const sigmaV = Math.sqrt(KB_MD * T * (1 - c * c) / AVG_BACKBONE_MASS); // noise amplitude
+  const sigmaV = Math.sqrt((KB_MD * T * (1 - c * c)) / AVG_BACKBONE_MASS); // noise amplitude
 
   // Masses
   const masses = new Array(nAtoms).fill(AVG_BACKBONE_MASS);
@@ -221,18 +204,16 @@ export function runMD(
 
   // Initialize velocities from Maxwell-Boltzmann distribution at target T
   // v ~ N(0, sqrt(kB*T/m)) per component
-  const vSigma = Math.sqrt(KB_MD * T / AVG_BACKBONE_MASS);
+  const vSigma = Math.sqrt((KB_MD * T) / AVG_BACKBONE_MASS);
   const velocities: Array<[number, number, number]> = [];
   for (let i = 0; i < nAtoms; i++) {
-    velocities.push([
-      vSigma * gaussianRandom(),
-      vSigma * gaussianRandom(),
-      vSigma * gaussianRandom(),
-    ]);
+    velocities.push([vSigma * gaussianRandom(), vSigma * gaussianRandom(), vSigma * gaussianRandom()]);
   }
 
   // Remove center-of-mass velocity to prevent drift
-  let cmVx = 0, cmVy = 0, cmVz = 0;
+  let cmVx = 0,
+    cmVy = 0,
+    cmVz = 0;
   for (let i = 0; i < nAtoms; i++) {
     cmVx += velocities[i][0];
     cmVy += velocities[i][1];
@@ -336,12 +317,8 @@ export function runMD(
   }
 
   const finalEnergy = calculateEnergy(positions, ffParams);
-  const meanTemperature =
-    temperatures.length > 0
-      ? temperatures.reduce((a, b) => a + b, 0) / temperatures.length
-      : 0;
-  const meanRMSD =
-    rmsds.length > 0 ? rmsds.reduce((a, b) => a + b, 0) / rmsds.length : 0;
+  const meanTemperature = temperatures.length > 0 ? temperatures.reduce((a, b) => a + b, 0) / temperatures.length : 0;
+  const meanRMSD = rmsds.length > 0 ? rmsds.reduce((a, b) => a + b, 0) / rmsds.length : 0;
 
   return {
     frames,

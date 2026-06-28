@@ -17,10 +17,7 @@
  * full reference genome databases.
  */
 
-import {
-  SELECT_AGENTS,
-  type SelectAgentEntry,
-} from '../../data/biosecurity/selectAgents';
+import { SELECT_AGENTS, type SelectAgentEntry } from "../../data/biosecurity/selectAgents";
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -41,7 +38,7 @@ export interface ScreeningMatch {
 
 export interface ScreeningResult {
   /** Overall screening status */
-  status: 'clear' | 'review' | 'blocked';
+  status: "clear" | "review" | "blocked";
   /** All matches that exceeded the identity threshold */
   matches: ScreeningMatch[];
   /** Timestamp of the screening (ISO 8601) */
@@ -69,7 +66,7 @@ export interface ScreeningConfig {
  * Normalize a DNA sequence: uppercase and strip everything except ACGT.
  */
 export function normalizeSequence(raw: string): string {
-  return raw.toUpperCase().replace(/[^ACGT]/g, '');
+  return raw.toUpperCase().replace(/[^ACGT]/g, "");
 }
 
 /**
@@ -78,7 +75,7 @@ export function normalizeSequence(raw: string): string {
 function validateSequence(raw: string): string {
   const normalized = normalizeSequence(raw);
   if (normalized.length === 0) {
-    throw new Error('Sequence is empty after normalization (no ACGT characters found)');
+    throw new Error("Sequence is empty after normalization (no ACGT characters found)");
   }
   return normalized;
 }
@@ -144,7 +141,7 @@ export function maxLocalIdentity(query: string, reference: string, minWindow: nu
 export const screeningAuditLog: Array<{
   timestamp: string;
   sequenceLength: number;
-  status: 'clear' | 'review' | 'blocked';
+  status: "clear" | "review" | "blocked";
   matchCount: number;
   topOrganism: string | null;
   topIdentity: number;
@@ -157,9 +154,8 @@ export const screeningAuditLog: Array<{
  * (see `src/services/audit/auditLogger.ts`).
  */
 function logScreeningResult(result: ScreeningResult): void {
-  const topMatch = result.matches.length > 0
-    ? result.matches.reduce((best, m) => (m.identity > best.identity ? m : best))
-    : null;
+  const topMatch =
+    result.matches.length > 0 ? result.matches.reduce((best, m) => (m.identity > best.identity ? m : best)) : null;
 
   const entry = {
     timestamp: result.timestamp,
@@ -174,12 +170,12 @@ function logScreeningResult(result: ScreeningResult): void {
   screeningAuditLog.push(entry);
 
   // Also log to console for development visibility
-  if (result.status !== 'clear') {
+  if (result.status !== "clear") {
     console.warn(
       `[Biosecurity] Sequence screened: status=${result.status}, ` +
         `matches=${result.matches.length}, ` +
-        `topOrganism=${topMatch?.organism ?? 'none'}, ` +
-        `topIdentity=${(topMatch?.identity ?? 0).toFixed(4)}`
+        `topOrganism=${topMatch?.organism ?? "none"}, ` +
+        `topIdentity=${(topMatch?.identity ?? 0).toFixed(4)}`,
     );
   }
 }
@@ -227,13 +223,13 @@ export function screenSequence(sequence: string, config?: ScreeningConfig): Scre
   matches.sort((a, b) => b.identity - a.identity);
 
   // Determine status from the best match
-  let status: 'clear' | 'review' | 'blocked';
+  let status: "clear" | "review" | "blocked";
   if (matches.length === 0) {
-    status = 'clear';
+    status = "clear";
   } else {
     const bestIdentity = matches[0].identity;
     // Sequences above 90% identity to select agents are blocked outright
-    status = bestIdentity > 0.9 ? 'blocked' : 'review';
+    status = bestIdentity > 0.9 ? "blocked" : "review";
   }
 
   const result: ScreeningResult = {

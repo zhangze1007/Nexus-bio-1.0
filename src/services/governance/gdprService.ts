@@ -13,9 +13,9 @@
  * - Export as ZIP with JSON files per table.
  */
 
-import { randomUUID } from 'node:crypto';
-import { deflateRawSync } from 'node:zlib';
-import { sqlAll, sqlGet, sqlRun, sqlBatch } from '../../server/libsqlDb';
+import { randomUUID } from "node:crypto";
+import { deflateRawSync } from "node:zlib";
+import { sqlAll, sqlGet, sqlRun, sqlBatch } from "../../server/libsqlDb";
 import type {
   GDPRRequest,
   GDPRRequestRow,
@@ -24,8 +24,8 @@ import type {
   DataSummary,
   DataTableSummary,
   SoftDeletedRecord,
-} from './types';
-import { USER_DATA_TABLES } from './types';
+} from "./types";
+import { USER_DATA_TABLES } from "./types";
 
 // ── Minimal ZIP builder (no external deps) ───────────────────────────
 
@@ -57,43 +57,43 @@ function buildZip(entries: ZipEntry[]): Buffer {
 
   for (const entry of entries) {
     const compressed = deflateRawSync(entry.data);
-    const nameBuffer = Buffer.from(entry.name, 'utf8');
+    const nameBuffer = Buffer.from(entry.name, "utf8");
     const crc = crc32(entry.data);
 
     // Local file header
     const local = Buffer.alloc(30 + nameBuffer.length);
-    local.writeUInt32LE(0x04034b50, 0);  // signature
-    local.writeUInt16LE(20, 4);           // version needed
-    local.writeUInt16LE(0, 6);            // flags
-    local.writeUInt16LE(8, 8);            // compression (deflate)
-    local.writeUInt16LE(0, 10);           // mod time
-    local.writeUInt16LE(0, 12);           // mod date
-    local.writeUInt32LE(crc, 14);         // crc32
-    local.writeUInt32LE(compressed.length, 18);  // compressed size
-    local.writeUInt32LE(entry.data.length, 22);  // uncompressed size
-    local.writeUInt16LE(nameBuffer.length, 26);  // filename length
-    local.writeUInt16LE(0, 28);           // extra field length
+    local.writeUInt32LE(0x04034b50, 0); // signature
+    local.writeUInt16LE(20, 4); // version needed
+    local.writeUInt16LE(0, 6); // flags
+    local.writeUInt16LE(8, 8); // compression (deflate)
+    local.writeUInt16LE(0, 10); // mod time
+    local.writeUInt16LE(0, 12); // mod date
+    local.writeUInt32LE(crc, 14); // crc32
+    local.writeUInt32LE(compressed.length, 18); // compressed size
+    local.writeUInt32LE(entry.data.length, 22); // uncompressed size
+    local.writeUInt16LE(nameBuffer.length, 26); // filename length
+    local.writeUInt16LE(0, 28); // extra field length
     nameBuffer.copy(local, 30);
 
     // Central directory header
     const central = Buffer.alloc(46 + nameBuffer.length);
-    central.writeUInt32LE(0x02014b50, 0);  // signature
-    central.writeUInt16LE(20, 4);           // version made by
-    central.writeUInt16LE(20, 6);           // version needed
-    central.writeUInt16LE(0, 8);            // flags
-    central.writeUInt16LE(8, 10);           // compression
-    central.writeUInt16LE(0, 12);           // mod time
-    central.writeUInt16LE(0, 14);           // mod date
-    central.writeUInt32LE(crc, 16);         // crc32
-    central.writeUInt32LE(compressed.length, 20);  // compressed size
-    central.writeUInt32LE(entry.data.length, 24);  // uncompressed size
-    central.writeUInt16LE(nameBuffer.length, 28);  // filename length
-    central.writeUInt16LE(0, 30);           // extra length
-    central.writeUInt16LE(0, 32);           // comment length
-    central.writeUInt16LE(0, 34);           // disk number start
-    central.writeUInt16LE(0, 36);           // internal attrs
-    central.writeUInt32LE(0, 38);           // external attrs
-    central.writeUInt32LE(offset, 42);      // local header offset
+    central.writeUInt32LE(0x02014b50, 0); // signature
+    central.writeUInt16LE(20, 4); // version made by
+    central.writeUInt16LE(20, 6); // version needed
+    central.writeUInt16LE(0, 8); // flags
+    central.writeUInt16LE(8, 10); // compression
+    central.writeUInt16LE(0, 12); // mod time
+    central.writeUInt16LE(0, 14); // mod date
+    central.writeUInt32LE(crc, 16); // crc32
+    central.writeUInt32LE(compressed.length, 20); // compressed size
+    central.writeUInt32LE(entry.data.length, 24); // uncompressed size
+    central.writeUInt16LE(nameBuffer.length, 28); // filename length
+    central.writeUInt16LE(0, 30); // extra length
+    central.writeUInt16LE(0, 32); // comment length
+    central.writeUInt16LE(0, 34); // disk number start
+    central.writeUInt16LE(0, 36); // internal attrs
+    central.writeUInt32LE(0, 38); // external attrs
+    central.writeUInt32LE(offset, 42); // local header offset
     nameBuffer.copy(central, 46);
 
     localHeaders.push(local, compressed);
@@ -107,13 +107,13 @@ function buildZip(entries: ZipEntry[]): Buffer {
   // End of central directory
   const eocd = Buffer.alloc(22);
   eocd.writeUInt32LE(0x06054b50, 0);
-  eocd.writeUInt16LE(0, 4);                // disk number
-  eocd.writeUInt16LE(0, 6);                // disk with central dir
-  eocd.writeUInt16LE(entries.length, 8);   // entries on this disk
-  eocd.writeUInt16LE(entries.length, 10);  // total entries
+  eocd.writeUInt16LE(0, 4); // disk number
+  eocd.writeUInt16LE(0, 6); // disk with central dir
+  eocd.writeUInt16LE(entries.length, 8); // entries on this disk
+  eocd.writeUInt16LE(entries.length, 10); // total entries
   eocd.writeUInt32LE(centralDirSize, 12);
   eocd.writeUInt32LE(centralDirOffset, 16);
-  eocd.writeUInt16LE(0, 20);               // comment length
+  eocd.writeUInt16LE(0, 20); // comment length
 
   return Buffer.concat([...localHeaders, ...centralHeaders, eocd]);
 }
@@ -122,12 +122,12 @@ function buildZip(entries: ZipEntry[]): Buffer {
 
 /** Known user-id column names per table. */
 const TABLE_USER_COLUMNS: Record<string, string> = {
-  workbench_projects: 'actor_id',
-  workbench_experiments: 'actor_id',
-  workbench_history: 'actor_id',
-  workbench_artifacts: 'actor_id',
-  audit_log: 'actor_id',
-  gdpr_requests: 'user_id',
+  workbench_projects: "actor_id",
+  workbench_experiments: "actor_id",
+  workbench_history: "actor_id",
+  workbench_artifacts: "actor_id",
+  audit_log: "actor_id",
+  gdpr_requests: "user_id",
 };
 
 // ── GDPR Service ─────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ export class GDPRService {
       [id, userId, now],
     );
 
-    return { id, userId, type: 'deletion', status: 'pending', requestedAt: now };
+    return { id, userId, type: "deletion", status: "pending", requestedAt: now };
   }
 
   /**
@@ -191,15 +191,15 @@ export class GDPRService {
     const result: DeletionResult = { tablesAffected: [], recordsDeleted: 0, recordsAnonymized: 0 };
 
     // Get the request
-    const requestRow = await sqlGet(
-      'SELECT * FROM gdpr_requests WHERE id = ? AND type = ?',
-      [requestId, 'deletion'],
-    ) as GDPRRequestRow | undefined;
+    const requestRow = (await sqlGet("SELECT * FROM gdpr_requests WHERE id = ? AND type = ?", [
+      requestId,
+      "deletion",
+    ])) as GDPRRequestRow | undefined;
 
     if (!requestRow) {
       throw new Error(`Deletion request not found: ${requestId}`);
     }
-    if (requestRow.status === 'completed') {
+    if (requestRow.status === "completed") {
       throw new Error(`Deletion request already completed: ${requestId}`);
     }
 
@@ -209,10 +209,7 @@ export class GDPRService {
     recoverableUntil.setDate(recoverableUntil.getDate() + 30);
 
     // Mark as processing
-    await sqlRun(
-      'UPDATE gdpr_requests SET status = ? WHERE id = ?',
-      ['processing', requestId],
-    );
+    await sqlRun("UPDATE gdpr_requests SET status = ? WHERE id = ?", ["processing", requestId]);
 
     try {
       for (const table of USER_DATA_TABLES) {
@@ -220,7 +217,7 @@ export class GDPRService {
         if (!userCol) continue;
 
         try {
-          if (table === 'audit_log') {
+          if (table === "audit_log") {
             // Anonymize audit logs — don't delete
             const updateResult = await sqlRun(
               `UPDATE audit_log
@@ -249,7 +246,7 @@ export class GDPRService {
                 [
                   randomUUID(),
                   table,
-                  String(record.id ?? ''),
+                  String(record.id ?? ""),
                   JSON.stringify(record),
                   now.toISOString(),
                   recoverableUntil.toISOString(),
@@ -270,10 +267,7 @@ export class GDPRService {
               }
             } catch {
               // Table might not have soft_deleted column — try hard delete
-              const deleteResult = await sqlRun(
-                `DELETE FROM ${table} WHERE ${userCol} = ?`,
-                [userId],
-              );
+              const deleteResult = await sqlRun(`DELETE FROM ${table} WHERE ${userCol} = ?`, [userId]);
               if (deleteResult.rowsAffected > 0) {
                 result.tablesAffected.push(table);
                 result.recordsDeleted += deleteResult.rowsAffected;
@@ -286,15 +280,17 @@ export class GDPRService {
       }
 
       // Mark request as completed
-      await sqlRun(
-        'UPDATE gdpr_requests SET status = ?, completed_at = ? WHERE id = ?',
-        ['completed', new Date().toISOString(), requestId],
-      );
+      await sqlRun("UPDATE gdpr_requests SET status = ?, completed_at = ? WHERE id = ?", [
+        "completed",
+        new Date().toISOString(),
+        requestId,
+      ]);
     } catch (err) {
-      await sqlRun(
-        'UPDATE gdpr_requests SET status = ?, error_message = ? WHERE id = ?',
-        ['failed', String(err), requestId],
-      );
+      await sqlRun("UPDATE gdpr_requests SET status = ?, error_message = ? WHERE id = ?", [
+        "failed",
+        String(err),
+        requestId,
+      ]);
       throw err;
     }
 
@@ -316,7 +312,7 @@ export class GDPRService {
       [id, userId, now],
     );
 
-    return { id, userId, type: 'export', status: 'pending', requestedAt: now };
+    return { id, userId, type: "export", status: "pending", requestedAt: now };
   }
 
   /**
@@ -327,10 +323,9 @@ export class GDPRService {
    */
   async processExport(requestId: string): Promise<ExportResult> {
     // Get the request
-    const requestRow = await sqlGet(
-      'SELECT * FROM gdpr_requests WHERE id = ? AND type = ?',
-      [requestId, 'export'],
-    ) as GDPRRequestRow | undefined;
+    const requestRow = (await sqlGet("SELECT * FROM gdpr_requests WHERE id = ? AND type = ?", [requestId, "export"])) as
+      | GDPRRequestRow
+      | undefined;
 
     if (!requestRow) {
       throw new Error(`Export request not found: ${requestId}`);
@@ -339,10 +334,7 @@ export class GDPRService {
     const userId = requestRow.user_id;
 
     // Mark as processing
-    await sqlRun(
-      'UPDATE gdpr_requests SET status = ? WHERE id = ?',
-      ['processing', requestId],
-    );
+    await sqlRun("UPDATE gdpr_requests SET status = ? WHERE id = ?", ["processing", requestId]);
 
     try {
       const entries: ZipEntry[] = [];
@@ -360,17 +352,14 @@ export class GDPRService {
         if (!userCol) continue;
 
         try {
-          const records = await sqlAll(
-            `SELECT * FROM ${table} WHERE ${userCol} = ?`,
-            [userId],
-          );
+          const records = await sqlAll(`SELECT * FROM ${table} WHERE ${userCol} = ?`, [userId]);
 
           if (records.length > 0) {
             // Redact sensitive fields in export
             const sanitized = records.map((r) => this.sanitizeForExport(r, table));
             entries.push({
               name: `${table}.json`,
-              data: Buffer.from(JSON.stringify(sanitized, null, 2), 'utf8'),
+              data: Buffer.from(JSON.stringify(sanitized, null, 2), "utf8"),
             });
             metadata.tables.push(table);
           }
@@ -381,8 +370,8 @@ export class GDPRService {
 
       // Add metadata file
       entries.push({
-        name: '_metadata.json',
-        data: Buffer.from(JSON.stringify(metadata, null, 2), 'utf8'),
+        name: "_metadata.json",
+        data: Buffer.from(JSON.stringify(metadata, null, 2), "utf8"),
       });
 
       // Build ZIP
@@ -396,10 +385,11 @@ export class GDPRService {
       const downloadUrl = `/api/gdpr/export?download=${requestId}`;
 
       // Mark request as completed
-      await sqlRun(
-        'UPDATE gdpr_requests SET status = ?, completed_at = ? WHERE id = ?',
-        ['completed', new Date().toISOString(), requestId],
-      );
+      await sqlRun("UPDATE gdpr_requests SET status = ?, completed_at = ? WHERE id = ?", [
+        "completed",
+        new Date().toISOString(),
+        requestId,
+      ]);
 
       // Store export artifact reference (the actual ZIP is ephemeral in-memory;
       // production would use persistent storage)
@@ -408,13 +398,14 @@ export class GDPRService {
       return {
         downloadUrl,
         fileSize: zipBuffer.length,
-        format: 'zip',
+        format: "zip",
       };
     } catch (err) {
-      await sqlRun(
-        'UPDATE gdpr_requests SET status = ?, error_message = ? WHERE id = ?',
-        ['failed', String(err), requestId],
-      );
+      await sqlRun("UPDATE gdpr_requests SET status = ?, error_message = ? WHERE id = ?", [
+        "failed",
+        String(err),
+        requestId,
+      ]);
       throw err;
     }
   }
@@ -440,16 +431,13 @@ export class GDPRService {
       if (!userCol) continue;
 
       try {
-        const countRow = await sqlGet(
-          `SELECT COUNT(*) as cnt FROM ${table} WHERE ${userCol} = ?`,
-          [userId],
-        );
+        const countRow = await sqlGet(`SELECT COUNT(*) as cnt FROM ${table} WHERE ${userCol} = ?`, [userId]);
         const recordCount = Number(countRow?.cnt ?? 0);
 
-        let lastModified = 'N/A';
+        let lastModified = "N/A";
         if (recordCount > 0) {
           // Try common timestamp columns
-          for (const tsCol of ['updated_at', 'created_at', 'requested_at', 'classified_at', 'timestamp']) {
+          for (const tsCol of ["updated_at", "created_at", "requested_at", "classified_at", "timestamp"]) {
             try {
               const tsRow = await sqlGet(
                 `SELECT ${tsCol} FROM ${table} WHERE ${userCol} = ? ORDER BY ${tsCol} DESC LIMIT 1`,
@@ -468,7 +456,7 @@ export class GDPRService {
         tables.push({ name: table, recordCount, lastModified });
       } catch {
         // Table may not exist
-        tables.push({ name: table, recordCount: 0, lastModified: 'N/A' });
+        tables.push({ name: table, recordCount: 0, lastModified: "N/A" });
       }
     }
 

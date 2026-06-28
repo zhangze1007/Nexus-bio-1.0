@@ -64,11 +64,7 @@ export class ConversationManager {
 
   // ── Create ────────────────────────────────────────────────────────
 
-  async createConversation(
-    projectId: string | null,
-    userId: string,
-    title?: string,
-  ): Promise<Conversation> {
+  async createConversation(projectId: string | null, userId: string, title?: string): Promise<Conversation> {
     const id = this.idFactory();
     const ts = nowISO();
     const safeTitle = title ?? "New Conversation";
@@ -94,16 +90,14 @@ export class ConversationManager {
   // ── Read ──────────────────────────────────────────────────────────
 
   async getConversation(id: string): Promise<Conversation | null> {
-    const row = this.db
-      .prepare(`SELECT * FROM ai_conversations WHERE id = ?`)
-      .get(id) as Record<string, unknown> | undefined;
+    const row = this.db.prepare(`SELECT * FROM ai_conversations WHERE id = ?`).get(id) as
+      | Record<string, unknown>
+      | undefined;
 
     if (!row) return null;
 
     const messages = this.db
-      .prepare(
-        `SELECT * FROM ai_messages WHERE conversation_id = ? ORDER BY created_at ASC`,
-      )
+      .prepare(`SELECT * FROM ai_messages WHERE conversation_id = ? ORDER BY created_at ASC`)
       .all(id) as Record<string, unknown>[];
 
     return {
@@ -119,19 +113,11 @@ export class ConversationManager {
 
   // ── Add message ───────────────────────────────────────────────────
 
-  async addMessage(
-    conversationId: string,
-    message: Omit<CopilotMessage, "id" | "timestamp">,
-  ): Promise<CopilotMessage> {
+  async addMessage(conversationId: string, message: Omit<CopilotMessage, "id" | "timestamp">): Promise<CopilotMessage> {
     const id = this.idFactory();
     const ts = nowISO();
-    const toolCallsJson = message.toolCalls
-      ? JSON.stringify(message.toolCalls)
-      : null;
-    const toolResultJson =
-      message.toolResult !== undefined
-        ? JSON.stringify(message.toolResult)
-        : null;
+    const toolCallsJson = message.toolCalls ? JSON.stringify(message.toolCalls) : null;
+    const toolResultJson = message.toolResult !== undefined ? JSON.stringify(message.toolResult) : null;
 
     this.db
       .prepare(
@@ -141,9 +127,7 @@ export class ConversationManager {
       .run(id, conversationId, message.role, message.content, toolCallsJson, ts);
 
     // Touch conversation updated_at
-    this.db
-      .prepare(`UPDATE ai_conversations SET updated_at = ? WHERE id = ?`)
-      .run(ts, conversationId);
+    this.db.prepare(`UPDATE ai_conversations SET updated_at = ? WHERE id = ?`).run(ts, conversationId);
 
     return {
       id,
@@ -157,10 +141,7 @@ export class ConversationManager {
 
   // ── Get recent messages (for context window) ──────────────────────
 
-  async getRecentMessages(
-    conversationId: string,
-    limit = 20,
-  ): Promise<CopilotMessage[]> {
+  async getRecentMessages(conversationId: string, limit = 20): Promise<CopilotMessage[]> {
     const rows = this.db
       .prepare(
         `SELECT * FROM ai_messages WHERE conversation_id = ?
@@ -176,9 +157,7 @@ export class ConversationManager {
 
   async summarizeOldMessages(conversationId: string): Promise<string> {
     const total = this.db
-      .prepare(
-        `SELECT COUNT(*) as cnt FROM ai_messages WHERE conversation_id = ?`,
-      )
+      .prepare(`SELECT COUNT(*) as cnt FROM ai_messages WHERE conversation_id = ?`)
       .get(conversationId) as Record<string, unknown> | undefined;
 
     const count = Number(total?.cnt ?? 0);
@@ -195,18 +174,13 @@ export class ConversationManager {
     if (oldRows.length === 0) return "";
 
     // Build a plain-text summary of the older conversation turns
-    const lines = oldRows.map(
-      (r) => `[${r.role}]: ${String(r.content).slice(0, 200)}`,
-    );
+    const lines = oldRows.map((r) => `[${r.role}]: ${String(r.content).slice(0, 200)}`);
     return `Previous conversation summary (${oldRows.length} messages):\n${lines.join("\n")}`;
   }
 
   // ── List conversations ────────────────────────────────────────────
 
-  async listConversations(
-    userId: string,
-    projectId?: string,
-  ): Promise<Conversation[]> {
+  async listConversations(userId: string, projectId?: string): Promise<Conversation[]> {
     let rows: Record<string, unknown>[];
 
     if (projectId) {

@@ -3,9 +3,10 @@
  * Restricts origins to known deployments instead of wildcard '*'.
  */
 
-const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
-  ? ["https://nexus-bio-1-0.vercel.app"]
-  : ["https://nexus-bio-1-0.vercel.app", "http://localhost:3000", "http://localhost:3001"];
+const ALLOWED_ORIGINS =
+  process.env.NODE_ENV === "production"
+    ? ["https://nexus-bio-1-0.vercel.app"]
+    : ["https://nexus-bio-1-0.vercel.app", "http://localhost:3000", "http://localhost:3001"];
 
 /**
  * Build CORS headers for a request. Falls back to the primary origin
@@ -22,7 +23,8 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, x-workbench-actor-id, x-workbench-project-id, X-API-Version, Deprecation, Sunset",
+    "Access-Control-Allow-Headers":
+      "Content-Type, x-workbench-actor-id, x-workbench-project-id, X-API-Version, Deprecation, Sunset",
   };
 }
 

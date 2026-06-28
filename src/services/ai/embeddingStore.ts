@@ -103,9 +103,7 @@ async function generateOpenAIEmbedding(text: string): Promise<number[]> {
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(
-      `OpenAI embedding failed (${res.status}): ${body.slice(0, 200)}`,
-    );
+    throw new Error(`OpenAI embedding failed (${res.status}): ${body.slice(0, 200)}`);
   }
 
   const data = (await res.json()) as {
@@ -139,7 +137,7 @@ export function generateLocalEmbedding(text: string): number[] {
 
   // Also seed from individual characters for single-word inputs
   for (let i = 0; i < normalized.length; i++) {
-    const idx = ((normalized.charCodeAt(i) * 17) % dim + dim) % dim;
+    const idx = (((normalized.charCodeAt(i) * 17) % dim) + dim) % dim;
     vec[idx] += 0.5;
   }
 
@@ -161,9 +159,7 @@ const localStore: Map<string, EmbeddingRecord> = new Map();
 /** Cosine similarity between two vectors of equal length. */
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
-    throw new Error(
-      `Vector dimension mismatch: ${a.length} vs ${b.length}`,
-    );
+    throw new Error(`Vector dimension mismatch: ${a.length} vs ${b.length}`);
   }
 
   let dot = 0;
@@ -198,11 +194,7 @@ function useUpstash(): boolean {
  * @param text     Source text to embed
  * @param metadata Arbitrary metadata to store alongside the vector
  */
-export async function upsertEmbedding(
-  id: string,
-  text: string,
-  metadata: EmbeddingMetadata = {},
-): Promise<void> {
+export async function upsertEmbedding(id: string, text: string, metadata: EmbeddingMetadata = {}): Promise<void> {
   const vector = await generateEmbedding(text);
 
   if (useUpstash()) {
@@ -212,11 +204,7 @@ export async function upsertEmbedding(
   }
 }
 
-async function upsertToUpstash(
-  id: string,
-  vector: number[],
-  metadata: Record<string, unknown>,
-): Promise<void> {
+async function upsertToUpstash(id: string, vector: number[], metadata: Record<string, unknown>): Promise<void> {
   const res = await fetch(`${UPSTASH_URL}/upsert`, {
     method: "POST",
     headers: upstashHeaders(),
@@ -229,18 +217,11 @@ async function upsertToUpstash(
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(
-      `Upstash upsert failed (${res.status}): ${body.slice(0, 200)}`,
-    );
+    throw new Error(`Upstash upsert failed (${res.status}): ${body.slice(0, 200)}`);
   }
 }
 
-function upsertToLocal(
-  id: string,
-  vector: number[],
-  metadata: EmbeddingMetadata,
-  text: string,
-): void {
+function upsertToLocal(id: string, vector: number[], metadata: EmbeddingMetadata, text: string): void {
   localStore.set(id, { id, vector, metadata, text });
 }
 
@@ -255,10 +236,7 @@ function upsertToLocal(
  * @param topK  Maximum number of results to return (default 5)
  * @returns     Ranked results sorted by descending similarity score
  */
-export async function queryEmbedding(
-  text: string,
-  topK: number = 5,
-): Promise<QueryResult[]> {
+export async function queryEmbedding(text: string, topK: number = 5): Promise<QueryResult[]> {
   const vector = await generateEmbedding(text);
 
   if (useUpstash()) {
@@ -267,10 +245,7 @@ export async function queryEmbedding(
   return queryFromLocal(vector, topK);
 }
 
-async function queryFromUpstash(
-  vector: number[],
-  topK: number,
-): Promise<QueryResult[]> {
+async function queryFromUpstash(vector: number[], topK: number): Promise<QueryResult[]> {
   const res = await fetch(`${UPSTASH_URL}/query`, {
     method: "POST",
     headers: upstashHeaders(),
@@ -283,9 +258,7 @@ async function queryFromUpstash(
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(
-      `Upstash query failed (${res.status}): ${body.slice(0, 200)}`,
-    );
+    throw new Error(`Upstash query failed (${res.status}): ${body.slice(0, 200)}`);
   }
 
   const data = (await res.json()) as {
@@ -300,16 +273,11 @@ async function queryFromUpstash(
     id: r.id,
     score: r.score,
     metadata: (r.metadata ?? {}) as EmbeddingMetadata,
-    text: (r.metadata as Record<string, unknown> | undefined)?.text as
-      | string
-      | undefined,
+    text: (r.metadata as Record<string, unknown> | undefined)?.text as string | undefined,
   }));
 }
 
-function queryFromLocal(
-  queryVector: number[],
-  topK: number,
-): QueryResult[] {
+function queryFromLocal(queryVector: number[], topK: number): QueryResult[] {
   const results: QueryResult[] = [];
 
   for (const record of localStore.values()) {
@@ -354,9 +322,7 @@ async function deleteFromUpstash(id: string): Promise<boolean> {
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(
-      `Upstash delete failed (${res.status}): ${body.slice(0, 200)}`,
-    );
+    throw new Error(`Upstash delete failed (${res.status}): ${body.slice(0, 200)}`);
   }
 
   return true;

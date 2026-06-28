@@ -146,11 +146,7 @@ export function exportToFasta(sequence: string, name: string): string {
  * @returns GenBank flat-file formatted string
  * @throws Error if sequence or name is empty
  */
-export function exportToGenBank(
-  sequence: string,
-  features: SequenceFeature[],
-  name: string,
-): string {
+export function exportToGenBank(sequence: string, features: SequenceFeature[], name: string): string {
   if (!sequence || sequence.length === 0) {
     throw new Error("Cannot export empty sequence to GenBank");
   }
@@ -257,11 +253,7 @@ export function exportToGenBank(
  * @returns SBOL 3.0 XML string
  * @throws Error if sequence or name is empty
  */
-export function exportToSBOL(
-  sequence: string,
-  features: SequenceFeature[],
-  name: string,
-): string {
+export function exportToSBOL(sequence: string, features: SequenceFeature[], name: string): string {
   if (!sequence || sequence.length === 0) {
     throw new Error("Cannot export empty sequence to SBOL");
   }
@@ -371,11 +363,7 @@ export function autoDetectFormat(content: string): "fasta" | "genbank" | "sbol" 
   }
 
   // GenBank fallback: contains both FEATURES and ORIGIN sections with // terminator
-  if (
-    content.includes("FEATURES") &&
-    content.includes("ORIGIN") &&
-    content.includes("//")
-  ) {
+  if (content.includes("FEATURES") && content.includes("ORIGIN") && content.includes("//")) {
     return "genbank";
   }
 

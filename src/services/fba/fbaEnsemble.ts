@@ -152,11 +152,7 @@ function uniformRandom(lo: number, hi: number): number {
  *                     (default 0.1 = 10% perturbation)
  * @returns EnsembleResult with all solutions and per-reaction statistics
  */
-export async function runEnsembleFBA(
-  model: LPModel,
-  nSamples: number,
-  delta = 0.1,
-): Promise<EnsembleResult> {
+export async function runEnsembleFBA(model: LPModel, nSamples: number, delta = 0.1): Promise<EnsembleResult> {
   if (nSamples <= 0) {
     return { solutions: [], meanFluxes: {}, stdFluxes: {} };
   }
@@ -233,10 +229,7 @@ export async function runEnsembleFBA(
  *                             (default 1e-6, i.e. maintain within 0.0001%)
  * @returns FVAResult with per-reaction min, max, and variability
  */
-export async function computeFluxVariability(
-  model: LPModel,
-  objectiveTolerance = 1e-6,
-): Promise<FVAResult> {
+export async function computeFluxVariability(model: LPModel, objectiveTolerance = 1e-6): Promise<FVAResult> {
   // Step 1: Solve for optimal objective
   const optResult = await solveLP(model);
   if (optResult.status !== "optimal") {

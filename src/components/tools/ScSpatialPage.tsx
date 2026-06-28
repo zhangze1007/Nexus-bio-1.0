@@ -703,7 +703,15 @@ export default React.memo(function ScSpatialPage() {
                           })}
                           {/* Legend */}
                           <g transform="translate(420, 10)" style={{ fontSize: 9, fontFamily: THEME.MONO }}>
-                            <rect x={0} y={0} width={130} height={90} rx={4} fill="#161a24" stroke="rgba(255,255,255,0.12)" />
+                            <rect
+                              x={0}
+                              y={0}
+                              width={130}
+                              height={90}
+                              rx={4}
+                              fill="#161a24"
+                              stroke="rgba(255,255,255,0.12)"
+                            />
                             <circle cx={12} cy={16} r={5} fill="#BFDCCD" stroke="#3b82f6" strokeWidth={1.5} />
                             <text x={22} y={19} fill="rgba(226,232,240,0.56)">
                               Sender
@@ -885,7 +893,14 @@ export default React.memo(function ScSpatialPage() {
                       <tbody>
                         {commResult.topInteractions.map((inter, idx) => (
                           <tr key={`${inter.ligand}-${inter.receptor}-${inter.sender}-${inter.receiver}-${idx}`}>
-                            <td style={{ padding: "4px 8px", fontFamily: THEME.MONO, fontSize: 10, color: "rgba(226,232,240,0.45)" }}>
+                            <td
+                              style={{
+                                padding: "4px 8px",
+                                fontFamily: THEME.MONO,
+                                fontSize: 10,
+                                color: "rgba(226,232,240,0.45)",
+                              }}
+                            >
                               {idx + 1}
                             </td>
                             <td style={{ padding: "4px 8px", fontWeight: 500 }}>{inter.ligand}</td>
@@ -994,9 +1009,7 @@ export default React.memo(function ScSpatialPage() {
               onToggleNeighbors={toggleNeighbors}
               onSetNeighborK={setNeighborK}
               onAnalysisParamChange={handleAnalysisParamChange}
-              spatialFormat={
-                query?.spatialFormat ?? null
-              }
+              spatialFormat={query?.spatialFormat ?? null}
             />
 
             <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
@@ -1010,9 +1023,7 @@ export default React.memo(function ScSpatialPage() {
                 showKde={showKde}
                 showNeighbors={showNeighbors}
                 neighborK={neighborK}
-                heImageData={
-                  query?.heImage ?? null
-                }
+                heImageData={query?.heImage ?? null}
               />
 
               {query && (

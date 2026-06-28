@@ -23,15 +23,7 @@ function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
-function AnimatedCounter({
-  target,
-  suffix,
-  inView,
-}: {
-  target: number;
-  suffix: string;
-  inView: boolean;
-}) {
+function AnimatedCounter({ target, suffix, inView }: { target: number; suffix: string; inView: boolean }) {
   const [count, setCount] = useState(0);
   const hasAnimated = useRef(false);
 
@@ -66,15 +58,7 @@ function AnimatedCounter({
   );
 }
 
-function StatCard({
-  stat,
-  index,
-  inView,
-}: {
-  stat: StatItem;
-  index: number;
-  inView: boolean;
-}) {
+function StatCard({ stat, index, inView }: { stat: StatItem; index: number; inView: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -82,20 +66,10 @@ function StatCard({
       transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
       className="text-center"
     >
-      <div
-        className="text-3xl sm:text-4xl font-bold mb-1"
-        style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-      >
-        <AnimatedCounter
-          target={stat.value}
-          suffix={stat.suffix}
-          inView={inView}
-        />
+      <div className="text-3xl sm:text-4xl font-bold mb-1" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
+        <AnimatedCounter target={stat.value} suffix={stat.suffix} inView={inView} />
       </div>
-      <div
-        className="text-xs sm:text-sm"
-        style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-      >
+      <div className="text-xs sm:text-sm" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
         {stat.label}
       </div>
       {/* Accent underline */}

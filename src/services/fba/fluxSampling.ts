@@ -308,11 +308,7 @@ function findStepBounds(
  * @param tolerance - Fraction of objective to allow (default 1e-6)
  * @returns Array of FluxSample objects with fluxes and objective values
  */
-export async function sampleFlux(
-  model: LPModel,
-  nSamples: number,
-  tolerance = 1e-6,
-): Promise<FluxSample[]> {
+export async function sampleFlux(model: LPModel, nSamples: number, tolerance = 1e-6): Promise<FluxSample[]> {
   if (nSamples <= 0) return [];
 
   // Collect variable names from model bounds (in order)
@@ -372,8 +368,8 @@ export async function sampleFlux(
       objective: [{ name, coef: 1 }],
     };
     const [minR, maxR] = await Promise.all([solveLP(minModel), solveLP(maxModel)]);
-    varMin[i] = minR.status === "optimal" ? minR.objectiveValue : optResult.primals[name] ?? 0;
-    varMax[i] = maxR.status === "optimal" ? maxR.objectiveValue : optResult.primals[name] ?? 0;
+    varMin[i] = minR.status === "optimal" ? minR.objectiveValue : (optResult.primals[name] ?? 0);
+    varMax[i] = maxR.status === "optimal" ? maxR.objectiveValue : (optResult.primals[name] ?? 0);
   }
 
   // Use midpoint of FVA range as starting point
@@ -442,9 +438,7 @@ export async function sampleFlux(
     }
 
     // Find feasible step range (analytical, no LP solves)
-    const { minStep, maxStep } = findStepBounds(
-      current, direction, varLb, varUb, objCoefs, varNames, objTarget,
-    );
+    const { minStep, maxStep } = findStepBounds(current, direction, varLb, varUb, objCoefs, varNames, objTarget);
 
     if (maxStep - minStep < 1e-12) {
       // Degenerate: no room to move, record current point
@@ -486,11 +480,7 @@ export async function sampleFlux(
  * @param tolerance - Fraction of objective to allow (default 1e-6)
  * @returns Array of FluxRange objects with per-reaction statistics
  */
-export async function computeFluxRange(
-  model: LPModel,
-  nSamples = 100,
-  tolerance = 1e-6,
-): Promise<FluxRange[]> {
+export async function computeFluxRange(model: LPModel, nSamples = 100, tolerance = 1e-6): Promise<FluxRange[]> {
   const samples = await sampleFlux(model, nSamples, tolerance);
   if (samples.length === 0) return [];
 

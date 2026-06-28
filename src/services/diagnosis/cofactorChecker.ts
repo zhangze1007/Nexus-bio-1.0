@@ -27,21 +27,7 @@
  */
 
 /** Standard set of cofactors to check in metabolic models. */
-export const COFACTORS = [
-  "atp",
-  "adp",
-  "amp",
-  "nad",
-  "nadh",
-  "nadp",
-  "nadph",
-  "coa",
-  "accoa",
-  "pi",
-  "ppi",
-  "h2o",
-  "h",
-];
+export const COFACTORS = ["atp", "adp", "amp", "nad", "nadh", "nadp", "nadph", "coa", "accoa", "pi", "ppi", "h2o", "h"];
 
 export interface CofactorImbalance {
   cofactor: string;
@@ -95,10 +81,7 @@ export function checkCofactorBalance(
       const effectiveRate = flux * coef; // positive = net production, negative = net consumption
 
       if (effectiveRate > 0) {
-        cofactorProduction.set(
-          matchedCofactor,
-          (cofactorProduction.get(matchedCofactor) ?? 0) + effectiveRate,
-        );
+        cofactorProduction.set(matchedCofactor, (cofactorProduction.get(matchedCofactor) ?? 0) + effectiveRate);
       } else {
         cofactorConsumption.set(
           matchedCofactor,

@@ -1,14 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Beaker,
-  CircuitBoard,
-  GitBranch,
-  Microscope,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { Beaker, CircuitBoard, GitBranch, Microscope, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { THEME } from "../../theme";
 
@@ -94,22 +87,39 @@ const highlightVariants = {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function getTooltipPosition(
-  targetRect: DOMRect,
-  position: TourStep["position"],
-) {
+function getTooltipPosition(targetRect: DOMRect, position: TourStep["position"]) {
   const gap = 16;
   switch (position) {
     case "top":
-      return { top: targetRect.top - gap, left: targetRect.left + targetRect.width / 2, transform: "translate(-50%, -100%)" };
+      return {
+        top: targetRect.top - gap,
+        left: targetRect.left + targetRect.width / 2,
+        transform: "translate(-50%, -100%)",
+      };
     case "bottom":
-      return { top: targetRect.bottom + gap, left: targetRect.left + targetRect.width / 2, transform: "translate(-50%, 0)" };
+      return {
+        top: targetRect.bottom + gap,
+        left: targetRect.left + targetRect.width / 2,
+        transform: "translate(-50%, 0)",
+      };
     case "left":
-      return { top: targetRect.top + targetRect.height / 2, left: targetRect.left - gap, transform: "translate(-100%, -50%)" };
+      return {
+        top: targetRect.top + targetRect.height / 2,
+        left: targetRect.left - gap,
+        transform: "translate(-100%, -50%)",
+      };
     case "right":
-      return { top: targetRect.top + targetRect.height / 2, left: targetRect.right + gap, transform: "translate(0, -50%)" };
+      return {
+        top: targetRect.top + targetRect.height / 2,
+        left: targetRect.right + gap,
+        transform: "translate(0, -50%)",
+      };
     default:
-      return { top: targetRect.bottom + gap, left: targetRect.left + targetRect.width / 2, transform: "translate(-50%, 0)" };
+      return {
+        top: targetRect.bottom + gap,
+        left: targetRect.left + targetRect.width / 2,
+        transform: "translate(-50%, 0)",
+      };
   }
 }
 
@@ -134,12 +144,7 @@ interface OnboardingTourProps {
   onComplete?: () => void;
 }
 
-export default function OnboardingTour({
-  steps = TOUR_STEPS,
-  isOpen,
-  onClose,
-  onComplete,
-}: OnboardingTourProps) {
+export default function OnboardingTour({ steps = TOUR_STEPS, isOpen, onClose, onComplete }: OnboardingTourProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
@@ -178,8 +183,10 @@ export default function OnboardingTour({
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
-        if (isLast) { onComplete?.(); onClose(); }
-        else setStepIndex((i) => i + 1);
+        if (isLast) {
+          onComplete?.();
+          onClose();
+        } else setStepIndex((i) => i + 1);
       }
       if (e.key === "ArrowLeft" && !isFirst) {
         setStepIndex((i) => i - 1);
@@ -400,8 +407,10 @@ export default function OnboardingTour({
               </button>
               <button
                 onClick={() => {
-                  if (isLast) { onComplete?.(); onClose(); }
-                  else setStepIndex((i) => i + 1);
+                  if (isLast) {
+                    onComplete?.();
+                    onClose();
+                  } else setStepIndex((i) => i + 1);
                 }}
                 data-testid="tour-next"
                 style={{

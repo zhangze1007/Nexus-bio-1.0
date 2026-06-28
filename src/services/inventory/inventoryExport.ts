@@ -137,12 +137,7 @@ export async function generateInventoryReport(projectId: string): Promise<Invent
   // ── Fetch all items per type ──────────────────────────────────────
 
   const [strainRows, plasmidRows, primerRows, chemicalRows] = await Promise.all(
-    ITEM_TABLES.map(({ table }) =>
-      sqlAll(
-        `SELECT * FROM ${table} WHERE archived = 0 AND project_id = ?`,
-        pidArgs,
-      ),
-    ),
+    ITEM_TABLES.map(({ table }) => sqlAll(`SELECT * FROM ${table} WHERE archived = 0 AND project_id = ?`, pidArgs)),
   );
 
   const byType = {
@@ -188,8 +183,7 @@ export async function generateInventoryReport(projectId: string): Promise<Invent
     pidArgs,
   );
 
-  const lowStock =
-    Number(lowChemicalRows[0]?.cnt ?? 0) + Number(lowStrainRows[0]?.cnt ?? 0);
+  const lowStock = Number(lowChemicalRows[0]?.cnt ?? 0) + Number(lowStrainRows[0]?.cnt ?? 0);
 
   return {
     summary: { total, byType, expiring, lowStock },

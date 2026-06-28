@@ -14,10 +14,9 @@ import { z } from "zod";
  * envelope shape before the handler runs.
  */
 export const WorkbenchPutSchema = z.object({
-  state: z.record(z.string(), z.unknown()).refine(
-    (val) => val !== null && typeof val === "object",
-    { message: "state must be a non-null object" },
-  ),
+  state: z
+    .record(z.string(), z.unknown())
+    .refine((val) => val !== null && typeof val === "object", { message: "state must be a non-null object" }),
 });
 
 export type WorkbenchPutBody = z.infer<typeof WorkbenchPutSchema>;

@@ -16,13 +16,7 @@ import { sqlAll, sqlBatch, sqlGet, sqlRun } from "../../server/libsqlDb";
 // ─── Types ───────────────────────────────────────────────────────
 
 /** Allowed experiment statuses. */
-export type ExperimentStatus =
-  | "planned"
-  | "running"
-  | "paused"
-  | "completed"
-  | "failed"
-  | "aborted";
+export type ExperimentStatus = "planned" | "running" | "paused" | "completed" | "failed" | "aborted";
 
 /** Canonical experiment record returned to callers. */
 export interface Experiment {
@@ -105,14 +99,7 @@ function now(): number {
   return Date.now();
 }
 
-const VALID_STATUSES: ExperimentStatus[] = [
-  "planned",
-  "running",
-  "paused",
-  "completed",
-  "failed",
-  "aborted",
-];
+const VALID_STATUSES: ExperimentStatus[] = ["planned", "running", "paused", "completed", "failed", "aborted"];
 
 /** Map a raw DB row to a typed Experiment. */
 function rowToExperiment(row: Record<string, unknown>): Experiment {
@@ -182,13 +169,7 @@ export async function createExperiment(
     {
       sql: `INSERT INTO lab_experiment_data (id, experiment_id, key, value, timestamp)
             VALUES (?, ?, ?, ?, ?)`,
-      args: [
-        randomUUID(),
-        id,
-        "created",
-        `Experiment "${name.trim()}" created for protocol ${protocolId.trim()}`,
-        ts,
-      ],
+      args: [randomUUID(), id, "created", `Experiment "${name.trim()}" created for protocol ${protocolId.trim()}`, ts],
     },
   ]);
 
@@ -215,20 +196,12 @@ export async function createExperiment(
  * @param status New status value
  * @throws       If the experiment does not exist or status is invalid
  */
-export async function updateExperimentStatus(
-  id: string,
-  status: ExperimentStatus,
-): Promise<void> {
+export async function updateExperimentStatus(id: string, status: ExperimentStatus): Promise<void> {
   if (!VALID_STATUSES.includes(status)) {
-    throw new Error(
-      `Invalid status "${status}". Must be one of: ${VALID_STATUSES.join(", ")}.`,
-    );
+    throw new Error(`Invalid status "${status}". Must be one of: ${VALID_STATUSES.join(", ")}.`);
   }
 
-  const experiment = await sqlGet(
-    "SELECT * FROM lab_experiments WHERE id = ?",
-    [id],
-  );
+  const experiment = await sqlGet("SELECT * FROM lab_experiments WHERE id = ?", [id]);
   if (!experiment) {
     throw new Error(`Experiment not found: ${id}`);
   }
@@ -252,13 +225,7 @@ export async function updateExperimentStatus(
     {
       sql: `INSERT INTO lab_experiment_data (id, experiment_id, key, value, timestamp)
             VALUES (?, ?, ?, ?, ?)`,
-      args: [
-        randomUUID(),
-        id,
-        "status_change",
-        `Status changed from "${oldStatus}" to "${status}"`,
-        ts,
-      ],
+      args: [randomUUID(), id, "status_change", `Status changed from "${oldStatus}" to "${status}"`, ts],
     },
   ]);
 }
@@ -274,19 +241,12 @@ export async function updateExperimentStatus(
  * @param value Data value (stored as text)
  * @throws      If the experiment does not exist or key is empty
  */
-export async function addExperimentData(
-  id: string,
-  key: string,
-  value: string,
-): Promise<void> {
+export async function addExperimentData(id: string, key: string, value: string): Promise<void> {
   if (!key || key.trim().length === 0) {
     throw new Error("Data key must not be empty.");
   }
 
-  const experiment = await sqlGet(
-    "SELECT id FROM lab_experiments WHERE id = ?",
-    [id],
-  );
+  const experiment = await sqlGet("SELECT id FROM lab_experiments WHERE id = ?", [id]);
   if (!experiment) {
     throw new Error(`Experiment not found: ${id}`);
   }
@@ -294,21 +254,26 @@ export async function addExperimentData(
   const ts = now();
 
   // Upsert: try update first, fall back to insert
-  const existing = await sqlGet(
-    "SELECT id FROM lab_experiment_data WHERE experiment_id = ? AND key = ?",
-    [id, key.trim()],
-  );
+  const existing = await sqlGet("SELECT id FROM lab_experiment_data WHERE experiment_id = ? AND key = ?", [
+    id,
+    key.trim(),
+  ]);
 
   if (existing) {
-    await sqlRun(
-      "UPDATE lab_experiment_data SET value = ?, timestamp = ? WHERE experiment_id = ? AND key = ?",
-      [value, ts, id, key.trim()],
-    );
+    await sqlRun("UPDATE lab_experiment_data SET value = ?, timestamp = ? WHERE experiment_id = ? AND key = ?", [
+      value,
+      ts,
+      id,
+      key.trim(),
+    ]);
   } else {
-    await sqlRun(
-      "INSERT INTO lab_experiment_data (id, experiment_id, key, value, timestamp) VALUES (?, ?, ?, ?, ?)",
-      [randomUUID(), id, key.trim(), value, ts],
-    );
+    await sqlRun("INSERT INTO lab_experiment_data (id, experiment_id, key, value, timestamp) VALUES (?, ?, ?, ?, ?)", [
+      randomUUID(),
+      id,
+      key.trim(),
+      value,
+      ts,
+    ]);
   }
 }
 
@@ -323,13 +288,8 @@ export async function addExperimentData(
  * @returns   Array of TimelineEvent records (oldest first)
  * @throws    If the experiment does not exist
  */
-export async function getExperimentTimeline(
-  id: string,
-): Promise<TimelineEvent[]> {
-  const experiment = await sqlGet(
-    "SELECT id FROM lab_experiments WHERE id = ?",
-    [id],
-  );
+export async function getExperimentTimeline(id: string): Promise<TimelineEvent[]> {
+  const experiment = await sqlGet("SELECT id FROM lab_experiments WHERE id = ?", [id]);
   if (!experiment) {
     throw new Error(`Experiment not found: ${id}`);
   }

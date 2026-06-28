@@ -97,12 +97,8 @@ function ToolCallCard({ tc }: { tc: ToolCallData }) {
             flexShrink: 0,
           }}
         />
-        <span style={{ color: THEME.VALUE, fontWeight: 600 }}>
-          {tc.tool}
-        </span>
-        <span style={{ color: THEME.DIM, marginLeft: "auto" }}>
-          {tc.status}
-        </span>
+        <span style={{ color: THEME.VALUE, fontWeight: 600 }}>{tc.tool}</span>
+        <span style={{ color: THEME.DIM, marginLeft: "auto" }}>{tc.status}</span>
       </div>
       {expanded && (
         <div
@@ -118,9 +114,7 @@ function ToolCallCard({ tc }: { tc: ToolCallData }) {
           }}
         >
           <div style={{ marginBottom: 4, color: THEME.DIM }}>Inputs:</div>
-          <div style={{ marginBottom: 8 }}>
-            {JSON.stringify(tc.inputs, null, 2)}
-          </div>
+          <div style={{ marginBottom: 8 }}>{JSON.stringify(tc.inputs, null, 2)}</div>
           {tc.result !== undefined && (
             <>
               <div style={{ marginBottom: 4, color: THEME.DIM }}>Result:</div>
@@ -129,9 +123,7 @@ function ToolCallCard({ tc }: { tc: ToolCallData }) {
           )}
           {tc.error && (
             <>
-              <div style={{ marginBottom: 4, color: THEME.RISK_HIGH }}>
-                Error:
-              </div>
+              <div style={{ marginBottom: 4, color: THEME.RISK_HIGH }}>Error:</div>
               <div>{tc.error}</div>
             </>
           )}
@@ -173,18 +165,16 @@ function MessageBubble({ msg }: { msg: Message }) {
         style={{
           maxWidth: "80%",
           padding: "12px 16px",
-          borderRadius: isUser ? `${THEME.R_MD} ${THEME.R_MD} 4px ${THEME.R_MD}` : `${THEME.R_MD} ${THEME.R_MD} ${THEME.R_MD} 4px`,
+          borderRadius: isUser
+            ? `${THEME.R_MD} ${THEME.R_MD} 4px ${THEME.R_MD}`
+            : `${THEME.R_MD} ${THEME.R_MD} ${THEME.R_MD} 4px`,
           background: isUser
             ? "rgba(175, 195, 214, 0.12)"
             : isTool
               ? "rgba(191, 220, 205, 0.08)"
               : THEME.PANEL_GLASS_STRONG,
           border: `1px solid ${
-            isUser
-              ? "rgba(175, 195, 214, 0.15)"
-              : isTool
-                ? "rgba(191, 220, 205, 0.12)"
-                : THEME.BORDER
+            isUser ? "rgba(175, 195, 214, 0.15)" : isTool ? "rgba(191, 220, 205, 0.12)" : THEME.BORDER
           }`,
           color: THEME.VALUE,
           fontFamily: THEME.SANS,
@@ -422,8 +412,7 @@ export default function CopilotPage() {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229)
-        return;
+      if ((e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229) return;
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
@@ -538,15 +527,8 @@ export default function CopilotPage() {
                   width: "100%",
                   padding: "10px 12px",
                   marginBottom: 4,
-                  background:
-                    c.id === conversationId
-                      ? "rgba(175, 195, 214, 0.1)"
-                      : "transparent",
-                  border: `1px solid ${
-                    c.id === conversationId
-                      ? "rgba(175, 195, 214, 0.2)"
-                      : "transparent"
-                  }`,
+                  background: c.id === conversationId ? "rgba(175, 195, 214, 0.1)" : "transparent",
+                  border: `1px solid ${c.id === conversationId ? "rgba(175, 195, 214, 0.2)" : "transparent"}`,
                   borderRadius: THEME.R_SM,
                   color: THEME.VALUE,
                   fontFamily: THEME.SANS,
@@ -618,9 +600,7 @@ export default function CopilotPage() {
               marginLeft: 8,
             }}
           >
-            {conversationId
-              ? `Conversation: ${conversationId.slice(0, 12)}...`
-              : "New conversation"}
+            {conversationId ? `Conversation: ${conversationId.slice(0, 12)}...` : "New conversation"}
           </div>
           <div style={{ flex: 1 }} />
           <button
@@ -680,8 +660,8 @@ export default function CopilotPage() {
                   lineHeight: 1.6,
                 }}
               >
-                Ask questions about synthetic biology, request pathway designs,
-                run simulations, or explore your research data.
+                Ask questions about synthetic biology, request pathway designs, run simulations, or explore your
+                research data.
               </div>
 
               {/* Suggestion chips */}
@@ -799,23 +779,14 @@ export default function CopilotPage() {
               disabled={loading || !input.trim()}
               style={{
                 padding: "12px 20px",
-                background:
-                  loading || !input.trim()
-                    ? "rgba(175, 195, 214, 0.06)"
-                    : "rgba(175, 195, 214, 0.15)",
-                border: `1px solid ${
-                  loading || !input.trim()
-                    ? THEME.BORDER
-                    : "rgba(175, 195, 214, 0.3)"
-                }`,
+                background: loading || !input.trim() ? "rgba(175, 195, 214, 0.06)" : "rgba(175, 195, 214, 0.15)",
+                border: `1px solid ${loading || !input.trim() ? THEME.BORDER : "rgba(175, 195, 214, 0.3)"}`,
                 borderRadius: THEME.R_MD,
-                color:
-                  loading || !input.trim() ? THEME.DIM : THEME.SKY,
+                color: loading || !input.trim() ? THEME.DIM : THEME.SKY,
                 fontFamily: THEME.SANS,
                 fontSize: THEME.FS_MD,
                 fontWeight: 600,
-                cursor:
-                  loading || !input.trim() ? "default" : "pointer",
+                cursor: loading || !input.trim() ? "default" : "pointer",
                 transition: "all 0.15s",
                 whiteSpace: "nowrap",
               }}

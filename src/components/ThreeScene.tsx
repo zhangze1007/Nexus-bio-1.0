@@ -667,25 +667,25 @@ const MolNode = React.memo(function MolNode({
 
       {/* LOD: skip labels for inactive nodes when node count is large */}
       {(!lod || hov || sel) && (
-      <Html position={[0, labelOffsetY, 0]} center style={{ pointerEvents: "none", whiteSpace: "nowrap" }}>
-        <div
-          style={{
-            color: hov || sel ? "#fff" : "rgba(160,180,200,0.55)",
-            fontSize: "10px",
-            fontWeight: sel ? 600 : 500,
-            fontFamily: THEME.MONO,
-            letterSpacing: "0.01em",
-            textShadow: "0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)",
-            padding: "2px 4px",
-            background: sel ? "rgba(200,216,232,0.08)" : "transparent",
-            borderRadius: "4px",
-            border: sel ? "1px solid rgba(200,216,232,0.14)" : "1px solid transparent",
-            transition: "color 0.2s",
-          }}
-        >
-          {lbl}
-        </div>
-      </Html>
+        <Html position={[0, labelOffsetY, 0]} center style={{ pointerEvents: "none", whiteSpace: "nowrap" }}>
+          <div
+            style={{
+              color: hov || sel ? "#fff" : "rgba(160,180,200,0.55)",
+              fontSize: "10px",
+              fontWeight: sel ? 600 : 500,
+              fontFamily: THEME.MONO,
+              letterSpacing: "0.01em",
+              textShadow: "0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)",
+              padding: "2px 4px",
+              background: sel ? "rgba(200,216,232,0.08)" : "transparent",
+              borderRadius: "4px",
+              border: sel ? "1px solid rgba(200,216,232,0.14)" : "1px solid transparent",
+              transition: "color 0.2s",
+            }}
+          >
+            {lbl}
+          </div>
+        </Html>
       )}
 
       {hov && !sel && (
@@ -1863,7 +1863,9 @@ export default function ThreeScene({
           dpr={[1, 1.5]}
           performance={{ min: 0.5 }}
           style={{ background: "transparent", pointerEvents: "auto" }}
-          onCreated={(state) => { storeRef.current = state; }}
+          onCreated={(state) => {
+            storeRef.current = state;
+          }}
         >
           <ResizeHandler />
           <Scene

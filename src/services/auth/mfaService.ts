@@ -43,7 +43,10 @@ function sha256(input: string): string {
  * and 8 one-time backup codes. The caller is responsible for encrypting
  * the secret and hashing the backup codes before persisting.
  */
-export function generateMfaSecret(userId: string, email: string): {
+export function generateMfaSecret(
+  userId: string,
+  email: string,
+): {
   secret: string;
   qrCodeUrl: string;
   backupCodes: string[];
@@ -80,10 +83,7 @@ export function verifyToken(secret: string, token: string): boolean {
 export function generateBackupCodes(): string[] {
   const codes: string[] = [];
   for (let i = 0; i < BACKUP_CODE_COUNT; i++) {
-    const raw = randomBytes(BACKUP_CODE_LENGTH)
-      .toString("hex")
-      .slice(0, BACKUP_CODE_LENGTH)
-      .toUpperCase();
+    const raw = randomBytes(BACKUP_CODE_LENGTH).toString("hex").slice(0, BACKUP_CODE_LENGTH).toUpperCase();
     codes.push(`${raw.slice(0, 4)}-${raw.slice(4)}`);
   }
   return codes;
@@ -95,10 +95,7 @@ export function generateBackupCodes(): string[] {
  * Returns `{ valid, remaining }` where `remaining` is the list of hashes
  * with the consumed code removed (so the caller can update storage).
  */
-export function verifyBackupCode(
-  storedHashes: string[],
-  code: string,
-): { valid: boolean; remaining: string[] } {
+export function verifyBackupCode(storedHashes: string[], code: string): { valid: boolean; remaining: string[] } {
   const normalized = code.trim().toUpperCase();
   const hash = sha256(normalized);
 

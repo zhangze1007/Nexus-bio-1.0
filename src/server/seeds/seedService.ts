@@ -18,11 +18,7 @@ import { IJO1366_REACTIONS } from "../../data/iJO1366Subset";
 import { PRECOMPUTED_DG } from "../../data/precomputedDG";
 import codonUsageJson from "../../data/codonUsageTables.json";
 import { PROTOCOL_TEMPLATES } from "../../data/protocols/templates";
-import {
-  writeProjectState,
-  getWorkbenchDb,
-  projectStateExists,
-} from "../workbenchDb";
+import { writeProjectState, getWorkbenchDb, projectStateExists } from "../workbenchDb";
 import type { WorkbenchCanonicalState } from "../../store/workbenchTypes";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -151,15 +147,11 @@ async function seedIJOR1366Reactions(): Promise<number> {
   const statements: InStatement[] = IJO1366_REACTIONS.map((rxn) => ({
     sql: `INSERT INTO seed_ijor1366_reactions (id, name, subsystem, lb, ub, stoichiometry_json, gpr)
           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [
-      rxn.id,
-      rxn.name,
-      rxn.subsystem,
-      rxn.lb,
-      rxn.ub,
-      JSON.stringify(rxn.stoichiometry),
-      rxn.gpr ?? null,
-    ] as (string | number | null)[],
+    args: [rxn.id, rxn.name, rxn.subsystem, rxn.lb, rxn.ub, JSON.stringify(rxn.stoichiometry), rxn.gpr ?? null] as (
+      | string
+      | number
+      | null
+    )[],
   }));
 
   await sqlBatch(statements);
@@ -288,7 +280,8 @@ export async function seedDemoProject(userId: string): Promise<string> {
     project: {
       id: projectId,
       title: "Artemisinin Biosynthesis Demo",
-      summary: "Demo project: artemisinin biosynthesis in S. cerevisiae via engineered mevalonate pathway (Ro et al., Nature 2006).",
+      summary:
+        "Demo project: artemisinin biosynthesis in S. cerevisiae via engineered mevalonate pathway (Ro et al., Nature 2006).",
       targetProduct: "artemisinin",
       status: "active",
       isDemo: true,
@@ -341,12 +334,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
 export async function getSeedStatus(): Promise<SeedStatus> {
   await ensureSchema();
 
-  const seedTables = [
-    "seed_ijor1366_reactions",
-    "seed_precomputed_dg",
-    "seed_codon_usage",
-    "seed_protocol_templates",
-  ];
+  const seedTables = ["seed_ijor1366_reactions", "seed_precomputed_dg", "seed_codon_usage", "seed_protocol_templates"];
 
   const tables: SeedStatus["tables"] = [];
 
@@ -354,10 +342,9 @@ export async function getSeedStatus(): Promise<SeedStatus> {
     const countRow = await sqlGet(`SELECT COUNT(*) as cnt FROM ${tableName}`);
     const rowCount = Number(countRow?.cnt ?? 0);
 
-    const metaRow = (await sqlGet(
-      `SELECT seeded_at FROM ${SEED_META_TABLE} WHERE table_name = ?`,
-      [tableName],
-    )) as { seeded_at: string } | undefined;
+    const metaRow = (await sqlGet(`SELECT seeded_at FROM ${SEED_META_TABLE} WHERE table_name = ?`, [tableName])) as
+      | { seeded_at: string }
+      | undefined;
 
     tables.push({
       name: tableName,

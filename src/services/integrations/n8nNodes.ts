@@ -49,9 +49,7 @@ export interface N8nNodeDefinition {
 // Helper
 // ---------------------------------------------------------------------------
 
-async function timedExecution<T>(
-  fn: () => Promise<T>,
-): Promise<{ result: T; elapsed: number }> {
+async function timedExecution<T>(fn: () => Promise<T>): Promise<{ result: T; elapsed: number }> {
   const start = performance.now();
   const result = await fn();
   const elapsed = Math.round(performance.now() - start);
@@ -75,8 +73,17 @@ export const NexusBioTrigger: N8nNodeDefinition = {
   group: "trigger",
 
   inputs: [
-    { name: "eventType", type: "string", description: "Event type to filter on (e.g. experiment.completed)", required: true },
-    { name: "since", type: "string", description: "ISO-8601 timestamp to poll from (optional, defaults to last 5 minutes)" },
+    {
+      name: "eventType",
+      type: "string",
+      description: "Event type to filter on (e.g. experiment.completed)",
+      required: true,
+    },
+    {
+      name: "since",
+      type: "string",
+      description: "ISO-8601 timestamp to poll from (optional, defaults to last 5 minutes)",
+    },
     { name: "limit", type: "number", description: "Max events to return per poll (default 50)" },
   ],
 
@@ -92,9 +99,10 @@ export const NexusBioTrigger: N8nNodeDefinition = {
       if (!eventType) throw new Error("eventType is required");
 
       const limit = typeof input.limit === "number" && input.limit > 0 ? Math.min(input.limit, 500) : 50;
-      const since = typeof input.since === "string" && input.since
-        ? input.since
-        : new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const since =
+        typeof input.since === "string" && input.since
+          ? input.since
+          : new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
       // In a real deployment this queries the event store.
       // Here we return the structured envelope so n8n can wire it.
@@ -142,7 +150,12 @@ export const NexusBioFBA: N8nNodeDefinition = {
   group: "action",
 
   inputs: [
-    { name: "model", type: "string", description: "Model identifier (e.g. 'e_coli_core' or BiGG model id)", required: true },
+    {
+      name: "model",
+      type: "string",
+      description: "Model identifier (e.g. 'e_coli_core' or BiGG model id)",
+      required: true,
+    },
     { name: "objective", type: "string", description: "Objective reaction id (optional, uses model default)" },
     { name: "reactions", type: "array", description: "Reaction bound overrides" },
     { name: "knockouts", type: "array", description: "Reaction ids to knock out" },
@@ -220,7 +233,12 @@ export const NexusBioInventory: N8nNodeDefinition = {
   group: "action",
 
   inputs: [
-    { name: "action", type: "string", description: "CRUD action: create | read | update | delete | list", required: true },
+    {
+      name: "action",
+      type: "string",
+      description: "CRUD action: create | read | update | delete | list",
+      required: true,
+    },
     { name: "itemType", type: "string", description: "Inventory item type (e.g. PLASMID, STRAIN, CHEMICAL)" },
     { name: "itemId", type: "string", description: "Specific item id (required for read/update/delete)" },
     { name: "data", type: "object", description: "Item payload (required for create/update)" },
@@ -253,7 +271,7 @@ export const NexusBioInventory: N8nNodeDefinition = {
       // Here we return a structured envelope.
       return {
         action,
-        item: action !== "list" ? (input.data || { id: input.itemId }) : undefined,
+        item: action !== "list" ? input.data || { id: input.itemId } : undefined,
         items: action === "list" ? [] : undefined,
         success: true,
       };
@@ -311,9 +329,10 @@ export const NexusBioAnalysis: N8nNodeDefinition = {
       const query = String(input.query || "");
       if (!query.trim()) throw new Error("query is required and must be non-empty");
 
-      const mode = (["analyze", "search", "summarize"].includes(String(input.mode))
-        ? String(input.mode)
-        : "analyze") as "analyze" | "search" | "summarize";
+      const mode = (["analyze", "search", "summarize"].includes(String(input.mode)) ? String(input.mode) : "analyze") as
+        | "analyze"
+        | "search"
+        | "summarize";
 
       // In production this POSTs to /api/analyze with the Axon system prompt.
       // Here we return the structured envelope.
@@ -335,12 +354,7 @@ export const NexusBioAnalysis: N8nNodeDefinition = {
 // ---------------------------------------------------------------------------
 
 /** All Nexus-Bio n8n node definitions. */
-export const NEXUS_BIO_NODES: N8nNodeDefinition[] = [
-  NexusBioTrigger,
-  NexusBioFBA,
-  NexusBioInventory,
-  NexusBioAnalysis,
-];
+export const NEXUS_BIO_NODES: N8nNodeDefinition[] = [NexusBioTrigger, NexusBioFBA, NexusBioInventory, NexusBioAnalysis];
 
 /** Lookup a node by its machine name. */
 export function getNodeByName(name: string): N8nNodeDefinition | undefined {

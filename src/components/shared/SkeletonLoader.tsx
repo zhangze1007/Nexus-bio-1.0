@@ -53,10 +53,20 @@ export interface SkeletonLineProps {
 
 export function SkeletonLine({ width = "100%", height = 14, count = 1, gap = 8 }: SkeletonLineProps) {
   if (count < 1) return null;
-  if (count === 1) return <div role="status" aria-label="Loading"><Bone width={width} height={height} borderRadius="4px" /></div>;
+  if (count === 1)
+    return (
+      <div role="status" aria-label="Loading">
+        <Bone width={width} height={height} borderRadius="4px" />
+      </div>
+    );
 
   return (
-    <div role="status" aria-label="Loading" style={{ display: "flex", flexDirection: "column", gap }} data-testid="skeleton-line-group">
+    <div
+      role="status"
+      aria-label="Loading"
+      style={{ display: "flex", flexDirection: "column", gap }}
+      data-testid="skeleton-line-group"
+    >
       {Array.from({ length: count }, (_, i) => (
         <Bone
           key={i}
@@ -108,14 +118,11 @@ export function SkeletonCard({ width = "100%", height = 180, showHeader = true, 
           <Bone width="55%" height={14} borderRadius="4px" />
         </div>
       )}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, marginTop: showHeader ? THEME.SP_XS : 0 }}>
+      <div
+        style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, marginTop: showHeader ? THEME.SP_XS : 0 }}
+      >
         {Array.from({ length: bodyLines }, (_, i) => (
-          <Bone
-            key={i}
-            width={i === bodyLines - 1 ? "60%" : "100%"}
-            height={12}
-            borderRadius="4px"
-          />
+          <Bone key={i} width={i === bodyLines - 1 ? "60%" : "100%"} height={12} borderRadius="4px" />
         ))}
       </div>
     </div>
@@ -188,12 +195,7 @@ export function SkeletonTable({ columns = 4, rows = 5, width = "100%", showHeade
           }}
         >
           {Array.from({ length: safeColumns }, (_, c) => (
-            <Bone
-              key={c}
-              width={`${50 + ((r + c) % 4) * 12}%`}
-              height={12}
-              borderRadius="4px"
-            />
+            <Bone key={c} width={`${50 + ((r + c) % 4) * 12}%`} height={12} borderRadius="4px" />
           ))}
         </div>
       ))}
@@ -302,11 +304,7 @@ export function SkeletonChart({ width = "100%", height = 240, showAxes = true, b
                 height: "100%",
               }}
             >
-              <Bone
-                width="100%"
-                height={`${pct}%`}
-                borderRadius={`${THEME.R_SM} ${THEME.R_SM} 0 0`}
-              />
+              <Bone width="100%" height={`${pct}%`} borderRadius={`${THEME.R_SM} ${THEME.R_SM} 0 0`} />
             </div>
           ))}
         </div>

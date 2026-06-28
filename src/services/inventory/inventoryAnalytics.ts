@@ -78,10 +78,7 @@ export async function getInventoryStats(projectId?: string): Promise<InventorySt
   // Count items per table in parallel
   const countPromises = ITEM_TABLES.map(async ({ type, table }) => {
     const { sql: pidSql, args: pidArgs } = projectIdClause(projectId);
-    const row = await sqlGet(
-      `SELECT COUNT(*) as cnt FROM ${table} WHERE archived = 0${pidSql}`,
-      pidArgs,
-    );
+    const row = await sqlGet(`SELECT COUNT(*) as cnt FROM ${table} WHERE archived = 0${pidSql}`, pidArgs);
     const count = Number(row?.cnt ?? 0);
     byType[type] = count;
     return count;
@@ -121,8 +118,7 @@ export async function getInventoryStats(projectId?: string): Promise<InventorySt
        AND aliquot_count <= 2${pidSql}`,
     pidArgs,
   );
-  const lowStockCount =
-    Number(lowChemicalRow?.cnt ?? 0) + Number(lowStrainRow?.cnt ?? 0);
+  const lowStockCount = Number(lowChemicalRow?.cnt ?? 0) + Number(lowStrainRow?.cnt ?? 0);
 
   return { totalItems, byType, expiringCount, lowStockCount };
 }
@@ -137,10 +133,7 @@ export async function getInventoryStats(projectId?: string): Promise<InventorySt
  * @param daysAhead   Number of days to look ahead (default 30).
  * @returns Array of ExpiringItem, sorted by expiry date ascending.
  */
-export async function getExpiringItems(
-  projectId?: string,
-  daysAhead: number = 30,
-): Promise<ExpiringItem[]> {
+export async function getExpiringItems(projectId?: string, daysAhead: number = 30): Promise<ExpiringItem[]> {
   const { sql: pidSql, args: pidArgs } = projectIdClause(projectId);
 
   const rows = await sqlAll(
@@ -179,9 +172,7 @@ export async function getExpiringItems(
  * @param projectId  Optional project filter.
  * @returns Array of LowStockItem, sorted by type then name.
  */
-export async function getLowStockItems(
-  projectId?: string,
-): Promise<LowStockItem[]> {
+export async function getLowStockItems(projectId?: string): Promise<LowStockItem[]> {
   const { sql: pidSql, args: pidArgs } = projectIdClause(projectId);
 
   // Low-stock chemicals

@@ -314,18 +314,10 @@ export async function generateIncidentReport(id: string): Promise<IncidentReport
 
   // Build summary
   const severityLabel = incident.severity.toUpperCase();
-  const systemsList = incident.affectedSystems.length > 0
-    ? incident.affectedSystems.join(", ")
-    : "unspecified systems";
-  const resolutionInfo = incident.resolvedAt
-    ? ` Resolved at ${incident.resolvedAt}.`
-    : " Currently unresolved.";
-  const rootCauseInfo = incident.rootCause
-    ? ` Root cause: ${incident.rootCause}`
-    : "";
-  const correctiveInfo = incident.correctiveAction
-    ? ` Corrective action: ${incident.correctiveAction}`
-    : "";
+  const systemsList = incident.affectedSystems.length > 0 ? incident.affectedSystems.join(", ") : "unspecified systems";
+  const resolutionInfo = incident.resolvedAt ? ` Resolved at ${incident.resolvedAt}.` : " Currently unresolved.";
+  const rootCauseInfo = incident.rootCause ? ` Root cause: ${incident.rootCause}` : "";
+  const correctiveInfo = incident.correctiveAction ? ` Corrective action: ${incident.correctiveAction}` : "";
 
   const summary =
     `[${severityLabel}] ${incident.description} ` +

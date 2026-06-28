@@ -5,10 +5,10 @@
  * Uses a top-level Y.Map so CRDT merge semantics handle concurrent edits.
  */
 
-import * as Y from 'yjs';
+import * as Y from "yjs";
 
 /** The key used for the shared workbench map inside the Yjs doc. */
-const WORKBENCH_KEY = 'workbench';
+const WORKBENCH_KEY = "workbench";
 
 /**
  * Push workbench state into the Yjs document.
@@ -21,10 +21,7 @@ const WORKBENCH_KEY = 'workbench';
  * Uses `ydoc.transact()` so all updates are batched into a single
  * undoable transaction.
  */
-export function syncWorkbenchToYjs(
-  ydoc: Y.Doc,
-  workbenchState: Record<string, unknown>,
-): void {
+export function syncWorkbenchToYjs(ydoc: Y.Doc, workbenchState: Record<string, unknown>): void {
   ydoc.transact(() => {
     let rootMap = ydoc.getMap<unknown>(WORKBENCH_KEY);
 
@@ -56,9 +53,7 @@ export function syncWorkbenchToYjs(
  *
  * Returns a plain object reconstructed from the Y.Map.
  */
-export function syncYjsToWorkbench(
-  ydoc: Y.Doc,
-): Record<string, unknown> {
+export function syncYjsToWorkbench(ydoc: Y.Doc): Record<string, unknown> {
   const rootMap = ydoc.getMap<unknown>(WORKBENCH_KEY);
   const result: Record<string, unknown> = {};
   for (const [key, value] of rootMap.entries()) {
@@ -75,10 +70,7 @@ export function syncYjsToWorkbench(
  *
  * Returns an unsubscribe function.
  */
-export function watchWorkbenchChanges(
-  ydoc: Y.Doc,
-  callback: (state: Record<string, unknown>) => void,
-): () => void {
+export function watchWorkbenchChanges(ydoc: Y.Doc, callback: (state: Record<string, unknown>) => void): () => void {
   const rootMap = ydoc.getMap<unknown>(WORKBENCH_KEY);
 
   const observer = (_event: Y.YMapEvent<unknown>, transaction: Y.Transaction) => {
@@ -102,10 +94,7 @@ export function watchWorkbenchChanges(
  * Useful when you need to react to any mutation regardless of origin.
  * Returns an unsubscribe function.
  */
-export function watchAllWorkbenchChanges(
-  ydoc: Y.Doc,
-  callback: (state: Record<string, unknown>) => void,
-): () => void {
+export function watchAllWorkbenchChanges(ydoc: Y.Doc, callback: (state: Record<string, unknown>) => void): () => void {
   const rootMap = ydoc.getMap<unknown>(WORKBENCH_KEY);
 
   const observer = (_event: Y.YMapEvent<unknown>) => {

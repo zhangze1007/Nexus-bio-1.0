@@ -125,11 +125,7 @@ function standardizeFeatures(features: number[][]): StandardizeResult {
 
 // ── Linear Algebra Helpers ─────────────────────────────────────────────────
 
-function predict(
-  features: number[][],
-  weights: number[],
-  intercept: number,
-): number[] {
+function predict(features: number[][], weights: number[], intercept: number): number[] {
   return features.map((row) => {
     let sum = intercept;
     for (let j = 0; j < weights.length; j++) sum += row[j] * weights[j];
@@ -162,10 +158,7 @@ function computeMetrics(actual: number[], predicted: number[]): TrainingMetrics 
   return { r2: rSquared(actual, predicted), rmse: Math.sqrt(mse), mae };
 }
 
-function featureImportanceFromWeights(
-  featureNames: string[],
-  weights: number[],
-): FeatureImportance[] {
+function featureImportanceFromWeights(featureNames: string[], weights: number[]): FeatureImportance[] {
   const absWeights = weights.map(Math.abs);
   const total = absWeights.reduce((a, b) => a + b, 0);
   return featureNames.map((name, i) => ({
@@ -239,10 +232,7 @@ function hashTrainingData(data: TrainingData): string {
  *
  * @throws {Error} if trainingData is empty or has inconsistent dimensions.
  */
-export async function trainModel(
-  trainingData: TrainingData,
-  config: TrainingConfig = {},
-): Promise<TrainingResult> {
+export async function trainModel(trainingData: TrainingData, config: TrainingConfig = {}): Promise<TrainingResult> {
   // ── Validate ──
   if (trainingData.rows.length === 0) {
     throw new Error("Training data is empty");
@@ -253,9 +243,7 @@ export async function trainModel(
   for (const row of trainingData.rows) {
     const keys = Object.keys(row.features);
     if (keys.length !== trainingData.featureNames.length) {
-      throw new Error(
-        `Feature count mismatch: expected ${trainingData.featureNames.length}, got ${keys.length}`,
-      );
+      throw new Error(`Feature count mismatch: expected ${trainingData.featureNames.length}, got ${keys.length}`);
     }
   }
 
@@ -267,9 +255,7 @@ export async function trainModel(
 
   // ── Prepare matrices ──
   const featureNames = trainingData.featureNames;
-  const allFeatures = trainingData.rows.map((r) =>
-    featureNames.map((f) => r.features[f]),
-  );
+  const allFeatures = trainingData.rows.map((r) => featureNames.map((f) => r.features[f]));
   const allTargets = trainingData.rows.map((r) => r.target);
 
   // ── Train/test split ──
@@ -294,9 +280,7 @@ export async function trainModel(
   const endTime = performance.now();
 
   // ── Evaluate on test set ──
-  const standardizedTest = testFeatures.map((row) =>
-    row.map((val, j) => (val - means[j]) / stds[j]),
-  );
+  const standardizedTest = testFeatures.map((row) => row.map((val, j) => (val - means[j]) / stds[j]));
   const predictions = predict(standardizedTest, weights, intercept);
   const metrics = computeMetrics(testTargets, predictions);
   const importance = featureImportanceFromWeights(featureNames, weights);
@@ -337,10 +321,7 @@ export async function trainModel(
  *
  * @throws {Error} if modelId is not found or feature dimensions do not match.
  */
-export async function evaluateModel(
-  modelId: string,
-  testData: TrainingData,
-): Promise<EvaluationResult> {
+export async function evaluateModel(modelId: string, testData: TrainingData): Promise<EvaluationResult> {
   await ensureSchema();
 
   const row = await sqlGet("SELECT * FROM ml_models WHERE id = ?", [modelId]);
@@ -362,9 +343,7 @@ export async function evaluateModel(
   // ── Build feature matrix and standardize ──
   const features = testData.rows.map((r) => featureNames.map((f) => r.features[f]));
   const targets = testData.rows.map((r) => r.target);
-  const standardized = features.map((row) =>
-    row.map((val, j) => (val - means[j]) / stds[j]),
-  );
+  const standardized = features.map((row) => row.map((val, j) => (val - means[j]) / stds[j]));
 
   const predictions = predict(standardized, weights, intercept);
   const metrics = computeMetrics(targets, predictions);

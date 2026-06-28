@@ -18,10 +18,7 @@ interface ToastProps {
   onRemove: (id: string) => void;
 }
 
-const TYPE_CONFIG: Record<
-  ToastType,
-  { bg: string; border: string; icon: string; accent: string }
-> = {
+const TYPE_CONFIG: Record<ToastType, { bg: string; border: string; icon: string; accent: string }> = {
   success: {
     bg: "rgba(191, 220, 205, 0.12)",
     border: "rgba(191, 220, 205, 0.35)",

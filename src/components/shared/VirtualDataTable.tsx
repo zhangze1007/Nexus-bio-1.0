@@ -1,13 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { THEME } from "../../theme";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -64,10 +57,7 @@ function VirtualDataTableInner<T extends Record<string, unknown>>(
   // Sync controlled prop changes into internal state
   const prevControlled = useRef(controlledFocus);
   useEffect(() => {
-    if (
-      controlledFocus !== undefined &&
-      controlledFocus !== prevControlled.current
-    ) {
+    if (controlledFocus !== undefined && controlledFocus !== prevControlled.current) {
       setFocusIdx(controlledFocus);
       prevControlled.current = controlledFocus;
     }
@@ -162,10 +152,7 @@ function VirtualDataTableInner<T extends Record<string, unknown>>(
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          nextFocus = Math.min(
-            rows.length - 1,
-            Math.max(0, focusIdx) + 1,
-          );
+          nextFocus = Math.min(rows.length - 1, Math.max(0, focusIdx) + 1);
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -173,10 +160,7 @@ function VirtualDataTableInner<T extends Record<string, unknown>>(
           break;
         case "PageDown":
           e.preventDefault();
-          nextFocus = Math.min(
-            rows.length - 1,
-            Math.max(0, focusIdx) + pageSize,
-          );
+          nextFocus = Math.min(rows.length - 1, Math.max(0, focusIdx) + pageSize);
           break;
         case "PageUp":
           e.preventDefault();
@@ -348,10 +332,7 @@ function VirtualDataTableInner<T extends Record<string, unknown>>(
         }}
       >
         {/* Spacer to enforce total scroll height */}
-        <div
-          data-testid="scroll-spacer"
-          style={{ height: totalHeight, position: "relative" }}
-        >
+        <div data-testid="scroll-spacer" style={{ height: totalHeight, position: "relative" }}>
           {/* Visible rows positioned absolutely */}
           <table
             style={{
@@ -403,14 +384,8 @@ function VirtualDataTableInner<T extends Record<string, unknown>>(
                         }}
                       >
                         {col.render
-                          ? col.render(
-                              (row as Record<string, unknown>)[col.key],
-                              row,
-                              absoluteIndex,
-                            )
-                          : String(
-                              (row as Record<string, unknown>)[col.key] ?? "",
-                            )}
+                          ? col.render((row as Record<string, unknown>)[col.key], row, absoluteIndex)
+                          : String((row as Record<string, unknown>)[col.key] ?? "")}
                       </td>
                     ))}
                   </tr>

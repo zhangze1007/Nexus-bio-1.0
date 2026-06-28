@@ -11,7 +11,7 @@
  * - Deleterious: significant growth reduction
  */
 
-import type { GenomeTrack } from './GenomeBrowser';
+import type { GenomeTrack } from "./GenomeBrowser";
 
 /** Gene knockout target with predicted impact */
 export interface KnockoutTarget {
@@ -24,9 +24,9 @@ export interface KnockoutTarget {
   /** Gene end position (0-based, bp) */
   end: number;
   /** Strand direction */
-  strand: '+' | '-';
+  strand: "+" | "-";
   /** Predicted impact category */
-  impact: 'essential' | 'beneficial' | 'neutral' | 'deleterious';
+  impact: "essential" | "beneficial" | "neutral" | "deleterious";
   /** Optional: growth impact coefficient (-1 to 0, where -1 = lethal) */
   growthImpact?: number;
   /** Optional: knockdown efficiency (0-1) */
@@ -43,19 +43,19 @@ export interface KnockoutTarget {
  * Neutral (sky/blue): minimal effect on fitness.
  * Deleterious (apricot/amber): significant growth reduction without yield benefit.
  */
-const IMPACT_COLORS: Record<KnockoutTarget['impact'], string> = {
-  essential: '#E8A3A1',   // Coral — DO NOT knock out
-  beneficial: '#9ECE7E',  // Green — target for knockout
-  neutral: '#AFC3D6',     // Sky — candidate for testing
-  deleterious: '#E7C7A9', // Apricot — avoid
+const IMPACT_COLORS: Record<KnockoutTarget["impact"], string> = {
+  essential: "#E8A3A1", // Coral — DO NOT knock out
+  beneficial: "#9ECE7E", // Green — target for knockout
+  neutral: "#AFC3D6", // Sky — candidate for testing
+  deleterious: "#E7C7A9", // Apricot — avoid
 };
 
 /** Human-readable labels for impact categories */
-const IMPACT_LABELS: Record<KnockoutTarget['impact'], string> = {
-  essential: 'Essential (Lethal)',
-  beneficial: 'Beneficial (Yield+)',
-  neutral: 'Neutral (Candidate)',
-  deleterious: 'Deleterious (Growth-)',
+const IMPACT_LABELS: Record<KnockoutTarget["impact"], string> = {
+  essential: "Essential (Lethal)",
+  beneficial: "Beneficial (Yield+)",
+  neutral: "Neutral (Candidate)",
+  deleterious: "Deleterious (Growth-)",
 };
 
 /**
@@ -78,10 +78,7 @@ const IMPACT_LABELS: Record<KnockoutTarget['impact'], string> = {
  * ], 'chr');
  * ```
  */
-export function buildKnockoutTrack(
-  knockouts: KnockoutTarget[],
-  chromosome: string,
-): GenomeTrack {
+export function buildKnockoutTrack(knockouts: KnockoutTarget[], chromosome: string): GenomeTrack {
   const features = knockouts.map((ko) => ({
     chr: chromosome,
     start: ko.start,
@@ -94,22 +91,18 @@ export function buildKnockoutTrack(
     description: [
       `Gene: ${ko.geneName} (${ko.geneId})`,
       `Impact: ${IMPACT_LABELS[ko.impact]}`,
-      ko.growthImpact !== undefined
-        ? `Growth impact: ${(ko.growthImpact * 100).toFixed(0)}%`
-        : null,
-      ko.efficiency !== undefined
-        ? `Knockdown efficiency: ${(ko.efficiency * 100).toFixed(0)}%`
-        : null,
+      ko.growthImpact !== undefined ? `Growth impact: ${(ko.growthImpact * 100).toFixed(0)}%` : null,
+      ko.efficiency !== undefined ? `Knockdown efficiency: ${(ko.efficiency * 100).toFixed(0)}%` : null,
       ko.phenotype ? `Phenotype: ${ko.phenotype}` : null,
     ]
       .filter(Boolean)
-      .join(' | '),
+      .join(" | "),
   }));
 
   return {
-    name: 'Knockout Targets',
-    type: 'annotation',
-    format: 'bed',
+    name: "Knockout Targets",
+    type: "annotation",
+    format: "bed",
     features,
   };
 }
@@ -118,13 +111,13 @@ export function buildKnockoutTrack(
  * Build a track specifically for essential genes (protected from knockout).
  */
 export function buildEssentialGeneTrack(
-  genes: Array<{ geneId: string; geneName: string; start: number; end: number; strand: '+' | '-' }>,
+  genes: Array<{ geneId: string; geneName: string; start: number; end: number; strand: "+" | "-" }>,
   chromosome: string,
 ): GenomeTrack {
   return buildKnockoutTrack(
     genes.map((g) => ({
       ...g,
-      impact: 'essential' as const,
+      impact: "essential" as const,
     })),
     chromosome,
   );

@@ -26,10 +26,7 @@ export type InventoryItemType =
  * @returns A deterministic string suitable for 1-D barcode encoding.
  * @throws {Error} If itemType or itemId is empty / whitespace-only.
  */
-export function generateBarcodeData(
-  itemType: InventoryItemType,
-  itemId: string,
-): string {
+export function generateBarcodeData(itemType: InventoryItemType, itemId: string): string {
   const trimmedType = itemType.trim();
   const trimmedId = itemId.trim();
 
@@ -54,10 +51,7 @@ export function generateBarcodeData(
  * @returns A full URL string (e.g. "https://nexus-bio-1-0.vercel.app/inventory/PLASMID:pAUR123").
  * @throws {Error} If itemType or itemId is empty / whitespace-only.
  */
-export function generateQRUrl(
-  itemType: InventoryItemType,
-  itemId: string,
-): string {
+export function generateQRUrl(itemType: InventoryItemType, itemId: string): string {
   const barcode = generateBarcodeData(itemType, itemId);
   const base = getBaseUrl();
   return `${base}/inventory/${encodeURIComponent(barcode)}`;
@@ -87,9 +81,7 @@ export function parseBarcodeData(data: string): {
 
   const colonIndex = trimmed.indexOf(":");
   if (colonIndex === -1) {
-    throw new Error(
-      `Invalid barcode format: missing ":" separator in "${trimmed}"`,
-    );
+    throw new Error(`Invalid barcode format: missing ":" separator in "${trimmed}"`);
   }
 
   const type = trimmed.substring(0, colonIndex).trim();

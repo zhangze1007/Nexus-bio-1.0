@@ -78,10 +78,7 @@ function nowIso(): string {
  * @param deviceInfo - Device metadata captured from the request
  * @returns The newly created Session record
  */
-export async function createSession(
-  userId: string,
-  deviceInfo: DeviceInfo,
-): Promise<Session> {
+export async function createSession(userId: string, deviceInfo: DeviceInfo): Promise<Session> {
   await ensureSchema();
 
   const id = generateSessionId();
@@ -129,16 +126,10 @@ export async function getActiveSessions(userId: string): Promise<Session[]> {
  *
  * @throws Error if the session does not exist or does not belong to the user
  */
-export async function revokeSession(
-  sessionId: string,
-  userId: string,
-): Promise<void> {
+export async function revokeSession(sessionId: string, userId: string): Promise<void> {
   await ensureSchema();
 
-  const existing = await sqlGet(
-    `SELECT id, user_id, revoked_at FROM user_sessions WHERE id = ?`,
-    [sessionId],
-  );
+  const existing = await sqlGet(`SELECT id, user_id, revoked_at FROM user_sessions WHERE id = ?`, [sessionId]);
 
   if (!existing) {
     throw new Error(`Session ${sessionId} not found`);
@@ -150,10 +141,7 @@ export async function revokeSession(
     return; // already revoked, idempotent
   }
 
-  await sqlRun(
-    `UPDATE user_sessions SET revoked_at = ? WHERE id = ?`,
-    [nowIso(), sessionId],
-  );
+  await sqlRun(`UPDATE user_sessions SET revoked_at = ? WHERE id = ?`, [nowIso(), sessionId]);
 }
 
 /**
@@ -163,10 +151,7 @@ export async function revokeSession(
 export async function revokeAllSessions(userId: string): Promise<void> {
   await ensureSchema();
 
-  await sqlRun(
-    `UPDATE user_sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`,
-    [nowIso(), userId],
-  );
+  await sqlRun(`UPDATE user_sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`, [nowIso(), userId]);
 }
 
 // ─── Row mapper ───────────────────────────────────────────────────────────

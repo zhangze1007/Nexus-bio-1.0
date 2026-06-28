@@ -50,9 +50,7 @@ let _defaultClient: Client | null = null;
  * @param options  Configuration: maxRequests, windowMs, and optional libsql connection details.
  * @returns A RateLimiter with `check(key)` and `close()` methods.
  */
-export async function createRateLimiter(
-  options: RateLimiterOptions,
-): Promise<RateLimiter> {
+export async function createRateLimiter(options: RateLimiterOptions): Promise<RateLimiter> {
   const { maxRequests, windowMs, url, authToken } = options;
 
   const client = createClient({
@@ -126,9 +124,6 @@ export async function createRateLimiter(
  * @param limiter  An existing RateLimiter instance.
  * @returns The rate limit result.
  */
-export async function checkRateLimit(
-  key: string,
-  limiter: RateLimiter,
-): Promise<RateLimitResult> {
+export async function checkRateLimit(key: string, limiter: RateLimiter): Promise<RateLimitResult> {
   return limiter.check(key);
 }

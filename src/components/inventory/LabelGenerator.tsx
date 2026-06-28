@@ -32,7 +32,7 @@ export interface LabelItem {
  */
 const CODE128_PATTERNS: Record<string, number[]> = {
   // Start Code B
-  "Ê": [2, 1, 1, 2, 3, 2],
+  Ê: [2, 1, 1, 2, 3, 2],
 };
 
 // Code 128B encoding table -- value = ASCII - 32 (space = 0)
@@ -174,9 +174,7 @@ function renderBarcodeSvg(text: string, barWidth: number = 1.5): string {
   const totalWidth = pos * barWidth;
   const barHeight = 40;
 
-  const rects = bars
-    .map((b) => `<rect x="${b.x}" y="0" width="${b.w}" height="${barHeight}" fill="#000"/>`)
-    .join("");
+  const rects = bars.map((b) => `<rect x="${b.x}" y="0" width="${b.w}" height="${barHeight}" fill="#000"/>`).join("");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${barHeight}" viewBox="0 0 ${totalWidth} ${barHeight}">${rects}</svg>`;
 }
@@ -190,10 +188,7 @@ interface LabelGeneratorProps {
   showPrintButton?: boolean;
 }
 
-export default function LabelGenerator({
-  items,
-  showPrintButton = true,
-}: LabelGeneratorProps) {
+export default function LabelGenerator({ items, showPrintButton = true }: LabelGeneratorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useCallback(() => {
@@ -338,15 +333,18 @@ export default function LabelGenerator({
       )}
 
       {/* Label grid */}
-      <div ref={containerRef} className="label-grid" style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 2.625in)",
-        gap: THEME.SP_SM,
-      }}>
+      <div
+        ref={containerRef}
+        className="label-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 2.625in)",
+          gap: THEME.SP_SM,
+        }}
+      >
         {items.map((item, index) => {
           const barcode = generateBarcodeData(item.itemType, item.itemId);
-          const locationCode =
-            item.locationCode ?? deriveLocationCode(barcode);
+          const locationCode = item.locationCode ?? deriveLocationCode(barcode);
           const barcodeSvg = renderBarcodeSvg(barcode);
 
           return (

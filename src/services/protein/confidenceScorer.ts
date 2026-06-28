@@ -13,7 +13,7 @@
  * Reference: Jumper et al. (2021) Nature 596:583, Supp. Fig. 1
  */
 
-import type { ConfidenceAnalysis, QualityLevel } from './types';
+import type { ConfidenceAnalysis, QualityLevel } from "./types";
 
 // ---------------------------------------------------------------------------
 // PDB B-factor extraction
@@ -30,18 +30,18 @@ import type { ConfidenceAnalysis, QualityLevel } from './types';
  */
 export function extractPLDDTFromPDB(pdbText: string): number[] {
   const plddt: number[] = [];
-  const lines = pdbText.split('\n');
-  let prevResidueKey = '';
+  const lines = pdbText.split("\n");
+  let prevResidueKey = "";
 
   for (const line of lines) {
-    if (!line.startsWith('ATOM')) continue;
+    if (!line.startsWith("ATOM")) continue;
 
     // Use CA atoms as the per-residue representative
     const atomName = line.substring(12, 16).trim();
-    if (atomName !== 'CA') continue;
+    if (atomName !== "CA") continue;
 
     // Build a unique residue key: chain + residue number
-    const chainId = line.length > 21 ? line.charAt(21) : ' ';
+    const chainId = line.length > 21 ? line.charAt(21) : " ";
     const residueNumber = line.substring(22, 26).trim();
     const residueKey = `${chainId}:${residueNumber}`;
 
@@ -66,20 +66,20 @@ export function extractPLDDTFromPDB(pdbText: string): number[] {
  */
 export function extractPLDDTByChain(pdbText: string): Map<string, number[]> {
   const chains = new Map<string, number[]>();
-  const lines = pdbText.split('\n');
+  const lines = pdbText.split("\n");
   const prevResidueKeys = new Map<string, string>();
 
   for (const line of lines) {
-    if (!line.startsWith('ATOM')) continue;
+    if (!line.startsWith("ATOM")) continue;
 
     const atomName = line.substring(12, 16).trim();
-    if (atomName !== 'CA') continue;
+    if (atomName !== "CA") continue;
 
-    const chainId = line.length > 21 ? line.charAt(21).trim() : 'A';
+    const chainId = line.length > 21 ? line.charAt(21).trim() : "A";
     const residueNumber = line.substring(22, 26).trim();
     const residueKey = `${chainId}:${residueNumber}`;
 
-    const prevKey = prevResidueKeys.get(chainId) ?? '';
+    const prevKey = prevResidueKeys.get(chainId) ?? "";
     if (residueKey === prevKey) continue;
     prevResidueKeys.set(chainId, residueKey);
 
@@ -110,10 +110,10 @@ export function extractPLDDTByChain(pdbText: string): Map<string, number[]> {
  * @returns Hex color string
  */
 export function pLDDTtoColor(pLDDT: number): string {
-  if (pLDDT > 90) return '#0053D6';
-  if (pLDDT >= 70) return '#65CBF3';
-  if (pLDDT >= 50) return '#FFDB13';
-  return '#FF7D45';
+  if (pLDDT > 90) return "#0053D6";
+  if (pLDDT >= 70) return "#65CBF3";
+  if (pLDDT >= 50) return "#FFDB13";
+  return "#FF7D45";
 }
 
 /**
@@ -122,10 +122,10 @@ export function pLDDTtoColor(pLDDT: number): string {
  */
 export function pLDDTColorPalette(): Array<{ threshold: number; color: string; label: string }> {
   return [
-    { threshold: 90, color: '#0053D6', label: 'Very high (>90)' },
-    { threshold: 70, color: '#65CBF3', label: 'Confident (70-90)' },
-    { threshold: 50, color: '#FFDB13', label: 'Low (50-70)' },
-    { threshold: 0, color: '#FF7D45', label: 'Very low (<50)' },
+    { threshold: 90, color: "#0053D6", label: "Very high (>90)" },
+    { threshold: 70, color: "#65CBF3", label: "Confident (70-90)" },
+    { threshold: 50, color: "#FFDB13", label: "Low (50-70)" },
+    { threshold: 0, color: "#FF7D45", label: "Very low (<50)" },
   ];
 }
 
@@ -143,10 +143,10 @@ export function pLDDTColorPalette(): Array<{ threshold: number; color: string; l
  *   <  30  → 'very_low'   (likely unstructured / prediction failure)
  */
 export function classifyQuality(meanPLDDT: number): QualityLevel {
-  if (meanPLDDT >= 70) return 'high';
-  if (meanPLDDT >= 50) return 'medium';
-  if (meanPLDDT >= 30) return 'low';
-  return 'very_low';
+  if (meanPLDDT >= 70) return "high";
+  if (meanPLDDT >= 50) return "medium";
+  if (meanPLDDT >= 30) return "low";
+  return "very_low";
 }
 
 // ---------------------------------------------------------------------------
@@ -160,10 +160,7 @@ export function classifyQuality(meanPLDDT: number): QualityLevel {
  * @param threshold - pLDDT threshold (default 70)
  * @returns Array of {start, end} ranges (0-indexed residue indices)
  */
-export function detectLowConfidenceRegions(
-  plddt: number[],
-  threshold = 70,
-): Array<{ start: number; end: number }> {
+export function detectLowConfidenceRegions(plddt: number[], threshold = 70): Array<{ start: number; end: number }> {
   const regions: Array<{ start: number; end: number }> = [];
   let inRegion = false;
   let regionStart = 0;
@@ -208,28 +205,28 @@ function generateInterpretation(
 
   // Overall quality
   switch (quality) {
-    case 'high':
+    case "high":
       parts.push(
         `High-confidence prediction (mean pLDDT ${meanPLDDT.toFixed(1)}). ` +
-          'The structure is reliable for most analyses including binding site identification and homology modeling.',
+          "The structure is reliable for most analyses including binding site identification and homology modeling.",
       );
       break;
-    case 'medium':
+    case "medium":
       parts.push(
         `Medium-confidence prediction (mean pLDDT ${meanPLDDT.toFixed(1)}). ` +
-          'The overall fold is likely correct but loop regions and side-chain orientations may be inaccurate.',
+          "The overall fold is likely correct but loop regions and side-chain orientations may be inaccurate.",
       );
       break;
-    case 'low':
+    case "low":
       parts.push(
         `Low-confidence prediction (mean pLDDT ${meanPLDDT.toFixed(1)}). ` +
-          'The structure should be interpreted with caution — significant portions may be disordered or incorrectly modeled.',
+          "The structure should be interpreted with caution — significant portions may be disordered or incorrectly modeled.",
       );
       break;
-    case 'very_low':
+    case "very_low":
       parts.push(
         `Very low confidence (mean pLDDT ${meanPLDDT.toFixed(1)}). ` +
-          'The prediction is unreliable. Consider experimental determination or alternative modeling approaches.',
+          "The prediction is unreliable. Consider experimental determination or alternative modeling approaches.",
       );
       break;
   }
@@ -259,12 +256,12 @@ function generateInterpretation(
   // Low-confidence regions
   if (lowRegionCount > 0) {
     parts.push(
-      `${lowRegionCount} low-confidence region${lowRegionCount > 1 ? 's' : ''} detected (pLDDT < 70). ` +
-        'These are often flexible loops, disordered termini, or prediction artifacts.',
+      `${lowRegionCount} low-confidence region${lowRegionCount > 1 ? "s" : ""} detected (pLDDT < 70). ` +
+        "These are often flexible loops, disordered termini, or prediction artifacts.",
     );
   }
 
-  return parts.join(' ');
+  return parts.join(" ");
 }
 
 // ---------------------------------------------------------------------------
@@ -282,11 +279,7 @@ function generateInterpretation(
  * @param ipTM - Interface pTM for complexes (0-1), default null
  * @returns Full confidence analysis
  */
-export function analyzeConfidence(
-  pdbText: string,
-  pTM = 0,
-  ipTM: number | null = null,
-): ConfidenceAnalysis {
+export function analyzeConfidence(pdbText: string, pTM = 0, ipTM: number | null = null): ConfidenceAnalysis {
   const perResidueConfidence = extractPLDDTFromPDB(pdbText);
   const meanPLDDT =
     perResidueConfidence.length > 0
@@ -295,13 +288,7 @@ export function analyzeConfidence(
 
   const overallQuality = classifyQuality(meanPLDDT);
   const lowConfidenceRegions = detectLowConfidenceRegions(perResidueConfidence);
-  const interpretation = generateInterpretation(
-    overallQuality,
-    meanPLDDT,
-    pTM,
-    ipTM,
-    lowConfidenceRegions.length,
-  );
+  const interpretation = generateInterpretation(overallQuality, meanPLDDT, pTM, ipTM, lowConfidenceRegions.length);
 
   return {
     overallQuality,

@@ -16,12 +16,7 @@ import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
 
 // ── Types ──
 
-export type SOC2Category =
-  | "security"
-  | "availability"
-  | "processing_integrity"
-  | "confidentiality"
-  | "privacy";
+export type SOC2Category = "security" | "availability" | "processing_integrity" | "confidentiality" | "privacy";
 
 export type SOC2ControlStatus = "pass" | "warn" | "fail";
 
@@ -82,9 +77,7 @@ async function ensureTables(): Promise<void> {
 
 async function checkAccessControlPolicies(): Promise<SOC2Control> {
   try {
-    const policies = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM access_control_policies WHERE enabled = 1",
-    );
+    const policies = await sqlGet("SELECT COUNT(*) as cnt FROM access_control_policies WHERE enabled = 1");
     const count = policies ? Number(policies.cnt) : 0;
 
     if (count >= 1) {
@@ -129,9 +122,7 @@ async function checkMfaEnforcement(): Promise<SOC2Control> {
       };
     }
 
-    const mfaEnabled = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM org_members WHERE mfa_enabled = 1",
-    );
+    const mfaEnabled = await sqlGet("SELECT COUNT(*) as cnt FROM org_members WHERE mfa_enabled = 1");
     const mfaCnt = mfaEnabled ? Number(mfaEnabled.cnt) : 0;
     const rate = (mfaCnt / totalCnt) * 100;
 
@@ -231,9 +222,7 @@ async function checkAuditLogIntegrity(): Promise<SOC2Control> {
 
 async function checkIncidentResponsePlan(): Promise<SOC2Control> {
   try {
-    const plans = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM incident_response_plans WHERE active = 1",
-    );
+    const plans = await sqlGet("SELECT COUNT(*) as cnt FROM incident_response_plans WHERE active = 1");
     const count = plans ? Number(plans.cnt) : 0;
 
     if (count >= 1) {
@@ -280,9 +269,7 @@ async function checkBackupRecovery(): Promise<SOC2Control> {
       };
     }
 
-    const anyBackup = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM backup_jobs WHERE status = 'completed'",
-    );
+    const anyBackup = await sqlGet("SELECT COUNT(*) as cnt FROM backup_jobs WHERE status = 'completed'");
     const anyCount = anyBackup ? Number(anyBackup.cnt) : 0;
 
     if (anyCount > 0) {
@@ -350,9 +337,7 @@ async function checkCapacityMonitoring(): Promise<SOC2Control> {
 
 async function checkInputValidation(): Promise<SOC2Control> {
   try {
-    const rules = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM validation_rules WHERE enabled = 1",
-    );
+    const rules = await sqlGet("SELECT COUNT(*) as cnt FROM validation_rules WHERE enabled = 1");
     const count = rules ? Number(rules.cnt) : 0;
 
     if (count >= 5) {
@@ -486,9 +471,7 @@ async function checkDataClassification(): Promise<SOC2Control> {
 
 async function checkEncryptionAtRest(): Promise<SOC2Control> {
   try {
-    const encrypted = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM data_assets WHERE encryption_status = 'encrypted'",
-    );
+    const encrypted = await sqlGet("SELECT COUNT(*) as cnt FROM data_assets WHERE encryption_status = 'encrypted'");
     const encryptedCnt = encrypted ? Number(encrypted.cnt) : 0;
 
     const total = await sqlGet("SELECT COUNT(*) as cnt FROM data_assets");
@@ -546,9 +529,7 @@ async function checkEncryptionAtRest(): Promise<SOC2Control> {
 
 async function checkPrivacyConsent(): Promise<SOC2Control> {
   try {
-    const totalUsers = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM users",
-    );
+    const totalUsers = await sqlGet("SELECT COUNT(*) as cnt FROM users");
     const totalCnt = totalUsers ? Number(totalUsers.cnt) : 0;
 
     if (totalCnt === 0) {
@@ -561,9 +542,7 @@ async function checkPrivacyConsent(): Promise<SOC2Control> {
       };
     }
 
-    const consented = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM users WHERE consent_given = 1",
-    );
+    const consented = await sqlGet("SELECT COUNT(*) as cnt FROM users WHERE consent_given = 1");
     const consentedCnt = consented ? Number(consented.cnt) : 0;
     const rate = (consentedCnt / totalCnt) * 100;
 
@@ -639,9 +618,7 @@ async function checkDataSubjectRequests(): Promise<SOC2Control> {
 
 async function checkRetentionPolicy(): Promise<SOC2Control> {
   try {
-    const policies = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM retention_policies",
-    );
+    const policies = await sqlGet("SELECT COUNT(*) as cnt FROM retention_policies");
     const count = policies ? Number(policies.cnt) : 0;
 
     if (count >= 1) {
@@ -706,17 +683,16 @@ export async function runSOC2Check(orgId: string): Promise<SOC2Report> {
   const checkId = crypto.randomUUID();
   const timestamp = new Date().toISOString();
 
-  const controls = await Promise.all(
-    ALL_CONTROL_CHECKS.map((check) => check()),
-  );
+  const controls = await Promise.all(ALL_CONTROL_CHECKS.map((check) => check()));
 
   const report: SOC2Report = { checkId, timestamp, controls };
 
   // Persist the report
-  await sqlRun(
-    "INSERT INTO soc2_report (id, timestamp, controls) VALUES (?, ?, ?)",
-    [checkId, timestamp, JSON.stringify(controls)],
-  );
+  await sqlRun("INSERT INTO soc2_report (id, timestamp, controls) VALUES (?, ?, ?)", [
+    checkId,
+    timestamp,
+    JSON.stringify(controls),
+  ]);
 
   // Persist individual control statuses
   for (const control of controls) {
@@ -739,9 +715,7 @@ export async function getControlStatus(orgId: string): Promise<ControlStatusRow[
   await ensureTables();
 
   // Find the latest report
-  const latest = await sqlGet(
-    "SELECT id, timestamp FROM soc2_report ORDER BY timestamp DESC LIMIT 1",
-  );
+  const latest = await sqlGet("SELECT id, timestamp FROM soc2_report ORDER BY timestamp DESC LIMIT 1");
 
   if (!latest) {
     return [];

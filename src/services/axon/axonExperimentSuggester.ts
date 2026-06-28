@@ -31,10 +31,7 @@ interface SuggestionRule {
   /** Condition to check on the result. */
   condition: (result: unknown, context: WorkbenchCopilotContext) => boolean;
   /** Generate suggestions from the result. */
-  suggest: (
-    result: unknown,
-    context: WorkbenchCopilotContext,
-  ) => ExperimentSuggestion[];
+  suggest: (result: unknown, context: WorkbenchCopilotContext) => ExperimentSuggestion[];
 }
 
 /**
@@ -47,14 +44,11 @@ const SUGGESTION_RULES: SuggestionRule[] = [
     sourceTool: "pathd",
     condition: (result, _ctx) => {
       const r = result as Record<string, unknown>;
-      return (
-        typeof r?.nodeCount === "number" &&
-        (r.nodeCount as number) > 0
-      );
+      return typeof r?.nodeCount === "number" && (r.nodeCount as number) > 0;
     },
     suggest: (result, context) => {
       const r = result as Record<string, unknown>;
-      const nodeCount = r?.nodeCount as number ?? 0;
+      const nodeCount = (r?.nodeCount as number) ?? 0;
       const suggestions: ExperimentSuggestion[] = [];
 
       suggestions.push({
@@ -65,16 +59,14 @@ const SUGGESTION_RULES: SuggestionRule[] = [
           species: "ecoli",
           objective: context.targetProduct ? "product" : "biomass",
         },
-        rationale:
-          "FBA validates the pathway's flux feasibility and identifies rate-limiting steps",
+        rationale: "FBA validates the pathway's flux feasibility and identifies rate-limiting steps",
         priority: "high",
       });
 
       if (nodeCount >= 3) {
         suggestions.push({
           title: "Check thermodynamic feasibility",
-          description:
-            "Compute delta-G cascade to verify each step is thermodynamically favorable",
+          description: "Compute delta-G cascade to verify each step is thermodynamically favorable",
           tool: "cethx",
           suggestedInputs: {},
           rationale:
@@ -97,43 +89,38 @@ const SUGGESTION_RULES: SuggestionRule[] = [
     suggest: (result, context) => {
       const r = result as Record<string, unknown>;
       const suggestions: ExperimentSuggestion[] = [];
-      const objValue = r?.objectiveValue as number ?? 0;
+      const objValue = (r?.objectiveValue as number) ?? 0;
 
       suggestions.push({
         title: "Design catalysts for bottlenecks",
         description: `Use FBA bottleneck data to design enzyme catalysts that improve the objective value (${objValue.toFixed(3)})`,
         tool: "catdes",
         suggestedInputs: {},
-        rationale:
-          "FBA identified flux bottlenecks; catalyst design targets these rate-limiting steps",
+        rationale: "FBA identified flux bottlenecks; catalyst design targets these rate-limiting steps",
         priority: "high",
       });
 
       if (objValue < 0.5) {
         suggestions.push({
           title: "Try knockout strategy",
-          description:
-            "Low objective value suggests competing pathways; try gene knockouts to redirect flux",
+          description: "Low objective value suggests competing pathways; try gene knockouts to redirect flux",
           tool: "fbasim",
           suggestedInputs: {
             species: "ecoli",
             objective: context.targetProduct ? "product" : "biomass",
             knockouts: ["EX_ac_e"], // common competing byproduct
           },
-          rationale:
-            "Low objective value indicates flux leakage; knockouts may redirect carbon to the target",
+          rationale: "Low objective value indicates flux leakage; knockouts may redirect carbon to the target",
           priority: "medium",
         });
       }
 
       suggestions.push({
         title: "Minimize genome for chassis",
-        description:
-          "Remove non-essential genes to create a streamlined chassis for production",
+        description: "Remove non-essential genes to create a streamlined chassis for production",
         tool: "genmim",
         suggestedInputs: {},
-        rationale:
-          "A minimal chassis reduces metabolic burden and improves product yield",
+        rationale: "A minimal chassis reduces metabolic burden and improves product yield",
         priority: "low",
       });
 
@@ -150,17 +137,15 @@ const SUGGESTION_RULES: SuggestionRule[] = [
     },
     suggest: (result, _context) => {
       const r = result as Record<string, unknown>;
-      const score = r?.bestSequenceScore as number ?? 0;
+      const score = (r?.bestSequenceScore as number) ?? 0;
       const suggestions: ExperimentSuggestion[] = [];
 
       suggestions.push({
         title: "Set up dynamic control",
-        description:
-          "Design a feedback controller to maintain optimal expression of the designed catalyst",
+        description: "Design a feedback controller to maintain optimal expression of the designed catalyst",
         tool: "dyncon",
         suggestedInputs: {},
-        rationale:
-          "Dynamic control stabilizes production and prevents metabolic imbalance",
+        rationale: "Dynamic control stabilizes production and prevents metabolic imbalance",
         priority: "high",
       });
 
@@ -170,20 +155,17 @@ const SUGGESTION_RULES: SuggestionRule[] = [
           description: `Sequence score (${score.toFixed(2)}) is below optimal; run a directed evolution campaign to improve activity`,
           tool: "proevol",
           suggestedInputs: {},
-          rationale:
-            "Moderate catalyst score indicates room for improvement through iterative evolution",
+          rationale: "Moderate catalyst score indicates room for improvement through iterative evolution",
           priority: "high",
         });
       }
 
       suggestions.push({
         title: "Cell-free prototype",
-        description:
-          "Test the designed catalyst in a cell-free system before in-vivo implementation",
+        description: "Test the designed catalyst in a cell-free system before in-vivo implementation",
         tool: "cellfree",
         suggestedInputs: {},
-        rationale:
-          "Cell-free testing provides rapid validation without full cell engineering",
+        rationale: "Cell-free testing provides rapid validation without full cell engineering",
         priority: "medium",
       });
 
@@ -206,23 +188,19 @@ const SUGGESTION_RULES: SuggestionRule[] = [
       if (stable) {
         suggestions.push({
           title: "Cell-free prototyping",
-          description:
-            "Controller is stable; proceed to cell-free validation of the full system",
+          description: "Controller is stable; proceed to cell-free validation of the full system",
           tool: "cellfree",
           suggestedInputs: {},
-          rationale:
-            "Stable controller validates proceed to cell-free testing",
+          rationale: "Stable controller validates proceed to cell-free testing",
           priority: "high",
         });
       } else {
         suggestions.push({
           title: "Retune controller parameters",
-          description:
-            "Controller is unstable; adjust PID gains and setpoint",
+          description: "Controller is unstable; adjust PID gains and setpoint",
           tool: "dyncon",
           suggestedInputs: { retune: true },
-          rationale:
-            "Unstable controller must be fixed before proceeding to physical experiments",
+          rationale: "Unstable controller must be fixed before proceeding to physical experiments",
           priority: "high",
         });
       }
@@ -240,7 +218,7 @@ const SUGGESTION_RULES: SuggestionRule[] = [
     },
     suggest: (result, _context) => {
       const r = result as Record<string, unknown>;
-      const confidence = r?.confidence as number ?? 0;
+      const confidence = (r?.confidence as number) ?? 0;
       const suggestions: ExperimentSuggestion[] = [];
 
       suggestions.push({
@@ -248,20 +226,17 @@ const SUGGESTION_RULES: SuggestionRule[] = [
         description: `Cell-free confidence is ${(confidence * 100).toFixed(0)}%; begin the design-build-test-learn cycle`,
         tool: "dbtlflow",
         suggestedInputs: {},
-        rationale:
-          "Cell-free results provide the baseline for the first DBTL iteration",
+        rationale: "Cell-free results provide the baseline for the first DBTL iteration",
         priority: "high",
       });
 
       if (confidence < 0.5) {
         suggestions.push({
           title: "Multi-omics analysis",
-          description:
-            "Low confidence suggests complex interactions; use multi-omics to identify hidden factors",
+          description: "Low confidence suggests complex interactions; use multi-omics to identify hidden factors",
           tool: "multio",
           suggestedInputs: {},
-          rationale:
-            "Low cell-free confidence may indicate unmodeled interactions that omics can reveal",
+          rationale: "Low cell-free confidence may indicate unmodeled interactions that omics can reveal",
           priority: "medium",
         });
       }
@@ -279,29 +254,25 @@ const SUGGESTION_RULES: SuggestionRule[] = [
     },
     suggest: (result, _context) => {
       const r = result as Record<string, unknown>;
-      const diversity = r?.diversityIndex as number ?? 0;
+      const diversity = (r?.diversityIndex as number) ?? 0;
       const suggestions: ExperimentSuggestion[] = [];
 
       suggestions.push({
         title: "Redesign catalyst with evolved sequences",
-        description:
-          "Use the top evolved variant as input for a new catalyst design cycle",
+        description: "Use the top evolved variant as input for a new catalyst design cycle",
         tool: "catdes",
         suggestedInputs: {},
-        rationale:
-          "Evolved sequences provide a better starting point for catalyst optimization",
+        rationale: "Evolved sequences provide a better starting point for catalyst optimization",
         priority: "high",
       });
 
       if (diversity > 0.8) {
         suggestions.push({
           title: "Cell-free screening of variants",
-          description:
-            "High sequence diversity; screen top variants in cell-free to identify leads",
+          description: "High sequence diversity; screen top variants in cell-free to identify leads",
           tool: "cellfree",
           suggestedInputs: {},
-          rationale:
-            "High diversity campaign has many candidates; cell-free screening narrows the field",
+          rationale: "High diversity campaign has many candidates; cell-free screening narrows the field",
           priority: "medium",
         });
       }
@@ -318,22 +289,18 @@ const SUGGESTION_RULES: SuggestionRule[] = [
       return [
         {
           title: "Design gene circuit",
-          description:
-            "Design a gene circuit for the minimized chassis to control production",
+          description: "Design a gene circuit for the minimized chassis to control production",
           tool: "gecair",
           suggestedInputs: {},
-          rationale:
-            "A minimal chassis is the ideal foundation for a precisely designed gene circuit",
+          rationale: "A minimal chassis is the ideal foundation for a precisely designed gene circuit",
           priority: "high",
         },
         {
           title: "Re-run FBA on minimized genome",
-          description:
-            "Verify flux feasibility with the reduced genome configuration",
+          description: "Verify flux feasibility with the reduced genome configuration",
           tool: "fbasim",
           suggestedInputs: {},
-          rationale:
-            "Gene removals may alter flux distribution; FBA confirms feasibility",
+          rationale: "Gene removals may alter flux distribution; FBA confirms feasibility",
           priority: "medium",
         },
       ];
@@ -348,12 +315,10 @@ const SUGGESTION_RULES: SuggestionRule[] = [
       return [
         {
           title: "Set up dynamic control",
-          description:
-            "Connect the gene circuit to a dynamic controller for real-time regulation",
+          description: "Connect the gene circuit to a dynamic controller for real-time regulation",
           tool: "dyncon",
           suggestedInputs: {},
-          rationale:
-            "Gene circuit output levels inform the controller bandwidth and setpoint",
+          rationale: "Gene circuit output levels inform the controller bandwidth and setpoint",
           priority: "high",
         },
       ];
@@ -369,18 +334,16 @@ const SUGGESTION_RULES: SuggestionRule[] = [
     },
     suggest: (result, context) => {
       const r = result as Record<string, unknown>;
-      const efficiency = r?.efficiency as number ?? 0;
+      const efficiency = (r?.efficiency as number) ?? 0;
       const suggestions: ExperimentSuggestion[] = [];
 
       if (context.targetProduct) {
         suggestions.push({
           title: "Design pathway with thermodynamic constraints",
-          description:
-            "Use thermodynamic analysis to guide pathway design toward favorable reactions",
+          description: "Use thermodynamic analysis to guide pathway design toward favorable reactions",
           tool: "pathd",
           suggestedInputs: { targetProduct: context.targetProduct },
-          rationale:
-            "Thermodynamic data provides feasibility constraints for pathway design",
+          rationale: "Thermodynamic data provides feasibility constraints for pathway design",
           priority: "high",
         });
       }
@@ -388,12 +351,10 @@ const SUGGESTION_RULES: SuggestionRule[] = [
       if (efficiency < 0.5) {
         suggestions.push({
           title: "Explore alternative pathways",
-          description:
-            "Low thermodynamic efficiency suggests the current route may be unfavorable",
+          description: "Low thermodynamic efficiency suggests the current route may be unfavorable",
           tool: "pathd",
           suggestedInputs: { searchMode: "alternative" },
-          rationale:
-            "Poor thermodynamics indicates the need for alternative biosynthetic routes",
+          rationale: "Poor thermodynamics indicates the need for alternative biosynthetic routes",
           priority: "medium",
         });
       }
@@ -411,7 +372,7 @@ const SUGGESTION_RULES: SuggestionRule[] = [
     },
     suggest: (result, _context) => {
       const r = result as Record<string, unknown>;
-      const passRate = r?.passRate as number ?? 0;
+      const passRate = (r?.passRate as number) ?? 0;
       const suggestions: ExperimentSuggestion[] = [];
 
       suggestions.push({
@@ -419,31 +380,26 @@ const SUGGESTION_RULES: SuggestionRule[] = [
         description: `Pass rate is ${(passRate * 100).toFixed(0)}%; use learned metrics to refine the design`,
         tool: "pathd",
         suggestedInputs: { iteration: "next" },
-        rationale:
-          "DBTL learned metrics should feed back into the next pathway design iteration",
+        rationale: "DBTL learned metrics should feed back into the next pathway design iteration",
         priority: "high",
       });
 
       if (passRate > 0.7) {
         suggestions.push({
           title: "Multi-omics deep analysis",
-          description:
-            "High pass rate; analyze the system with multi-omics for deeper understanding",
+          description: "High pass rate; analyze the system with multi-omics for deeper understanding",
           tool: "multio",
           suggestedInputs: {},
-          rationale:
-            "Successful iterations provide rich data for multi-omics integration",
+          rationale: "Successful iterations provide rich data for multi-omics integration",
           priority: "medium",
         });
 
         suggestions.push({
           title: "Spatial transcriptomics",
-          description:
-            "Map gene expression spatially to understand cell-to-cell variation",
+          description: "Map gene expression spatially to understand cell-to-cell variation",
           tool: "scspatial",
           suggestedInputs: {},
-          rationale:
-            "Spatial data reveals heterogeneity that bulk measurements miss",
+          rationale: "Spatial data reveals heterogeneity that bulk measurements miss",
           priority: "low",
         });
       }
@@ -478,9 +434,7 @@ export function suggestNextExperiments(
     medium: 1,
     low: 2,
   };
-  suggestions.sort(
-    (a, b) => (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99),
-  );
+  suggestions.sort((a, b) => (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99));
 
   return suggestions;
 }

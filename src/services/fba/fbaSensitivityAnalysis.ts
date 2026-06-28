@@ -140,9 +140,7 @@ function round(value: number, digits = 6): number {
  * a copy with the upper bound replaced.
  */
 function withBoundOverride(model: LPModel, reactionId: string, newUb: number): LPModel {
-  const bounds = (model.bounds ?? []).map((b) =>
-    b.name === reactionId ? { ...b, ub: newUb } : { ...b },
-  );
+  const bounds = (model.bounds ?? []).map((b) => (b.name === reactionId ? { ...b, ub: newUb } : { ...b }));
   return {
     ...model,
     objective: model.objective.map((v) => ({ ...v })),
@@ -234,15 +232,11 @@ export async function runSensitivityAnalysis(
 
     // Finite-difference elasticity: (delta_J / J_ref) / (delta_p / p_ref)
     let elasticity = 0;
-    if (
-      steps >= 2 &&
-      Math.abs(refObjective) > 1e-12 &&
-      Math.abs(refParamValue) > 1e-12
-    ) {
+    if (steps >= 2 && Math.abs(refObjective) > 1e-12 && Math.abs(refParamValue) > 1e-12) {
       const deltaJ = objectiveValues[steps - 1] - objectiveValues[0];
       const deltaP = parameterValues[steps - 1] - parameterValues[0];
       if (Math.abs(deltaP) > 1e-12) {
-        elasticity = round((deltaJ / refObjective) / (deltaP / refParamValue), 6);
+        elasticity = round(deltaJ / refObjective / (deltaP / refParamValue), 6);
       }
     }
 
@@ -285,9 +279,7 @@ const MCA_PERTURBATION = 0.01;
  *
  * @param model - The LP model to analyse (solved with its original objective)
  */
-export async function runMetabolicControlAnalysis(
-  model: LPModel,
-): Promise<MCAResult> {
+export async function runMetabolicControlAnalysis(model: LPModel): Promise<MCAResult> {
   // ── Step 1: baseline solve ──────────────────────────────────────────
   const baseline = await solveLP(model);
   const refObjective = baseline.objectiveValue;
@@ -337,7 +329,7 @@ export async function runMetabolicControlAnalysis(
     // C^J_i = (delta_J / J_ref) / (delta_e / e_ref)
     if (Math.abs(refObjective) > 1e-12) {
       const deltaJ = perturbed.objectiveValue - refObjective;
-      const cc = (deltaJ / refObjective) / MCA_PERTURBATION;
+      const cc = deltaJ / refObjective / MCA_PERTURBATION;
       fluxControlCoefficients[rxnId] = round(cc, 6);
     }
 
@@ -349,7 +341,7 @@ export async function runMetabolicControlAnalysis(
 
       const pertFlux = perturbed.primals[targetRxn] ?? 0;
       const deltaV = pertFlux - refFlux;
-      const eps = (deltaV / refFlux) / MCA_PERTURBATION;
+      const eps = deltaV / refFlux / MCA_PERTURBATION;
 
       elasticityCoefficients.push({
         reactionId: rxnId,
@@ -368,7 +360,7 @@ export async function runMetabolicControlAnalysis(
 
       if (Math.abs(refShadow) > 1e-12) {
         const deltaShadow = pertShadow - refShadow;
-        cccForRxn[conName] = round((deltaShadow / refShadow) / MCA_PERTURBATION, 6);
+        cccForRxn[conName] = round(deltaShadow / refShadow / MCA_PERTURBATION, 6);
       } else if (Math.abs(pertShadow) > 1e-12) {
         // Ref shadow is zero but perturbed is not — use absolute ratio
         cccForRxn[conName] = round(pertShadow / (refUb * MCA_PERTURBATION), 6);

@@ -60,7 +60,7 @@ const HEADER_OFFSETS = {
  * Trims leading/trailing whitespace.
  */
 function readAscii(data: Uint8Array, start: number, end: number): string {
-  let result = '';
+  let result = "";
   for (let i = start; i < end && i < data.length; i++) {
     result += String.fromCharCode(data[i]);
   }
@@ -81,7 +81,7 @@ function readAsciiInt(data: Uint8Array, start: number, end: number): number {
  * Common values: "1,2,3,4" (little-endian), "4,3,2,1" (big-endian)
  */
 function isBigEndian(byteOrd: string): boolean {
-  const parts = byteOrd.split(',').map(s => parseInt(s.trim(), 10));
+  const parts = byteOrd.split(",").map((s) => parseInt(s.trim(), 10));
   if (parts.length === 0) return false;
   // Big-endian if first byte is the most significant
   return parts[0] === 4 || parts[0] === 8;
@@ -140,7 +140,7 @@ function parseTextSegment(data: Uint8Array, start: number, end: number): Record<
   const primaryDelim = String.fromCharCode(data[start]);
 
   // Read the entire TEXT segment as a string (skip the delimiter byte itself)
-  let text = '';
+  let text = "";
   for (let i = start + 1; i < end && i < data.length; i++) {
     text += String.fromCharCode(data[i]);
   }
@@ -150,7 +150,7 @@ function parseTextSegment(data: Uint8Array, start: number, end: number): Record<
 
   for (let i = 0; i < pairs.length - 1; i += 2) {
     const key = pairs[i].trim();
-    const val = (i + 1 < pairs.length) ? pairs[i + 1].trim() : '';
+    const val = i + 1 < pairs.length ? pairs[i + 1].trim() : "";
     if (key) {
       result[key] = val;
     }
@@ -194,7 +194,7 @@ function parseDataSegment(
 
   const dt = dataType.toUpperCase();
 
-  if (dt === 'F') {
+  if (dt === "F") {
     // Float32: 4 bytes per value
     const bytesPerValue = 4;
     const bytesPerEvent = numParams * bytesPerValue;
@@ -208,7 +208,7 @@ function parseDataSegment(
       }
       events.push(event);
     }
-  } else if (dt === 'D') {
+  } else if (dt === "D") {
     // Float64: 8 bytes per value
     const bytesPerValue = 8;
     const bytesPerEvent = numParams * bytesPerValue;
@@ -228,7 +228,7 @@ function parseDataSegment(
       }
       events.push(event);
     }
-  } else if (dt === 'I') {
+  } else if (dt === "I") {
     // Integer: determine bytes per value from $PnB (bits per parameter)
     // Default to 32-bit if not specified
     const bitsPerParam = 32; // Will be refined below if $PnB is available
@@ -250,14 +250,14 @@ function parseDataSegment(
           rawValue = readUint8(data, offset);
         }
         // Scale to range if available
-        const range = (p < paramRanges.length) ? paramRanges[p] : 0;
+        const range = p < paramRanges.length ? paramRanges[p] : 0;
         event.push(range > 0 ? rawValue : rawValue);
       }
       events.push(event);
     }
-  } else if (dt === 'A') {
+  } else if (dt === "A") {
     // ASCII: values are ASCII-encoded numbers separated by spaces/commas
-    let ascii = '';
+    let ascii = "";
     for (let i = start; i < end && i < data.length; i++) {
       ascii += String.fromCharCode(data[i]);
     }
@@ -303,7 +303,7 @@ export function parseFcs(input: Uint8Array | ArrayBuffer): FcsParseResult {
 
   // Read version
   const version = readAscii(data, HEADER_OFFSETS.version.start, HEADER_OFFSETS.version.end);
-  if (!version.startsWith('FCS')) {
+  if (!version.startsWith("FCS")) {
     throw new Error(`Invalid FCS file: expected version starting with "FCS", got "${version}"`);
   }
 
@@ -325,18 +325,18 @@ export function parseFcs(input: Uint8Array | ArrayBuffer): FcsParseResult {
   // FCS 3.0: if standard offsets are zero, check the supplemental segment
   // (bytes 58-65 may contain extended data/analysis offsets in some implementations)
   if (textStart === 0 && textEnd === 0) {
-    throw new Error('Invalid FCS file: TEXT segment offsets are zero');
+    throw new Error("Invalid FCS file: TEXT segment offsets are zero");
   }
 
   // Parse TEXT segment
   const textParams = parseTextSegment(data, textStart, textEnd);
 
   // Extract key parameters
-  const totalEvents = parseInt(textParams['$TOT'] || '0', 10);
-  const numParameters = parseInt(textParams['$PAR'] || '0', 10);
-  const byteOrder = textParams['$BYTEORD'] || '1,2,3,4';
-  const dataType = textParams['$DATATYPE'] || 'F';
-  const mode = textParams['$MODE'] || 'L';
+  const totalEvents = parseInt(textParams["$TOT"] || "0", 10);
+  const numParameters = parseInt(textParams["$PAR"] || "0", 10);
+  const byteOrder = textParams["$BYTEORD"] || "1,2,3,4";
+  const dataType = textParams["$DATATYPE"] || "F";
+  const mode = textParams["$MODE"] || "L";
   const bigEndian = isBigEndian(byteOrder);
 
   // Validate required parameters
@@ -353,24 +353,20 @@ export function parseFcs(input: Uint8Array | ArrayBuffer): FcsParseResult {
   for (let i = 1; i <= numParameters; i++) {
     const name = textParams[`$P${i}N`] || `P${i}`;
     parameters.push(name);
-    const range = parseInt(textParams[`$P${i}R`] || '0', 10);
+    const range = parseInt(textParams[`$P${i}R`] || "0", 10);
     paramRanges.push(range);
   }
 
   // Resolve data segment offsets if zero (FCS 2.0 allows TEXT segment to specify them)
   if (dataStart === 0 && dataEnd === 0) {
-    dataStart = parseInt(textParams['$BEGINDATA'] || '0', 10);
-    dataEnd = parseInt(textParams['$ENDDATA'] || '0', 10);
+    dataStart = parseInt(textParams["$BEGINDATA"] || "0", 10);
+    dataEnd = parseInt(textParams["$ENDDATA"] || "0", 10);
   }
 
   // Parse DATA segment
   let events: number[][] = [];
   if (dataStart > 0 && dataEnd > dataStart) {
-    events = parseDataSegment(
-      data, dataStart, dataEnd,
-      numParameters, totalEvents,
-      dataType, bigEndian, paramRanges,
-    );
+    events = parseDataSegment(data, dataStart, dataEnd, numParameters, totalEvents, dataType, bigEndian, paramRanges);
   }
 
   const metadata: FcsMetadata = {
@@ -416,7 +412,7 @@ export function isFcsFile(data: Uint8Array | ArrayBuffer): boolean {
   const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
   if (bytes.length < 6) return false;
   const version = readAscii(bytes, 0, 6);
-  return version === 'FCS2.0' || version === 'FCS3.0';
+  return version === "FCS2.0" || version === "FCS3.0";
 }
 
 /**
@@ -426,7 +422,7 @@ export function getFcsVersion(data: Uint8Array | ArrayBuffer): string | null {
   const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
   if (bytes.length < 6) return null;
   const version = readAscii(bytes, 0, 6);
-  return version.startsWith('FCS') ? version : null;
+  return version.startsWith("FCS") ? version : null;
 }
 
 /**
@@ -441,7 +437,7 @@ export function estimateFcsMemory(data: Uint8Array | ArrayBuffer): number {
   if (bytes.length < 58) return -1;
 
   const version = readAscii(bytes, 0, 6);
-  if (!version.startsWith('FCS')) return -1;
+  if (!version.startsWith("FCS")) return -1;
 
   // Read TEXT segment to get $TOT and $PAR
   const textStart = readAsciiInt(bytes, 10, 18);
@@ -449,14 +445,14 @@ export function estimateFcsMemory(data: Uint8Array | ArrayBuffer): number {
   if (textStart <= 0 || textEnd <= textStart) return -1;
 
   const textParams = parseTextSegment(bytes, textStart, textEnd);
-  const totalEvents = parseInt(textParams['$TOT'] || '0', 10);
-  const numParameters = parseInt(textParams['$PAR'] || '0', 10);
-  const dataType = (textParams['$DATATYPE'] || 'F').toUpperCase();
+  const totalEvents = parseInt(textParams["$TOT"] || "0", 10);
+  const numParameters = parseInt(textParams["$PAR"] || "0", 10);
+  const dataType = (textParams["$DATATYPE"] || "F").toUpperCase();
 
   let bytesPerValue: number;
-  if (dataType === 'D') bytesPerValue = 8;
-  else if (dataType === 'F') bytesPerValue = 4;
-  else if (dataType === 'I') bytesPerValue = 4;
+  if (dataType === "D") bytesPerValue = 8;
+  else if (dataType === "F") bytesPerValue = 4;
+  else if (dataType === "I") bytesPerValue = 4;
   else return -1;
 
   // Estimate: events × parameters × bytes per value, plus overhead for number arrays

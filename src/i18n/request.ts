@@ -6,19 +6,19 @@
  * Lazy-loads only the messages file for the active locale.
  */
 
-import { getRequestConfig } from 'next-intl/server';
-import { cookies, headers } from 'next/headers';
-import { defaultLocale, locales, type Locale } from './routing';
+import { getRequestConfig } from "next-intl/server";
+import { cookies, headers } from "next/headers";
+import { defaultLocale, locales, type Locale } from "./routing";
 
 export default getRequestConfig(async () => {
   const store = await cookies();
   const headerStore = await headers();
 
   // 1. Cookie (set by LanguageSwitcher)
-  const cookieLocale = store.get('NEXT_LOCALE')?.value;
+  const cookieLocale = store.get("NEXT_LOCALE")?.value;
 
   // 2. Accept-Language header (browser default)
-  const acceptLang = headerStore.get('accept-language')?.split(',')[0]?.split('-')[0];
+  const acceptLang = headerStore.get("accept-language")?.split(",")[0]?.split("-")[0];
 
   // 3. Resolve to a supported locale
   let locale: Locale = defaultLocale;

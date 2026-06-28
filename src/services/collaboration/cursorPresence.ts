@@ -6,7 +6,7 @@
  * — no extra transport needed.
  */
 
-import type { Awareness } from 'y-protocols/awareness';
+import type { Awareness } from "y-protocols/awareness";
 
 /** Cursor information broadcast to peers. */
 export interface CursorInfo {
@@ -25,7 +25,7 @@ export interface CursorInfo {
 }
 
 /** Internal awareness field key for cursor data. */
-const CURSOR_FIELD = 'cursor';
+const CURSOR_FIELD = "cursor";
 
 /**
  * Broadcast the local user's cursor position to all peers.
@@ -33,10 +33,7 @@ const CURSOR_FIELD = 'cursor';
  * Sets the `cursor` field in the local awareness state.
  * The y-websocket provider automatically propagates this to all peers.
  */
-export function broadcastCursor(
-  awareness: Awareness,
-  cursor: CursorInfo,
-): void {
+export function broadcastCursor(awareness: Awareness, cursor: CursorInfo): void {
   awareness.setLocalStateField(CURSOR_FIELD, {
     userId: cursor.userId,
     userName: cursor.userName,
@@ -58,10 +55,7 @@ export function broadcastCursor(
  *
  * Returns an unsubscribe function.
  */
-export function watchCursors(
-  awareness: Awareness,
-  callback: (cursors: CursorInfo[]) => void,
-): () => void {
+export function watchCursors(awareness: Awareness, callback: (cursors: CursorInfo[]) => void): () => void {
   const localClientId = awareness.clientID;
 
   const handleChange = () => {
@@ -72,15 +66,15 @@ export function watchCursors(
       if (clientId === localClientId) continue;
 
       const cursorData = (state as Record<string, unknown>)[CURSOR_FIELD];
-      if (cursorData && typeof cursorData === 'object') {
+      if (cursorData && typeof cursorData === "object") {
         const c = cursorData as Record<string, unknown>;
         if (
-          typeof c.userId === 'string' &&
-          typeof c.userName === 'string' &&
-          typeof c.x === 'number' &&
-          typeof c.y === 'number' &&
-          typeof c.toolId === 'string' &&
-          typeof c.color === 'string'
+          typeof c.userId === "string" &&
+          typeof c.userName === "string" &&
+          typeof c.x === "number" &&
+          typeof c.y === "number" &&
+          typeof c.toolId === "string" &&
+          typeof c.color === "string"
         ) {
           cursors.push({
             userId: c.userId,
@@ -97,13 +91,13 @@ export function watchCursors(
     callback(cursors);
   };
 
-  awareness.on('change', handleChange);
+  awareness.on("change", handleChange);
 
   // Fire immediately with current state
   handleChange();
 
   return () => {
-    awareness.off('change', handleChange);
+    awareness.off("change", handleChange);
   };
 }
 

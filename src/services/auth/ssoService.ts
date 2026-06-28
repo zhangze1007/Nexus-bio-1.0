@@ -108,10 +108,7 @@ function rowToSSOConfig(row: Record<string, unknown>): SSOConfig {
  */
 export async function getSSOConfig(orgId: string): Promise<SSOConfig | undefined> {
   await ensureSSOSchema();
-  const row = await sqlGet(
-    "SELECT * FROM sso_configs WHERE org_id = ?",
-    [orgId],
-  );
+  const row = await sqlGet("SELECT * FROM sso_configs WHERE org_id = ?", [orgId]);
   return row ? rowToSSOConfig(row) : undefined;
 }
 
@@ -121,10 +118,7 @@ export async function getSSOConfig(orgId: string): Promise<SSOConfig | undefined
  * Uses an upsert so the caller does not need to know whether a config
  * already exists. Returns the full persisted config.
  */
-export async function updateSSOConfig(
-  orgId: string,
-  input: SSOConfigInput,
-): Promise<SSOConfig> {
+export async function updateSSOConfig(orgId: string, input: SSOConfigInput): Promise<SSOConfig> {
   await ensureSSOSchema();
 
   const now = new Date().toISOString();
@@ -135,15 +129,7 @@ export async function updateSSOConfig(
       `UPDATE sso_configs
        SET provider = ?, metadata_url = ?, entity_id = ?, acs_url = ?, enabled = ?, updated_at = ?
        WHERE org_id = ?`,
-      [
-        input.provider,
-        input.metadata_url,
-        input.entity_id,
-        input.acs_url,
-        input.enabled ? 1 : 0,
-        now,
-        orgId,
-      ],
+      [input.provider, input.metadata_url, input.entity_id, input.acs_url, input.enabled ? 1 : 0, now, orgId],
     );
   } else {
     await sqlRun(
@@ -186,10 +172,7 @@ export async function listSSOConfigs(): Promise<SSOConfig[]> {
  */
 export async function deleteSSOConfig(orgId: string): Promise<boolean> {
   await ensureSSOSchema();
-  const result = await sqlRun(
-    "DELETE FROM sso_configs WHERE org_id = ?",
-    [orgId],
-  );
+  const result = await sqlRun("DELETE FROM sso_configs WHERE org_id = ?", [orgId]);
   return result.rowsAffected > 0;
 }
 
@@ -234,9 +217,7 @@ export async function generateSAMLRequest(orgId: string): Promise<SAMLRequest> {
  * The `response` parameter is expected to be a parsed SAML response object
  * with at minimum: `in_response_to`, `status`, and `assertion` fields.
  */
-export async function validateSAMLResponse(
-  response: Record<string, unknown>,
-): Promise<SAMLResult> {
+export async function validateSAMLResponse(response: Record<string, unknown>): Promise<SAMLResult> {
   if (!response || typeof response !== "object") {
     return { valid: false, error: "Response must be a non-null object" };
   }
@@ -263,19 +244,14 @@ export async function validateSAMLResponse(
 
   // Extract attributes if present
   const rawAttrs = assertion.attributes as Record<string, string> | undefined;
-  const attributes: Record<string, string> = rawAttrs && typeof rawAttrs === "object"
-    ? { ...rawAttrs }
-    : {};
+  const attributes: Record<string, string> = rawAttrs && typeof rawAttrs === "object" ? { ...rawAttrs } : {};
 
   // Resolve org_id from the issuer if available
   const issuer = assertion.issuer as string | undefined;
   let orgId: string | undefined;
 
   if (issuer) {
-    const rows = await sqlAll(
-      "SELECT org_id FROM sso_configs WHERE entity_id = ?",
-      [issuer],
-    );
+    const rows = await sqlAll("SELECT org_id FROM sso_configs WHERE entity_id = ?", [issuer]);
     if (rows.length > 0) {
       orgId = String(rows[0].org_id);
     }

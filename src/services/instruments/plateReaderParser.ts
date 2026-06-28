@@ -23,12 +23,12 @@ export interface PlateReaderResult {
   metadata: Record<string, string>;
 }
 
-export type PlateReaderVendor = 'bmg' | 'tecan' | 'molecular-devices';
+export type PlateReaderVendor = "bmg" | "tecan" | "molecular-devices";
 
 // ─── Constants ───────────────────────────────────────────────────
 
-const ROW_LABELS_96 = 'ABCDEFGH'.split('');
-const ROW_LABELS_384 = 'ABCDEFGHIJKLMNOP'.split('');
+const ROW_LABELS_96 = "ABCDEFGH".split("");
+const ROW_LABELS_384 = "ABCDEFGHIJKLMNOP".split("");
 
 /** Well ID regex: letter(s) followed by 1-2 digit column number. */
 const WELL_ID_RE = /^([A-P])(\d{1,2})$/;
@@ -46,13 +46,13 @@ const MAX_COLS: Record<number, number> = { 96: 12, 384: 24 };
 export function parseNumeric(raw: string): number {
   if (raw == null) return NaN;
   let s = raw.trim();
-  if (s === '' || s === '---' || s === 'OVRFLW' || s === '-' || s === 'N/A') {
+  if (s === "" || s === "---" || s === "OVRFLW" || s === "-" || s === "N/A") {
     return NaN;
   }
   // Remove thousands separator (commas used in some European locales)
   // but only when they appear as thousands grouping (not decimal separator).
   if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) {
-    s = s.replace(/,/g, '');
+    s = s.replace(/,/g, "");
   }
   const n = Number(s);
   return n;
@@ -68,7 +68,7 @@ export function normalizeWellId(raw: string): string | null {
   const letter = m[1];
   const col = parseInt(m[2], 10);
   if (col < 1 || col > 24) return null;
-  return `${letter}${String(col).padStart(2, '0')}`;
+  return `${letter}${String(col).padStart(2, "0")}`;
 }
 
 /**
@@ -100,7 +100,7 @@ function extractUnit(text: string): string {
   // Unit or measurement type at the start or after a space
   const unitMatch = text.match(/\b(RFU|RLU|RLUs|OD|AU|cps|mM|uM|nM|%)\b/i);
   if (unitMatch) return unitMatch[1];
-  return '';
+  return "";
 }
 
 /**
@@ -113,10 +113,10 @@ function extractUnit(text: string): string {
  */
 function splitCsvLine(line: string): string[] {
   const fields: string[] = [];
-  let current = '';
+  let current = "";
   let inQuotes = false;
   // Use tabs as delimiter if present (TSV preserves commas in values like "1,234.567")
-  const useTabs = line.includes('\t');
+  const useTabs = line.includes("\t");
 
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
@@ -127,9 +127,9 @@ function splitCsvLine(line: string): string[] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (!inQuotes && ((useTabs && ch === '\t') || (!useTabs && ch === ','))) {
+    } else if (!inQuotes && ((useTabs && ch === "\t") || (!useTabs && ch === ","))) {
       fields.push(current);
-      current = '';
+      current = "";
     } else {
       current += ch;
     }
@@ -166,19 +166,19 @@ export function parseBmgCsv(input: string): PlateReaderResult {
   const lines = input.split(/\r?\n/);
   const metadata: Record<string, string> = {};
   const wells: Record<string, WellValue> = {};
-  let unit = '';
+  let unit = "";
   let dataStartIdx = -1;
 
   // Phase 1: Parse metadata header
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line === '') {
+    if (line === "") {
       dataStartIdx = i + 1;
       break;
     }
     // Key-value pairs separated by first colon or tab
-    const colonIdx = line.indexOf(':');
-    const tabIdx = line.indexOf('\t');
+    const colonIdx = line.indexOf(":");
+    const tabIdx = line.indexOf("\t");
     let sepIdx = -1;
     if (colonIdx >= 0 && (tabIdx < 0 || colonIdx < tabIdx)) {
       sepIdx = colonIdx;
@@ -195,7 +195,7 @@ export function parseBmgCsv(input: string): PlateReaderResult {
   if (dataStartIdx < 0) dataStartIdx = 0;
 
   // Try to extract unit from metadata
-  const measureStr = metadata['Measurement'] || metadata['measurement'] || metadata['Info'] || '';
+  const measureStr = metadata["Measurement"] || metadata["measurement"] || metadata["Info"] || "";
   unit = extractUnit(measureStr) || extractUnit(input.substring(0, 200));
 
   // Phase 2: Parse data grid
@@ -211,7 +211,7 @@ export function parseBmgCsv(input: string): PlateReaderResult {
   if (headerIdx < 0) headerIdx = dataStartIdx;
 
   // Parse column numbers from header row
-  const headerFields = splitCsvLine(lines[headerIdx]).map(f => f.trim());
+  const headerFields = splitCsvLine(lines[headerIdx]).map((f) => f.trim());
   const colNumbers: number[] = [];
   for (let j = 1; j < headerFields.length; j++) {
     const n = parseInt(headerFields[j], 10);
@@ -221,14 +221,14 @@ export function parseBmgCsv(input: string): PlateReaderResult {
   // Parse data rows
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line === '') continue;
+    if (line === "") continue;
     const fields = splitCsvLine(line);
     if (fields.length < 2) continue;
     const rowLabel = fields[0].trim().toUpperCase();
     if (!/^[A-P]$/.test(rowLabel)) continue;
 
     for (let j = 1; j < fields.length && j - 1 < colNumbers.length; j++) {
-      const wellId = `${rowLabel}${String(colNumbers[j - 1]).padStart(2, '0')}`;
+      const wellId = `${rowLabel}${String(colNumbers[j - 1]).padStart(2, "0")}`;
       const val = parseNumeric(fields[j]);
       wells[wellId] = { value: val, unit };
     }
@@ -257,17 +257,17 @@ export function parseTecanCsv(input: string): PlateReaderResult {
   const lines = input.split(/\r?\n/);
   const metadata: Record<string, string> = {};
   const wells: Record<string, WellValue> = {};
-  let unit = '';
+  let unit = "";
 
   // Parse metadata header (common to both formats)
   let dataStartIdx = 0;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line === '') {
+    if (line === "") {
       dataStartIdx = i + 1;
       break;
     }
-    const colonIdx = line.indexOf(':');
+    const colonIdx = line.indexOf(":");
     if (colonIdx > 0) {
       const key = line.substring(0, colonIdx).trim();
       const val = line.substring(colonIdx + 1).trim();
@@ -283,7 +283,7 @@ export function parseTecanCsv(input: string): PlateReaderResult {
   let headerIdx = dataStartIdx;
   for (let i = dataStartIdx; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line === '') continue;
+    if (line === "") continue;
     const fields = splitCsvLine(line);
     if (fields.length < 2) continue;
 
@@ -313,7 +313,7 @@ export function parseTecanCsv(input: string): PlateReaderResult {
     }
 
     // First field is empty (leading tab) — likely header row in grid format
-    if (firstField === '' && fields.length > 1) {
+    if (firstField === "" && fields.length > 1) {
       const secondField = fields[1].trim();
       if (/^\d+$/.test(secondField)) {
         headerIdx = i;
@@ -327,7 +327,7 @@ export function parseTecanCsv(input: string): PlateReaderResult {
     return parseTecanColumnar(lines, metadata, headerIdx);
   }
 
-  const headerFields = splitCsvLine(lines[headerIdx]).map(f => f.trim());
+  const headerFields = splitCsvLine(lines[headerIdx]).map((f) => f.trim());
   const colNumbers: number[] = [];
   for (let j = 1; j < headerFields.length; j++) {
     const n = parseInt(headerFields[j], 10);
@@ -335,26 +335,29 @@ export function parseTecanCsv(input: string): PlateReaderResult {
   }
 
   // Try to get unit from header or metadata
-  const measureStr = metadata['Measurement'] || metadata['Description'] || '';
+  const measureStr = metadata["Measurement"] || metadata["Description"] || "";
   unit = extractUnit(measureStr);
   if (!unit) {
     // Check second field of header for unit
     for (let j = 1; j < headerFields.length; j++) {
       const u = extractUnit(headerFields[j]);
-      if (u) { unit = u; break; }
+      if (u) {
+        unit = u;
+        break;
+      }
     }
   }
 
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line === '') continue;
+    if (line === "") continue;
     const fields = splitCsvLine(line);
     if (fields.length < 2) continue;
     const rowLabel = fields[0].trim().toUpperCase();
     if (!/^[A-P]$/.test(rowLabel)) continue;
 
     for (let j = 1; j < fields.length && j - 1 < colNumbers.length; j++) {
-      const wellId = `${rowLabel}${String(colNumbers[j - 1]).padStart(2, '0')}`;
+      const wellId = `${rowLabel}${String(colNumbers[j - 1]).padStart(2, "0")}`;
       const val = parseNumeric(fields[j]);
       wells[wellId] = { value: val, unit };
     }
@@ -369,19 +372,28 @@ export function parseTecanCsv(input: string): PlateReaderResult {
  */
 function parseTecanColumnar(lines: string[], metadata: Record<string, string>, headerIdx: number): PlateReaderResult {
   const wells: Record<string, WellValue> = {};
-  let unit = '';
+  let unit = "";
 
   if (headerIdx < 0 || headerIdx >= lines.length) {
     return { plateFormat: 96, wells, metadata };
   }
 
-  const rawHeaders = splitCsvLine(lines[headerIdx]).map(f => f.trim());
-  const headers = rawHeaders.map(f => f.toLowerCase());
-  const valueColIdx = headers.findIndex(h =>
-    h === 'value' || h === 'od' || h === 'abs' || h === 'fluorescence' ||
-    h === 'measurement' || h === 'result' ||
-    h.startsWith('value') || h.startsWith('od ') || h.startsWith('abs ') ||
-    h.startsWith('fluorescence') || h.startsWith('measurement') || h.startsWith('result'),
+  const rawHeaders = splitCsvLine(lines[headerIdx]).map((f) => f.trim());
+  const headers = rawHeaders.map((f) => f.toLowerCase());
+  const valueColIdx = headers.findIndex(
+    (h) =>
+      h === "value" ||
+      h === "od" ||
+      h === "abs" ||
+      h === "fluorescence" ||
+      h === "measurement" ||
+      h === "result" ||
+      h.startsWith("value") ||
+      h.startsWith("od ") ||
+      h.startsWith("abs ") ||
+      h.startsWith("fluorescence") ||
+      h.startsWith("measurement") ||
+      h.startsWith("result"),
   );
   if (valueColIdx < 0) {
     // Assume second column is value
@@ -430,27 +442,27 @@ export function parseMolecularDevicesCsv(input: string): PlateReaderResult {
   const lines = input.split(/\r?\n/);
   const metadata: Record<string, string> = {};
   const wells: Record<string, WellValue> = {};
-  let unit = '';
+  let unit = "";
   let inResults = false;
   let headerParsed = false;
   const colNumbers: number[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line === '') continue;
+    if (line === "") continue;
 
     // Section header
     const sectionMatch = line.match(/^\[(.+)\]$/);
     if (sectionMatch) {
-      inResults = sectionMatch[1].toLowerCase().includes('result');
+      inResults = sectionMatch[1].toLowerCase().includes("result");
       continue;
     }
 
     // Metadata outside results section
     if (!inResults) {
-      const eqIdx = line.indexOf('=');
-      const colonIdx = line.indexOf(':');
-      const sepIdx = (eqIdx >= 0 && (colonIdx < 0 || eqIdx < colonIdx)) ? eqIdx : colonIdx;
+      const eqIdx = line.indexOf("=");
+      const colonIdx = line.indexOf(":");
+      const sepIdx = eqIdx >= 0 && (colonIdx < 0 || eqIdx < colonIdx) ? eqIdx : colonIdx;
       if (sepIdx > 0) {
         const key = line.substring(0, sepIdx).trim();
         const val = line.substring(sepIdx + 1).trim();
@@ -466,22 +478,28 @@ export function parseMolecularDevicesCsv(input: string): PlateReaderResult {
     if (!headerParsed && fields.length > 1) {
       headerParsed = true; // Mark as parsed regardless of format
 
-      const possibleCols = fields.slice(1).map(f => parseInt(f.trim(), 10));
-      const validCols = possibleCols.filter(n => !isNaN(n) && n >= 1 && n <= 24);
+      const possibleCols = fields.slice(1).map((f) => parseInt(f.trim(), 10));
+      const validCols = possibleCols.filter((n) => !isNaN(n) && n >= 1 && n <= 24);
       if (validCols.length > 0) {
         // Numeric column headers (1, 2, 3...)
         colNumbers.push(...validCols);
         // Try to get unit from header
         for (const f of fields) {
           const u = extractUnit(f);
-          if (u) { unit = u; break; }
+          if (u) {
+            unit = u;
+            break;
+          }
         }
       } else {
         // Label-based headers (e.g., "Well\tValue (OD)")
         // Try to extract unit from value column headers
         for (let j = 1; j < fields.length; j++) {
           const u = extractUnit(fields[j]);
-          if (u) { unit = u; break; }
+          if (u) {
+            unit = u;
+            break;
+          }
         }
       }
       continue;
@@ -497,7 +515,7 @@ export function parseMolecularDevicesCsv(input: string): PlateReaderResult {
 
       if (colNumbers.length > 0) {
         for (let j = 1; j < fields.length && j - 1 < colNumbers.length; j++) {
-          const wellId = `${rowLabel}${String(colNumbers[j - 1]).padStart(2, '0')}`;
+          const wellId = `${rowLabel}${String(colNumbers[j - 1]).padStart(2, "0")}`;
           const val = parseNumeric(fields[j]);
           wells[wellId] = { value: val, unit };
         }
@@ -510,7 +528,7 @@ export function parseMolecularDevicesCsv(input: string): PlateReaderResult {
         for (let j = 1; j < fields.length; j++) {
           const val = parseNumeric(fields[j]);
           if (!isNaN(val)) {
-            const wellId = `${rowLabel}${String(colNum).padStart(2, '0')}`;
+            const wellId = `${rowLabel}${String(colNum).padStart(2, "0")}`;
             wells[wellId] = { value: val, unit };
             break; // One value per well in this format
           }
@@ -521,8 +539,8 @@ export function parseMolecularDevicesCsv(input: string): PlateReaderResult {
 
   // Extract unit from metadata if not found in headers
   if (!unit) {
-    const wl = metadata['Wavelength'] || metadata['Wavelength(nm)'] || metadata['Read'] || '';
-    unit = extractUnit(wl) || '';
+    const wl = metadata["Wavelength"] || metadata["Wavelength(nm)"] || metadata["Read"] || "";
+    unit = extractUnit(wl) || "";
   }
 
   const plateFormat = detectPlateFormat(Object.keys(wells));
@@ -557,17 +575,17 @@ export function parsePlateReaderXml(input: string): PlateReaderResult {
   const plateFormat = plateMatch ? (parseInt(plateMatch[1], 10) === 384 ? 384 : 96) : 96;
 
   // Extract metadata fields
-  const metaTags = ['Instrument', 'Date', 'Time', 'Protocol', 'Wavelength', 'Temperature', 'User'];
+  const metaTags = ["Instrument", "Date", "Time", "Protocol", "Wavelength", "Temperature", "User"];
   for (const tag of metaTags) {
-    const re = new RegExp(`<${tag}[^>]*>([^<]*)<\\/${tag}>`, 'i');
+    const re = new RegExp(`<${tag}[^>]*>([^<]*)<\\/${tag}>`, "i");
     const m = input.match(re);
     if (m) metadata[tag] = m[1].trim();
   }
 
   // Extract unit
-  let unit = '';
-  const unitMatch = input.match(/<Unit[^>]*>([^<]*)<\/Unit>/i) ||
-    input.match(/<Measurement[^>]*>([^<]*)<\/Measurement>/i);
+  let unit = "";
+  const unitMatch =
+    input.match(/<Unit[^>]*>([^<]*)<\/Unit>/i) || input.match(/<Measurement[^>]*>([^<]*)<\/Measurement>/i);
   if (unitMatch) unit = extractUnit(unitMatch[1]) || unitMatch[1].trim();
 
   // Extract wells
@@ -606,14 +624,14 @@ export function parsePlateReaderData(input: string, vendor?: PlateReaderVendor):
   const trimmed = input.trim();
 
   // XML detection
-  if (trimmed.startsWith('<?xml') || trimmed.startsWith('<PlateData') || trimmed.startsWith('<plate')) {
+  if (trimmed.startsWith("<?xml") || trimmed.startsWith("<PlateData") || trimmed.startsWith("<plate")) {
     return parsePlateReaderXml(trimmed);
   }
 
   // Explicit vendor
-  if (vendor === 'bmg') return parseBmgCsv(trimmed);
-  if (vendor === 'tecan') return parseTecanCsv(trimmed);
-  if (vendor === 'molecular-devices') return parseMolecularDevicesCsv(trimmed);
+  if (vendor === "bmg") return parseBmgCsv(trimmed);
+  if (vendor === "tecan") return parseTecanCsv(trimmed);
+  if (vendor === "molecular-devices") return parseMolecularDevicesCsv(trimmed);
 
   // Auto-detect
   if (/\[Results?\]/i.test(trimmed) || /\[Plate/i.test(trimmed)) {

@@ -14,12 +14,7 @@
  * Reference: Watson et al. (2023) Nature 620:1089-1100 (RFdiffusion)
  */
 
-import {
-  generateBackbone,
-  backboneToPDB,
-  type BackboneConfig,
-  type BackboneAtom,
-} from './backboneGenerator';
+import { generateBackbone, backboneToPDB, type BackboneConfig, type BackboneAtom } from "./backboneGenerator";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,7 +32,7 @@ export interface RFdiffusionRequest {
   /** Number of designs to generate */
   numDesigns?: number;
   /** Design type: 'unconditional', 'scaffolded', 'binder' */
-  designType: 'unconditional' | 'scaffolded' | 'binder';
+  designType: "unconditional" | "scaffolded" | "binder";
 }
 
 export interface RFdiffusionResult {
@@ -65,37 +60,37 @@ export interface ValidationResult {
  * protein length. Uses approximate distributions seen in natural proteins:
  * ~30% helix, ~20% sheet, ~50% loop.
  */
-function generateSecondaryStructure(length: number): BackboneConfig['secondaryStructure'] {
+function generateSecondaryStructure(length: number): BackboneConfig["secondaryStructure"] {
   if (length <= 0) return [];
 
-  const helixFrac = 0.30;
-  const sheetFrac = 0.20;
+  const helixFrac = 0.3;
+  const sheetFrac = 0.2;
 
   const helixLen = Math.max(1, Math.round(length * helixFrac));
   const sheetLen = Math.max(1, Math.round(length * sheetFrac));
   const loopLen = length - helixLen - sheetLen;
 
-  const ss: BackboneConfig['secondaryStructure'] = [];
+  const ss: BackboneConfig["secondaryStructure"] = [];
   let pos = 0;
 
   // Helix at N-terminus
-  ss.push({ type: 'helix', start: pos, end: pos + helixLen - 1 });
+  ss.push({ type: "helix", start: pos, end: pos + helixLen - 1 });
   pos += helixLen;
 
   // Loop connector
   if (loopLen > 0) {
     const firstLoopLen = Math.ceil(loopLen / 2);
-    ss.push({ type: 'loop', start: pos, end: pos + firstLoopLen - 1 });
+    ss.push({ type: "loop", start: pos, end: pos + firstLoopLen - 1 });
     pos += firstLoopLen;
   }
 
   // Sheet in the middle
-  ss.push({ type: 'sheet', start: pos, end: pos + sheetLen - 1 });
+  ss.push({ type: "sheet", start: pos, end: pos + sheetLen - 1 });
   pos += sheetLen;
 
   // Remaining loop at C-terminus
   if (pos < length) {
-    ss.push({ type: 'loop', start: pos, end: length - 1 });
+    ss.push({ type: "loop", start: pos, end: length - 1 });
   }
 
   return ss;
@@ -106,10 +101,10 @@ function generateSecondaryStructure(length: number): BackboneConfig['secondarySt
  * Make regions around hotspots more flexible (loop).
  */
 function applyBinderConstraints(
-  ss: BackboneConfig['secondaryStructure'],
+  ss: BackboneConfig["secondaryStructure"],
   hotspots: string[],
   length: number,
-): BackboneConfig['secondaryStructure'] {
+): BackboneConfig["secondaryStructure"] {
   // Parse hotspot residue numbers
   const hotspotResidues = hotspots
     .map((h) => {
@@ -125,18 +120,18 @@ function applyBinderConstraints(
   for (const hotspotIdx of hotspotResidues) {
     for (const seg of modified) {
       // If a hotspot falls within a helix or sheet, convert nearby residues to loop
-      if (hotspotIdx >= seg.start && hotspotIdx <= seg.end && seg.type !== 'loop') {
+      if (hotspotIdx >= seg.start && hotspotIdx <= seg.end && seg.type !== "loop") {
         const flexStart = Math.max(seg.start, hotspotIdx - 2);
         const flexEnd = Math.min(seg.end, hotspotIdx + 2);
 
         // Split the segment around the flexible region
         const idx = modified.indexOf(seg);
-        const replacements: BackboneConfig['secondaryStructure'] = [];
+        const replacements: BackboneConfig["secondaryStructure"] = [];
 
         if (flexStart > seg.start) {
           replacements.push({ type: seg.type, start: seg.start, end: flexStart - 1 });
         }
-        replacements.push({ type: 'loop', start: flexStart, end: flexEnd });
+        replacements.push({ type: "loop", start: flexStart, end: flexEnd });
         if (flexEnd < seg.end) {
           replacements.push({ type: seg.type, start: flexEnd + 1, end: seg.end });
         }
@@ -154,15 +149,12 @@ function applyBinderConstraints(
  * Apply scaffolded design: parse partial structure and integrate
  * with generated regions.
  */
-function applyScaffoldedStructure(
-  partialPDB: string,
-  targetLength: number,
-): BackboneConfig['secondaryStructure'] {
+function applyScaffoldedStructure(partialPDB: string, targetLength: number): BackboneConfig["secondaryStructure"] {
   // Count residues in partial structure
   const residueSet = new Set<number>();
-  const lines = partialPDB.split('\n');
+  const lines = partialPDB.split("\n");
   for (const line of lines) {
-    if (line.startsWith('ATOM')) {
+    if (line.startsWith("ATOM")) {
       const resSeq = parseInt(line.substring(22, 26).trim(), 10);
       residueSet.add(resSeq);
     }
@@ -172,14 +164,14 @@ function applyScaffoldedStructure(
   const remainingLength = Math.max(0, targetLength - partialLength);
 
   if (remainingLength === 0) {
-    return [{ type: 'loop', start: 0, end: targetLength - 1 }];
+    return [{ type: "loop", start: 0, end: targetLength - 1 }];
   }
 
   // Build SS: partial region as loop (conservative), remaining as mixed
-  const ss: BackboneConfig['secondaryStructure'] = [];
+  const ss: BackboneConfig["secondaryStructure"] = [];
 
   // Partial structure region (treated as scaffold constraints)
-  ss.push({ type: 'loop', start: 0, end: partialLength - 1 });
+  ss.push({ type: "loop", start: 0, end: partialLength - 1 });
 
   // Remaining region: helix-sheet-loop pattern
   const remainingSS = generateSecondaryStructure(remainingLength);
@@ -213,11 +205,7 @@ function scoreBackbone(atoms: BackboneAtom[]): number {
     const nNext = atoms[(i + 1) * 4]; // N of residue i+1
 
     // Peptide bond length
-    const pepBond = Math.sqrt(
-      (cAtom.x - nNext.x) ** 2 +
-      (cAtom.y - nNext.y) ** 2 +
-      (cAtom.z - nNext.z) ** 2,
-    );
+    const pepBond = Math.sqrt((cAtom.x - nNext.x) ** 2 + (cAtom.y - nNext.y) ** 2 + (cAtom.z - nNext.z) ** 2);
     totalDeviation += Math.abs(pepBond - 1.32);
     count++;
   }
@@ -239,28 +227,28 @@ export function validateDesignRequest(request: RFdiffusionRequest): ValidationRe
   const errors: string[] = [];
 
   if (request.targetLength < 10) {
-    errors.push('targetLength must be at least 10 amino acids');
+    errors.push("targetLength must be at least 10 amino acids");
   }
   if (request.targetLength > 1000) {
-    errors.push('targetLength must not exceed 1000 amino acids');
+    errors.push("targetLength must not exceed 1000 amino acids");
   }
 
-  const validDesignTypes = ['unconditional', 'scaffolded', 'binder'];
+  const validDesignTypes = ["unconditional", "scaffolded", "binder"];
   if (!validDesignTypes.includes(request.designType)) {
-    errors.push(`designType must be one of: ${validDesignTypes.join(', ')}`);
+    errors.push(`designType must be one of: ${validDesignTypes.join(", ")}`);
   }
 
   if (request.numDesigns !== undefined) {
     if (request.numDesigns < 1) {
-      errors.push('numDesigns must be at least 1');
+      errors.push("numDesigns must be at least 1");
     }
     if (request.numDesigns > 10) {
-      errors.push('numDesigns must not exceed 10');
+      errors.push("numDesigns must not exceed 10");
     }
   }
 
-  if (request.designType === 'binder' && (!request.hotspots || request.hotspots.length === 0)) {
-    errors.push('binder design requires at least one hotspot');
+  if (request.designType === "binder" && (!request.hotspots || request.hotspots.length === 0)) {
+    errors.push("binder design requires at least one hotspot");
   }
 
   return { valid: errors.length === 0, errors };
@@ -279,7 +267,7 @@ export function validateDesignRequest(request: RFdiffusionRequest): ValidationRe
 export async function designProtein(request: RFdiffusionRequest): Promise<RFdiffusionResult> {
   const validation = validateDesignRequest(request);
   if (!validation.valid) {
-    throw new Error(`Invalid design request: ${validation.errors.join('; ')}`);
+    throw new Error(`Invalid design request: ${validation.errors.join("; ")}`);
   }
 
   const numDesigns = request.numDesigns ?? 1;
@@ -288,10 +276,10 @@ export async function designProtein(request: RFdiffusionRequest): Promise<RFdiff
 
   for (let d = 0; d < numDesigns; d++) {
     // Determine secondary structure based on design type
-    let ss: BackboneConfig['secondaryStructure'];
+    let ss: BackboneConfig["secondaryStructure"];
 
     switch (request.designType) {
-      case 'scaffolded':
+      case "scaffolded":
         if (request.partialStructure) {
           ss = applyScaffoldedStructure(request.partialStructure, request.targetLength);
         } else {
@@ -299,14 +287,14 @@ export async function designProtein(request: RFdiffusionRequest): Promise<RFdiff
         }
         break;
 
-      case 'binder':
+      case "binder":
         ss = generateSecondaryStructure(request.targetLength);
         if (request.hotspots && request.hotspots.length > 0) {
           ss = applyBinderConstraints(ss, request.hotspots, request.targetLength);
         }
         break;
 
-      case 'unconditional':
+      case "unconditional":
       default:
         ss = generateSecondaryStructure(request.targetLength);
         break;
@@ -339,7 +327,7 @@ export async function designProtein(request: RFdiffusionRequest): Promise<RFdiff
     pdbs,
     scores,
     metadata: {
-      model: 'rfdiffusion-heuristic-v1',
+      model: "rfdiffusion-heuristic-v1",
       targetLength: request.targetLength,
       designType: request.designType,
       timestamp: new Date().toISOString(),
@@ -354,13 +342,10 @@ export async function designProtein(request: RFdiffusionRequest): Promise<RFdiff
  * @param numDesigns - Number of designs to generate (default: 1)
  * @returns Generated designs
  */
-export async function generateUnconditionalDesign(
-  length: number,
-  numDesigns?: number,
-): Promise<RFdiffusionResult> {
+export async function generateUnconditionalDesign(length: number, numDesigns?: number): Promise<RFdiffusionResult> {
   return designProtein({
     targetLength: length,
-    designType: 'unconditional',
+    designType: "unconditional",
     numDesigns,
   });
 }
@@ -380,7 +365,7 @@ export async function generateScaffoldedDesign(
 ): Promise<RFdiffusionResult> {
   return designProtein({
     targetLength: length,
-    designType: 'scaffolded',
+    designType: "scaffolded",
     partialStructure: partialPDB,
     numDesigns,
   });
@@ -401,7 +386,7 @@ export async function generateBinderDesign(
 ): Promise<RFdiffusionResult> {
   return designProtein({
     targetLength: length,
-    designType: 'binder',
+    designType: "binder",
     hotspots,
     numDesigns,
   });

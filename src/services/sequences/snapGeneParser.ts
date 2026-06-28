@@ -183,20 +183,11 @@ function decodeUtf8(bytes: Uint8Array): string {
       result += String.fromCharCode(((b & 0x1f) << 6) | (bytes[++i] & 0x3f));
     } else if (b < 0xf0 && i + 2 < bytes.length) {
       // Three-byte sequence
-      result += String.fromCharCode(
-        ((b & 0x0f) << 12) | ((bytes[++i] & 0x3f) << 6) | (bytes[++i] & 0x3f),
-      );
+      result += String.fromCharCode(((b & 0x0f) << 12) | ((bytes[++i] & 0x3f) << 6) | (bytes[++i] & 0x3f));
     } else if (i + 3 < bytes.length) {
       // Four-byte sequence (surrogate pair)
-      const cp =
-        ((b & 0x07) << 18) |
-        ((bytes[++i] & 0x3f) << 12) |
-        ((bytes[++i] & 0x3f) << 6) |
-        (bytes[++i] & 0x3f);
-      result += String.fromCharCode(
-        0xd800 + ((cp - 0x10000) >> 10),
-        0xdc00 + ((cp - 0x10000) & 0x3ff),
-      );
+      const cp = ((b & 0x07) << 18) | ((bytes[++i] & 0x3f) << 12) | ((bytes[++i] & 0x3f) << 6) | (bytes[++i] & 0x3f);
+      result += String.fromCharCode(0xd800 + ((cp - 0x10000) >> 10), 0xdc00 + ((cp - 0x10000) & 0x3ff));
     } else {
       // Truncated or invalid — emit replacement char
       result += String.fromCharCode(0xfffd);
@@ -218,24 +209,20 @@ function parseHeader(reader: BinaryReader): SnapGeneHeader {
   const firstByte = reader.readByte();
   if (firstByte !== 0x09) {
     throw new Error(
-      `Invalid SnapGene file: expected leading byte 0x09, got 0x${firstByte.toString(16).padStart(2, "0")}`
+      `Invalid SnapGene file: expected leading byte 0x09, got 0x${firstByte.toString(16).padStart(2, "0")}`,
     );
   }
 
   // Document length (big-endian uint32) — should be 14
   const docLength = reader.readUint32BE();
   if (docLength !== 14) {
-    throw new Error(
-      `Invalid SnapGene file: expected document length 14, got ${docLength}`
-    );
+    throw new Error(`Invalid SnapGene file: expected document length 14, got ${docLength}`);
   }
 
   // Magic bytes: "SnapGene" (8 bytes ASCII)
   const magic = reader.readAscii(8);
   if (magic !== SNAPGENE_MAGIC) {
-    throw new Error(
-      `Invalid SnapGene file: expected magic "SnapGene", got "${magic}"`
-    );
+    throw new Error(`Invalid SnapGene file: expected magic "SnapGene", got "${magic}"`);
   }
 
   // isDNA flag (big-endian uint16: 1 = DNA)
@@ -274,8 +261,7 @@ function parseSequenceBlock(
 
   // Flags byte
   const flags = reader.readByte();
-  const topology: "circular" | "linear" =
-    (flags & FLAG_CIRCULAR) !== 0 ? "circular" : "linear";
+  const topology: "circular" | "linear" = (flags & FLAG_CIRCULAR) !== 0 ? "circular" : "linear";
   const isDoubleStranded = (flags & FLAG_DOUBLE_STRANDED) !== 0;
 
   // DNA sequence (remaining bytes in block)
@@ -481,7 +467,7 @@ export function parseSnapGene(buffer: ArrayBuffer): SnapGeneResult {
     // Sanity check: block size must not exceed remaining buffer
     if (blockSize > reader.remaining) {
       throw new Error(
-        `Corrupt SnapGene file: block type ${blockType} claims size ${blockSize} but only ${reader.remaining} bytes remain`
+        `Corrupt SnapGene file: block type ${blockType} claims size ${blockSize} but only ${reader.remaining} bytes remain`,
       );
     }
 

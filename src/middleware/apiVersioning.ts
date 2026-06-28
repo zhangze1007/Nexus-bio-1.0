@@ -31,7 +31,7 @@ export interface VersionMeta {
  */
 const VERSION_REGISTRY: Record<string, VersionMeta> = {
   v1: {
-    version: '1',
+    version: "1",
     deprecated: false,
   },
   // Example: uncomment when v2 ships and v1 is deprecated
@@ -48,7 +48,7 @@ const VERSION_REGISTRY: Record<string, VersionMeta> = {
 };
 
 /** The version segment returned when the URL carries no /v{n}/ prefix. */
-const DEFAULT_VERSION = 'unversioned';
+const DEFAULT_VERSION = "unversioned";
 
 // ─── Public API ─────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ export function getApiVersion(request: { url: string }): string {
 
   const segment = match[1]; // e.g. "v1"
   const meta = VERSION_REGISTRY[segment];
-  return meta ? meta.version : segment.replace('v', '');
+  return meta ? meta.version : segment.replace("v", "");
 }
 
 /**
@@ -88,15 +88,15 @@ export function getApiVersion(request: { url: string }): string {
  */
 export function addVersionHeaders(response: Response, version: string): Response {
   const headers = new Headers(response.headers);
-  headers.set('X-API-Version', version);
+  headers.set("X-API-Version", version);
 
   const segment = `v${version}`;
   const meta = VERSION_REGISTRY[segment];
 
   if (meta?.deprecated) {
-    headers.set('Deprecation', 'true');
+    headers.set("Deprecation", "true");
     if (meta.sunsetDate) {
-      headers.set('Sunset', meta.sunsetDate);
+      headers.set("Sunset", meta.sunsetDate);
     }
   }
 

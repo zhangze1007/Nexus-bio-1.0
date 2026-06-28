@@ -10,15 +10,15 @@
  * Also decodes common HTML entities.
  */
 export function sanitizeHtml(input: string): string {
-  if (typeof input !== 'string') return '';
+  if (typeof input !== "string") return "";
   return input
-    .replace(/<[^>]*>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#x27;/g, "'")
-    .replace(/&#x2F;/g, '/')
+    .replace(/&#x2F;/g, "/")
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'");
 }
@@ -29,11 +29,8 @@ export function sanitizeHtml(input: string): string {
  * always use parameterized queries / prepared statements.
  */
 export function sanitizeSql(input: string): string {
-  if (typeof input !== 'string') return '';
-  return input
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "''")
-    .replace(/"/g, '""');
+  if (typeof input !== "string") return "";
+  return input.replace(/\\/g, "\\\\").replace(/'/g, "''").replace(/"/g, '""');
 }
 
 /**
@@ -41,7 +38,7 @@ export function sanitizeSql(input: string): string {
  * Returns true if the email is structurally valid.
  */
 export function validateEmail(email: string): boolean {
-  if (typeof email !== 'string') return false;
+  if (typeof email !== "string") return false;
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
 }
@@ -51,10 +48,10 @@ export function validateEmail(email: string): boolean {
  * Returns true if the URL is structurally valid and safe.
  */
 export function validateUrl(url: string): boolean {
-  if (typeof url !== 'string') return false;
+  if (typeof url !== "string") return false;
   try {
     const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
   } catch {
     return false;
   }

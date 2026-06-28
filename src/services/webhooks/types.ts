@@ -6,11 +6,7 @@
  */
 
 /** Supported webhook event types. */
-export type WebhookEventType =
-  | "experiment.complete"
-  | "milestone.reached"
-  | "task.assigned"
-  | "inventory.alert";
+export type WebhookEventType = "experiment.complete" | "milestone.reached" | "task.assigned" | "inventory.alert";
 
 /** All valid event types as a set for validation. */
 export const VALID_WEBHOOK_EVENTS: ReadonlySet<string> = new Set<WebhookEventType>([
@@ -47,9 +43,9 @@ export interface WebhookDelivery {
 
 /** Retry schedule: delays in milliseconds for exponential backoff. */
 export const WEBHOOK_RETRY_DELAYS_MS = [
-  60_000,     // 1 minute
-  300_000,    // 5 minutes
-  1_800_000,  // 30 minutes
+  60_000, // 1 minute
+  300_000, // 5 minutes
+  1_800_000, // 30 minutes
 ] as const;
 
 /** Maximum number of retry attempts before giving up. */

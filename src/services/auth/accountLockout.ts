@@ -107,9 +107,8 @@ export async function recordFailedAttempt(userId: string): Promise<LockoutStatus
     // First failed attempt — create record
     const id = generateId();
     const attempts = 1;
-    const lockedUntil = attempts >= MAX_FAILED_ATTEMPTS
-      ? addMinutes(new Date(), LOCKOUT_DURATION_MS / 60_000).toISOString()
-      : null;
+    const lockedUntil =
+      attempts >= MAX_FAILED_ATTEMPTS ? addMinutes(new Date(), LOCKOUT_DURATION_MS / 60_000).toISOString() : null;
 
     await sqlRun(
       `INSERT INTO account_lockouts (id, user_id, failed_attempts, locked_until, last_attempt_at)
@@ -164,10 +163,7 @@ export async function recordFailedAttempt(userId: string): Promise<LockoutStatus
 export async function checkAccountLocked(userId: string): Promise<boolean> {
   await ensureSchema();
 
-  const row = await sqlGet(
-    `SELECT locked_until FROM account_lockouts WHERE user_id = ?`,
-    [userId],
-  );
+  const row = await sqlGet(`SELECT locked_until FROM account_lockouts WHERE user_id = ?`, [userId]);
 
   return isLockedRow(row);
 }

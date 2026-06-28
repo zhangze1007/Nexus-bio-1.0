@@ -74,10 +74,7 @@ function deviceIcon(os: string) {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function SessionManager({
-  apiBase = "/api/auth/sessions",
-  headers = {},
-}: SessionManagerProps) {
+export default function SessionManager({ apiBase = "/api/auth/sessions", headers = {} }: SessionManagerProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -215,7 +212,7 @@ export default function SessionManager({
               display: "flex",
               alignItems: "center",
               gap: THEME.SP_SM,
-              padding: `${ THEME.SP_SM }px ${ THEME.SP_MD }px`,
+              padding: `${THEME.SP_SM}px ${THEME.SP_MD}px`,
               marginBottom: THEME.SP_MD,
               borderRadius: THEME.R_SM,
               background: "rgba(232,163,161,0.1)",
@@ -299,14 +296,10 @@ export default function SessionManager({
                 display: "flex",
                 alignItems: "center",
                 gap: THEME.SP_MD,
-                padding: `${THEME.SP_MD }px`,
+                padding: `${THEME.SP_MD}px`,
                 borderRadius: THEME.R_MD,
-                background: session.isCurrent
-                  ? "rgba(191,220,205,0.06)"
-                  : THEME.PANEL_STRONG,
-                border: `1px solid ${
-                  session.isCurrent ? "rgba(191,220,205,0.2)" : THEME.BORDER
-                }`,
+                background: session.isCurrent ? "rgba(191,220,205,0.06)" : THEME.PANEL_STRONG,
+                border: `1px solid ${session.isCurrent ? "rgba(191,220,205,0.2)" : THEME.BORDER}`,
                 transition: "border-color 0.15s",
               }}
               onMouseEnter={(e) => {

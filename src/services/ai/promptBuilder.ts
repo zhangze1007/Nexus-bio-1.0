@@ -68,11 +68,13 @@ const TOOL_PROMPT_CATALOG: Record<string, string> = {
   "metabolic-eng": "Metabolic Engineering Lab — full 3D metabolic lab with FBA overlays and force-directed layout.",
   catdes: "Catalyst Designer — enzyme design, binding affinity, mutagenesis targeting, Pareto optimization.",
   proevol: "Protein Evolution — fitness landscape, evolution trajectory, variant library, campaign tracking.",
-  fbasim: "Flux Balance Analysis — LP-based flux optimization, knockout/OE strategies, shadow prices, carbon efficiency.",
+  fbasim:
+    "Flux Balance Analysis — LP-based flux optimization, knockout/OE strategies, shadow prices, carbon efficiency.",
   dyncon: "Dynamic Control — bioreactor simulation, Hill-function feedback, RK4 ODE integration, convergence.",
   cethx: "Cell Thermodynamics — condition-aware ΔG' via Alberty transform, ATP accounting, feasibility assessment.",
   gecair: "Gene Circuit Reasoner — logic gate design, Hill curve modeling, circuit dynamics, phase-space analysis.",
-  multio: "Multi-Omics Integration — VAE/UMAP embeddings, volcano plots, MOFA+ factor analysis, perturbation prediction.",
+  multio:
+    "Multi-Omics Integration — VAE/UMAP embeddings, volcano plots, MOFA+ factor analysis, perturbation prediction.",
   scspatial: "Single-Cell Spatial — hexagonal spot grid, UMAP spatial viz, cluster analysis, gene expression heatmap.",
   cellfree: "Cell-Free Sandbox — TX-TL simulation, expression yield prediction, resource-aware modeling.",
   dbtlflow: "DBTL Cycle Tracker — iteration waterfall, protocol generation, SBOL export, delta pack management.",
@@ -119,10 +121,7 @@ Do not fabricate tool outputs — wait for the actual result. If the question ca
  * @param context  Optional contextual metadata (active tool, pathway, etc.).
  * @returns A complete prompt string ready to send to an LLM.
  */
-export function buildAnalysisPrompt(
-  input: string,
-  context: AnalysisContext = {},
-): string {
+export function buildAnalysisPrompt(input: string, context: AnalysisContext = {}): string {
   const sections: string[] = [SYSTEM_IDENTITY, "", SCIENTIFIC_RIGOR_RULES];
 
   // Tool catalog — include all or just the active tool
@@ -141,10 +140,7 @@ export function buildAnalysisPrompt(
     sections.push("", `## Recent Experiments\n${expList}`);
   }
   if (context.conversationSummary) {
-    sections.push(
-      "",
-      `## Conversation History\n${context.conversationSummary}`,
-    );
+    sections.push("", `## Conversation History\n${context.conversationSummary}`);
   }
 
   // Tool calling instructions (only when an active tool is specified)
@@ -177,10 +173,7 @@ export function buildAnalysisPrompt(
  * @param tools  List of tools the planner can choose from.
  * @returns A complete prompt string ready to send to an LLM.
  */
-export function buildPlanningPrompt(
-  goal: string,
-  tools: PlanningTool[],
-): string {
+export function buildPlanningPrompt(goal: string, tools: PlanningTool[]): string {
   const sections: string[] = [
     SYSTEM_IDENTITY,
     "",
@@ -252,11 +245,7 @@ Return a JSON object with this structure — no markdown, no prose outside the J
  * @param params  The original parameters that were used.
  * @returns A complete prompt string ready to send to an LLM.
  */
-export function buildCorrectionPrompt(
-  task: CorrectionTask,
-  error: string,
-  params: Record<string, unknown>,
-): string {
+export function buildCorrectionPrompt(task: CorrectionTask, error: string, params: Record<string, unknown>): string {
   const sections: string[] = [
     SYSTEM_IDENTITY,
     "",

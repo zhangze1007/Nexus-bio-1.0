@@ -12,26 +12,35 @@
  */
 
 /** Extensions considered immutable (Next.js content-hashed bundles). */
-const IMMUTABLE_EXTENSIONS = new Set([
-  '.js', '.mjs', '.css', '.map',
-]);
+const IMMUTABLE_EXTENSIONS = new Set([".js", ".mjs", ".css", ".map"]);
 
 /** Extensions for images and fonts (long-lived but not hashed). */
 const LONG_LIVED_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico',
-  '.woff', '.woff2', '.ttf', '.otf', '.eot',
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".svg",
+  ".webp",
+  ".avif",
+  ".ico",
+  ".woff",
+  ".woff2",
+  ".ttf",
+  ".otf",
+  ".eot",
 ]);
 
 /** Extensions for HTML documents. */
-const HTML_EXTENSIONS = new Set(['.html', '.htm']);
+const HTML_EXTENSIONS = new Set([".html", ".htm"]);
 
 /**
  * Extracts the file extension (lowercased, with dot) from a filename or path.
  * Returns an empty string if no extension is found.
  */
 function getExtension(filename: string): string {
-  const dot = filename.lastIndexOf('.');
-  if (dot === -1) return '';
+  const dot = filename.lastIndexOf(".");
+  if (dot === -1) return "";
   return filename.slice(dot).toLowerCase();
 }
 
@@ -49,24 +58,25 @@ function getExtension(filename: string): string {
  */
 export function getStaticAssetHeaders(filename: string): Record<string, string> {
   const ext = getExtension(filename);
-  const isNextStatic = filename.includes('_next/static');
+  const isNextStatic = filename.includes("_next/static");
 
   let cacheControl: string;
 
   if (isNextStatic || IMMUTABLE_EXTENSIONS.has(ext)) {
-    cacheControl = 'public, max-age=31536000, s-maxage=31536000, immutable';
+    cacheControl = "public, max-age=31536000, s-maxage=31536000, immutable";
   } else if (LONG_LIVED_EXTENSIONS.has(ext)) {
-    cacheControl = 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=86400';
+    cacheControl = "public, max-age=604800, s-maxage=604800, stale-while-revalidate=86400";
   } else if (HTML_EXTENSIONS.has(ext)) {
-    cacheControl = 'no-cache, must-revalidate';
+    cacheControl = "no-cache, must-revalidate";
   } else {
     // Conservative default: no-cache for unknown types
-    cacheControl = 'no-cache, must-revalidate';
+    cacheControl = "no-cache, must-revalidate";
   }
 
   return {
-    'Cache-Control': cacheControl,
-    'Content-Security-Policy': "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; object-src 'none'; frame-ancestors 'none'",
-    'X-Content-Type-Options': 'nosniff',
+    "Cache-Control": cacheControl,
+    "Content-Security-Policy":
+      "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; object-src 'none'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
   };
 }

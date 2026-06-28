@@ -9,19 +9,14 @@
  * Each route returns a normalized ProteinPrediction with confidence scores.
  */
 
-import type {
-  ProteinPrediction,
-  ProteinPredictionRequest,
-  ConfidenceScores,
-  PredictionMetadata,
-} from './types';
-import { extractPLDDTFromPDB } from './confidenceScorer';
+import type { ProteinPrediction, ProteinPredictionRequest, ConfidenceScores, PredictionMetadata } from "./types";
+import { extractPLDDTFromPDB } from "./confidenceScorer";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const CHAIN_IDS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const CHAIN_IDS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /** pLDDT value used when the backend does not return per-residue scores. */
 const DEFAULT_PLDDT = 50;
@@ -35,7 +30,7 @@ function generateChainIds(count: number): string[] {
 }
 
 function validateSequence(seq: string): string {
-  const cleaned = seq.toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '');
+  const cleaned = seq.toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, "");
   if (cleaned.length < 10) {
     throw new Error(`Sequence too short (minimum 10 residues, got ${cleaned.length})`);
   }
@@ -45,21 +40,14 @@ function validateSequence(seq: string): string {
   return cleaned;
 }
 
-function buildConfidence(
-  plddt: number[],
-  ptm: number,
-  iptm: number | null,
-): ConfidenceScores {
-  const meanPLDDT =
-    plddt.length > 0
-      ? Math.round((plddt.reduce((s, v) => s + v, 0) / plddt.length) * 100) / 100
-      : 0;
+function buildConfidence(plddt: number[], ptm: number, iptm: number | null): ConfidenceScores {
+  const meanPLDDT = plddt.length > 0 ? Math.round((plddt.reduce((s, v) => s + v, 0) / plddt.length) * 100) / 100 : 0;
 
   return { pTM: ptm, ipTM: iptm, pLDDT: plddt, meanPLDDT };
 }
 
 function buildMetadata(
-  model: PredictionMetadata['model'],
+  model: PredictionMetadata["model"],
   chainIds: string[],
   sequence: string | string[],
   source?: string,
@@ -86,20 +74,17 @@ function buildMetadata(
  * For sequence-based lookup we POST to /api/alphafold3 with a single sequence,
  * since the EBI proxy only supports UniProt ID lookups.
  */
-async function callAlphaFold2(
-  sequences: string[],
-  chainIds: string[],
-): Promise<ProteinPrediction | null> {
+async function callAlphaFold2(sequences: string[], chainIds: string[]): Promise<ProteinPrediction | null> {
   try {
-    const res = await fetch('/api/alphafold3', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/alphafold3", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sequences: sequences.map((seq, i) => ({
           id: chainIds[i] ?? `chain_${i}`,
           sequence: seq,
         })),
-        mode: 'alphafold2',
+        mode: "alphafold2",
       }),
     });
 
@@ -109,14 +94,12 @@ async function callAlphaFold2(
     if (!data.ok || !data.pdb) return null;
 
     const plddt = data.plddt ?? extractPLDDTFromPDB(data.pdb);
-    const paddedPLDDT = plddt.length > 0
-      ? plddt
-      : Array.from({ length: sequences[0].length }, () => DEFAULT_PLDDT);
+    const paddedPLDDT = plddt.length > 0 ? plddt : Array.from({ length: sequences[0].length }, () => DEFAULT_PLDDT);
 
     return {
       pdb: data.pdb,
       confidence: buildConfidence(paddedPLDDT, data.ptm ?? 0, data.iptm ?? null),
-      metadata: buildMetadata('alphafold2', chainIds, sequences[0], data.source, data.durationMs),
+      metadata: buildMetadata("alphafold2", chainIds, sequences[0], data.source, data.durationMs),
     };
   } catch {
     return null;
@@ -126,20 +109,17 @@ async function callAlphaFold2(
 /**
  * Call ColabFold / AlphaFold3 for multi-chain complex prediction.
  */
-async function callColabFold(
-  sequences: string[],
-  chainIds: string[],
-): Promise<ProteinPrediction | null> {
+async function callColabFold(sequences: string[], chainIds: string[]): Promise<ProteinPrediction | null> {
   try {
-    const res = await fetch('/api/alphafold3', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/alphafold3", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sequences: sequences.map((seq, i) => ({
           id: chainIds[i] ?? `chain_${i}`,
           sequence: seq,
         })),
-        mode: 'alphafold3',
+        mode: "alphafold3",
         paired: true,
       }),
     });
@@ -150,14 +130,13 @@ async function callColabFold(
     if (!data.ok || !data.pdb) return null;
 
     const plddt = data.plddt ?? extractPLDDTFromPDB(data.pdb);
-    const paddedPLDDT = plddt.length > 0
-      ? plddt
-      : sequences.flatMap((seq) => Array.from({ length: seq.length }, () => DEFAULT_PLDDT));
+    const paddedPLDDT =
+      plddt.length > 0 ? plddt : sequences.flatMap((seq) => Array.from({ length: seq.length }, () => DEFAULT_PLDDT));
 
     return {
       pdb: data.pdb,
       confidence: buildConfidence(paddedPLDDT, data.ptm ?? 0, data.iptm ?? null),
-      metadata: buildMetadata('colabfold', chainIds, sequences, data.source, data.durationMs),
+      metadata: buildMetadata("colabfold", chainIds, sequences, data.source, data.durationMs),
     };
   } catch {
     return null;
@@ -167,14 +146,11 @@ async function callColabFold(
 /**
  * Call ESMFold for fast single-sequence prediction (no MSA).
  */
-async function callESMFold(
-  sequences: string[],
-  chainIds: string[],
-): Promise<ProteinPrediction | null> {
+async function callESMFold(sequences: string[], chainIds: string[]): Promise<ProteinPrediction | null> {
   try {
-    const res = await fetch('/api/esmfold', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/esmfold", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sequence: sequences[0] }),
     });
 
@@ -184,14 +160,13 @@ async function callESMFold(
     if (!data.ok || !data.pdb) return null;
 
     const plddt = extractPLDDTFromPDB(data.pdb);
-    const paddedPLDDT = plddt.length > 0
-      ? plddt
-      : Array.from({ length: sequences[0].length }, () => data.plddt ?? DEFAULT_PLDDT);
+    const paddedPLDDT =
+      plddt.length > 0 ? plddt : Array.from({ length: sequences[0].length }, () => data.plddt ?? DEFAULT_PLDDT);
 
     return {
       pdb: data.pdb,
       confidence: buildConfidence(paddedPLDDT, 0, null),
-      metadata: buildMetadata('esmfold', chainIds, sequences[0], 'esmfold', data.durationMs),
+      metadata: buildMetadata("esmfold", chainIds, sequences[0], "esmfold", data.durationMs),
     };
   } catch {
     return null;
@@ -210,20 +185,18 @@ async function callESMFold(
  *   2. Multi-chain (sequences.length > 1) → colabfold
  *   3. Single chain → alphafold2 → esmfold
  */
-function selectBackend(
-  request: ProteinPredictionRequest,
-): 'alphafold2' | 'colabfold' | 'esmfold' {
-  const pref = request.model ?? 'auto';
+function selectBackend(request: ProteinPredictionRequest): "alphafold2" | "colabfold" | "esmfold" {
+  const pref = request.model ?? "auto";
 
-  if (pref === 'auto') {
-    if (request.sequences.length > 1) return 'colabfold';
-    return 'alphafold2';
+  if (pref === "auto") {
+    if (request.sequences.length > 1) return "colabfold";
+    return "alphafold2";
   }
 
   // Map explicit preferences
-  if (pref === 'alphafold3' || pref === 'colabfold') return 'colabfold';
-  if (pref === 'esmfold') return 'esmfold';
-  return 'alphafold2';
+  if (pref === "alphafold3" || pref === "colabfold") return "colabfold";
+  if (pref === "esmfold") return "esmfold";
+  return "alphafold2";
 }
 
 // ---------------------------------------------------------------------------
@@ -242,28 +215,24 @@ function selectBackend(
  * @returns Normalized prediction with PDB, confidence, and metadata
  * @throws {Error} If sequences are invalid or all backends fail
  */
-export async function predictStructure(
-  request: ProteinPredictionRequest,
-): Promise<ProteinPrediction> {
+export async function predictStructure(request: ProteinPredictionRequest): Promise<ProteinPrediction> {
   // Validate
   if (!request.sequences || request.sequences.length === 0) {
-    throw new Error('At least one sequence is required');
+    throw new Error("At least one sequence is required");
   }
 
   const cleanedSequences = request.sequences.map(validateSequence);
   const chainIds = request.chainIds ?? generateChainIds(cleanedSequences.length);
 
   if (chainIds.length < cleanedSequences.length) {
-    throw new Error(
-      `chainIds length (${chainIds.length}) < sequences length (${cleanedSequences.length})`,
-    );
+    throw new Error(`chainIds length (${chainIds.length}) < sequences length (${cleanedSequences.length})`);
   }
 
   const backend = selectBackend(request);
   let result: ProteinPrediction | null = null;
 
   switch (backend) {
-    case 'colabfold':
+    case "colabfold":
       result = await callColabFold(cleanedSequences, chainIds);
       // Fallback for single-chain if colabfold fails
       if (!result && cleanedSequences.length === 1) {
@@ -272,11 +241,11 @@ export async function predictStructure(
       }
       break;
 
-    case 'esmfold':
+    case "esmfold":
       result = await callESMFold(cleanedSequences, chainIds);
       break;
 
-    case 'alphafold2':
+    case "alphafold2":
     default:
       // Try AlphaFold2 first, then ESMFold fallback
       result = await callAlphaFold2(cleanedSequences, chainIds);
@@ -286,8 +255,7 @@ export async function predictStructure(
 
   if (!result) {
     throw new Error(
-      'All structure prediction backends are unavailable. ' +
-        'Please try again later or check API connectivity.',
+      "All structure prediction backends are unavailable. " + "Please try again later or check API connectivity.",
     );
   }
 
@@ -298,10 +266,8 @@ export async function predictStructure(
  * Check which prediction backends are available by sending lightweight
  * health-check requests. Returns a map of backend name to availability.
  */
-export async function checkBackendAvailability(): Promise<
-  Record<'alphafold' | 'alphafold3' | 'esmfold', boolean>
-> {
-  const results: Record<'alphafold' | 'alphafold3' | 'esmfold', boolean> = {
+export async function checkBackendAvailability(): Promise<Record<"alphafold" | "alphafold3" | "esmfold", boolean>> {
+  const results: Record<"alphafold" | "alphafold3" | "esmfold", boolean> = {
     alphafold: false,
     alphafold3: false,
     esmfold: false,

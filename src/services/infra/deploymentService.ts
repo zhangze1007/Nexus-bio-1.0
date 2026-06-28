@@ -51,11 +51,7 @@ function detectEnvironment(): Environment {
 
 function resolveVersion(): string {
   // Vercel provides the git commit SHA automatically
-  return (
-    process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
-    process.env.npm_package_version ??
-    "0.0.0-local"
-  );
+  return process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? process.env.npm_package_version ?? "0.0.0-local";
 }
 
 function isEnvSet(key: string): boolean {
@@ -80,12 +76,7 @@ const ENV_VARS: Record<Environment, { required: string[]; optional: string[] }> 
   },
   staging: {
     required: ["GROQ_API_KEY", "GEMINI_API_KEY"],
-    optional: [
-      "SCSPATIAL_ARTIFACT_DIR",
-      "SCSPATIAL_PYTHON_BIN",
-      "ESM2_PYTHON_BACKEND",
-      "REDIS_URL",
-    ],
+    optional: ["SCSPATIAL_ARTIFACT_DIR", "SCSPATIAL_PYTHON_BIN", "ESM2_PYTHON_BACKEND", "REDIS_URL"],
   },
   production: {
     required: ["GROQ_API_KEY", "GEMINI_API_KEY"],
@@ -140,10 +131,9 @@ export async function getDeploymentStatus(): Promise<DeploymentStatus> {
   // Determine last-deployed time. On Vercel, the deployment URL embeds
   // a timestamp, but the most reliable signal is the build metadata.
   // Fallback to now for local dev.
-  const lastDeployedAt =
-    process.env.VERCEL_DEPLOYMENT_ID
-      ? new Date().toISOString() // On Vercel we know it was just deployed
-      : new Date().toISOString();
+  const lastDeployedAt = process.env.VERCEL_DEPLOYMENT_ID
+    ? new Date().toISOString() // On Vercel we know it was just deployed
+    : new Date().toISOString();
 
   // Health is derived from whether required env vars are present
   const { required } = ENV_VARS[environment];
@@ -169,9 +159,7 @@ export async function getDeploymentStatus(): Promise<DeploymentStatus> {
  * Returns the environment configuration for the given environment,
  * including required/optional vars and feature flags.
  */
-export async function getEnvironmentConfig(
-  env: Environment,
-): Promise<EnvConfig> {
+export async function getEnvironmentConfig(env: Environment): Promise<EnvConfig> {
   const vars = ENV_VARS[env];
   const flags = FEATURE_FLAGS[env];
 
@@ -285,10 +273,7 @@ export async function validateDeployment(): Promise<ValidationResult> {
   checks.push({
     name: "build_version",
     status: version !== "0.0.0-local" ? "pass" : "warn",
-    message:
-      version !== "0.0.0-local"
-        ? `Build version: ${version}`
-        : "Running local build (no version metadata)",
+    message: version !== "0.0.0-local" ? `Build version: ${version}` : "Running local build (no version metadata)",
   });
 
   return { checks };

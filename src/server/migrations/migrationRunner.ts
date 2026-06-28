@@ -153,8 +153,7 @@ export async function rollbackMigration(migrationName: string): Promise<void> {
   const downFile = await findDownMigration(migrationName);
   if (!downFile) {
     throw new Error(
-      `No rollback file found for "${migrationName}". ` +
-        `Expected a .down.sql file in ${MIGRATIONS_DIR}.`,
+      `No rollback file found for "${migrationName}". ` + `Expected a .down.sql file in ${MIGRATIONS_DIR}.`,
     );
   }
 

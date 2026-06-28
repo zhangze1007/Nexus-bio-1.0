@@ -128,10 +128,12 @@ export async function createTrigger(input: CreateTriggerInput): Promise<N8nTrigg
   const id = generateId();
   const createdAt = new Date().toISOString();
 
-  await sqlRun(
-    "INSERT INTO n8n_triggers (id, event_type, callback_url, active, created_at) VALUES (?, ?, ?, 1, ?)",
-    [id, eventType.trim(), callbackUrl.trim(), createdAt],
-  );
+  await sqlRun("INSERT INTO n8n_triggers (id, event_type, callback_url, active, created_at) VALUES (?, ?, ?, 1, ?)", [
+    id,
+    eventType.trim(),
+    callbackUrl.trim(),
+    createdAt,
+  ]);
 
   return {
     id,
@@ -170,10 +172,7 @@ export async function listTriggers(eventType?: string): Promise<N8nTrigger[]> {
 
   let rows: Record<string, unknown>[];
   if (eventType) {
-    rows = await sqlAll(
-      "SELECT * FROM n8n_triggers WHERE event_type = ? ORDER BY created_at DESC",
-      [eventType],
-    );
+    rows = await sqlAll("SELECT * FROM n8n_triggers WHERE event_type = ? ORDER BY created_at DESC", [eventType]);
   } else {
     rows = await sqlAll("SELECT * FROM n8n_triggers ORDER BY created_at DESC");
   }
@@ -194,10 +193,7 @@ export async function deactivateTrigger(id: string): Promise<boolean> {
 
   await ensureSchema();
 
-  const result = await sqlRun(
-    "UPDATE n8n_triggers SET active = 0 WHERE id = ?",
-    [id.trim()],
-  );
+  const result = await sqlRun("UPDATE n8n_triggers SET active = 0 WHERE id = ?", [id.trim()]);
   return result.rowsAffected > 0;
 }
 
@@ -214,10 +210,7 @@ export async function activateTrigger(id: string): Promise<boolean> {
 
   await ensureSchema();
 
-  const result = await sqlRun(
-    "UPDATE n8n_triggers SET active = 1 WHERE id = ?",
-    [id.trim()],
-  );
+  const result = await sqlRun("UPDATE n8n_triggers SET active = 1 WHERE id = ?", [id.trim()]);
   return result.rowsAffected > 0;
 }
 
@@ -231,10 +224,9 @@ export async function activateTrigger(id: string): Promise<boolean> {
 export async function getActiveTriggersForEvent(eventType: string): Promise<N8nTrigger[]> {
   await ensureSchema();
 
-  const rows = await sqlAll(
-    "SELECT * FROM n8n_triggers WHERE event_type = ? AND active = 1 ORDER BY created_at DESC",
-    [eventType],
-  );
+  const rows = await sqlAll("SELECT * FROM n8n_triggers WHERE event_type = ? AND active = 1 ORDER BY created_at DESC", [
+    eventType,
+  ]);
 
   return rows.map(rowToTrigger);
 }

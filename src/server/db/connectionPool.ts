@@ -259,11 +259,7 @@ function drainWaiting(pool: ConnectionPool): void {
 /**
  * Execute a SQL statement using a pooled connection (auto-release).
  */
-export async function pooledExecute(
-  pool: ConnectionPool,
-  sql: string,
-  args?: InArgs,
-): Promise<ResultSet> {
+export async function pooledExecute(pool: ConnectionPool, sql: string, args?: InArgs): Promise<ResultSet> {
   const conn = await getConnection(pool);
   try {
     return await conn.client.execute({ sql, args });

@@ -24,11 +24,7 @@ export function useToast(defaultDuration = 4000) {
   }, []);
 
   const toast = useCallback(
-    (
-      message: string,
-      type: ToastType = "info",
-      duration: number = defaultDuration,
-    ) => {
+    (message: string, type: ToastType = "info", duration: number = defaultDuration) => {
       const id = `toast-${++counter}`;
       const item: ToastItem = { id, message, type, duration };
       setToasts((prev) => [...prev, item]);

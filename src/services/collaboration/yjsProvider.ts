@@ -6,9 +6,9 @@
  * on the same workbench state without conflicts.
  */
 
-import { IndexeddbPersistence } from 'y-indexeddb';
-import { WebsocketProvider } from 'y-websocket';
-import * as Y from 'yjs';
+import { IndexeddbPersistence } from "y-indexeddb";
+import { WebsocketProvider } from "y-websocket";
+import * as Y from "yjs";
 
 /** Full state for one collaboration session. */
 export interface CollaborationSession {
@@ -19,7 +19,7 @@ export interface CollaborationSession {
   /** IndexedDB persistence for offline support. */
   indexeddb: IndexeddbPersistence;
   /** Awareness protocol — tracks cursors, user info, etc. */
-  awareness: WebsocketProvider['awareness'];
+  awareness: WebsocketProvider["awareness"];
 }
 
 /** Active sessions keyed by projectId. */
@@ -33,15 +33,15 @@ const activeSessions = new Map<string, CollaborationSession>();
  * (the default y-websocket server port).
  */
 function getWsUrl(): string {
-  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_YJS_WS_URL) {
+  if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_YJS_WS_URL) {
     return process.env.NEXT_PUBLIC_YJS_WS_URL;
   }
   // In the browser, derive from the current origin
-  if (typeof window !== 'undefined') {
-    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  if (typeof window !== "undefined") {
+    const proto = window.location.protocol === "https:" ? "wss" : "ws";
     return `${proto}://${window.location.hostname}:1234`;
   }
-  return 'ws://localhost:1234';
+  return "ws://localhost:1234";
 }
 
 /**
@@ -54,11 +54,7 @@ function getWsUrl(): string {
  *
  * If a session already exists for this projectId it is returned as-is.
  */
-export function createSession(
-  projectId: string,
-  userId: string,
-  userName: string,
-): CollaborationSession {
+export function createSession(projectId: string, userId: string, userName: string): CollaborationSession {
   // Return existing session if already open
   const existing = activeSessions.get(projectId);
   if (existing) return existing;
@@ -77,7 +73,7 @@ export function createSession(
 
   // Configure awareness with user identity
   const awareness = provider.awareness;
-  awareness.setLocalStateField('user', {
+  awareness.setLocalStateField("user", {
     id: userId,
     name: userName,
     color: generateUserColor(userId),
@@ -147,9 +143,18 @@ export function destroyAllSessions(): void {
  */
 function generateUserColor(userId: string): string {
   const COLORS = [
-    '#C8D8E8', '#C8E0D0', '#DDD0E8', '#E8DCC8',
-    '#93CB52', '#5151CD', '#FA8072', '#87CEEB',
-    '#DDA0DD', '#F0E68C', '#98FB98', '#FFB6C1',
+    "#C8D8E8",
+    "#C8E0D0",
+    "#DDD0E8",
+    "#E8DCC8",
+    "#93CB52",
+    "#5151CD",
+    "#FA8072",
+    "#87CEEB",
+    "#DDA0DD",
+    "#F0E68C",
+    "#98FB98",
+    "#FFB6C1",
   ];
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {

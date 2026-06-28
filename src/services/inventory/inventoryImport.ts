@@ -152,7 +152,7 @@ const HEADER_ALIASES: Record<string, Record<string, string>> = {
     primer_name: "name",
     primername: "name",
     sequence: "sequence5to3",
-    "sequence_5to3": "sequence5to3",
+    sequence_5to3: "sequence5to3",
     "sequence 5' to 3'": "sequence5to3",
     "5_to_3": "sequence5to3",
     sequence5to3: "sequence5to3",
@@ -343,10 +343,7 @@ function generateId(): string {
  * Resolve raw CSV header names to camelCase field names using the
  * alias map for the given type.
  */
-function resolveHeaders(
-  rawHeaders: string[],
-  type: ImportableType,
-): (string | null)[] {
+function resolveHeaders(rawHeaders: string[], type: ImportableType): (string | null)[] {
   const aliases = HEADER_ALIASES[type];
   return rawHeaders.map((raw) => {
     const key = raw.trim().toLowerCase();
@@ -358,10 +355,7 @@ function resolveHeaders(
  * Validate that all required fields are present and non-empty.
  * Returns an array of error messages (empty if valid).
  */
-function validateRequired(
-  record: Record<string, string>,
-  type: ImportableType,
-): string[] {
+function validateRequired(record: Record<string, string>, type: ImportableType): string[] {
   const required = REQUIRED_FIELDS[type];
   const errors: string[] = [];
   for (const field of required) {
@@ -393,10 +387,7 @@ function coerceNumeric(value: string): string | number {
  * deduplication.
  */
 async function fetchExistingNames(table: string): Promise<Set<string>> {
-  const rows = await sqlAll(
-    `SELECT name FROM ${table} WHERE archived = 0`,
-    [],
-  );
+  const rows = await sqlAll(`SELECT name FROM ${table} WHERE archived = 0`, []);
   const names = new Set<string>();
   for (const row of rows) {
     if (row.name) {
@@ -439,8 +430,7 @@ async function importFromCSV(
 
   if (resolvedHeaders.every((h) => h === null)) {
     result.errors.push(
-      `No recognized column headers found for ${type}. ` +
-        `Expected columns like: ${REQUIRED_FIELDS[type].join(", ")}`,
+      `No recognized column headers found for ${type}. ` + `Expected columns like: ${REQUIRED_FIELDS[type].join(", ")}`,
     );
     return result;
   }
@@ -524,9 +514,7 @@ async function importFromCSV(
       result.imported++;
       existingNames.add(normalizedName); // prevent within-batch dupes from passing later
     } catch (err) {
-      result.errors.push(
-        `Row ${rowNum}: DB insert failed — ${err instanceof Error ? err.message : String(err)}`,
-      );
+      result.errors.push(`Row ${rowNum}: DB insert failed — ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

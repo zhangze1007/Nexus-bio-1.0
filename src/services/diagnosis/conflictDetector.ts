@@ -36,9 +36,7 @@ export interface Conflict {
  * @param reactions - Array of reactions with id, lowerBound, and upperBound
  * @returns Array of Conflict objects for reactions with problematic bounds
  */
-export function detectConflicts(
-  reactions: Array<{ id: string; lowerBound: number; upperBound: number }>,
-): Conflict[] {
+export function detectConflicts(reactions: Array<{ id: string; lowerBound: number; upperBound: number }>): Conflict[] {
   const conflicts: Conflict[] = [];
 
   for (const rxn of reactions) {

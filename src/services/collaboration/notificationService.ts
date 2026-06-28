@@ -12,13 +12,7 @@ import { sqlAll, sqlBatch, sqlGet, sqlRun } from "../../server/libsqlDb";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-export type NotificationType =
-  | "mention"
-  | "comment"
-  | "assignment"
-  | "review"
-  | "system"
-  | "alert";
+export type NotificationType = "mention" | "comment" | "assignment" | "review" | "system" | "alert";
 
 export interface Notification {
   id: string;
@@ -106,10 +100,7 @@ export async function createNotification(
  * Get notifications for a user, optionally filtered to unread only.
  * Results are ordered by created_at descending (newest first).
  */
-export async function getNotifications(
-  userId: string,
-  unreadOnly = false,
-): Promise<Notification[]> {
+export async function getNotifications(userId: string, unreadOnly = false): Promise<Notification[]> {
   await ensureNotificationSchema();
 
   const sql = unreadOnly
@@ -134,10 +125,7 @@ export async function getNotifications(
 export async function markAsRead(notificationId: string): Promise<void> {
   await ensureNotificationSchema();
 
-  const result = await sqlRun(
-    "UPDATE notifications SET read = 1 WHERE id = ?",
-    [notificationId],
-  );
+  const result = await sqlRun("UPDATE notifications SET read = 1 WHERE id = ?", [notificationId]);
 
   if (result.rowsAffected === 0) {
     throw new Error(`Notification not found: ${notificationId}`);
@@ -151,10 +139,7 @@ export async function markAsRead(notificationId: string): Promise<void> {
 export async function markAllAsRead(userId: string): Promise<number> {
   await ensureNotificationSchema();
 
-  const result = await sqlRun(
-    "UPDATE notifications SET read = 1 WHERE user_id = ? AND read = 0",
-    [userId],
-  );
+  const result = await sqlRun("UPDATE notifications SET read = 1 WHERE user_id = ? AND read = 0", [userId]);
 
   return result.rowsAffected;
 }
@@ -165,10 +150,7 @@ export async function markAllAsRead(userId: string): Promise<number> {
 export async function getUnreadCount(userId: string): Promise<number> {
   await ensureNotificationSchema();
 
-  const row = await sqlGet(
-    "SELECT COUNT(*) AS count FROM notifications WHERE user_id = ? AND read = 0",
-    [userId],
-  );
+  const row = await sqlGet("SELECT COUNT(*) AS count FROM notifications WHERE user_id = ? AND read = 0", [userId]);
 
   return (row?.count as number) ?? 0;
 }

@@ -45,14 +45,9 @@ export interface DeadEnd {
  *                   (negative coefficients = reactant/consumed, positive = product/produced)
  * @returns Array of DeadEnd objects, one per dead-end metabolite
  */
-export function detectDeadEnds(
-  reactions: Array<{ id: string; stoichiometry: Record<string, number> }>,
-): DeadEnd[] {
+export function detectDeadEnds(reactions: Array<{ id: string; stoichiometry: Record<string, number> }>): DeadEnd[] {
   // Build metabolite → { producers, consumers } map
-  const metaboliteMap = new Map<
-    string,
-    { producingReactions: Set<string>; consumingReactions: Set<string> }
-  >();
+  const metaboliteMap = new Map<string, { producingReactions: Set<string>; consumingReactions: Set<string> }>();
 
   for (const rxn of reactions) {
     for (const [metId, coef] of Object.entries(rxn.stoichiometry)) {

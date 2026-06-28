@@ -7,7 +7,7 @@
  * Supports push, pull, and bidirectional sync with conflict resolution.
  */
 
-import type { FieldMapping, LIMSConfig, SyncResult } from './types';
+import type { FieldMapping, LIMSConfig, SyncResult } from "./types";
 
 export interface GenericLIMSAdapterOptions {
   /** Injected fetch function for testability */
@@ -25,7 +25,7 @@ export class GenericLIMSAdapter {
     options?: GenericLIMSAdapterOptions,
   ) {
     this.baseUrl = options?.baseUrl ?? config.baseUrl;
-    const defaultFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined;
+    const defaultFetch = typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : undefined;
     this.fetchFn = options?.fetchFn ?? defaultFetch!;
   }
 
@@ -35,23 +35,21 @@ export class GenericLIMSAdapter {
   private headers(): Record<string, string> {
     const creds = this.config.credentials;
     const h: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+      "Content-Type": "application/json",
+      Accept: "application/json",
     };
 
     switch (this.config.authType) {
-      case 'api_key':
-        h['Authorization'] = `Bearer ${creds.api_key ?? creds.token ?? ''}`;
+      case "api_key":
+        h["Authorization"] = `Bearer ${creds.api_key ?? creds.token ?? ""}`;
         break;
-      case 'basic': {
-        const encoded = Buffer.from(
-          `${creds.username ?? ''}:${creds.password ?? ''}`,
-        ).toString('base64');
-        h['Authorization'] = `Basic ${encoded}`;
+      case "basic": {
+        const encoded = Buffer.from(`${creds.username ?? ""}:${creds.password ?? ""}`).toString("base64");
+        h["Authorization"] = `Basic ${encoded}`;
         break;
       }
-      case 'oauth2':
-        h['Authorization'] = `Bearer ${creds.access_token ?? ''}`;
+      case "oauth2":
+        h["Authorization"] = `Bearer ${creds.access_token ?? ""}`;
         break;
     }
 
@@ -72,10 +70,8 @@ export class GenericLIMSAdapter {
     });
 
     if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      throw new Error(
-        `LIMS API ${response.status}: ${response.statusText}${body ? ` — ${body}` : ''}`,
-      );
+      const body = await response.text().catch(() => "");
+      throw new Error(`LIMS API ${response.status}: ${response.statusText}${body ? ` — ${body}` : ""}`);
     }
 
     return (await response.json()) as T;
@@ -87,10 +83,7 @@ export class GenericLIMSAdapter {
    * Map a Nexus-Bio entity to LIMS format using the provided field mappings.
    * Unknown fields are passed through unchanged.
    */
-  mapToLIMS(
-    entity: Record<string, unknown>,
-    mappings: FieldMapping[],
-  ): Record<string, unknown> {
+  mapToLIMS(entity: Record<string, unknown>, mappings: FieldMapping[]): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
     for (const mapping of mappings) {
@@ -112,18 +105,12 @@ export class GenericLIMSAdapter {
   /**
    * Map a LIMS entity to Nexus-Bio format using the provided field mappings.
    */
-  mapFromLIMS(
-    entity: Record<string, unknown>,
-    mappings: FieldMapping[],
-  ): Record<string, unknown> {
+  mapFromLIMS(entity: Record<string, unknown>, mappings: FieldMapping[]): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
     for (const mapping of mappings) {
       const sourceValue = entity[mapping.limsField];
-      result[mapping.nexusField] = this.applyReverseTransform(
-        sourceValue,
-        mapping.transform,
-      );
+      result[mapping.nexusField] = this.applyReverseTransform(sourceValue, mapping.transform);
     }
 
     // Pass through unmapped fields
@@ -140,20 +127,17 @@ export class GenericLIMSAdapter {
   /**
    * Apply a forward transform (Nexus-Bio -> LIMS).
    */
-  private applyTransform(
-    value: unknown,
-    transform?: FieldMapping['transform'],
-  ): unknown {
+  private applyTransform(value: unknown, transform?: FieldMapping["transform"]): unknown {
     if (value === undefined || value === null) return value;
 
     switch (transform) {
-      case 'json':
-        return typeof value === 'string' ? value : JSON.stringify(value);
-      case 'date':
+      case "json":
+        return typeof value === "string" ? value : JSON.stringify(value);
+      case "date":
         return value instanceof Date ? value.toISOString() : String(value);
-      case 'custom':
+      case "custom":
         return value;
-      case 'direct':
+      case "direct":
       default:
         return value;
     }
@@ -162,15 +146,12 @@ export class GenericLIMSAdapter {
   /**
    * Apply a reverse transform (LIMS -> Nexus-Bio).
    */
-  private applyReverseTransform(
-    value: unknown,
-    transform?: FieldMapping['transform'],
-  ): unknown {
+  private applyReverseTransform(value: unknown, transform?: FieldMapping["transform"]): unknown {
     if (value === undefined || value === null) return value;
 
     switch (transform) {
-      case 'json':
-        if (typeof value === 'string') {
+      case "json":
+        if (typeof value === "string") {
           try {
             return JSON.parse(value);
           } catch {
@@ -178,11 +159,11 @@ export class GenericLIMSAdapter {
           }
         }
         return value;
-      case 'date':
-        return typeof value === 'string' ? new Date(value).toISOString() : value;
-      case 'custom':
+      case "date":
+        return typeof value === "string" ? new Date(value).toISOString() : value;
+      case "custom":
         return value;
-      case 'direct':
+      case "direct":
       default:
         return value;
     }
@@ -198,7 +179,7 @@ export class GenericLIMSAdapter {
    * - bidirectional: pull first, then push
    */
   async sync(options: {
-    direction: 'push' | 'pull' | 'bidirectional';
+    direction: "push" | "pull" | "bidirectional";
     entityType: string;
     since?: string;
     mappings?: FieldMapping[];
@@ -206,17 +187,15 @@ export class GenericLIMSAdapter {
   }): Promise<SyncResult> {
     const { direction, entityType, since, mappings = [], endpoint } = options;
     const path = endpoint ?? `/api/${entityType}`;
-    const sinceParam = since ? `?since=${encodeURIComponent(since)}` : '';
-    const errors: SyncResult['errors'] = [];
+    const sinceParam = since ? `?since=${encodeURIComponent(since)}` : "";
+    const errors: SyncResult["errors"] = [];
     let pushed = 0;
     let pulled = 0;
     let updated = 0;
 
     try {
-      if (direction === 'pull' || direction === 'bidirectional') {
-        const remoteEntities = await this.request<Record<string, unknown>[]>(
-          `${path}${sinceParam}`,
-        );
+      if (direction === "pull" || direction === "bidirectional") {
+        const remoteEntities = await this.request<Record<string, unknown>[]>(`${path}${sinceParam}`);
 
         for (const entity of remoteEntities) {
           const _mapped = this.mapFromLIMS(entity, mappings);
@@ -225,7 +204,7 @@ export class GenericLIMSAdapter {
         }
       }
 
-      if (direction === 'push' || direction === 'bidirectional') {
+      if (direction === "push" || direction === "bidirectional") {
         // In a real integration, read local entities from store
         // For now, this is a framework — the caller provides entities via a callback
         // or the endpoint handles it server-side
@@ -233,7 +212,7 @@ export class GenericLIMSAdapter {
       }
     } catch (err) {
       errors.push({
-        entityId: '*',
+        entityId: "*",
         error: err instanceof Error ? err.message : String(err),
       });
     }
@@ -253,14 +232,10 @@ export class GenericLIMSAdapter {
    * Push a single entity to the LIMS.
    * Returns the LIMS-assigned external ID.
    */
-  async pushEntity(
-    entity: Record<string, unknown>,
-    mappings: FieldMapping[],
-    endpoint: string,
-  ): Promise<string> {
+  async pushEntity(entity: Record<string, unknown>, mappings: FieldMapping[], endpoint: string): Promise<string> {
     const mapped = this.mapToLIMS(entity, mappings);
     const result = await this.request<{ id: string }>(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(mapped),
     });
     return result.id;
@@ -269,15 +244,9 @@ export class GenericLIMSAdapter {
   /**
    * Pull entities from the LIMS, mapped to Nexus-Bio format.
    */
-  async pullEntities(
-    mappings: FieldMapping[],
-    endpoint: string,
-    since?: string,
-  ): Promise<Record<string, unknown>[]> {
-    const sinceParam = since ? `?since=${encodeURIComponent(since)}` : '';
-    const remoteEntities = await this.request<Record<string, unknown>[]>(
-      `${endpoint}${sinceParam}`,
-    );
+  async pullEntities(mappings: FieldMapping[], endpoint: string, since?: string): Promise<Record<string, unknown>[]> {
+    const sinceParam = since ? `?since=${encodeURIComponent(since)}` : "";
+    const remoteEntities = await this.request<Record<string, unknown>[]>(`${endpoint}${sinceParam}`);
     return remoteEntities.map((e) => this.mapFromLIMS(e, mappings));
   }
 }

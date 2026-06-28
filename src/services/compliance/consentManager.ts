@@ -13,11 +13,7 @@ import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
 // ── Types ──
 
 /** The four consent categories tracked by the system. */
-export type ConsentType =
-  | "analytics"
-  | "marketing"
-  | "data_processing"
-  | "third_party_sharing";
+export type ConsentType = "analytics" | "marketing" | "data_processing" | "third_party_sharing";
 
 /** All valid consent types, used for validation. */
 export const VALID_CONSENT_TYPES: readonly ConsentType[] = [
@@ -77,9 +73,7 @@ async function ensureTables(): Promise<void> {
 
 function validateConsentType(consentType: string): asserts consentType is ConsentType {
   if (!VALID_CONSENT_TYPES.includes(consentType as ConsentType)) {
-    throw new Error(
-      `Invalid consent type '${consentType}'. Must be one of: ${VALID_CONSENT_TYPES.join(", ")}`,
-    );
+    throw new Error(`Invalid consent type '${consentType}'. Must be one of: ${VALID_CONSENT_TYPES.join(", ")}`);
   }
 }
 
@@ -172,10 +166,7 @@ export async function getConsentStatus(userId: string): Promise<ConsentStatus> {
  * @param consentType - The category of consent to revoke.
  * @returns true if a record was revoked, false if no active consent found.
  */
-export async function revokeConsent(
-  userId: string,
-  consentType: ConsentType,
-): Promise<boolean> {
+export async function revokeConsent(userId: string, consentType: ConsentType): Promise<boolean> {
   validateUserId(userId);
   validateConsentType(consentType);
 
@@ -196,10 +187,7 @@ export async function revokeConsent(
     return false;
   }
 
-  await sqlRun(
-    `UPDATE consent_records SET revoked_at = ? WHERE id = ?`,
-    [revokedAt, String(latest.id)],
-  );
+  await sqlRun(`UPDATE consent_records SET revoked_at = ? WHERE id = ?`, [revokedAt, String(latest.id)]);
 
   return true;
 }

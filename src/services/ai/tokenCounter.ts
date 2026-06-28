@@ -12,24 +12,24 @@
 
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   // Groq models
-  'llama-3.3-70b-versatile': { input: 0.59, output: 0.79 },
-  'llama3-70b-8192':         { input: 0.59, output: 0.79 },
-  'llama3-8b-8192':          { input: 0.05, output: 0.08 },
-  'mixtral-8x7b-32768':      { input: 0.24, output: 0.24 },
+  "llama-3.3-70b-versatile": { input: 0.59, output: 0.79 },
+  "llama3-70b-8192": { input: 0.59, output: 0.79 },
+  "llama3-8b-8192": { input: 0.05, output: 0.08 },
+  "mixtral-8x7b-32768": { input: 0.24, output: 0.24 },
 
   // Gemini models
-  'gemini-2.0-flash-lite': { input: 0.075, output: 0.30 },
-  'gemini-1.5-flash':      { input: 0.075, output: 0.30 },
-  'gemini-1.5-pro':        { input: 1.25,  output: 5.00 },
-  'gemini-2.0-flash':      { input: 0.10,  output: 0.40 },
+  "gemini-2.0-flash-lite": { input: 0.075, output: 0.3 },
+  "gemini-1.5-flash": { input: 0.075, output: 0.3 },
+  "gemini-1.5-pro": { input: 1.25, output: 5.0 },
+  "gemini-2.0-flash": { input: 0.1, output: 0.4 },
 
   // OpenAI-compatible reference pricing
-  'gpt-4o':       { input: 2.50,  output: 10.00 },
-  'gpt-4o-mini':  { input: 0.15,  output: 0.60 },
-  'gpt-3.5-turbo': { input: 0.50, output: 1.50 },
+  "gpt-4o": { input: 2.5, output: 10.0 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  "gpt-3.5-turbo": { input: 0.5, output: 1.5 },
 };
 
-const DEFAULT_PRICING = { input: 0.50, output: 0.50 };
+const DEFAULT_PRICING = { input: 0.5, output: 0.5 };
 
 /**
  * Count tokens in a string using word-based estimation.
@@ -51,10 +51,10 @@ export function countTokens(text: string): number {
   const cjkCount = cjkMatches ? cjkMatches.length : 0;
 
   // Strip CJK characters for word-based counting
-  const withoutCjk = text.replace(/[一-鿿㐀-䶿豈-﫿　-〿぀-ゟ゠-ヿ]/g, ' ');
+  const withoutCjk = text.replace(/[一-鿿㐀-䶿豈-﫿　-〿぀-ゟ゠-ヿ]/g, " ");
 
   // Split on whitespace, filter empty segments
-  const words = withoutCjk.split(/\s+/).filter(w => w.length > 0);
+  const words = withoutCjk.split(/\s+/).filter((w) => w.length > 0);
   const wordCount = words.length;
 
   // Estimate: ~1.33 tokens per word (i.e. 1 token ~ 0.75 words)
@@ -71,15 +71,11 @@ export function countTokens(text: string): number {
  * @param role   - Whether these are input or output tokens (default: 'input')
  * @returns Cost in USD (not cents)
  */
-export function estimateCost(
-  tokens: number,
-  model: string,
-  role: 'input' | 'output' = 'input',
-): number {
+export function estimateCost(tokens: number, model: string, role: "input" | "output" = "input"): number {
   if (tokens <= 0) return 0;
 
   const pricing = MODEL_PRICING[model] ?? DEFAULT_PRICING;
-  const ratePerMillion = role === 'output' ? pricing.output : pricing.input;
+  const ratePerMillion = role === "output" ? pricing.output : pricing.input;
 
   return (tokens / 1_000_000) * ratePerMillion;
 }
@@ -91,7 +87,7 @@ export function estimateCost(
  * @returns Formatted string, e.g. '$0.0042' or '$1.23'
  */
 export function formatCost(cents: number): string {
-  if (cents <= 0) return '$0.00';
+  if (cents <= 0) return "$0.00";
   const dollars = cents / 100;
 
   if (dollars < 0.01) {
@@ -110,11 +106,6 @@ export function formatCost(cents: number): string {
  * @param model        - Model identifier
  * @returns Total cost in USD
  */
-export function estimateRequestCost(
-  inputTokens: number,
-  outputTokens: number,
-  model: string,
-): number {
-  return estimateCost(inputTokens, model, 'input')
-       + estimateCost(outputTokens, model, 'output');
+export function estimateRequestCost(inputTokens: number, outputTokens: number, model: string): number {
+  return estimateCost(inputTokens, model, "input") + estimateCost(outputTokens, model, "output");
 }

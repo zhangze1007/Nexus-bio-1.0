@@ -63,9 +63,7 @@ function generateId(): string {
  * For all other tools, wraps the request as an analyze call with
  * the tool name as context.
  */
-export async function executeToolCall(
-  request: ToolCallRequest,
-): Promise<ToolCallResult> {
+export async function executeToolCall(request: ToolCallRequest): Promise<ToolCallResult> {
   const id = generateId();
   const startTime = Date.now();
   const route = TOOL_ROUTES[request.tool];
@@ -124,9 +122,7 @@ export async function executeToolCall(
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function buildRequestBody(
-  request: ToolCallRequest,
-): Record<string, unknown> {
+function buildRequestBody(request: ToolCallRequest): Record<string, unknown> {
   const { tool, inputs } = request;
 
   // FBA has its own request format
@@ -154,9 +150,7 @@ function buildRequestBody(
  * Extract a tool_call JSON block from LLM response text.
  * Returns null if no tool call is found.
  */
-export function extractToolCall(
-  text: string,
-): { tool: string; inputs: Record<string, unknown> } | null {
+export function extractToolCall(text: string): { tool: string; inputs: Record<string, unknown> } | null {
   const match = text.match(/```tool_call\s*\n([\s\S]*?)\n```/);
   if (!match) return null;
 

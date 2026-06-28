@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * React hook for Yjs-based real-time collaboration.
@@ -14,14 +14,11 @@
  * @param userName  — Current user's display name (default: 'Current User').
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CursorInfo } from '../services/collaboration/cursorPresence';
-import {
-  broadcastCursor,
-  watchCursors,
-} from '../services/collaboration/cursorPresence';
-import type { CollaborationSession } from '../services/collaboration/yjsProvider';
-import { createSession, destroySession } from '../services/collaboration/yjsProvider';
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CursorInfo } from "../services/collaboration/cursorPresence";
+import { broadcastCursor, watchCursors } from "../services/collaboration/cursorPresence";
+import type { CollaborationSession } from "../services/collaboration/yjsProvider";
+import { createSession, destroySession } from "../services/collaboration/yjsProvider";
 
 export interface UseCollaborationReturn {
   /** Whether the WebSocket provider is connected. */
@@ -29,17 +26,17 @@ export interface UseCollaborationReturn {
   /** Remote cursors (excludes local user). */
   cursors: CursorInfo[];
   /** Broadcast local cursor position to peers. */
-  broadcastCursor: (cursor: Omit<CursorInfo, 'userId' | 'userName' | 'color'>) => void;
+  broadcastCursor: (cursor: Omit<CursorInfo, "userId" | "userName" | "color">) => void;
   /** The underlying Yjs document (for direct CRDT access). */
-  ydoc: import('yjs').Doc | null;
+  ydoc: import("yjs").Doc | null;
   /** The collaboration session (for advanced use). */
   session: CollaborationSession | null;
 }
 
 export function useCollaboration(
   projectId: string | null,
-  userId: string = 'current-user',
-  userName: string = 'Current User',
+  userId: string = "current-user",
+  userName: string = "Current User",
 ): UseCollaborationReturn {
   const [connected, setConnected] = useState(false);
   const [cursors, setCursors] = useState<CursorInfo[]>([]);
@@ -58,9 +55,9 @@ export function useCollaboration(
 
     // Track connection status
     const handleStatus = (event: { status: string }) => {
-      setConnected(event.status === 'connected');
+      setConnected(event.status === "connected");
     };
-    session.provider.on('status', handleStatus);
+    session.provider.on("status", handleStatus);
 
     // Set initial status
     setConnected(session.provider.wsconnected);
@@ -72,7 +69,7 @@ export function useCollaboration(
 
     return () => {
       unsubscribeCursors();
-      session.provider.off('status', handleStatus);
+      session.provider.off("status", handleStatus);
       destroySession(session);
       sessionRef.current = null;
       setConnected(false);
@@ -82,7 +79,7 @@ export function useCollaboration(
 
   // Stable callback for broadcasting cursor
   const broadcast = useCallback(
-    (cursor: Omit<CursorInfo, 'userId' | 'userName' | 'color'>) => {
+    (cursor: Omit<CursorInfo, "userId" | "userName" | "color">) => {
       const session = sessionRef.current;
       if (!session) return;
 
@@ -90,7 +87,7 @@ export function useCollaboration(
         ...cursor,
         userId,
         userName,
-        color: session.awareness.getLocalState()?.user?.color ?? '#C8D8E8',
+        color: session.awareness.getLocalState()?.user?.color ?? "#C8D8E8",
       });
     },
     [userId, userName],

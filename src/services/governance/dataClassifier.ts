@@ -14,67 +14,60 @@
  *   public      — published research, public pathways, marketing content
  */
 
-import { randomUUID } from 'node:crypto';
-import { sqlAll, sqlGet, sqlRun } from '../../server/libsqlDb';
-import type { DataClassification, DataClassificationRow } from './types';
+import { randomUUID } from "node:crypto";
+import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
+import type { DataClassification, DataClassificationRow } from "./types";
 
 // ── Classification heuristics ────────────────────────────────────────
 
 /** Entity types that are inherently internal. */
 const INTERNAL_ENTITY_TYPES = new Set([
-  'project',
-  'experiment',
-  'workbench',
-  'artifact',
-  'tool_run',
-  'pathway',
-  'simulation',
+  "project",
+  "experiment",
+  "workbench",
+  "artifact",
+  "tool_run",
+  "pathway",
+  "simulation",
 ]);
 
 /** Entity types that contain PII — classified as confidential. */
-const CONFIDENTIAL_ENTITY_TYPES = new Set([
-  'user',
-  'account',
-  'profile',
-  'session',
-  'auth',
-  'billing',
-]);
+const CONFIDENTIAL_ENTITY_TYPES = new Set(["user", "account", "profile", "session", "auth", "billing"]);
 
 /** Entity types that are health/genetic data — classified as restricted. */
 const RESTRICTED_ENTITY_TYPES = new Set([
-  'genetic_sequence',
-  'patient_data',
-  'health_record',
-  'biometric',
-  'clinical_data',
+  "genetic_sequence",
+  "patient_data",
+  "health_record",
+  "biometric",
+  "clinical_data",
 ]);
 
 /** Field names that indicate PII (all lowercase for case-insensitive matching). */
 const PII_FIELDS = new Set([
-  'email',
-  'name',
-  'fullname',
-  'firstname',
-  'lastname',
-  'phone',
-  'address',
-  'ipaddress',
-  'ip',
-  'ssn',
-  'dateofbirth',
-  'dob',
+  "email",
+  "name",
+  "fullname",
+  "firstname",
+  "lastname",
+  "phone",
+  "address",
+  "ipaddress",
+  "ip",
+  "ssn",
+  "dateofbirth",
+  "dob",
 ]);
 
 /** Field names that indicate health/genetic data (all lowercase for case-insensitive matching). */
 const SENSITIVE_FIELDS = new Set([
-  'genotype',
-  'phenotype',
-  'dnasequence',
-  'proteinsequence',
-  'geneticdata',
-  'patientid',
-  'medicalrecord',
+  "genotype",
+  "phenotype",
+  "dnasequence",
+  "proteinsequence",
+  "geneticdata",
+  "patientid",
+  "medicalrecord",
 ]);
 
 /**
@@ -89,24 +82,24 @@ export function classifyData(entity: unknown, entityType: string): DataClassific
 
   // 1. Entity-type-based rules (highest priority)
   if (RESTRICTED_ENTITY_TYPES.has(normalizedType)) {
-    return 'restricted';
+    return "restricted";
   }
   if (CONFIDENTIAL_ENTITY_TYPES.has(normalizedType)) {
-    return 'confidential';
+    return "confidential";
   }
   if (INTERNAL_ENTITY_TYPES.has(normalizedType)) {
-    return 'internal';
+    return "internal";
   }
 
   // 2. Content-based heuristics (if entity is a plain object)
-  if (entity && typeof entity === 'object' && !Array.isArray(entity)) {
+  if (entity && typeof entity === "object" && !Array.isArray(entity)) {
     const keys = Object.keys(entity as Record<string, unknown>);
 
     // Check for sensitive fields
     for (const key of keys) {
       const normalizedKey = key.toLowerCase();
       if (SENSITIVE_FIELDS.has(normalizedKey)) {
-        return 'restricted';
+        return "restricted";
       }
     }
 
@@ -114,13 +107,13 @@ export function classifyData(entity: unknown, entityType: string): DataClassific
     for (const key of keys) {
       const normalizedKey = key.toLowerCase();
       if (PII_FIELDS.has(normalizedKey)) {
-        return 'confidential';
+        return "confidential";
       }
     }
   }
 
   // 3. Default — internal (anything stored in the system is at least internal)
-  return 'internal';
+  return "internal";
 }
 
 // ── DB-backed classification lookups ─────────────────────────────────
@@ -130,14 +123,11 @@ export function classifyData(entity: unknown, entityType: string): DataClassific
  *
  * @returns The stored classification, or null if not yet classified.
  */
-export async function getDataClassification(
-  entityId: string,
-  entityType: string,
-): Promise<DataClassification | null> {
-  const row = await sqlGet(
-    'SELECT classification FROM data_classifications WHERE entity_id = ? AND entity_type = ?',
-    [entityId, entityType],
-  );
+export async function getDataClassification(entityId: string, entityType: string): Promise<DataClassification | null> {
+  const row = await sqlGet("SELECT classification FROM data_classifications WHERE entity_id = ? AND entity_type = ?", [
+    entityId,
+    entityType,
+  ]);
   if (!row) return null;
   return (row as unknown as DataClassificationRow).classification;
 }
@@ -150,22 +140,22 @@ export async function setDataClassification(
   entityId: string,
   entityType: string,
   classification: DataClassification,
-  classifiedBy: string = 'system',
+  classifiedBy: string = "system",
 ): Promise<void> {
   const now = new Date().toISOString();
-  const existing = await sqlGet(
-    'SELECT entity_id FROM data_classifications WHERE entity_id = ? AND entity_type = ?',
-    [entityId, entityType],
-  );
+  const existing = await sqlGet("SELECT entity_id FROM data_classifications WHERE entity_id = ? AND entity_type = ?", [
+    entityId,
+    entityType,
+  ]);
 
   if (existing) {
     await sqlRun(
-      'UPDATE data_classifications SET classification = ?, classified_at = ?, classified_by = ? WHERE entity_id = ? AND entity_type = ?',
+      "UPDATE data_classifications SET classification = ?, classified_at = ?, classified_by = ? WHERE entity_id = ? AND entity_type = ?",
       [classification, now, classifiedBy, entityId, entityType],
     );
   } else {
     await sqlRun(
-      'INSERT INTO data_classifications (entity_id, entity_type, classification, classified_at, classified_by) VALUES (?, ?, ?, ?, ?)',
+      "INSERT INTO data_classifications (entity_id, entity_type, classification, classified_at, classified_by) VALUES (?, ?, ?, ?, ?)",
       [entityId, entityType, classification, now, classifiedBy],
     );
   }

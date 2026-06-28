@@ -8,34 +8,20 @@
 // ── Tool catalog ──────────────────────────────────────────────────────
 
 export const COPILOT_TOOL_CATALOG: Record<string, string> = {
-  pathd:
-    "Pathway Designer — design metabolic pathways, visualize 3D route graphs, identify bottlenecks.",
-  fbasim:
-    "Flux Balance Analysis — run FBA simulations, compute optimal flux distributions, knockout/OE strategies.",
-  cethx:
-    "Cell Thermodynamics — compute ΔG free energy, ATP accounting, pathway feasibility assessment.",
-  catdes:
-    "Catalyst Designer — enzyme design, binding affinity analysis, mutagenesis targeting, Pareto optimization.",
-  proevol:
-    "Protein Evolution — fitness landscape visualization, evolution trajectory, basin climbing.",
-  cellfree:
-    "Cell-Free Simulation — gene construct design, expression yield prediction, cell-free system modeling.",
-  gecair:
-    "Gene Circuit Reasoner — logic gate design, Hill curve modeling, circuit dynamics simulation.",
-  genmim:
-    "Gene Minimization — CRISPRi knockdown scheduling, genome map, efficiency optimization.",
-  dyncon:
-    "Dynamic Control — bioreactor simulation, Hill function feedback, RK4 ODE, convergence analysis.",
-  multio:
-    "Multi-Omics Integration — VAE/UMAP embeddings, volcano plots, MOFA+ factor analysis.",
-  scspatial:
-    "Single-Cell Spatial — hexagonal spot grid, UMAP/3D spatial visualization, gene expression heatmap.",
-  dbtlflow:
-    "DBTL Cycle Tracker — iteration waterfall, protocol generation, SBOL serialization.",
-  nexai:
-    "AI Research Agent — citation network analysis, Socratic questioning, literature support mapping.",
-  metabolic:
-    "Metabolic Engineering Lab — full 3D metabolic lab with real-time simulation and pathway design.",
+  pathd: "Pathway Designer — design metabolic pathways, visualize 3D route graphs, identify bottlenecks.",
+  fbasim: "Flux Balance Analysis — run FBA simulations, compute optimal flux distributions, knockout/OE strategies.",
+  cethx: "Cell Thermodynamics — compute ΔG free energy, ATP accounting, pathway feasibility assessment.",
+  catdes: "Catalyst Designer — enzyme design, binding affinity analysis, mutagenesis targeting, Pareto optimization.",
+  proevol: "Protein Evolution — fitness landscape visualization, evolution trajectory, basin climbing.",
+  cellfree: "Cell-Free Simulation — gene construct design, expression yield prediction, cell-free system modeling.",
+  gecair: "Gene Circuit Reasoner — logic gate design, Hill curve modeling, circuit dynamics simulation.",
+  genmim: "Gene Minimization — CRISPRi knockdown scheduling, genome map, efficiency optimization.",
+  dyncon: "Dynamic Control — bioreactor simulation, Hill function feedback, RK4 ODE, convergence analysis.",
+  multio: "Multi-Omics Integration — VAE/UMAP embeddings, volcano plots, MOFA+ factor analysis.",
+  scspatial: "Single-Cell Spatial — hexagonal spot grid, UMAP/3D spatial visualization, gene expression heatmap.",
+  dbtlflow: "DBTL Cycle Tracker — iteration waterfall, protocol generation, SBOL serialization.",
+  nexai: "AI Research Agent — citation network analysis, Socratic questioning, literature support mapping.",
+  metabolic: "Metabolic Engineering Lab — full 3D metabolic lab with real-time simulation and pathway design.",
 };
 
 // ── Builder ───────────────────────────────────────────────────────────
@@ -62,13 +48,7 @@ export function buildSystemPrompt(context: CopilotContext = {}): string {
     })
     .join("\n");
 
-  const sections: string[] = [
-    COPILOT_ROLE_HEADER,
-    "",
-    COPILOT_BEHAVIOR_RULES,
-    "",
-    `## Available Tools\n${toolList}`,
-  ];
+  const sections: string[] = [COPILOT_ROLE_HEADER, "", COPILOT_BEHAVIOR_RULES, "", `## Available Tools\n${toolList}`];
 
   if (context.projectBrief) {
     sections.push("", `## Current Project\n${context.projectBrief}`);
@@ -84,10 +64,7 @@ export function buildSystemPrompt(context: CopilotContext = {}): string {
   }
 
   if (context.conversationSummary) {
-    sections.push(
-      "",
-      `## Conversation History (summarized)\n${context.conversationSummary}`,
-    );
+    sections.push("", `## Conversation History (summarized)\n${context.conversationSummary}`);
   }
 
   sections.push("", COPILOT_TOOL_CALL_INSTRUCTIONS);

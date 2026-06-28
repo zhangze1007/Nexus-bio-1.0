@@ -57,10 +57,10 @@ function emitOpentronsStep(
   const vol = step.volume > 0 ? step.volume : 10;
 
   switch (step.type.toLowerCase()) {
-    case 'transfer':
-    case 'pipette':
-    case 'dilute':
-    case 'plate': {
+    case "transfer":
+    case "pipette":
+    case "dilute":
+    case "plate": {
       const destWell = wellId(index + 1);
       lines.push(
         `    # Step ${index + 1}: ${step.description}`,
@@ -69,7 +69,7 @@ function emitOpentronsStep(
       break;
     }
 
-    case 'mix': {
+    case "mix": {
       const cycles = Math.max(3, Math.round(step.duration / 5));
       lines.push(
         `    # Step ${index + 1}: ${step.description}`,
@@ -78,9 +78,9 @@ function emitOpentronsStep(
       break;
     }
 
-    case 'incubate':
-    case 'heat':
-    case 'cool': {
+    case "incubate":
+    case "heat":
+    case "cool": {
       const temp = step.temperature > 0 ? step.temperature : 37;
       const minutes = step.duration > 0 ? Math.ceil(step.duration / 60) : 5;
       lines.push(
@@ -93,16 +93,13 @@ function emitOpentronsStep(
       break;
     }
 
-    case 'wait': {
+    case "wait": {
       const minutes = step.duration > 0 ? Math.ceil(step.duration / 60) : 1;
-      lines.push(
-        `    # Step ${index + 1}: ${step.description}`,
-        `    protocol.delay(minutes=${minutes})`,
-      );
+      lines.push(`    # Step ${index + 1}: ${step.description}`, `    protocol.delay(minutes=${minutes})`);
       break;
     }
 
-    case 'centrifuge': {
+    case "centrifuge": {
       const minutes = step.duration > 0 ? Math.ceil(step.duration / 60) : 5;
       lines.push(
         `    # Step ${index + 1}: ${step.description}`,
@@ -112,7 +109,7 @@ function emitOpentronsStep(
       break;
     }
 
-    case 'vortex': {
+    case "vortex": {
       const seconds = step.duration > 0 ? step.duration : 10;
       lines.push(
         `    # Step ${index + 1}: ${step.description}`,
@@ -133,10 +130,7 @@ function emitOpentronsStep(
 
   // If the step has a non-zero, non-room-temp temperature and we didn't
   // already emit a temperature module block, attach a comment.
-  if (
-    step.temperature > 0 &&
-    !['incubate', 'heat', 'cool'].includes(step.type.toLowerCase())
-  ) {
+  if (step.temperature > 0 && !["incubate", "heat", "cool"].includes(step.type.toLowerCase())) {
     lines.push(`    # Temperature target: ${step.temperature} °C`);
   }
 
@@ -148,9 +142,9 @@ function emitOpentronsStep(
  * Wraps after H12 back to A1.
  */
 function wellId(index: number): string {
-  const row = 'ABCDEFGH';
+  const row = "ABCDEFGH";
   const r = index % 8;
-  const c = Math.floor(index / 8) % 12 + 1;
+  const c = (Math.floor(index / 8) % 12) + 1;
   return `${row[r]}${c}`;
 }
 
@@ -165,51 +159,51 @@ function wellId(index: number): string {
 export function generateOpentronsProtocol(steps: ProtocolStep[]): string {
   if (steps.length === 0) {
     return [
-      '# Empty protocol — no steps provided.',
-      'from opentrons import protocol_api',
-      '',
+      "# Empty protocol — no steps provided.",
+      "from opentrons import protocol_api",
+      "",
       "metadata = {'protocolName': 'Empty Protocol', 'apiLevel': '2.15'}",
-      '',
-      'def run(protocol: protocol_api.ProtocolContext):',
-      '    pass',
-    ].join('\n');
+      "",
+      "def run(protocol: protocol_api.ProtocolContext):",
+      "    pass",
+    ].join("\n");
   }
 
   const header = [
-    'from opentrons import protocol_api',
-    '',
-    'metadata = {',
+    "from opentrons import protocol_api",
+    "",
+    "metadata = {",
     "    'protocolName': 'Nexus-Bio Generated Protocol',",
     "    'author': 'Nexus-Bio Protocol Generator',",
     "    'description': 'Auto-generated Opentrons protocol',",
     "    'apiLevel': '2.15'",
-    '}',
-    '',
-    '',
-    'def run(protocol: protocol_api.ProtocolContext):',
-    '    # ---- Labware ----',
+    "}",
+    "",
+    "",
+    "def run(protocol: protocol_api.ProtocolContext):",
+    "    # ---- Labware ----",
     "    source_plate = protocol.load_labware('corning_96_wellplate_360ul_flat', '1')",
     "    dest_plate   = protocol.load_labware('corning_96_wellplate_360ul_flat', '2')",
     "    tiprack_20   = protocol.load_labware('opentrons_96_tiprack_20ul', '3')",
     "    pipette      = protocol.load_instrument('p20_single_gen2', 'left', tip_racks=[tiprack_20])",
-    '',
-    '    # ---- Steps ----',
+    "",
+    "    # ---- Steps ----",
   ];
 
   const labwareMap = new Map<string, string>();
   const bodyLines: string[] = [];
 
   for (let i = 0; i < steps.length; i++) {
-    const stepLines = emitOpentronsStep(steps[i], i, labwareMap, 'pipette');
-    bodyLines.push(...stepLines, '');
+    const stepLines = emitOpentronsStep(steps[i], i, labwareMap, "pipette");
+    bodyLines.push(...stepLines, "");
   }
 
   // Remove trailing blank line
-  if (bodyLines.length > 0 && bodyLines[bodyLines.length - 1] === '') {
+  if (bodyLines.length > 0 && bodyLines[bodyLines.length - 1] === "") {
     bodyLines.pop();
   }
 
-  return [...header, ...bodyLines].join('\n');
+  return [...header, ...bodyLines].join("\n");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -220,7 +214,7 @@ export function generateOpentronsProtocol(steps: ProtocolStep[]): string {
  * Format a duration (in seconds) into a human-readable string.
  */
 function formatDuration(seconds: number): string {
-  if (seconds <= 0) return '—';
+  if (seconds <= 0) return "—";
   if (seconds < 60) return `${seconds} sec`;
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -236,15 +230,15 @@ function formatDuration(seconds: number): string {
  */
 export function generateManualProtocol(steps: ProtocolStep[]): string {
   if (steps.length === 0) {
-    return 'Manual Protocol\n===============\n\n(No steps defined.)';
+    return "Manual Protocol\n===============\n\n(No steps defined.)";
   }
 
   const lines: string[] = [
-    'Manual Protocol',
-    '===============',
+    "Manual Protocol",
+    "===============",
     `Generated: ${new Date().toISOString().slice(0, 10)}`,
     `Total steps: ${steps.length}`,
-    '',
+    "",
   ];
 
   for (let i = 0; i < steps.length; i++) {
@@ -255,10 +249,10 @@ export function generateManualProtocol(steps: ProtocolStep[]): string {
     if (s.volume > 0) lines.push(`  Volume      : ${s.volume} uL`);
     if (s.duration > 0) lines.push(`  Duration    : ${formatDuration(s.duration)}`);
     if (s.temperature > 0) lines.push(`  Temperature : ${s.temperature} °C`);
-    lines.push('');
+    lines.push("");
   }
 
-  return lines.join('\n').trimEnd();
+  return lines.join("\n").trimEnd();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -266,17 +260,17 @@ export function generateManualProtocol(steps: ProtocolStep[]): string {
 /* -------------------------------------------------------------------------- */
 
 const VALID_STEP_TYPES = new Set([
-  'transfer',
-  'pipette',
-  'mix',
-  'incubate',
-  'centrifuge',
-  'wait',
-  'heat',
-  'cool',
-  'vortex',
-  'plate',
-  'dilute',
+  "transfer",
+  "pipette",
+  "mix",
+  "incubate",
+  "centrifuge",
+  "wait",
+  "heat",
+  "cool",
+  "vortex",
+  "plate",
+  "dilute",
 ]);
 
 /**
@@ -295,7 +289,7 @@ export function validateProtocol(steps: ProtocolStep[]): ValidationResult {
   const errors: string[] = [];
 
   if (steps.length === 0) {
-    errors.push('Protocol must contain at least one step.');
+    errors.push("Protocol must contain at least one step.");
     return { valid: false, errors };
   }
 
@@ -307,7 +301,7 @@ export function validateProtocol(steps: ProtocolStep[]): ValidationResult {
       errors.push(`${prefix}: "type" is required.`);
     } else if (!VALID_STEP_TYPES.has(s.type.toLowerCase())) {
       errors.push(
-        `${prefix}: Unrecognised type "${s.type}". Valid types: ${Array.from(VALID_STEP_TYPES).sort().join(', ')}.`,
+        `${prefix}: Unrecognised type "${s.type}". Valid types: ${Array.from(VALID_STEP_TYPES).sort().join(", ")}.`,
       );
     }
 
@@ -319,7 +313,7 @@ export function validateProtocol(steps: ProtocolStep[]): ValidationResult {
       errors.push(`${prefix}: "reagent" is required.`);
     }
 
-    if (typeof s.volume !== 'number' || Number.isNaN(s.volume)) {
+    if (typeof s.volume !== "number" || Number.isNaN(s.volume)) {
       errors.push(`${prefix}: "volume" must be a number.`);
     } else if (s.volume < 0) {
       errors.push(`${prefix}: "volume" must be non-negative (got ${s.volume}).`);
@@ -327,13 +321,13 @@ export function validateProtocol(steps: ProtocolStep[]): ValidationResult {
       errors.push(`${prefix}: "volume" exceeds maximum pipette capacity of 1000 uL (got ${s.volume}).`);
     }
 
-    if (typeof s.duration !== 'number' || Number.isNaN(s.duration)) {
+    if (typeof s.duration !== "number" || Number.isNaN(s.duration)) {
       errors.push(`${prefix}: "duration" must be a number.`);
     } else if (s.duration < 0) {
       errors.push(`${prefix}: "duration" must be non-negative (got ${s.duration}).`);
     }
 
-    if (typeof s.temperature !== 'number' || Number.isNaN(s.temperature)) {
+    if (typeof s.temperature !== "number" || Number.isNaN(s.temperature)) {
       errors.push(`${prefix}: "temperature" must be a number.`);
     } else if (s.temperature !== 0 && (s.temperature < -20 || s.temperature > 150)) {
       errors.push(
@@ -344,14 +338,8 @@ export function validateProtocol(steps: ProtocolStep[]): ValidationResult {
     // Warn about consecutive duplicate steps
     if (i > 0) {
       const prev = steps[i - 1];
-      if (
-        prev.reagent === s.reagent &&
-        prev.volume === s.volume &&
-        prev.type === s.type
-      ) {
-        errors.push(
-          `${prefix}: Consecutive duplicate of step ${i} (same type, reagent, and volume).`,
-        );
+      if (prev.reagent === s.reagent && prev.volume === s.volume && prev.type === s.type) {
+        errors.push(`${prefix}: Consecutive duplicate of step ${i} (same type, reagent, and volume).`);
       }
     }
   }

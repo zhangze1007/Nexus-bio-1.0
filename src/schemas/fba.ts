@@ -27,12 +27,14 @@ const DynamicReactionSchema = z.object({
 const SteadyComSpeciesSchema = z.object({
   id: z.string(),
   name: z.string().optional(),
-  reactions: z.array(z.object({
-    id: z.string(),
-    stoichiometry: z.record(z.string(), z.number()),
-    lowerBound: z.number().finite().optional(),
-    upperBound: z.number().finite().optional(),
-  })),
+  reactions: z.array(
+    z.object({
+      id: z.string(),
+      stoichiometry: z.record(z.string(), z.number()),
+      lowerBound: z.number().finite().optional(),
+      upperBound: z.number().finite().optional(),
+    }),
+  ),
   metabolites: z.array(z.string()).optional(),
   biomassReaction: z.string(),
 });

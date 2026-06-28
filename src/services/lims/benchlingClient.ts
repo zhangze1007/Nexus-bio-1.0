@@ -7,7 +7,7 @@
  * Benchling API docs: https://docs.benchling.com/reference
  */
 
-import type { LIMSConfig, LIMSExperiment, LIMSSample } from './types';
+import type { LIMSConfig, LIMSExperiment, LIMSSample } from "./types";
 
 export interface BenchlingClientOptions {
   /** Injected fetch function for testability */
@@ -25,16 +25,16 @@ export class BenchlingClient {
     private readonly config: LIMSConfig,
     options?: BenchlingClientOptions,
   ) {
-    if (config.type !== 'benchling') {
+    if (config.type !== "benchling") {
       throw new Error(`BenchlingClient requires config type "benchling", got "${config.type}"`);
     }
     this.baseUrl = options?.baseUrl ?? config.baseUrl;
-    this.apiKey = config.credentials.api_key ?? '';
-    const defaultFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined;
+    this.apiKey = config.credentials.api_key ?? "";
+    const defaultFetch = typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : undefined;
     this.fetchFn = options?.fetchFn ?? defaultFetch!;
 
     if (!this.apiKey) {
-      throw new Error('BenchlingClient requires an api_key in credentials');
+      throw new Error("BenchlingClient requires an api_key in credentials");
     }
   }
 
@@ -43,11 +43,11 @@ export class BenchlingClient {
    * Benchling uses HTTP Basic auth with the API key as the password.
    */
   private headers(): Record<string, string> {
-    const encoded = Buffer.from(`${this.apiKey}:`).toString('base64');
+    const encoded = Buffer.from(`${this.apiKey}:`).toString("base64");
     return {
       Authorization: `Basic ${encoded}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+      "Content-Type": "application/json",
+      Accept: "application/json",
     };
   }
 
@@ -66,10 +66,8 @@ export class BenchlingClient {
     });
 
     if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      throw new Error(
-        `Benchling API ${response.status}: ${response.statusText}${body ? ` — ${body}` : ''}`,
-      );
+      const body = await response.text().catch(() => "");
+      throw new Error(`Benchling API ${response.status}: ${response.statusText}${body ? ` — ${body}` : ""}`);
     }
 
     return (await response.json()) as T;
@@ -85,8 +83,8 @@ export class BenchlingClient {
 
     return (data.dnaSequences ?? []).map((seq) => ({
       id: `benchling-${seq.id}`,
-      name: seq.name ?? 'Unnamed',
-      type: 'plasmid' as const,
+      name: seq.name ?? "Unnamed",
+      type: "plasmid" as const,
       properties: {
         length: seq.length,
         bases: seq.bases,
@@ -94,7 +92,7 @@ export class BenchlingClient {
         folderId: seq.folderId,
       },
       externalId: seq.id,
-      source: 'lims' as const,
+      source: "lims" as const,
     }));
   }
 
@@ -106,8 +104,8 @@ export class BenchlingClient {
 
     return {
       id: `benchling-${seq.id}`,
-      name: seq.name ?? 'Unnamed',
-      type: 'plasmid',
+      name: seq.name ?? "Unnamed",
+      type: "plasmid",
       properties: {
         length: seq.length,
         bases: seq.bases,
@@ -115,7 +113,7 @@ export class BenchlingClient {
         folderId: seq.folderId,
       },
       externalId: seq.id,
-      source: 'lims',
+      source: "lims",
     };
   }
 
@@ -126,18 +124,15 @@ export class BenchlingClient {
   async createSequence(sample: LIMSSample): Promise<string> {
     const body = {
       name: sample.name,
-      bases: (sample.properties.bases as string) ?? 'ATCG',
+      bases: (sample.properties.bases as string) ?? "ATCG",
       folderId: (sample.properties.folderId as string) ?? undefined,
       annotations: (sample.properties.annotations as unknown[]) ?? [],
     };
 
-    const result = await this.request<BenchlingSequence>(
-      '/api/v2/dna-sequences',
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      },
-    );
+    const result = await this.request<BenchlingSequence>("/api/v2/dna-sequences", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
 
     return result.id;
   }
@@ -153,14 +148,14 @@ export class BenchlingClient {
     return (data.plates ?? []).map((plate) => ({
       id: `benchling-plate-${plate.id}`,
       name: plate.name ?? `Plate ${plate.barcode}`,
-      type: 'other' as const,
+      type: "other" as const,
       properties: {
         barcode: plate.barcode,
         plateType: plate.plateType,
         wellCount: plate.wellCount,
       },
       externalId: plate.id,
-      source: 'lims' as const,
+      source: "lims" as const,
     }));
   }
 
@@ -174,13 +169,10 @@ export class BenchlingClient {
       fields: experiment.results,
     };
 
-    const result = await this.request<{ id: string }>(
-      '/api/v2/assay-runs',
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      },
-    );
+    const result = await this.request<{ id: string }>("/api/v2/assay-runs", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
 
     return result.id;
   }
@@ -195,26 +187,24 @@ export class BenchlingClient {
 
     return (data.customEntities ?? []).map((entity) => ({
       id: `benchling-entity-${entity.id}`,
-      name: entity.name ?? 'Unnamed',
+      name: entity.name ?? "Unnamed",
       type: this.classifyEntityType(entity.fields),
       properties: entity.fields ?? {},
       externalId: entity.id,
-      source: 'lims' as const,
+      source: "lims" as const,
     }));
   }
 
   /**
    * Classify a Benchling custom entity into a Nexus-Bio sample type.
    */
-  private classifyEntityType(
-    fields: Record<string, unknown> | undefined,
-  ): LIMSSample['type'] {
-    const entityKind = String(fields?.type ?? fields?.kind ?? '').toLowerCase();
-    if (entityKind.includes('strain') || entityKind.includes('cell')) return 'strain';
-    if (entityKind.includes('plasmid') || entityKind.includes('vector')) return 'plasmid';
-    if (entityKind.includes('primer') || entityKind.includes('oligo')) return 'primer';
-    if (entityKind.includes('chemical') || entityKind.includes('reagent')) return 'chemical';
-    return 'other';
+  private classifyEntityType(fields: Record<string, unknown> | undefined): LIMSSample["type"] {
+    const entityKind = String(fields?.type ?? fields?.kind ?? "").toLowerCase();
+    if (entityKind.includes("strain") || entityKind.includes("cell")) return "strain";
+    if (entityKind.includes("plasmid") || entityKind.includes("vector")) return "plasmid";
+    if (entityKind.includes("primer") || entityKind.includes("oligo")) return "primer";
+    if (entityKind.includes("chemical") || entityKind.includes("reagent")) return "chemical";
+    return "other";
   }
 }
 

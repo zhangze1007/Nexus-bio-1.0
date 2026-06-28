@@ -102,10 +102,7 @@ function hashRollout(flagName: string, userId?: string): number {
 export async function isEnabled(flagName: string, userId?: string): Promise<boolean> {
   await ensureSchema();
 
-  const row = await sqlGet(
-    "SELECT enabled, rollout_percentage FROM feature_flags WHERE name = ?",
-    [flagName],
-  );
+  const row = await sqlGet("SELECT enabled, rollout_percentage FROM feature_flags WHERE name = ?", [flagName]);
 
   if (!row) return false;
   if (!row.enabled) return false;
@@ -123,9 +120,7 @@ export async function isEnabled(flagName: string, userId?: string): Promise<bool
 export async function getAllFlags(): Promise<FeatureFlag[]> {
   await ensureSchema();
 
-  const rows = await sqlAll(
-    "SELECT * FROM feature_flags ORDER BY created_at DESC",
-  );
+  const rows = await sqlAll("SELECT * FROM feature_flags ORDER BY created_at DESC");
 
   return rows.map(rowToFlag);
 }
@@ -137,11 +132,7 @@ export async function getAllFlags(): Promise<FeatureFlag[]> {
  *   `rollout_percentage`, and `updated_at` are updated.
  * - If it does not exist, a new row is inserted.
  */
-export async function setFlag(
-  flagName: string,
-  enabled: boolean,
-  rolloutPercentage?: number,
-): Promise<void> {
+export async function setFlag(flagName: string, enabled: boolean, rolloutPercentage?: number): Promise<void> {
   await ensureSchema();
 
   const ts = nowISO();

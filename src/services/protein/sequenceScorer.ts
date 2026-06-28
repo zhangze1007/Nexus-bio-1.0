@@ -22,8 +22,8 @@ import {
   HYDROPHOBIC_CORE,
   CHARGE_PAIRS,
   ALL_AMINO_ACIDS,
-} from './propensity';
-import type { BackboneAtom } from './backboneGenerator';
+} from "./propensity";
+import type { BackboneAtom } from "./backboneGenerator";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,10 +82,7 @@ function countUniqueAA(sequence: string): number {
  *
  * @returns Per-residue scores in [0, 1]
  */
-function scoreSecondaryStructure(
-  sequence: string,
-  ssAssignments: Array<'helix' | 'sheet' | 'loop'>,
-): number[] {
+function scoreSecondaryStructure(sequence: string, ssAssignments: Array<"helix" | "sheet" | "loop">): number[] {
   const scores: number[] = [];
   const maxPropensity = 1.91; // Pro loop propensity is highest
 
@@ -95,13 +92,13 @@ function scoreSecondaryStructure(
 
     let propensity: number;
     switch (ss) {
-      case 'helix':
+      case "helix":
         propensity = HELIX_PROPENSITIES[aa] ?? 1.0;
         break;
-      case 'sheet':
+      case "sheet":
         propensity = SHEET_PROPENSITIES[aa] ?? 1.0;
         break;
-      case 'loop':
+      case "loop":
         propensity = LOOP_PROPENSITIES[aa] ?? 1.0;
         break;
     }
@@ -123,10 +120,7 @@ function scoreSecondaryStructure(
  *
  * @returns Per-residue scores in [0, 1]
  */
-function scoreHydrophobicCore(
-  sequence: string,
-  backbone: BackboneAtom[],
-): number[] {
+function scoreHydrophobicCore(sequence: string, backbone: BackboneAtom[]): number[] {
   const n = backbone.length;
   const scores: number[] = [];
 
@@ -169,16 +163,17 @@ function scoreHydrophobicCore(
  *
  * @returns Per-residue scores in [0, 1]
  */
-function scoreChargeBalance(
-  sequence: string,
-  backbone: BackboneAtom[],
-): number[] {
+function scoreChargeBalance(sequence: string, backbone: BackboneAtom[]): number[] {
   const n = sequence.length;
   const scores: number[] = [];
 
   // Charge map for standard amino acids
   const chargeMap: Record<string, number> = {
-    D: -1, E: -1, K: 1, R: 1, H: 0.5,
+    D: -1,
+    E: -1,
+    K: 1,
+    R: 1,
+    H: 0.5,
   };
 
   // Compute global net charge
@@ -277,18 +272,14 @@ function scoreDiversity(sequence: string): number[] {
 export function scoreSequence(
   sequence: string,
   backbone: BackboneAtom[],
-  ssAssignments: Array<'helix' | 'sheet' | 'loop'>,
+  ssAssignments: Array<"helix" | "sheet" | "loop">,
 ): ScoringResult {
   // Validate inputs
   if (sequence.length !== backbone.length) {
-    throw new Error(
-      `Sequence length (${sequence.length}) must match backbone length (${backbone.length})`,
-    );
+    throw new Error(`Sequence length (${sequence.length}) must match backbone length (${backbone.length})`);
   }
   if (sequence.length !== ssAssignments.length) {
-    throw new Error(
-      `Sequence length (${sequence.length}) must match SS assignments length (${ssAssignments.length})`,
-    );
+    throw new Error(`Sequence length (${sequence.length}) must match SS assignments length (${ssAssignments.length})`);
   }
 
   // Compute per-residue scores for each component
@@ -302,11 +293,7 @@ export function scoreSequence(
   const perResidueScores: number[] = [];
   for (let i = 0; i < n; i++) {
     // Weighted average per residue
-    const score =
-      0.35 * ssScores[i] +
-      0.30 * hydroScores[i] +
-      0.20 * chargeScores[i] +
-      0.15 * diversityScores[i];
+    const score = 0.35 * ssScores[i] + 0.3 * hydroScores[i] + 0.2 * chargeScores[i] + 0.15 * diversityScores[i];
     perResidueScores.push(Math.round(Math.min(1.0, Math.max(0.0, score)) * 1000) / 1000);
   }
 
@@ -321,10 +308,7 @@ export function scoreSequence(
 
   // Total score: geometric mean of components (penalizes imbalance)
   const geoMean = Math.pow(
-    components.secondaryStructure *
-      components.hydrophobicCore *
-      components.chargeBalance *
-      components.diversity,
+    components.secondaryStructure * components.hydrophobicCore * components.chargeBalance * components.diversity,
     0.25,
   );
 

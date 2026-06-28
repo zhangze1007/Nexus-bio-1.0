@@ -5,8 +5,8 @@
  * (Addgene, IDT). Uses libsql for persistent order storage.
  */
 
-import { randomUUID } from 'node:crypto';
-import { sqlAll, sqlGet, sqlRun } from '../../server/libsqlDb';
+import { randomUUID } from "node:crypto";
+import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
 
 // ── Types ──
 
@@ -32,14 +32,14 @@ export interface VendorQuoteItem {
 }
 
 export interface VendorQuote {
-  vendor: 'idt';
+  vendor: "idt";
   items: VendorQuoteItem[];
   totalCents: number;
   currency: string;
   validUntil: string;
 }
 
-export type OrderStatusValue = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatusValue = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
 
 export interface OrderStatus {
   id: string;
@@ -73,13 +73,13 @@ const VENDOR_ORDERS_DDL = `
 
 export async function initVendorSchema(): Promise<void> {
   // PRAGMA journal_mode cannot run inside a batch transaction, so run it separately.
-  await sqlRun('PRAGMA journal_mode = WAL').catch(() => {});
+  await sqlRun("PRAGMA journal_mode = WAL").catch(() => {});
   await sqlRun(VENDOR_ORDERS_DDL);
 }
 
 // ── Addgene Search ──
 
-const ADDGENE_SEARCH_URL = 'https://www.addgene.org/search/catalog/plasmids/';
+const ADDGENE_SEARCH_URL = "https://www.addgene.org/search/catalog/plasmids/";
 
 /**
  * Search Addgene's plasmid catalog.
@@ -97,7 +97,7 @@ export async function searchAddgene(query: string): Promise<VendorPlasmid[]> {
   let response: Response;
   try {
     response = await fetch(url, {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(10_000),
     });
   } catch {
@@ -121,7 +121,7 @@ export async function searchAddgene(query: string): Promise<VendorPlasmid[]> {
 }
 
 function normalizeAddgeneResponse(data: unknown): VendorPlasmid[] {
-  if (!data || typeof data !== 'object') return [];
+  if (!data || typeof data !== "object") return [];
 
   const record = data as Record<string, unknown>;
   const results = record.results ?? record.objects;
@@ -129,17 +129,17 @@ function normalizeAddgeneResponse(data: unknown): VendorPlasmid[] {
   if (!Array.isArray(results)) return [];
 
   return results
-    .filter((r): r is Record<string, unknown> => r !== null && typeof r === 'object')
+    .filter((r): r is Record<string, unknown> => r !== null && typeof r === "object")
     .map((r) => ({
-      id: typeof r.id === 'number' ? r.id : 0,
-      name: typeof r.name === 'string' ? r.name : 'Unknown',
-      depositor: typeof r.depositor === 'string' ? r.depositor : 'Unknown',
-      purpose: typeof r.purpose === 'string' ? r.purpose : null,
-      insert: typeof r.insert === 'string' ? r.insert : null,
-      expression: typeof r.expression === 'string' ? r.expression : null,
-      promoter: typeof r.promoter === 'string' ? r.promoter : null,
-      url: typeof r.url === 'string' ? `https://www.addgene.org${r.url}` : '',
-      availability: typeof r.availability === 'string' ? r.availability : null,
+      id: typeof r.id === "number" ? r.id : 0,
+      name: typeof r.name === "string" ? r.name : "Unknown",
+      depositor: typeof r.depositor === "string" ? r.depositor : "Unknown",
+      purpose: typeof r.purpose === "string" ? r.purpose : null,
+      insert: typeof r.insert === "string" ? r.insert : null,
+      expression: typeof r.expression === "string" ? r.expression : null,
+      promoter: typeof r.promoter === "string" ? r.promoter : null,
+      url: typeof r.url === "string" ? `https://www.addgene.org${r.url}` : "",
+      availability: typeof r.availability === "string" ? r.availability : null,
     }))
     .filter((p) => p.id > 0);
 }
@@ -150,15 +150,7 @@ const BASE_PRICE_PER_BASE_CENTS = 15;
 const MIN_OLIGO_PRICE_CENTS = 500;
 const MODIFICATION_PRICE_CENTS = 200;
 
-const KNOWN_MODIFICATIONS = [
-  'phosphorothioate',
-  'biotin',
-  'fluorescent',
-  'amine',
-  'thiol',
-  'methyl',
-  'deoxyuridine',
-];
+const KNOWN_MODIFICATIONS = ["phosphorothioate", "biotin", "fluorescent", "amine", "thiol", "methyl", "deoxyuridine"];
 
 /**
  * Generate a cost estimate for ordering DNA sequences from IDT.
@@ -167,10 +159,10 @@ const KNOWN_MODIFICATIONS = [
 export async function searchIDT(sequences: string[]): Promise<VendorQuote> {
   if (!sequences || sequences.length === 0) {
     return {
-      vendor: 'idt',
+      vendor: "idt",
       items: [],
       totalCents: 0,
-      currency: 'USD',
+      currency: "USD",
       validUntil: futureDate(7),
     };
   }
@@ -193,10 +185,10 @@ export async function searchIDT(sequences: string[]): Promise<VendorQuote> {
     const unitPriceCents = basePrice + modPrice;
     totalCents += unitPriceCents;
 
-    const scale = length > 200 ? '25nm' : length > 60 ? '100nm' : '25nm';
+    const scale = length > 200 ? "25nm" : length > 60 ? "100nm" : "25nm";
 
     return {
-      sequence: cleanSeq.slice(0, 20) + (cleanSeq.length > 20 ? '...' : ''),
+      sequence: cleanSeq.slice(0, 20) + (cleanSeq.length > 20 ? "..." : ""),
       length,
       scale,
       modifications,
@@ -206,10 +198,10 @@ export async function searchIDT(sequences: string[]): Promise<VendorQuote> {
   });
 
   return {
-    vendor: 'idt',
+    vendor: "idt",
     items,
     totalCents,
-    currency: 'USD',
+    currency: "USD",
     validUntil: futureDate(7),
   };
 }
@@ -225,11 +217,7 @@ function futureDate(daysAhead: number): string {
 /**
  * Create a new vendor order in the database.
  */
-export async function createOrder(
-  vendor: string,
-  items: VendorOrderItem[],
-  totalCents: number,
-): Promise<OrderStatus> {
+export async function createOrder(vendor: string, items: VendorOrderItem[], totalCents: number): Promise<OrderStatus> {
   const id = randomUUID();
   const now = new Date().toISOString();
   const itemsJson = JSON.stringify(items);
@@ -244,7 +232,7 @@ export async function createOrder(
     id,
     vendor,
     items,
-    status: 'pending',
+    status: "pending",
     totalCents,
     createdAt: now,
     updatedAt: now,
@@ -257,10 +245,7 @@ export async function createOrder(
 export async function getOrderStatus(orderId: string): Promise<OrderStatus | null> {
   if (!orderId || orderId.trim().length === 0) return null;
 
-  const row = await sqlGet(
-    'SELECT * FROM vendor_orders WHERE id = ?',
-    [orderId.trim()],
-  );
+  const row = await sqlGet("SELECT * FROM vendor_orders WHERE id = ?", [orderId.trim()]);
 
   if (!row) return null;
   return rowToOrder(row);
@@ -270,10 +255,7 @@ export async function getOrderStatus(orderId: string): Promise<OrderStatus | nul
  * List all orders, most recent first.
  */
 export async function listOrders(limit = 50): Promise<OrderStatus[]> {
-  const rows = await sqlAll(
-    'SELECT * FROM vendor_orders ORDER BY created_at DESC LIMIT ?',
-    [Math.min(limit, 200)],
-  );
+  const rows = await sqlAll("SELECT * FROM vendor_orders ORDER BY created_at DESC LIMIT ?", [Math.min(limit, 200)]);
   return rows.map(rowToOrder);
 }
 
@@ -290,7 +272,7 @@ function rowToOrder(row: Record<string, unknown>): OrderStatus {
     id: row.id as string,
     vendor: row.vendor as string,
     items,
-    status: (row.status as OrderStatusValue) ?? 'pending',
+    status: (row.status as OrderStatusValue) ?? "pending",
     totalCents: Number(row.total_cents ?? 0),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,

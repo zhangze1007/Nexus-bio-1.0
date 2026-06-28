@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * GenomeBrowser — interactive genome visualization powered by IGV.js.
@@ -24,8 +24,8 @@
  * ```
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { THEME } from '../../theme';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { THEME } from "../../theme";
 
 // ── Public types ────────────────────────────────────────────────────────────
 
@@ -33,9 +33,9 @@ export interface GenomeBrowserTrack {
   /** Display name for the track */
   name: string;
   /** Track type */
-  type: 'annotation' | 'sequence' | 'wig' | 'alignment';
+  type: "annotation" | "sequence" | "wig" | "alignment";
   /** File format */
-  format: 'bed' | 'gff' | 'gtf' | 'bam' | 'bigwig';
+  format: "bed" | "gff" | "gtf" | "bam" | "bigwig";
   /** Remote track URL (mutually exclusive with features) */
   url?: string;
   /** Inline BED-format features (mutually exclusive with url) */
@@ -45,7 +45,7 @@ export interface GenomeBrowserTrack {
     end: number;
     name?: string;
     score?: number;
-    strand?: '+' | '-';
+    strand?: "+" | "-";
     color?: string;
     description?: string;
   }>;
@@ -88,23 +88,17 @@ interface IGVModule {
 
 const CUSTOM_GENOMES: Record<string, Record<string, unknown>> = {
   ecoli_K12_MG1655: {
-    id: 'ecoli_K12_MG1655',
-    name: 'E. coli K-12 MG1655',
-    fastaURL: 'https://hgdownload.soe.ucsc.edu/goldenPath/ecK12/dna/ecK12.fa.gz',
-    indexURL: 'https://hgdownload.soe.ucsc.edu/goldenPath/ecK12/dna/ecK12.fa.gz.fai',
-    chromosomeOrder: ['chr'],
+    id: "ecoli_K12_MG1655",
+    name: "E. coli K-12 MG1655",
+    fastaURL: "https://hgdownload.soe.ucsc.edu/goldenPath/ecK12/dna/ecK12.fa.gz",
+    indexURL: "https://hgdownload.soe.ucsc.edu/goldenPath/ecK12/dna/ecK12.fa.gz.fai",
+    chromosomeOrder: ["chr"],
   },
 };
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export function GenomeBrowser({
-  genome,
-  locus,
-  tracks,
-  height = 400,
-  onRegionSelect,
-}: GenomeBrowserProps) {
+export function GenomeBrowser({ genome, locus, tracks, height = 400, onRegionSelect }: GenomeBrowserProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const browserRef = useRef<IGVBrowser | null>(null);
   const igvRef = useRef<IGVModule | null>(null);
@@ -126,7 +120,7 @@ export function GenomeBrowser({
 
     try {
       // Dynamic import — IGV.js accesses window/document, must run client-side
-      const igv = (await import('igv').then((m) => m.default ?? m)) as unknown as IGVModule;
+      const igv = (await import("igv").then((m) => m.default ?? m)) as unknown as IGVModule;
       igvRef.current = igv;
 
       // Configure dark theme defaults
@@ -148,18 +142,19 @@ export function GenomeBrowser({
 
       const options: Record<string, unknown> = {
         reference: genomeConfig,
-        locus: locus ?? (genome.startsWith('ecoli') ? 'chr:0-100000' : undefined),
-        tracks: tracks?.map((t) => ({
-          name: t.name,
-          type: t.type,
-          format: t.format,
-          url: t.url,
-          features: t.features,
-          color: t.features?.[0]?.color,
-          height: 100,
-          autoHeight: false,
-          displayMode: 'EXPANDED',
-        })) ?? [],
+        locus: locus ?? (genome.startsWith("ecoli") ? "chr:0-100000" : undefined),
+        tracks:
+          tracks?.map((t) => ({
+            name: t.name,
+            type: t.type,
+            format: t.format,
+            url: t.url,
+            features: t.features,
+            color: t.features?.[0]?.color,
+            height: 100,
+            autoHeight: false,
+            displayMode: "EXPANDED",
+          })) ?? [],
         showNavigation: true,
         showRuler: true,
       };
@@ -171,7 +166,7 @@ export function GenomeBrowser({
       }
 
       // Clear container
-      containerRef.current.innerHTML = '';
+      containerRef.current.innerHTML = "";
 
       // Create browser
       const browser = await igv.createBrowser(containerRef.current, options);
@@ -179,8 +174,10 @@ export function GenomeBrowser({
 
       // Register locus change handler for region selection
       if (onRegionSelectRef.current) {
-        browser.on('locuschange', (...args: unknown[]) => {
-          const loci = args[0] as Array<{ chr: string; start: number; end: number; getLocusString: () => string }> | undefined;
+        browser.on("locuschange", (...args: unknown[]) => {
+          const loci = args[0] as
+            | Array<{ chr: string; start: number; end: number; getLocusString: () => string }>
+            | undefined;
           if (loci && loci.length > 0 && onRegionSelectRef.current) {
             onRegionSelectRef.current({
               chr: loci[0].chr,
@@ -193,7 +190,7 @@ export function GenomeBrowser({
 
       setLoading(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to initialize genome browser';
+      const message = err instanceof Error ? err.message : "Failed to initialize genome browser";
       setError(message);
       setLoading(false);
     }
@@ -224,31 +221,33 @@ export function GenomeBrowser({
 
     // Load any tracks that weren't in the initial config
     for (const track of tracks) {
-      browserRef.current.loadTrack({
-        name: track.name,
-        type: track.type,
-        format: track.format,
-        url: track.url,
-        features: track.features,
-        color: track.features?.[0]?.color,
-        height: 100,
-        autoHeight: false,
-        displayMode: 'EXPANDED',
-      }).catch(() => {
-        // Track may already exist — ignore duplicate load errors
-      });
+      browserRef.current
+        .loadTrack({
+          name: track.name,
+          type: track.type,
+          format: track.format,
+          url: track.url,
+          features: track.features,
+          color: track.features?.[0]?.color,
+          height: 100,
+          autoHeight: false,
+          displayMode: "EXPANDED",
+        })
+        .catch(() => {
+          // Track may already exist — ignore duplicate load errors
+        });
     }
   }, [tracks]);
 
   return (
     <div
       style={{
-        position: 'relative',
-        width: '100%',
+        position: "relative",
+        width: "100%",
         height,
         minHeight: 200,
         borderRadius: THEME.R_SM,
-        overflow: 'hidden',
+        overflow: "hidden",
         border: `1px solid ${THEME.BORDER}`,
         background: THEME.BG_CANVAS,
       }}
@@ -257,12 +256,12 @@ export function GenomeBrowser({
       {loading && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(5, 5, 5, 0.85)',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(5, 5, 5, 0.85)",
             zIndex: 10,
           }}
         >
@@ -271,7 +270,7 @@ export function GenomeBrowser({
               fontFamily: THEME.SANS,
               fontSize: THEME.FS_SM,
               color: THEME.DIM,
-              letterSpacing: '0.05em',
+              letterSpacing: "0.05em",
             }}
           >
             Loading genome browser...
@@ -283,12 +282,12 @@ export function GenomeBrowser({
       {error && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 8,
             left: 8,
             right: 8,
-            padding: '8px 12px',
-            background: 'rgba(217, 101, 98, 0.15)',
+            padding: "8px 12px",
+            background: "rgba(217, 101, 98, 0.15)",
             border: `1px solid ${THEME.RISK_HIGH}`,
             borderRadius: THEME.R_SM,
             zIndex: 20,
@@ -310,13 +309,15 @@ export function GenomeBrowser({
       <div
         ref={containerRef}
         style={{
-          width: '100%',
-          height: '100%',
+          width: "100%",
+          height: "100%",
         }}
       />
 
       {/* IGV.js dark theme overrides — injected via style tag */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         /* Override IGV.js light theme to match Nexus-Bio dark palette */
         .igv-container,
         .igv-root-div,
@@ -423,7 +424,9 @@ export function GenomeBrowser({
         .igv-center-guide {
           background-color: rgba(175, 195, 214, 0.15) !important;
         }
-      ` }} />
+      `,
+        }}
+      />
     </div>
   );
 }

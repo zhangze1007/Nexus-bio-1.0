@@ -129,10 +129,7 @@ async function checkAuditTrailIntegrity(): Promise<ComplianceSection> {
 
 async function checkDataClassificationCoverage(orgId: string): Promise<ComplianceSection> {
   try {
-    const total = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM data_assets WHERE org_id = ?",
-      [orgId],
-    );
+    const total = await sqlGet("SELECT COUNT(*) as cnt FROM data_assets WHERE org_id = ?", [orgId]);
     const totalCnt = total ? Number(total.cnt) : 0;
 
     if (totalCnt === 0) {
@@ -181,10 +178,7 @@ async function checkDataClassificationCoverage(orgId: string): Promise<Complianc
 async function checkRetentionPolicyEnforcement(orgId: string): Promise<ComplianceSection> {
   try {
     // Check if retention policies exist
-    const policies = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM retention_policies WHERE org_id = ?",
-      [orgId],
-    );
+    const policies = await sqlGet("SELECT COUNT(*) as cnt FROM retention_policies WHERE org_id = ?", [orgId]);
     const policyCnt = policies ? Number(policies.cnt) : 0;
 
     if (policyCnt === 0) {
@@ -246,10 +240,7 @@ async function checkAccessControlReview(orgId: string): Promise<ComplianceSectio
     }
 
     // Check for stale permissions (users not reviewed)
-    const totalUsers = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM org_members WHERE org_id = ?",
-      [orgId],
-    );
+    const totalUsers = await sqlGet("SELECT COUNT(*) as cnt FROM org_members WHERE org_id = ?", [orgId]);
     const totalCnt = totalUsers ? Number(totalUsers.cnt) : 0;
 
     const reviewedUsers = await sqlGet(
@@ -283,10 +274,7 @@ async function checkAccessControlReview(orgId: string): Promise<ComplianceSectio
 
 async function checkMfaAdoptionRate(orgId: string): Promise<ComplianceSection> {
   try {
-    const totalUsers = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM org_members WHERE org_id = ?",
-      [orgId],
-    );
+    const totalUsers = await sqlGet("SELECT COUNT(*) as cnt FROM org_members WHERE org_id = ?", [orgId]);
     const totalCnt = totalUsers ? Number(totalUsers.cnt) : 0;
 
     if (totalCnt === 0) {
@@ -297,10 +285,9 @@ async function checkMfaAdoptionRate(orgId: string): Promise<ComplianceSection> {
       };
     }
 
-    const mfaEnabled = await sqlGet(
-      "SELECT COUNT(*) as cnt FROM org_members WHERE org_id = ? AND mfa_enabled = 1",
-      [orgId],
-    );
+    const mfaEnabled = await sqlGet("SELECT COUNT(*) as cnt FROM org_members WHERE org_id = ? AND mfa_enabled = 1", [
+      orgId,
+    ]);
     const mfaCnt = mfaEnabled ? Number(mfaEnabled.cnt) : 0;
     const rate = (mfaCnt / totalCnt) * 100;
 

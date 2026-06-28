@@ -175,10 +175,7 @@ export async function getApiMetrics(timeRange: TimeRange): Promise<ApiMetrics> {
  * p95 is computed by ordering all durations and picking the value at the
  * 95th percentile index.
  */
-export async function getEndpointStats(
-  endpoint: string,
-  timeRange?: TimeRange,
-): Promise<EndpointStats> {
+export async function getEndpointStats(endpoint: string, timeRange?: TimeRange): Promise<EndpointStats> {
   await ensureSchema();
 
   if (!endpoint || endpoint.trim().length === 0) {
@@ -222,10 +219,7 @@ export async function getEndpointStats(
       `SELECT duration_ms FROM api_metrics ${whereClause} ORDER BY duration_ms ASC`,
       args,
     );
-    const p95Index = Math.min(
-      Math.floor(calls * 0.95),
-      calls - 1,
-    );
+    const p95Index = Math.min(Math.floor(calls * 0.95), calls - 1);
     p95Duration = Math.round(Number(durationRows[p95Index]?.duration_ms ?? 0) * 100) / 100;
   }
 

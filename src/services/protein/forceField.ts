@@ -16,7 +16,7 @@
  *   REFERENCE: Cornell WD et al. (1995) JACS 117:5179-5197 (AMBER)
  */
 
-import type { BackboneAtom } from './backboneGenerator';
+import type { BackboneAtom } from "./backboneGenerator";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,25 +42,25 @@ type Vec3 = [number, number, number];
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_FORCE_FIELD_PARAMS: ForceFieldParams = {
-  bondForceConstant: 300,   // kJ/mol/A^2
-  angleForceConstant: 50,   // kJ/mol/rad^2
+  bondForceConstant: 300, // kJ/mol/A^2
+  angleForceConstant: 50, // kJ/mol/rad^2
   dihedralForceConstant: 10, // kJ/mol
-  ljEpsilon: 0.5,           // kJ/mol
-  ljSigma: 3.5,             // A
+  ljEpsilon: 0.5, // kJ/mol
+  ljSigma: 3.5, // A
 };
 
 /** Equilibrium bond lengths by atom pair (A) */
 const BOND_EQ_LENGTHS: Record<string, number> = {
-  'N-CA': 1.47,
-  'CA-C': 1.53,
-  'C-N': 1.32,
+  "N-CA": 1.47,
+  "CA-C": 1.53,
+  "C-N": 1.32,
 };
 
 /** Equilibrium bond angles (rad) */
 const BOND_EQ_ANGLES: Record<string, number> = {
-  'N-CA-C': (111 * Math.PI) / 180,
-  'CA-C-N': (116 * Math.PI) / 180,
-  'C-N-CA': (121 * Math.PI) / 180,
+  "N-CA-C": (111 * Math.PI) / 180,
+  "CA-C-N": (116 * Math.PI) / 180,
+  "C-N-CA": (121 * Math.PI) / 180,
 };
 
 /** Simplified partial charges (e) */
@@ -95,11 +95,7 @@ function vec3Dot(a: Vec3, b: Vec3): number {
 }
 
 function vec3Cross(a: Vec3, b: Vec3): Vec3 {
-  return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
-  ];
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
 function vec3Norm(v: Vec3): number {
@@ -159,13 +155,7 @@ function angleEnergy(pos1: Vec3, pos2: Vec3, pos3: Vec3, theta0: number, ka: num
 }
 
 /** Angle bending force contribution on atom1 (central atom gets reaction) */
-function angleForceOnEnd(
-  pos1: Vec3,
-  pos2: Vec3,
-  pos3: Vec3,
-  theta0: number,
-  ka: number,
-): Vec3 {
+function angleForceOnEnd(pos1: Vec3, pos2: Vec3, pos3: Vec3, theta0: number, ka: number): Vec3 {
   const v1 = vec3Sub(pos1, pos2);
   const v2 = vec3Sub(pos3, pos2);
   const n1 = vec3Norm(v1);
@@ -179,7 +169,7 @@ function angleForceOnEnd(
   if (Math.abs(sinTheta) < 1e-12) return [0, 0, 0];
 
   const dTheta = theta - theta0;
-  const fMag = -2 * ka * dTheta / sinTheta;
+  const fMag = (-2 * ka * dTheta) / sinTheta;
 
   // Gradient direction: perpendicular to v1 in the v1-v2 plane
   const v1hat = vec3Scale(v1, 1 / n1);
@@ -194,15 +184,7 @@ function angleForceOnEnd(
 }
 
 /** Torsional energy: E = k_d * (1 + cos(nφ - γ)) */
-function torsionalEnergy(
-  pos1: Vec3,
-  pos2: Vec3,
-  pos3: Vec3,
-  pos4: Vec3,
-  kd: number,
-  n = 3,
-  gamma = 0,
-): number {
+function torsionalEnergy(pos1: Vec3, pos2: Vec3, pos3: Vec3, pos4: Vec3, kd: number, n = 3, gamma = 0): number {
   const b1 = vec3Sub(pos2, pos1);
   const b2 = vec3Sub(pos3, pos2);
   const b3 = vec3Sub(pos4, pos3);
@@ -241,7 +223,7 @@ function ljForce(pos1: Vec3, pos2: Vec3, epsilon: number, sigma: number): Vec3 {
   const sr6 = Math.pow(sigma / r, 6);
   const sr12 = sr6 * sr6;
   // F = -dE/dr * (r_vec/r)
-  const fMag = 24 * epsilon * (2 * sr12 - sr6) / r;
+  const fMag = (24 * epsilon * (2 * sr12 - sr6)) / r;
   const dir = vec3Scale(diff, 1 / r);
   return vec3Scale(dir, fMag);
 }
@@ -251,7 +233,7 @@ function coulombEnergy(pos1: Vec3, pos2: Vec3, q1: number, q2: number): number {
   const diff = vec3Sub(pos2, pos1);
   const r = vec3Norm(diff);
   if (r < 1e-12) return Infinity;
-  return COULOMB_K * q1 * q2 / r;
+  return (COULOMB_K * q1 * q2) / r;
 }
 
 /** Coulomb force (on atom1) */
@@ -259,7 +241,7 @@ function coulombForce(pos1: Vec3, pos2: Vec3, q1: number, q2: number): Vec3 {
   const diff = vec3Sub(pos2, pos1);
   const r = vec3Norm(diff);
   if (r < 1e-12) return [0, 0, 0];
-  const fMag = COULOMB_K * q1 * q2 / (r * r);
+  const fMag = (COULOMB_K * q1 * q2) / (r * r);
   const dir = vec3Scale(diff, 1 / r);
   return vec3Scale(dir, fMag);
 }
@@ -275,10 +257,7 @@ function coulombForce(pos1: Vec3, pos2: Vec3, q1: number, q2: number): Vec3 {
  * @param params Force field parameters (uses defaults if omitted)
  * @returns Total energy in kJ/mol
  */
-export function calculateEnergy(
-  atoms: BackboneAtom[],
-  params: ForceFieldParams = DEFAULT_FORCE_FIELD_PARAMS,
-): number {
+export function calculateEnergy(atoms: BackboneAtom[], params: ForceFieldParams = DEFAULT_FORCE_FIELD_PARAMS): number {
   if (atoms.length === 0) return 0;
   if (atoms.length === 1) return 0;
 
@@ -289,12 +268,7 @@ export function calculateEnergy(
     const bondKey = getBondKey(atoms[i], atoms[i + 1]);
     if (bondKey) {
       const r0 = BOND_EQ_LENGTHS[bondKey];
-      totalEnergy += bondEnergy(
-        getAtomPos(atoms, i),
-        getAtomPos(atoms, i + 1),
-        r0,
-        params.bondForceConstant,
-      );
+      totalEnergy += bondEnergy(getAtomPos(atoms, i), getAtomPos(atoms, i + 1), r0, params.bondForceConstant);
     }
   }
 
@@ -364,12 +338,7 @@ export function calculateForces(
     const bondKey = getBondKey(atoms[i], atoms[i + 1]);
     if (bondKey) {
       const r0 = BOND_EQ_LENGTHS[bondKey];
-      const f = bondForce(
-        getAtomPos(atoms, i),
-        getAtomPos(atoms, i + 1),
-        r0,
-        params.bondForceConstant,
-      );
+      const f = bondForce(getAtomPos(atoms, i), getAtomPos(atoms, i + 1), r0, params.bondForceConstant);
       forces[i] = vec3Add(forces[i], f);
       forces[i + 1] = vec3Sub(forces[i + 1], f); // Newton's 3rd law
     }

@@ -18,13 +18,7 @@ import { scaleLinear, type ScaleLinear } from "d3-scale";
 import { select } from "d3-selection";
 import { zoom } from "d3-zoom";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  type ClusterNode,
-  calculateDistanceMatrix,
-  getLeafOrder,
-  getMaxDistance,
-  upgma,
-} from "../../utils/clustering";
+import { type ClusterNode, calculateDistanceMatrix, getLeafOrder, getMaxDistance, upgma } from "../../utils/clustering";
 import { THEME } from "../../theme";
 
 // ── Public types ─────────────────────────────────────────────────────────────
@@ -70,10 +64,10 @@ function viridisScale(domain: [number, number]): ScaleLinear<string, string> {
 // ── Margins ──────────────────────────────────────────────────────────────────
 
 const MARGIN = {
-  top: 120,    // space for column dendrogram + labels
+  top: 120, // space for column dendrogram + labels
   right: 40,
   bottom: 20,
-  left: 120,   // space for row dendrogram + labels
+  left: 120, // space for row dendrogram + labels
 };
 
 const DENDROGRAM_SIZE = 80; // px allocated to each dendrogram
@@ -96,10 +90,7 @@ export function ClusteredHeatmap({
 
   // ── Validation ─────────────────────────────────────────────────────────────
   const isValid =
-    data.length > 0 &&
-    data[0].length > 0 &&
-    rowLabels.length === data.length &&
-    colLabels.length === data[0].length;
+    data.length > 0 && data[0].length > 0 && rowLabels.length === data.length && colLabels.length === data[0].length;
 
   // ── Clustering ─────────────────────────────────────────────────────────────
   const { rowOrder, colOrder, rowRoot, colRoot } = useMemo(() => {
@@ -157,11 +148,7 @@ export function ClusteredHeatmap({
     svg.selectAll("*").remove();
 
     // Background
-    svg
-      .append("rect")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("fill", "#050505");
+    svg.append("rect").attr("width", width).attr("height", height).attr("fill", "#050505");
 
     // Root group
     const g = svg.append("g");
@@ -182,9 +169,7 @@ export function ClusteredHeatmap({
       .attr("transform", `translate(${MARGIN.left - DENDROGRAM_SIZE - 4}, ${MARGIN.top})`);
 
     const rowMaxDist = getMaxDistance(rowRoot);
-    const rowXScale = scaleLinear()
-      .domain([0, rowMaxDist])
-      .range([DENDROGRAM_SIZE, 0]);
+    const rowXScale = scaleLinear().domain([0, rowMaxDist]).range([DENDROGRAM_SIZE, 0]);
 
     // Map leaf index to y position in heatmap.
     const rowYMap = new Map<number, number>();
@@ -225,9 +210,7 @@ export function ClusteredHeatmap({
       .attr("transform", `translate(${MARGIN.left}, ${MARGIN.top - DENDROGRAM_SIZE - 4})`);
 
     const colMaxDist = getMaxDistance(colRoot);
-    const colYScale = scaleLinear()
-      .domain([0, colMaxDist])
-      .range([DENDROGRAM_SIZE, 0]);
+    const colYScale = scaleLinear().domain([0, colMaxDist]).range([DENDROGRAM_SIZE, 0]);
 
     const colXMap = new Map<number, number>();
     colOrder.forEach((idx, pos) => {
@@ -278,25 +261,15 @@ export function ClusteredHeatmap({
           .attr("width", Math.max(1, cellW - 0.5))
           .attr("height", Math.max(1, cellH - 0.5))
           .attr("fill", colorScale(value))
-          .attr(
-            "stroke",
-            selectedCell?.row === origRow && selectedCell?.col === origCol
-              ? THEME.CORAL
-              : "none",
-          )
-          .attr(
-            "stroke-width",
-            selectedCell?.row === origRow && selectedCell?.col === origCol ? 2 : 0,
-          )
+          .attr("stroke", selectedCell?.row === origRow && selectedCell?.col === origCol ? THEME.CORAL : "none")
+          .attr("stroke-width", selectedCell?.row === origRow && selectedCell?.col === origCol ? 2 : 0)
           .style("cursor", "pointer")
           .on("click", () => {
             setSelectedCell({ row: origRow, col: origCol });
             onCellClick?.(origRow, origCol, value);
           })
           .append("title")
-          .text(
-            `${rowLabels[origRow]} / ${colLabels[origCol]}: ${value.toFixed(3)}`,
-          );
+          .text(`${rowLabels[origRow]} / ${colLabels[origCol]}: ${value.toFixed(3)}`);
       }
     }
 
@@ -330,10 +303,7 @@ export function ClusteredHeatmap({
         .attr("x", pos * cellW + cellW / 2)
         .attr("y", -4)
         .attr("text-anchor", "start")
-        .attr(
-          "transform",
-          `rotate(-45, ${pos * cellW + cellW / 2}, -4)`,
-        )
+        .attr("transform", `rotate(-45, ${pos * cellW + cellW / 2}, -4)`)
         .attr("font-size", Math.min(10, cellW * 0.7))
         .attr("font-family", THEME.MONO)
         .attr("fill", THEME.INK_SOFT)
@@ -346,17 +316,11 @@ export function ClusteredHeatmap({
     const legendX = width - MARGIN.right - legendW - 10;
     const legendY = height - MARGIN.bottom - legendH - 20;
 
-    const legendG = g
-      .append("g")
-      .attr("transform", `translate(${legendX}, ${legendY})`);
+    const legendG = g.append("g").attr("transform", `translate(${legendX}, ${legendY})`);
 
     // Gradient bar
     const defs = svg.append("defs");
-    const gradient = defs
-      .append("linearGradient")
-      .attr("id", "viridis-legend")
-      .attr("x1", "0%")
-      .attr("x2", "100%");
+    const gradient = defs.append("linearGradient").attr("id", "viridis-legend").attr("x1", "0%").attr("x2", "100%");
 
     VIRIDIS_STOPS.forEach(([offset, color]) => {
       gradient
@@ -452,8 +416,7 @@ export function ClusteredHeatmap({
               maxWidth: 400,
             }}
           >
-            data, rowLabels, and colLabels must be non-empty and have matching
-            dimensions.
+            data, rowLabels, and colLabels must be non-empty and have matching dimensions.
           </div>
         </div>
       </div>

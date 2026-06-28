@@ -7,8 +7,8 @@
  * Signatures include a SHA-256 content hash for tamper detection.
  */
 
-import { createHash, randomUUID } from 'node:crypto';
-import type { ELNAttachment, ELNEntry, ELNSignature } from './types';
+import { createHash, randomUUID } from "node:crypto";
+import type { ELNAttachment, ELNEntry, ELNSignature } from "./types";
 
 export interface ELNServiceOptions {
   /** Injected clock for testability */
@@ -43,7 +43,7 @@ export class ELNService {
    * Compute a SHA-256 hash of entry content for signature integrity.
    */
   private hashContent(content: string): string {
-    return createHash('sha256').update(content).digest('hex');
+    return createHash("sha256").update(content).digest("hex");
   }
 
   /**
@@ -55,12 +55,14 @@ export class ELNService {
       projectId: row.project_id as string,
       title: row.title as string,
       content: row.content as string,
-      attachments: typeof row.attachments === 'string'
-        ? JSON.parse(row.attachments as string)
-        : (row.attachments as ELNAttachment[]) ?? [],
-      signatures: typeof row.signatures === 'string'
-        ? JSON.parse(row.signatures as string)
-        : (row.signatures as ELNSignature[]) ?? [],
+      attachments:
+        typeof row.attachments === "string"
+          ? JSON.parse(row.attachments as string)
+          : ((row.attachments as ELNAttachment[]) ?? []),
+      signatures:
+        typeof row.signatures === "string"
+          ? JSON.parse(row.signatures as string)
+          : ((row.signatures as ELNSignature[]) ?? []),
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
     };
@@ -69,9 +71,7 @@ export class ELNService {
   /**
    * Create a new ELN entry.
    */
-  async createEntry(
-    entry: Omit<ELNEntry, 'id' | 'signatures'>,
-  ): Promise<ELNEntry> {
+  async createEntry(entry: Omit<ELNEntry, "id" | "signatures">): Promise<ELNEntry> {
     const id = this.uuidFn();
     const now = this.clock().toISOString();
 
@@ -105,10 +105,7 @@ export class ELNService {
    * Retrieve an ELN entry by ID.
    */
   async getEntry(id: string): Promise<ELNEntry | null> {
-    const row = await this.db.get(
-      'SELECT * FROM eln_entries WHERE id = ?',
-      [id],
-    );
+    const row = await this.db.get("SELECT * FROM eln_entries WHERE id = ?", [id]);
     return row ? this.rowToEntry(row) : null;
   }
 
@@ -121,7 +118,7 @@ export class ELNService {
    */
   async updateEntry(
     id: string,
-    updates: Partial<Pick<ELNEntry, 'title' | 'content' | 'attachments'>>,
+    updates: Partial<Pick<ELNEntry, "title" | "content" | "attachments">>,
   ): Promise<ELNEntry> {
     const existing = await this.getEntry(id);
     if (!existing) {
@@ -145,13 +142,7 @@ export class ELNService {
       `UPDATE eln_entries
        SET title = ?, content = ?, attachments = ?, updated_at = ?
        WHERE id = ?`,
-      [
-        merged.title,
-        merged.content,
-        JSON.stringify(merged.attachments),
-        merged.updatedAt,
-        id,
-      ],
+      [merged.title, merged.content, JSON.stringify(merged.attachments), merged.updatedAt, id],
     );
 
     return merged;
@@ -163,25 +154,16 @@ export class ELNService {
    * Computes a SHA-256 hash of the current content for tamper detection.
    * Multiple signatures can be added (authored -> reviewed -> approved).
    */
-  async signEntry(
-    id: string,
-    userId: string,
-    userName: string,
-    meaning: string,
-  ): Promise<ELNEntry> {
+  async signEntry(id: string, userId: string, userName: string, meaning: string): Promise<ELNEntry> {
     const existing = await this.getEntry(id);
     if (!existing) {
       throw new Error(`ELN entry not found: ${id}`);
     }
 
     // Check if user already signed with the same meaning
-    const duplicate = existing.signatures.find(
-      (s) => s.userId === userId && s.meaning === meaning,
-    );
+    const duplicate = existing.signatures.find((s) => s.userId === userId && s.meaning === meaning);
     if (duplicate) {
-      throw new Error(
-        `User ${userId} already signed this entry with meaning "${meaning}"`,
-      );
+      throw new Error(`User ${userId} already signed this entry with meaning "${meaning}"`);
     }
 
     const signature: ELNSignature = {
@@ -194,14 +176,11 @@ export class ELNService {
 
     const updatedSignatures = [...existing.signatures, signature];
 
-    await this.db.run(
-      'UPDATE eln_entries SET signatures = ?, updated_at = ? WHERE id = ?',
-      [
-        JSON.stringify(updatedSignatures),
-        this.clock().toISOString(),
-        id,
-      ],
-    );
+    await this.db.run("UPDATE eln_entries SET signatures = ?, updated_at = ? WHERE id = ?", [
+      JSON.stringify(updatedSignatures),
+      this.clock().toISOString(),
+      id,
+    ]);
 
     return {
       ...existing,
@@ -214,10 +193,9 @@ export class ELNService {
    * List all ELN entries for a project.
    */
   async listEntries(projectId: string): Promise<ELNEntry[]> {
-    const rows = await this.db.all(
-      'SELECT * FROM eln_entries WHERE project_id = ? ORDER BY created_at DESC',
-      [projectId],
-    );
+    const rows = await this.db.all("SELECT * FROM eln_entries WHERE project_id = ? ORDER BY created_at DESC", [
+      projectId,
+    ]);
     return rows.map((row) => this.rowToEntry(row));
   }
 
@@ -242,15 +220,10 @@ export class ELNService {
     }
 
     if (existing.signatures.length > 0) {
-      throw new Error(
-        'Cannot delete a signed ELN entry — signatures are immutable per 21 CFR Part 11',
-      );
+      throw new Error("Cannot delete a signed ELN entry — signatures are immutable per 21 CFR Part 11");
     }
 
-    const result = await this.db.run(
-      'DELETE FROM eln_entries WHERE id = ?',
-      [id],
-    );
+    const result = await this.db.run("DELETE FROM eln_entries WHERE id = ?", [id]);
     return result.rowsAffected > 0;
   }
 }

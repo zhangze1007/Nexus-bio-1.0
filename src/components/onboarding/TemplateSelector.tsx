@@ -1,14 +1,7 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import {
-  CircuitBoard,
-  Dna,
-  GitBranch,
-  Microscope,
-  Timer,
-  Wrench,
-} from "lucide-react";
+import { CircuitBoard, Dna, GitBranch, Microscope, Timer, Wrench } from "lucide-react";
 import { useRef } from "react";
 import { THEME } from "../../theme";
 

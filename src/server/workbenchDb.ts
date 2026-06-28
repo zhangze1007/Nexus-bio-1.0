@@ -96,7 +96,7 @@ function toPayloadRecord(payload: WorkbenchRunArtifact["payloadSnapshot"]) {
 function resolveProjectId(
   projectId?: string | null,
   state?: WorkbenchCanonicalState | null,
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ) {
   const candidate = options?.forceExplicit ? projectId : (state?.project?.id ?? projectId);
   return candidate && candidate.trim().length > 0 ? candidate.trim() : DEFAULT_PROJECT_ID;
@@ -204,7 +204,7 @@ function buildEnsureActorStatements(actorId: string): InStatement[] {
 function buildEnsureProjectStatements(
   projectId: string,
   actorId: string,
-  state: WorkbenchCanonicalState
+  state: WorkbenchCanonicalState,
 ): InStatement[] {
   const timestamp = now();
   return [
@@ -242,7 +242,7 @@ function buildEnsureProjectStatements(
 function buildInsertRunArtifactStatements(
   projectId: string,
   revision: number,
-  runArtifacts: WorkbenchRunArtifact[]
+  runArtifacts: WorkbenchRunArtifact[],
 ): InStatement[] {
   return runArtifacts.map((artifact) => ({
     sql: `
@@ -274,7 +274,7 @@ function buildInsertExperimentRecordStatements(
   projectId: string,
   actorId: string,
   revision: number,
-  runArtifacts: WorkbenchRunArtifact[]
+  runArtifacts: WorkbenchRunArtifact[],
 ): InStatement[] {
   return runArtifacts.map((artifact) => {
     const category = ["cellfree", "dbtlflow", "multio", "scspatial"].includes(artifact.toolId)
@@ -312,7 +312,7 @@ function buildInsertProjectHistoryStatements(
   projectId: string,
   actorId: string,
   state: WorkbenchCanonicalState,
-  updatedAt: number
+  updatedAt: number,
 ): InStatement[] {
   return [
     {
@@ -558,7 +558,7 @@ async function migrateLegacyCanonicalIfNeeded(): Promise<void> {
     SYSTEM_ACTOR_ID,
     parsed,
     "legacy-canonical-migration",
-    "migrated legacy canonical snapshot into project-scoped state"
+    "migrated legacy canonical snapshot into project-scoped state",
   );
 }
 
@@ -581,7 +581,7 @@ async function migrateLegacyJsonIfNeeded(): Promise<void> {
       SYSTEM_ACTOR_ID,
       parsed,
       "legacy-json-migration",
-      "migrated legacy JSON snapshot into collaborative project state"
+      "migrated legacy JSON snapshot into collaborative project state",
     );
   } catch {
     await sqlRun(
@@ -595,7 +595,7 @@ async function migrateLegacyJsonIfNeeded(): Promise<void> {
         "failed",
         "legacy JSON migration failed or contained invalid state",
         now(),
-      ]
+      ],
     );
   }
 }
@@ -623,7 +623,7 @@ export async function projectStateExists(projectId?: string | null, options?: Sc
 
 export async function readProjectState(
   projectId?: string | null,
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ): Promise<WorkbenchCanonicalState> {
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const row = await sqlGet("SELECT state_json FROM project_state WHERE project_id = ?", [resolvedProjectId]);
@@ -641,7 +641,7 @@ export async function writeProjectState(
   state: WorkbenchCanonicalState,
   action = "sync",
   detail = "project state updated",
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ): Promise<void> {
   const resolvedProjectId = resolveProjectId(projectId, state, options);
   const resolvedActorId = resolveActorId(actorId);
@@ -701,7 +701,7 @@ export async function writeProjectState(
 export async function getBackendMeta(
   projectId?: string | null,
   actorId?: string | null,
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ) {
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const resolvedActorId = resolveActorId(actorId);
@@ -737,7 +737,7 @@ export async function getBackendMeta(
 export async function listSyncAudit(
   projectId?: string | null,
   limit = 12,
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ): Promise<WorkbenchSyncAuditEntry[]> {
   const safeLimit = Math.max(1, Math.min(limit, 50));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
@@ -749,7 +749,7 @@ export async function listSyncAudit(
     ORDER BY created_at DESC, id DESC
     LIMIT ?
   `,
-    [resolvedProjectId, safeLimit]
+    [resolvedProjectId, safeLimit],
   );
 
   return rows.map((row) => ({
@@ -767,7 +767,7 @@ export async function listSyncAudit(
 export async function listCanonicalHistory(
   projectId?: string | null,
   limit = 16,
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ): Promise<WorkbenchHistoryEntry[]> {
   const safeLimit = Math.max(1, Math.min(limit, 64));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
@@ -782,7 +782,7 @@ export async function listCanonicalHistory(
     ORDER BY revision DESC
     LIMIT ?
   `,
-    [resolvedProjectId, safeLimit]
+    [resolvedProjectId, safeLimit],
   );
 
   return rows.map((row) => ({
@@ -802,7 +802,7 @@ export async function listCanonicalHistory(
 export async function listProjectMembers(
   projectId?: string | null,
   limit = 24,
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ): Promise<WorkbenchCollaborator[]> {
   const safeLimit = Math.max(1, Math.min(limit, 64));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
@@ -815,7 +815,7 @@ export async function listProjectMembers(
     ORDER BY pm.last_seen_at DESC
     LIMIT ?
   `,
-    [resolvedProjectId, safeLimit]
+    [resolvedProjectId, safeLimit],
   );
 
   return rows.map((row) => ({
@@ -829,7 +829,7 @@ export async function listProjectMembers(
 export async function listExperimentRecords(
   projectId?: string | null,
   limit = 24,
-  options?: ScopeResolveOptions
+  options?: ScopeResolveOptions,
 ): Promise<WorkbenchExperimentRecord[]> {
   const safeLimit = Math.max(1, Math.min(limit, 64));
   const resolvedProjectId = resolveProjectId(projectId, undefined, options);
@@ -844,7 +844,7 @@ export async function listExperimentRecords(
     ORDER BY created_at DESC, updated_at DESC
     LIMIT ?
   `,
-    [resolvedProjectId, safeLimit]
+    [resolvedProjectId, safeLimit],
   );
 
   return rows.map((row) => ({

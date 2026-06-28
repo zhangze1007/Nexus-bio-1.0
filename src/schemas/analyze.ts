@@ -37,9 +37,11 @@ export const AnalyzeRequestSchema = z.union([
   z.object({
     contents: z.array(GeminiContentSchema).min(1),
     generationConfig: z.record(z.string(), z.unknown()).optional(),
-    systemInstruction: z.object({
-      parts: z.array(z.object({ text: z.string() })),
-    }).optional(),
+    systemInstruction: z
+      .object({
+        parts: z.array(z.object({ text: z.string() })),
+      })
+      .optional(),
     history: z.array(ConversationTurnSchema).max(5).optional(),
   }),
 ]);

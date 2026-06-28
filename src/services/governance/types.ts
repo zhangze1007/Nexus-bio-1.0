@@ -9,7 +9,7 @@
 
 // ── Data Classification ──────────────────────────────────────────────
 
-export type DataClassification = 'public' | 'internal' | 'confidential' | 'restricted';
+export type DataClassification = "public" | "internal" | "confidential" | "restricted";
 
 /** Ordered severity — index 0 is lowest, index 3 is highest. */
 export const CLASSIFICATION_SEVERITY: Record<DataClassification, number> = {
@@ -53,8 +53,8 @@ export interface ArchiveResult {
 
 // ── GDPR Requests ────────────────────────────────────────────────────
 
-export type GDPRRequestType = 'deletion' | 'export' | 'access';
-export type GDPRRequestStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type GDPRRequestType = "deletion" | "export" | "access";
+export type GDPRRequestStatus = "pending" | "processing" | "completed" | "failed";
 
 export interface GDPRRequest {
   id: string;
@@ -75,7 +75,7 @@ export interface DeletionResult {
 export interface ExportResult {
   downloadUrl: string;
   fileSize: number;
-  format: 'zip';
+  format: "zip";
 }
 
 export interface DataTableSummary {
@@ -136,12 +136,12 @@ export interface SoftDeletedRecord {
 
 /** Known tables that may contain user data (for GDPR export/deletion). */
 export const USER_DATA_TABLES = [
-  'workbench_projects',
-  'workbench_experiments',
-  'workbench_history',
-  'workbench_artifacts',
-  'audit_log',
-  'gdpr_requests',
+  "workbench_projects",
+  "workbench_experiments",
+  "workbench_history",
+  "workbench_artifacts",
+  "audit_log",
+  "gdpr_requests",
 ] as const;
 
 export type UserDataTable = (typeof USER_DATA_TABLES)[number];

@@ -40,13 +40,7 @@ const TESTIMONIALS: Testimonial[] = [
   },
 ];
 
-function TestimonialCard({
-  testimonial,
-  index,
-}: {
-  testimonial: Testimonial;
-  index: number;
-}) {
+function TestimonialCard({ testimonial, index }: { testimonial: Testimonial; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
 
@@ -74,18 +68,12 @@ function TestimonialCard({
       </div>
 
       {/* Quote text */}
-      <p
-        className="text-sm leading-relaxed flex-1 mb-6"
-        style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-      >
+      <p className="text-sm leading-relaxed flex-1 mb-6" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
         &ldquo;{testimonial.quote}&rdquo;
       </p>
 
       {/* Divider */}
-      <div
-        className="h-px mb-4"
-        style={{ backgroundColor: THEME.BORDER }}
-      />
+      <div className="h-px mb-4" style={{ backgroundColor: THEME.BORDER }} />
 
       {/* Attribution */}
       <div className="flex items-center gap-3">
@@ -112,16 +100,10 @@ function TestimonialCard({
           </span>
         </div>
         <div className="min-w-0">
-          <p
-            className="text-sm font-semibold truncate"
-            style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}
-          >
+          <p className="text-sm font-semibold truncate" style={{ fontFamily: THEME.SANS, color: THEME.VALUE }}>
             {testimonial.name}
           </p>
-          <p
-            className="text-xs truncate"
-            style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}
-          >
+          <p className="text-xs truncate" style={{ fontFamily: THEME.SANS, color: THEME.INK_SOFT }}>
             {testimonial.role} &middot; {testimonial.institution}
           </p>
         </div>
@@ -135,10 +117,7 @@ export default function TestimonialSection() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section
-      className="py-24 lg:py-32"
-      style={{ backgroundColor: THEME.BG_SHELL }}
-    >
+    <section className="py-24 lg:py-32" style={{ backgroundColor: THEME.BG_SHELL }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Section header */}
         <motion.div
@@ -159,29 +138,18 @@ export default function TestimonialSection() {
           >
             Testimonials
           </span>
-          <h2
-            className="text-3xl md:text-4xl font-bold mb-4"
-            style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}
-          >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: THEME.BRAND, color: THEME.VALUE }}>
             Trusted by Researchers
           </h2>
-          <p
-            className="text-base max-w-xl mx-auto"
-            style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}
-          >
-            Hear from synthetic biology labs using Nexus-Bio to accelerate
-            their research.
+          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: THEME.SANS, color: THEME.LABEL }}>
+            Hear from synthetic biology labs using Nexus-Bio to accelerate their research.
           </p>
         </motion.div>
 
         {/* Testimonial cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
           {TESTIMONIALS.map((testimonial, i) => (
-            <TestimonialCard
-              key={testimonial.name}
-              testimonial={testimonial}
-              index={i}
-            />
+            <TestimonialCard key={testimonial.name} testimonial={testimonial} index={i} />
           ))}
         </div>
       </div>

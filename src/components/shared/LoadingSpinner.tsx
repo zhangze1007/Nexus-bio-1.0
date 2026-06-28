@@ -16,12 +16,7 @@ interface LoadingSpinnerProps {
  * Animated loading spinner using pure CSS keyframes (no external deps).
  * Renders a circular arc that rotates continuously.
  */
-export default function LoadingSpinner({
-  size = 32,
-  color = THEME.MINT,
-  label,
-  style,
-}: LoadingSpinnerProps) {
+export default function LoadingSpinner({ size = 32, color = THEME.MINT, label, style }: LoadingSpinnerProps) {
   const border = Math.max(2, Math.round(size / 10));
 
   return (

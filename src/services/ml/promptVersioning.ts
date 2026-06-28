@@ -34,9 +34,7 @@ async function ensureTable(): Promise<void> {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
-  await sqlRun(
-    `CREATE INDEX IF NOT EXISTS idx_prompt_versions_tool_id ON prompt_versions(tool_id)`
-  );
+  await sqlRun(`CREATE INDEX IF NOT EXISTS idx_prompt_versions_tool_id ON prompt_versions(tool_id)`);
   tableEnsured = true;
 }
 
@@ -45,26 +43,22 @@ async function ensureTable(): Promise<void> {
  * The new version is inactive by default unless it is the first version
  * for that tool (in which case it is auto-activated).
  */
-export async function createPromptVersion(
-  toolId: string,
-  template: string,
-  version: string,
-): Promise<PromptVersion> {
+export async function createPromptVersion(toolId: string, template: string, version: string): Promise<PromptVersion> {
   await ensureTable();
 
   const id = `${toolId}_${version}_${Date.now()}`;
 
   // Check if this tool already has any versions
-  const existing = await sqlGet(
-    "SELECT COUNT(*) as cnt FROM prompt_versions WHERE tool_id = ?",
-    [toolId],
-  );
+  const existing = await sqlGet("SELECT COUNT(*) as cnt FROM prompt_versions WHERE tool_id = ?", [toolId]);
   const isFirst = existing && (existing.cnt as number) === 0;
 
-  await sqlRun(
-    "INSERT INTO prompt_versions (id, tool_id, template, version, active) VALUES (?, ?, ?, ?, ?)",
-    [id, toolId, template, version, isFirst ? 1 : 0],
-  );
+  await sqlRun("INSERT INTO prompt_versions (id, tool_id, template, version, active) VALUES (?, ?, ?, ?, ?)", [
+    id,
+    toolId,
+    template,
+    version,
+    isFirst ? 1 : 0,
+  ]);
 
   const created = await sqlGet("SELECT * FROM prompt_versions WHERE id = ?", [id]);
   return created as unknown as PromptVersion;
@@ -76,10 +70,9 @@ export async function createPromptVersion(
  */
 export async function getActivePrompt(toolId: string): Promise<PromptVersion | undefined> {
   await ensureTable();
-  return (await sqlGet(
-    "SELECT * FROM prompt_versions WHERE tool_id = ? AND active = 1",
-    [toolId],
-  )) as unknown as PromptVersion | undefined;
+  return (await sqlGet("SELECT * FROM prompt_versions WHERE tool_id = ? AND active = 1", [toolId])) as unknown as
+    | PromptVersion
+    | undefined;
 }
 
 /**
@@ -87,10 +80,9 @@ export async function getActivePrompt(toolId: string): Promise<PromptVersion | u
  */
 export async function listPromptVersions(toolId: string): Promise<PromptVersion[]> {
   await ensureTable();
-  return (await sqlAll(
-    "SELECT * FROM prompt_versions WHERE tool_id = ? ORDER BY created_at DESC",
-    [toolId],
-  )) as unknown as PromptVersion[];
+  return (await sqlAll("SELECT * FROM prompt_versions WHERE tool_id = ? ORDER BY created_at DESC", [
+    toolId,
+  ])) as unknown as PromptVersion[];
 }
 
 /**

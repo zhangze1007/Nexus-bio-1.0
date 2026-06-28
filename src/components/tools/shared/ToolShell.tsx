@@ -579,14 +579,14 @@ export default function ToolShell({
           <style>{`
             @media (min-width: 768px) {
               .nb-tool-shell__grid {
-                grid-template-columns: ${columns ? `repeat(${columns.split(' ').length}, 1fr)` : '1fr 1fr'} !important;
-                grid-template-areas: ${grid ?? 'none'} !important;
+                grid-template-columns: ${columns ? `repeat(${columns.split(" ").length}, 1fr)` : "1fr 1fr"} !important;
+                grid-template-areas: ${grid ?? "none"} !important;
               }
             }
             @media (min-width: 1024px) {
               .nb-tool-shell__grid {
-                grid-template-columns: ${columns ?? '1fr'} !important;
-                grid-template-areas: ${grid ?? 'none'} !important;
+                grid-template-columns: ${columns ?? "1fr"} !important;
+                grid-template-areas: ${grid ?? "none"} !important;
               }
             }
           `}</style>

@@ -270,190 +270,190 @@ export default React.memo(function FBASimPage() {
 
       {/* ── Tab Results (aria-live for screen reader announcements) ── */}
       <div aria-live="polite">
-      {/* ── Flux Map Tab ── */}
-      <ToolTabPanel tabId="flux" activeId={s.activeTab}>
-        <FluxMapTab
-          glucoseUptake={s.glucoseUptake}
-          setGlucoseUptake={s.setGlucoseUptake}
-          oxygenUptake={s.oxygenUptake}
-          setOxygenUptake={s.setOxygenUptake}
-          objective={s.objective}
-          setObjective={s.setObjective}
-          knockouts={s.knockouts}
-          setKnockouts={s.setKnockouts}
-          toggleKO={s.toggleKO}
-          singleResult={s.singleResult}
-          singleError={s.singleError}
-          setSingleError={s.setSingleError}
-          singleLoading={s.singleLoading}
-          chartRef={s.chartRef}
-          biggModels={s.biggModels}
-          biggResult={s.biggResult}
-          selectedModel={s.selectedModel}
-          setSelectedModel={s.setSelectedModel}
-          biggLoading={s.biggLoading}
-          loadedReactions={s.loadedReactions}
-          loadedObjectiveId={s.loadedObjectiveId}
-          modelLoading={s.modelLoading}
-          handleLoadModel={s.handleLoadModel}
-          seedOverwriteNotice={s.seedOverwriteNotice}
-          setSeedOverwriteNotice={s.setSeedOverwriteNotice}
-          lastAppliedSeedRef={s.lastAppliedSeedRef}
-          recommendedSeed={s.recommendedSeed}
-          figureMeta={s.figureMeta}
-        />
-      </ToolTabPanel>
-
-      {/* ── Knockout Tab ── */}
-      <ToolTabPanel tabId="knockout" activeId={s.activeTab}>
-        <KnockoutTab
-          glucoseUptake={s.glucoseUptake}
-          setGlucoseUptake={s.setGlucoseUptake}
-          oxygenUptake={s.oxygenUptake}
-          setOxygenUptake={s.setOxygenUptake}
-          objective={s.objective}
-          setObjective={s.setObjective}
-          knockouts={s.knockouts}
-          setKnockouts={s.setKnockouts}
-          toggleKO={s.toggleKO}
-          singleResult={s.singleResult}
-          singleError={s.singleError}
-          setSingleError={s.setSingleError}
-          singleLoading={s.singleLoading}
-          chartRef={s.chartRef}
-          biggModels={s.biggModels}
-          biggResult={s.biggResult}
-          selectedModel={s.selectedModel}
-          setSelectedModel={s.setSelectedModel}
-          biggLoading={s.biggLoading}
-          loadedReactions={s.loadedReactions}
-          loadedObjectiveId={s.loadedObjectiveId}
-          modelLoading={s.modelLoading}
-          handleLoadModel={s.handleLoadModel}
-          seedOverwriteNotice={s.seedOverwriteNotice}
-          setSeedOverwriteNotice={s.setSeedOverwriteNotice}
-          lastAppliedSeedRef={s.lastAppliedSeedRef}
-          recommendedSeed={s.recommendedSeed}
-          figureMeta={s.figureMeta}
-        />
-      </ToolTabPanel>
-
-      {/* ── Strain Design Tab ── */}
-      <ToolTabPanel tabId="strain" activeId={s.activeTab}>
-        <StrainDesignTab
-          fseofResult={s.fseofResult}
-          optknockResult={s.optknockResult}
-          strainDesignLoading={s.strainDesignLoading}
-          strainDesignError={s.strainDesignError}
-          setStrainDesignError={s.setStrainDesignError}
-          pipelineResult={s.pipelineResult}
-          pipelineLoading={s.pipelineLoading}
-          pipelineError={s.pipelineError}
-          loadedReactions={s.loadedReactions}
-          loadedObjectiveId={s.loadedObjectiveId}
-          handleRunFSEOF={s.handleRunFSEOF}
-          handleRunOptKnock={s.handleRunOptKnock}
-          handleRunPipeline={s.handleRunPipeline}
-          handleSendToProEvol={s.handleSendToProEvol}
-        />
-      </ToolTabPanel>
-
-      {/* ── FVA Tab ── */}
-      <ToolTabPanel tabId="fva" activeId={s.activeTab}>
-        <ScientificFigureFrame
-          eyebrow="Figure C · Flux Variability Analysis"
-          title="Reaction flux ranges at optimal objective"
-          caption="FVA (Mahadevan & Schilling 2003) finds the min and max flux each reaction can carry while maintaining the optimal objective value. Reactions with zero range are uniquely determined; variable reactions have alternate optimal pathways."
-          legend={[
-            { label: "Objective", value: s.objective, accent: THEME.APRICOT },
-            { label: "Glucose", value: `${s.glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
-            { label: "Oxygen", value: `${s.oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
-          ]}
-        >
-          <FVAPanel
-            objective={s.objective}
+        {/* ── Flux Map Tab ── */}
+        <ToolTabPanel tabId="flux" activeId={s.activeTab}>
+          <FluxMapTab
             glucoseUptake={s.glucoseUptake}
+            setGlucoseUptake={s.setGlucoseUptake}
             oxygenUptake={s.oxygenUptake}
-            knockouts={s.knockouts}
-          />
-        </ScientificFigureFrame>
-      </ToolTabPanel>
-
-      {/* ── GPR Knockout Tab ── */}
-      <ToolTabPanel tabId="gpr" activeId={s.activeTab}>
-        <ScientificFigureFrame
-          eyebrow="Figure D · Gene-Protein-Reaction Knockout"
-          title="Gene knockout simulation via GPR rules"
-          caption="Select genes from the iJO1366 model to knock out. The GPR (Gene-Protein-Reaction) boolean rules determine which reactions become disabled: AND = protein complex (all subunits required), OR = isozymes (any one sufficient). Knocked-out genes propagate through the rule tree to identify disabled reactions."
-          legend={[
-            { label: "Objective", value: s.objective, accent: THEME.APRICOT },
-            { label: "Glucose", value: `${s.glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
-            { label: "Oxygen", value: `${s.oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
-          ]}
-        >
-          <GPRPanel
+            setOxygenUptake={s.setOxygenUptake}
             objective={s.objective}
-            glucoseUptake={s.glucoseUptake}
-            oxygenUptake={s.oxygenUptake}
+            setObjective={s.setObjective}
             knockouts={s.knockouts}
+            setKnockouts={s.setKnockouts}
+            toggleKO={s.toggleKO}
+            singleResult={s.singleResult}
+            singleError={s.singleError}
+            setSingleError={s.setSingleError}
+            singleLoading={s.singleLoading}
+            chartRef={s.chartRef}
+            biggModels={s.biggModels}
+            biggResult={s.biggResult}
+            selectedModel={s.selectedModel}
+            setSelectedModel={s.setSelectedModel}
+            biggLoading={s.biggLoading}
+            loadedReactions={s.loadedReactions}
+            loadedObjectiveId={s.loadedObjectiveId}
+            modelLoading={s.modelLoading}
+            handleLoadModel={s.handleLoadModel}
+            seedOverwriteNotice={s.seedOverwriteNotice}
+            setSeedOverwriteNotice={s.setSeedOverwriteNotice}
+            lastAppliedSeedRef={s.lastAppliedSeedRef}
+            recommendedSeed={s.recommendedSeed}
+            figureMeta={s.figureMeta}
           />
-        </ScientificFigureFrame>
-      </ToolTabPanel>
+        </ToolTabPanel>
 
-      {/* ── Shadow Prices Tab ── */}
-      <ToolTabPanel tabId="shadows" activeId={s.activeTab}>
-        <ShadowPricesTab
-          singleResult={s.singleResult}
-          knockouts={s.knockouts}
-          top5={s.top5}
-          maxTopFlux={s.maxTopFlux}
-        />
-      </ToolTabPanel>
+        {/* ── Knockout Tab ── */}
+        <ToolTabPanel tabId="knockout" activeId={s.activeTab}>
+          <KnockoutTab
+            glucoseUptake={s.glucoseUptake}
+            setGlucoseUptake={s.setGlucoseUptake}
+            oxygenUptake={s.oxygenUptake}
+            setOxygenUptake={s.setOxygenUptake}
+            objective={s.objective}
+            setObjective={s.setObjective}
+            knockouts={s.knockouts}
+            setKnockouts={s.setKnockouts}
+            toggleKO={s.toggleKO}
+            singleResult={s.singleResult}
+            singleError={s.singleError}
+            setSingleError={s.setSingleError}
+            singleLoading={s.singleLoading}
+            chartRef={s.chartRef}
+            biggModels={s.biggModels}
+            biggResult={s.biggResult}
+            selectedModel={s.selectedModel}
+            setSelectedModel={s.setSelectedModel}
+            biggLoading={s.biggLoading}
+            loadedReactions={s.loadedReactions}
+            loadedObjectiveId={s.loadedObjectiveId}
+            modelLoading={s.modelLoading}
+            handleLoadModel={s.handleLoadModel}
+            seedOverwriteNotice={s.seedOverwriteNotice}
+            setSeedOverwriteNotice={s.setSeedOverwriteNotice}
+            lastAppliedSeedRef={s.lastAppliedSeedRef}
+            recommendedSeed={s.recommendedSeed}
+            figureMeta={s.figureMeta}
+          />
+        </ToolTabPanel>
 
-      {/* ── Community Tab ── */}
-      <ToolTabPanel tabId="community" activeId={s.activeTab}>
-        <CommunityFBATab
-          ecoliGlucose={s.ecoliGlucose}
-          setEcoliGlucose={s.setEcoliGlucose}
-          ecoliOxygen={s.ecoliOxygen}
-          setEcoliOxygen={s.setEcoliOxygen}
-          ecoliKO={s.ecoliKO}
-          setEcoliKO={s.setEcoliKO}
-          toggleEcoliKO={s.toggleEcoliKO}
-          yeastGlucose={s.yeastGlucose}
-          setYeastGlucose={s.setYeastGlucose}
-          yeastOxygen={s.yeastOxygen}
-          setYeastOxygen={s.setYeastOxygen}
-          yeastKO={s.yeastKO}
-          setYeastKO={s.setYeastKO}
-          toggleYeastKO={s.toggleYeastKO}
-          communityResult={s.communityResult}
-          communityError={s.communityError}
-          setCommunityError={s.setCommunityError}
-          communityLoading={s.communityLoading}
-        />
-      </ToolTabPanel>
+        {/* ── Strain Design Tab ── */}
+        <ToolTabPanel tabId="strain" activeId={s.activeTab}>
+          <StrainDesignTab
+            fseofResult={s.fseofResult}
+            optknockResult={s.optknockResult}
+            strainDesignLoading={s.strainDesignLoading}
+            strainDesignError={s.strainDesignError}
+            setStrainDesignError={s.setStrainDesignError}
+            pipelineResult={s.pipelineResult}
+            pipelineLoading={s.pipelineLoading}
+            pipelineError={s.pipelineError}
+            loadedReactions={s.loadedReactions}
+            loadedObjectiveId={s.loadedObjectiveId}
+            handleRunFSEOF={s.handleRunFSEOF}
+            handleRunOptKnock={s.handleRunOptKnock}
+            handleRunPipeline={s.handleRunPipeline}
+            handleSendToProEvol={s.handleSendToProEvol}
+          />
+        </ToolTabPanel>
 
-      {/* ── Consortium Design Tab ── */}
-      <ToolTabPanel tabId="consortium" activeId={s.activeTab}>
-        <ScientificFigureFrame
-          eyebrow="Stage 2 · Multi-Strain Consortium Design"
-          title="SteadyCom Community FBA with Quorum Sensing"
-          caption="Consortium design uses SteadyCom balanced-growth LP (Zomorrodi & Segre 2016), cross-feeding interaction modeling, LuxI/LuxR quorum sensing ODE dynamics, and Jacobian eigenvalue stability analysis (May 1972) to optimize microbial community function."
-          legend={[
-            { label: "Algorithm", value: "SteadyCom LP + QS Hill ODE", accent: THEME.LILAC },
-            { label: "Stability", value: "QR Eigenvalue Decomposition", accent: THEME.SKY },
-          ]}
-          minHeight="100%"
-        >
-          <ConsortiumPanel />
-        </ScientificFigureFrame>
-      </ToolTabPanel>
+        {/* ── FVA Tab ── */}
+        <ToolTabPanel tabId="fva" activeId={s.activeTab}>
+          <ScientificFigureFrame
+            eyebrow="Figure C · Flux Variability Analysis"
+            title="Reaction flux ranges at optimal objective"
+            caption="FVA (Mahadevan & Schilling 2003) finds the min and max flux each reaction can carry while maintaining the optimal objective value. Reactions with zero range are uniquely determined; variable reactions have alternate optimal pathways."
+            legend={[
+              { label: "Objective", value: s.objective, accent: THEME.APRICOT },
+              { label: "Glucose", value: `${s.glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
+              { label: "Oxygen", value: `${s.oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
+            ]}
+          >
+            <FVAPanel
+              objective={s.objective}
+              glucoseUptake={s.glucoseUptake}
+              oxygenUptake={s.oxygenUptake}
+              knockouts={s.knockouts}
+            />
+          </ScientificFigureFrame>
+        </ToolTabPanel>
 
-      {/* ── Custom Model Tab ── */}
-      <ToolTabPanel tabId="custom" activeId={s.activeTab}>
-        <CustomModelPanel />
-      </ToolTabPanel>
+        {/* ── GPR Knockout Tab ── */}
+        <ToolTabPanel tabId="gpr" activeId={s.activeTab}>
+          <ScientificFigureFrame
+            eyebrow="Figure D · Gene-Protein-Reaction Knockout"
+            title="Gene knockout simulation via GPR rules"
+            caption="Select genes from the iJO1366 model to knock out. The GPR (Gene-Protein-Reaction) boolean rules determine which reactions become disabled: AND = protein complex (all subunits required), OR = isozymes (any one sufficient). Knocked-out genes propagate through the rule tree to identify disabled reactions."
+            legend={[
+              { label: "Objective", value: s.objective, accent: THEME.APRICOT },
+              { label: "Glucose", value: `${s.glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
+              { label: "Oxygen", value: `${s.oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
+            ]}
+          >
+            <GPRPanel
+              objective={s.objective}
+              glucoseUptake={s.glucoseUptake}
+              oxygenUptake={s.oxygenUptake}
+              knockouts={s.knockouts}
+            />
+          </ScientificFigureFrame>
+        </ToolTabPanel>
+
+        {/* ── Shadow Prices Tab ── */}
+        <ToolTabPanel tabId="shadows" activeId={s.activeTab}>
+          <ShadowPricesTab
+            singleResult={s.singleResult}
+            knockouts={s.knockouts}
+            top5={s.top5}
+            maxTopFlux={s.maxTopFlux}
+          />
+        </ToolTabPanel>
+
+        {/* ── Community Tab ── */}
+        <ToolTabPanel tabId="community" activeId={s.activeTab}>
+          <CommunityFBATab
+            ecoliGlucose={s.ecoliGlucose}
+            setEcoliGlucose={s.setEcoliGlucose}
+            ecoliOxygen={s.ecoliOxygen}
+            setEcoliOxygen={s.setEcoliOxygen}
+            ecoliKO={s.ecoliKO}
+            setEcoliKO={s.setEcoliKO}
+            toggleEcoliKO={s.toggleEcoliKO}
+            yeastGlucose={s.yeastGlucose}
+            setYeastGlucose={s.setYeastGlucose}
+            yeastOxygen={s.yeastOxygen}
+            setYeastOxygen={s.setYeastOxygen}
+            yeastKO={s.yeastKO}
+            setYeastKO={s.setYeastKO}
+            toggleYeastKO={s.toggleYeastKO}
+            communityResult={s.communityResult}
+            communityError={s.communityError}
+            setCommunityError={s.setCommunityError}
+            communityLoading={s.communityLoading}
+          />
+        </ToolTabPanel>
+
+        {/* ── Consortium Design Tab ── */}
+        <ToolTabPanel tabId="consortium" activeId={s.activeTab}>
+          <ScientificFigureFrame
+            eyebrow="Stage 2 · Multi-Strain Consortium Design"
+            title="SteadyCom Community FBA with Quorum Sensing"
+            caption="Consortium design uses SteadyCom balanced-growth LP (Zomorrodi & Segre 2016), cross-feeding interaction modeling, LuxI/LuxR quorum sensing ODE dynamics, and Jacobian eigenvalue stability analysis (May 1972) to optimize microbial community function."
+            legend={[
+              { label: "Algorithm", value: "SteadyCom LP + QS Hill ODE", accent: THEME.LILAC },
+              { label: "Stability", value: "QR Eigenvalue Decomposition", accent: THEME.SKY },
+            ]}
+            minHeight="100%"
+          >
+            <ConsortiumPanel />
+          </ScientificFigureFrame>
+        </ToolTabPanel>
+
+        {/* ── Custom Model Tab ── */}
+        <ToolTabPanel tabId="custom" activeId={s.activeTab}>
+          <CustomModelPanel />
+        </ToolTabPanel>
       </div>
       <NextStepButton currentStepId="fbasim" />
     </ToolShell>

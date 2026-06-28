@@ -21,14 +21,14 @@ export interface QCOptions {
   /** Expected number of data points -- flag if length mismatches */
   expectedLength?: number;
   /** Outlier detection method. Default: 'iqr' */
-  outlierMethod?: 'zscore' | 'iqr';
+  outlierMethod?: "zscore" | "iqr";
   /** Z-score threshold when outlierMethod is 'zscore'. Default: 3 */
   zThreshold?: number;
 }
 
 export interface QCFlag {
   type: string;
-  severity: 'info' | 'warning' | 'error';
+  severity: "info" | "warning" | "error";
   message: string;
   indices: number[];
 }
@@ -60,15 +60,12 @@ function median(data: number[]): number {
   if (data.length === 0) return 0;
   const sorted = [...data].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1] + sorted[mid]) / 2
-    : sorted[mid];
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
 function std(data: number[], mu: number): number {
   if (data.length < 2) return 0;
-  const variance =
-    data.reduce((s, v) => s + (v - mu) ** 2, 0) / (data.length - 1);
+  const variance = data.reduce((s, v) => s + (v - mu) ** 2, 0) / (data.length - 1);
   return Math.sqrt(variance);
 }
 
@@ -98,14 +95,10 @@ function computeStats(data: number[]): QCStats {
  * @param zThreshold  Z-score cutoff when method is 'zscore'. Default 3.
  * @returns Array of indices flagged as outliers.
  */
-export function detectOutliers(
-  data: number[],
-  method: 'zscore' | 'iqr' = 'iqr',
-  zThreshold = 3,
-): number[] {
+export function detectOutliers(data: number[], method: "zscore" | "iqr" = "iqr", zThreshold = 3): number[] {
   if (data.length === 0) return [];
 
-  if (method === 'zscore') {
+  if (method === "zscore") {
     const mu = mean(data);
     const sigma = std(data, mu);
     if (sigma === 0) return [];
@@ -145,13 +138,10 @@ export function detectOutliers(
  *               'robust' -> median / IQR scaling.
  * @returns Normalized array (same length).
  */
-export function normalizeData(
-  data: number[],
-  method: 'minmax' | 'zscore' | 'robust',
-): number[] {
+export function normalizeData(data: number[], method: "minmax" | "zscore" | "robust"): number[] {
   if (data.length === 0) return [];
 
-  if (method === 'minmax') {
+  if (method === "minmax") {
     const lo = Math.min(...data);
     const hi = Math.max(...data);
     const range = hi - lo;
@@ -159,7 +149,7 @@ export function normalizeData(
     return data.map((v) => (v - lo) / range);
   }
 
-  if (method === 'zscore') {
+  if (method === "zscore") {
     const mu = mean(data);
     const sigma = std(data, mu);
     if (sigma === 0) return data.map(() => 0);
@@ -198,7 +188,7 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
     maxCV: Infinity,
     allowedRange: { min: -Infinity, max: Infinity },
     expectedLength: 0,
-    outlierMethod: 'iqr',
+    outlierMethod: "iqr",
     zThreshold: 3,
     ...options,
   };
@@ -211,9 +201,9 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
   // 1. Empty data
   if (data.length === 0) {
     flags.push({
-      type: 'empty_data',
-      severity: 'error',
-      message: 'Data array is empty.',
+      type: "empty_data",
+      severity: "error",
+      message: "Data array is empty.",
       indices: [],
     });
     return { passed: false, flags, stats };
@@ -228,8 +218,8 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
   }
   if (nonFiniteIndices.length > 0) {
     flags.push({
-      type: 'non_finite',
-      severity: 'error',
+      type: "non_finite",
+      severity: "error",
       message: `Found ${nonFiniteIndices.length} non-finite value(s) (NaN/Infinity).`,
       indices: nonFiniteIndices,
     });
@@ -238,8 +228,8 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
   // 3. Length mismatch
   if (opts.expectedLength > 0 && data.length !== opts.expectedLength) {
     flags.push({
-      type: 'length_mismatch',
-      severity: 'warning',
+      type: "length_mismatch",
+      severity: "warning",
       message: `Expected ${opts.expectedLength} points but received ${data.length}.`,
       indices: [],
     });
@@ -250,11 +240,7 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
 
   if (finiteData.length >= 2) {
     // 4. Outlier detection
-    const outlierIdx = detectOutliers(
-      finiteData,
-      opts.outlierMethod,
-      opts.zThreshold,
-    );
+    const outlierIdx = detectOutliers(finiteData, opts.outlierMethod, opts.zThreshold);
     // Map back to original indices
     const finiteToOrig = new Map<number, number>();
     let fi = 0;
@@ -269,8 +255,8 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
     const outlierFraction = outlierIdx.length / finiteData.length;
     if (outlierFraction > opts.outlierThreshold) {
       flags.push({
-        type: 'outlier_excess',
-        severity: 'warning',
+        type: "outlier_excess",
+        severity: "warning",
         message: `${outlierIdx.length} outlier(s) (${(outlierFraction * 100).toFixed(1)}%) exceed ${(opts.outlierThreshold * 100).toFixed(1)}% threshold.`,
         indices: outlierOrigIdx,
       });
@@ -281,16 +267,16 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
       const cv = stats.std / Math.abs(stats.mean);
       if (cv < opts.minCV) {
         flags.push({
-          type: 'low_cv',
-          severity: 'info',
+          type: "low_cv",
+          severity: "info",
           message: `Coefficient of variation ${(cv * 100).toFixed(2)}% is below minimum ${(opts.minCV * 100).toFixed(2)}%. Data may be unrealistically uniform.`,
           indices: [],
         });
       }
       if (cv > opts.maxCV) {
         flags.push({
-          type: 'high_cv',
-          severity: 'warning',
+          type: "high_cv",
+          severity: "warning",
           message: `Coefficient of variation ${(cv * 100).toFixed(2)}% exceeds maximum ${(opts.maxCV * 100).toFixed(2)}%.`,
           indices: [],
         });
@@ -302,24 +288,21 @@ export function runQC(data: number[], options?: QCOptions): QCResult {
   const outOfRangeIdx: number[] = [];
   for (let i = 0; i < data.length; i++) {
     if (!Number.isFinite(data[i])) continue;
-    if (
-      data[i] < opts.allowedRange.min ||
-      data[i] > opts.allowedRange.max
-    ) {
+    if (data[i] < opts.allowedRange.min || data[i] > opts.allowedRange.max) {
       outOfRangeIdx.push(i);
     }
   }
   if (outOfRangeIdx.length > 0) {
     flags.push({
-      type: 'out_of_range',
-      severity: 'warning',
+      type: "out_of_range",
+      severity: "warning",
       message: `${outOfRangeIdx.length} value(s) outside allowed range [${opts.allowedRange.min}, ${opts.allowedRange.max}].`,
       indices: outOfRangeIdx,
     });
   }
 
   // --- Pass / fail ---
-  const hasError = flags.some((f) => f.severity === 'error');
+  const hasError = flags.some((f) => f.severity === "error");
   const passed = !hasError;
 
   return { passed, flags, stats };

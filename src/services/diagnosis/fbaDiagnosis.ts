@@ -37,12 +37,7 @@ export interface DiagnosisResult {
 }
 
 export interface DiagnosisIssue {
-  type:
-    | "dead_end"
-    | "conflicting_bounds"
-    | "missing_cofactor"
-    | "blocked_reaction"
-    | "thermodynamic_infeasible";
+  type: "dead_end" | "conflicting_bounds" | "missing_cofactor" | "blocked_reaction" | "thermodynamic_infeasible";
   severity: "critical" | "warning" | "info";
   description: string;
   affectedReactions: string[];
@@ -223,7 +218,8 @@ export async function diagnoseFBA(
 
   let summary: string;
   if (issues.length === 0) {
-    summary = "No issues detected. The model appears structurally sound. If FBA is infeasible, the cause may be in implicit constraint interactions (requires IIS analysis).";
+    summary =
+      "No issues detected. The model appears structurally sound. If FBA is infeasible, the cause may be in implicit constraint interactions (requires IIS analysis).";
   } else if (status === "infeasible" || status === "infeasible_or_unbounded") {
     summary = `FBA infeasibility diagnosis found ${criticalCount} critical and ${warningCount} warning issues. `;
     if (deadEnds.length > 0) {

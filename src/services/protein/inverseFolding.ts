@@ -28,8 +28,8 @@ import {
   LOOP_PROPENSITIES,
   HYDROPHOBIC_CORE,
   ALL_AMINO_ACIDS,
-} from './propensity';
-import type { BackboneAtom } from './backboneGenerator';
+} from "./propensity";
+import type { BackboneAtom } from "./backboneGenerator";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,7 +70,7 @@ export interface InverseFoldingResult {
 // Constants
 // ---------------------------------------------------------------------------
 
-const MODEL_NAME = 'nexus-bio-inverse-fold-cf';
+const MODEL_NAME = "nexus-bio-inverse-fold-cf";
 
 /** Cα-Cα distance thresholds for secondary structure classification */
 const HELIX_CA_DIST = 3.8; // Å, typical α-helix
@@ -106,16 +106,14 @@ function euclideanDistance(a: BackboneAtom, b: BackboneAtom): number {
  *   - Sheet: avg Cα-Cα distance > 5.5 Å (6.5 - 1.0 tolerance)
  *   - Loop: everything else
  */
-function assignSecondaryStructure(
-  backbone: BackboneAtom[],
-): Array<'helix' | 'sheet' | 'loop'> {
+function assignSecondaryStructure(backbone: BackboneAtom[]): Array<"helix" | "sheet" | "loop"> {
   const n = backbone.length;
-  const assignments: Array<'helix' | 'sheet' | 'loop'> = [];
+  const assignments: Array<"helix" | "sheet" | "loop"> = [];
 
   for (let i = 0; i < n; i++) {
     if (i === 0 || i === n - 1) {
       // Terminal residues default to loop (no flanking neighbors for both sides)
-      assignments.push('loop');
+      assignments.push("loop");
       continue;
     }
 
@@ -124,11 +122,11 @@ function assignSecondaryStructure(
     const avgDist = (d1 + d2) / 2;
 
     if (avgDist < HELIX_CA_DIST + 0.3) {
-      assignments.push('helix');
+      assignments.push("helix");
     } else if (avgDist > SHEET_CA_DIST - 1.0) {
-      assignments.push('sheet');
+      assignments.push("sheet");
     } else {
-      assignments.push('loop');
+      assignments.push("loop");
     }
   }
 
@@ -150,10 +148,7 @@ function assignSecondaryStructure(
  *
  * The PSSM is unnormalized (raw scores); normalization happens during sampling.
  */
-function buildPSSM(
-  backbone: BackboneAtom[],
-  ssAssignments: Array<'helix' | 'sheet' | 'loop'>,
-): number[][] {
+function buildPSSM(backbone: BackboneAtom[], ssAssignments: Array<"helix" | "sheet" | "loop">): number[][] {
   const n = backbone.length;
   const pssm: number[][] = [];
 
@@ -180,13 +175,13 @@ function buildPSSM(
       // 1. Secondary structure propensity score
       let ssScore: number;
       switch (ss) {
-        case 'helix':
+        case "helix":
           ssScore = HELIX_PROPENSITIES[aa] ?? 1.0;
           break;
-        case 'sheet':
+        case "sheet":
           ssScore = SHEET_PROPENSITIES[aa] ?? 1.0;
           break;
-        case 'loop':
+        case "loop":
           ssScore = LOOP_PROPENSITIES[aa] ?? 1.0;
           break;
       }
@@ -228,10 +223,7 @@ function buildPSSM(
  * @param temperature - Sampling temperature (0=greedy, 1=diverse)
  * @returns Index of selected amino acid and its probability
  */
-function sampleAminoAcid(
-  scores: number[],
-  temperature: number,
-): { index: number; probability: number } {
+function sampleAminoAcid(scores: number[], temperature: number): { index: number; probability: number } {
   if (temperature <= 0) {
     // Greedy: pick the argmax
     let maxIdx = 0;
@@ -280,7 +272,7 @@ function sampleSequence(
   fixedPositions?: Map<number, string>,
 ): { sequence: string; perResidueScores: number[] } {
   const n = pssm.length;
-  let sequence = '';
+  let sequence = "";
   const perResidueScores: number[] = [];
 
   for (let i = 0; i < n; i++) {
@@ -313,11 +305,7 @@ function sampleSequence(
  *
  * @returns Score in [0, 1], higher = better
  */
-function scoreDesign(
-  sequence: string,
-  pssm: number[][],
-  backbone: BackboneAtom[],
-): number {
+function scoreDesign(sequence: string, pssm: number[][], backbone: BackboneAtom[]): number {
   const n = sequence.length;
 
   // 1. PSSM log-probability score
@@ -393,17 +381,11 @@ function computeSequenceIdentity(seq1: string, seq2: string): number {
  * @returns Designed sequences with scores and metadata
  */
 export function inverseFold(request: InverseFoldingRequest): InverseFoldingResult {
-  const {
-    backbone,
-    temperature = 1.0,
-    numSequences = 5,
-    fixedPositions,
-    wildType,
-  } = request;
+  const { backbone, temperature = 1.0, numSequences = 5, fixedPositions, wildType } = request;
 
   // Validate input
   if (backbone.length < 10) {
-    throw new Error('Inverse folding requires at least 10 residues');
+    throw new Error("Inverse folding requires at least 10 residues");
   }
 
   // 1. Assign secondary structure
@@ -413,7 +395,7 @@ export function inverseFold(request: InverseFoldingRequest): InverseFoldingResul
   const pssm = buildPSSM(backbone, ssAssignments);
 
   // 3. Sample sequences
-  const sequences: InverseFoldingResult['sequences'] = [];
+  const sequences: InverseFoldingResult["sequences"] = [];
   const seenSequences = new Set<string>();
   const maxAttempts = numSequences * 10;
   let attempts = 0;
@@ -431,9 +413,7 @@ export function inverseFold(request: InverseFoldingRequest): InverseFoldingResul
     const score = scoreDesign(sequence, pssm, backbone);
 
     // Compute sequence identity if wild-type provided
-    const sequenceIdentity = wildType !== undefined
-      ? computeSequenceIdentity(sequence, wildType)
-      : undefined;
+    const sequenceIdentity = wildType !== undefined ? computeSequenceIdentity(sequence, wildType) : undefined;
 
     sequences.push({
       sequence,

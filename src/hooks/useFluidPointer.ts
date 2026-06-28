@@ -1,5 +1,5 @@
-import { useRef, useCallback } from 'react';
-import type { FluidPointer } from '../store/uiStore';
+import { useRef, useCallback } from "react";
+import type { FluidPointer } from "../store/uiStore";
 
 /**
  * Ref-based hook for reading fluidPointer state at 60Hz without causing re-renders.

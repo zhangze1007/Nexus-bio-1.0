@@ -14,11 +14,7 @@
  *   - No LLM calls — execution delegates to tool adapters
  */
 
-import type {
-  DAGPlan,
-  DAGTask,
-  DAGTaskStatus,
-} from "./axonDAGPlanner";
+import type { DAGPlan, DAGTask, DAGTaskStatus } from "./axonDAGPlanner";
 import {
   getExecutableTasks,
   markTaskComplete,
@@ -35,10 +31,7 @@ export interface ExecutionResult {
   failed: number;
 }
 
-export type ToolExecutor = (
-  tool: string,
-  inputs: Record<string, unknown>,
-) => Promise<unknown>;
+export type ToolExecutor = (tool: string, inputs: Record<string, unknown>) => Promise<unknown>;
 
 export type ProgressCallback = (task: DAGTask, status: string) => void;
 

@@ -21,11 +21,7 @@ import { select } from "d3-selection";
 import { symbol, symbolDiamond } from "d3-shape";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { THEME } from "../../theme";
-import {
-  type ParseResult,
-  type PhyloNode,
-  parseNewick,
-} from "../../utils/newickParser";
+import { type ParseResult, type PhyloNode, parseNewick } from "../../utils/newickParser";
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -64,9 +60,7 @@ interface TreeNode {
 // ── Build d3 hierarchy-compatible structure ───────────────────────────────────
 
 function buildHierarchyData(node: PhyloNode): HierarchyNode<PhyloNode> {
-  const root = hierarchy<PhyloNode>(node, (d) =>
-    d.children.length > 0 ? d.children : null,
-  );
+  const root = hierarchy<PhyloNode>(node, (d) => (d.children.length > 0 ? d.children : null));
   return root;
 }
 
@@ -92,9 +86,7 @@ export function PhylogeneticTree({
       setParseResult(result);
       setParseError(null);
     } catch (err) {
-      setParseError(
-        err instanceof Error ? err.message : "Unknown parse error",
-      );
+      setParseError(err instanceof Error ? err.message : "Unknown parse error");
       setParseResult(null);
     }
   }, [newick]);
@@ -121,26 +113,19 @@ export function PhylogeneticTree({
       .padding(0.5);
 
     // x-scale: branch length proportional or uniform
-    const maxX = cladogramMode
-      ? (root.height ?? 0)
-      : parseResult.maxRootDistance || 1;
+    const maxX = cladogramMode ? (root.height ?? 0) : parseResult.maxRootDistance || 1;
 
     const xScale = scaleLinear().domain([0, maxX]).range([0, innerW]);
 
     // Compute positions
-    const nodePositions: Map<
-      HierarchyNode<PhyloNode>,
-      { x: number; y: number }
-    > = new Map();
+    const nodePositions: Map<HierarchyNode<PhyloNode>, { x: number; y: number }> = new Map();
 
     // First pass: assign y to leaves
     let leafIdx = 0;
     root.each((node) => {
       if (!node.children || node.children.length === 0) {
         nodePositions.set(node, {
-          x: cladogramMode
-            ? xScale(node.depth)
-            : xScale(node.data.rootDistance),
+          x: cladogramMode ? xScale(node.depth) : xScale(node.data.rootDistance),
           y: yScale(node.data.name || `leaf-${leafIdx}`) ?? 0,
         });
         leafIdx++;
@@ -148,16 +133,12 @@ export function PhylogeneticTree({
     });
 
     // Second pass: assign y to internal nodes (midpoint of children)
-    function assignInternalY(
-      node: HierarchyNode<PhyloNode>,
-    ): number {
+    function assignInternalY(node: HierarchyNode<PhyloNode>): number {
       if (node.children && node.children.length > 0) {
         const childYs = node.children.map((c) => assignInternalY(c));
         const midY = (Math.min(...childYs) + Math.max(...childYs)) / 2;
         nodePositions.set(node, {
-          x: cladogramMode
-            ? xScale(node.depth)
-            : xScale(node.data.rootDistance),
+          x: cladogramMode ? xScale(node.depth) : xScale(node.data.rootDistance),
           y: midY,
         });
         return midY;
@@ -219,9 +200,7 @@ export function PhylogeneticTree({
     const svg = select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const g = svg
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Zoom
     const zoomBehavior = zoom<SVGSVGElement, unknown>()
@@ -267,9 +246,7 @@ export function PhylogeneticTree({
           .attr("stroke-width", 1)
           .style("cursor", "pointer")
           .on("click", () => {
-            setSelectedNode(
-              node.data.name === selectedNode ? null : node.data.name,
-            );
+            setSelectedNode(node.data.name === selectedNode ? null : node.data.name);
             onNodeClick?.(node.data);
           });
 
@@ -300,21 +277,14 @@ export function PhylogeneticTree({
         // Internal node: small diamond
         nodeGroup
           .append("path")
-          .attr(
-            "d",
-            symbol<unknown>()
-              .type(symbolDiamond)
-              .size(40)(undefined) as string,
-          )
+          .attr("d", symbol<unknown>().type(symbolDiamond).size(40)(undefined) as string)
           .attr("transform", `translate(${node.x},${node.y})`)
           .attr("fill", isSelected ? THEME.CORAL : THEME.LILAC)
           .attr("stroke", THEME.BORDER)
           .attr("stroke-width", 0.5)
           .style("cursor", "pointer")
           .on("click", () => {
-            setSelectedNode(
-              node.data.name === selectedNode ? null : node.data.name,
-            );
+            setSelectedNode(node.data.name === selectedNode ? null : node.data.name);
             onNodeClick?.(node.data);
           });
 
@@ -351,10 +321,7 @@ export function PhylogeneticTree({
 
       barG
         .append("text")
-        .attr(
-          "x",
-          (barLen * ((width - margin.left - margin.right) / parseResult.maxRootDistance)) / 2,
-        )
+        .attr("x", (barLen * ((width - margin.left - margin.right) / parseResult.maxRootDistance)) / 2)
         .attr("y", barY + 14)
         .attr("text-anchor", "middle")
         .attr("font-size", THEME.FS_XS)
@@ -362,17 +329,7 @@ export function PhylogeneticTree({
         .attr("fill", THEME.INK_SOFT)
         .text(`substitutions/site`);
     }
-  }, [
-    nodes,
-    links,
-    parseResult,
-    width,
-    height,
-    margin,
-    cladogramMode,
-    selectedNode,
-    onNodeClick,
-  ]);
+  }, [nodes, links, parseResult, width, height, margin, cladogramMode, selectedNode, onNodeClick]);
 
   // ── Error state ────────────────────────────────────────────────────────
   if (parseError) {

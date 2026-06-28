@@ -7,7 +7,7 @@
  * Reference: Doench et al. (2016) Nat Biotechnol 34:184 — Rule Set 2 scoring
  */
 
-import type { GenomeTrack } from './GenomeBrowser';
+import type { GenomeTrack } from "./GenomeBrowser";
 
 /** CRISPR guide RNA target site */
 export interface CRISPRGuide {
@@ -22,7 +22,7 @@ export interface CRISPRGuide {
   /** Number of predicted off-target sites */
   offTargets: number;
   /** Optional: strand of the target */
-  strand?: '+' | '-';
+  strand?: "+" | "-";
   /** Optional: gene name if targeting a specific gene */
   geneName?: string;
   /** Optional: PAM sequence used */
@@ -35,25 +35,25 @@ export interface CRISPRGuide {
  */
 function guideColor(guide: CRISPRGuide): string {
   if (guide.offTargets === 0 && guide.score >= 0.7) {
-    return '#9ECE7E'; // Excellent — high efficiency, no off-targets
+    return "#9ECE7E"; // Excellent — high efficiency, no off-targets
   }
   if (guide.offTargets <= 2 && guide.score >= 0.5) {
-    return '#86C2C6'; // Good — moderate efficiency, few off-targets
+    return "#86C2C6"; // Good — moderate efficiency, few off-targets
   }
   if (guide.offTargets <= 5) {
-    return '#D9BC5D'; // Caution — some off-targets
+    return "#D9BC5D"; // Caution — some off-targets
   }
-  return '#D96562'; // Risk — many off-targets
+  return "#D96562"; // Risk — many off-targets
 }
 
 /**
  * Determine feature type label for tooltip display.
  */
 function guideType(guide: CRISPRGuide): string {
-  if (guide.offTargets === 0 && guide.score >= 0.7) return 'Optimal';
-  if (guide.offTargets <= 2 && guide.score >= 0.5) return 'Good';
-  if (guide.offTargets <= 5) return 'Caution';
-  return 'High Risk';
+  if (guide.offTargets === 0 && guide.score >= 0.7) return "Optimal";
+  if (guide.offTargets <= 2 && guide.score >= 0.5) return "Good";
+  if (guide.offTargets <= 5) return "Caution";
+  return "High Risk";
 }
 
 /**
@@ -76,19 +76,14 @@ function guideType(guide: CRISPRGuide): string {
  * ], 'chr');
  * ```
  */
-export function buildCRISPRTrack(
-  gRNAs: CRISPRGuide[],
-  chromosome: string,
-): GenomeTrack {
+export function buildCRISPRTrack(gRNAs: CRISPRGuide[], chromosome: string): GenomeTrack {
   const features = gRNAs.map((guide) => ({
     chr: chromosome,
     start: guide.targetStart,
     end: guide.targetEnd,
-    name: guide.geneName
-      ? `${guide.geneName} (${guide.sequence.slice(0, 8)}...)`
-      : `${guide.sequence.slice(0, 12)}...`,
+    name: guide.geneName ? `${guide.geneName} (${guide.sequence.slice(0, 8)}...)` : `${guide.sequence.slice(0, 12)}...`,
     score: guide.score,
-    strand: guide.strand ?? '+',
+    strand: guide.strand ?? "+",
     color: guideColor(guide),
     // Custom fields for tooltip / popup
     description: [
@@ -99,13 +94,13 @@ export function buildCRISPRTrack(
       `Status: ${guideType(guide)}`,
     ]
       .filter(Boolean)
-      .join(' | '),
+      .join(" | "),
   }));
 
   return {
-    name: 'CRISPR Targets',
-    type: 'annotation',
-    format: 'bed',
+    name: "CRISPR Targets",
+    type: "annotation",
+    format: "bed",
     features,
   };
 }

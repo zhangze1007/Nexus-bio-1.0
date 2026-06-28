@@ -16,10 +16,7 @@
  * All positions are 0-indexed. Sequences are case-insensitive.
  */
 
-import {
-  COMMON_ENZYMES,
-  type RestrictionEnzyme,
-} from "../../components/sequence/restrictionEnzymes";
+import { COMMON_ENZYMES, type RestrictionEnzyme } from "../../components/sequence/restrictionEnzymes";
 import type { RestrictionSite } from "../../components/sequence/types";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -165,10 +162,7 @@ export function searchFeatures(features: Feature[], query: string): Feature[] {
  *                   are used. Names are matched case-insensitively.
  * @returns Sorted array of RestrictionSite (by position ascending)
  */
-export function findRestrictionSites(
-  sequence: string,
-  enzymes?: string[],
-): RestrictionSite[] {
+export function findRestrictionSites(sequence: string, enzymes?: string[]): RestrictionSite[] {
   if (!sequence) return [];
 
   const upper = sequence.toUpperCase();

@@ -74,10 +74,7 @@ function projectIdClause(projectId?: string): { sql: string; args: unknown[] } {
  * Build a SQL WHERE clause fragment that searches across multiple columns
  * using OR-ed LIKE conditions. Returns the fragment and the bound args.
  */
-function buildSearchClause(
-  query: string,
-  columns: string[],
-): { sql: string; args: unknown[] } {
+function buildSearchClause(query: string, columns: string[]): { sql: string; args: unknown[] } {
   const likeValue = `%${query}%`;
   const conditions = columns.map((col) => `${col} LIKE ?`);
   return {
@@ -114,11 +111,7 @@ function computeRelevance(query: string, name: string, nameMatched: boolean): nu
  * fragments that contain the query substring, truncated with ellipsis
  * for readability.
  */
-function extractHighlights(
-  query: string,
-  row: Record<string, unknown>,
-  columns: string[],
-): string[] {
+function extractHighlights(query: string, row: Record<string, unknown>, columns: string[]): string[] {
   const q = query.toLowerCase();
   const highlights: string[] = [];
 
@@ -169,9 +162,7 @@ export async function searchInventory(
   if (trimmed.length === 0) return [];
 
   const { sql: pidSql, args: pidArgs } = projectIdClause(projectId);
-  const tablesToSearch = types
-    ? ITEM_TABLES.filter((t) => types.includes(t.type))
-    : ITEM_TABLES;
+  const tablesToSearch = types ? ITEM_TABLES.filter((t) => types.includes(t.type)) : ITEM_TABLES;
 
   // Execute all table searches in parallel
   const searchPromises = tablesToSearch.map(async ({ type, table, columns }) => {
@@ -185,8 +176,7 @@ export async function searchInventory(
       const nameLikeValue = `%${trimmed}%`;
 
       // Check if the name column specifically matched
-      const nameMatched =
-        name.toLowerCase().includes(trimmed.toLowerCase());
+      const nameMatched = name.toLowerCase().includes(trimmed.toLowerCase());
 
       const relevance = computeRelevance(trimmed, name, nameMatched);
       const highlights = extractHighlights(trimmed, row, columns);
@@ -231,10 +221,10 @@ export async function getSearchSuggestions(query: string): Promise<string[]> {
 
   // Search names across all tables in parallel
   const suggestionPromises = ITEM_TABLES.map(async ({ table }) => {
-    const rows = await sqlAll(
-      `SELECT name FROM ${table} WHERE archived = 0 AND name LIKE ? LIMIT ?`,
-      [likeValue, SUGGESTION_LIMIT],
-    );
+    const rows = await sqlAll(`SELECT name FROM ${table} WHERE archived = 0 AND name LIKE ? LIMIT ?`, [
+      likeValue,
+      SUGGESTION_LIMIT,
+    ]);
     return rows.map((row) => String(row.name ?? ""));
   });
 

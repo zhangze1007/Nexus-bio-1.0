@@ -98,10 +98,7 @@ export async function generateReferralCode(userId: string): Promise<{ code: stri
   }
 
   const id = randomUUID();
-  await sqlRun(
-    "INSERT INTO referral_codes (id, user_id, code) VALUES (?, ?, ?)",
-    [id, userId, code],
-  );
+  await sqlRun("INSERT INTO referral_codes (id, user_id, code) VALUES (?, ?, ?)", [id, userId, code]);
 
   return { code, isNew: true };
 }
@@ -159,10 +156,7 @@ export async function recordReferral(
   }
 
   // Check if this user was already referred
-  const alreadyReferred = await sqlGet(
-    "SELECT id FROM referral_records WHERE referred_user_id = ?",
-    [newUserId],
-  );
+  const alreadyReferred = await sqlGet("SELECT id FROM referral_records WHERE referred_user_id = ?", [newUserId]);
   if (alreadyReferred) {
     throw new Error("This user has already been referred");
   }

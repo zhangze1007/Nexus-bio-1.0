@@ -20,17 +20,17 @@
  * project's build output evolves.
  */
 const CRITICAL_ASSETS: Array<{ path: string; as: string; type?: string }> = [
-  { path: '/_next/static/css/app/layout.css', as: 'style' },
-  { path: '/_next/static/chunks/main.js', as: 'script' },
-  { path: '/_next/static/chunks/app/layout.js', as: 'script' },
-  { path: '/_next/static/chunks/webpack.js', as: 'script' },
+  { path: "/_next/static/css/app/layout.css", as: "style" },
+  { path: "/_next/static/chunks/main.js", as: "script" },
+  { path: "/_next/static/chunks/app/layout.js", as: "script" },
+  { path: "/_next/static/chunks/webpack.js", as: "script" },
 ];
 
 /**
  * Normalizes a base URL by stripping any trailing slash.
  */
 function normalizeBaseUrl(base: string): string {
-  return base.endsWith('/') ? base.slice(0, -1) : base;
+  return base.endsWith("/") ? base.slice(0, -1) : base;
 }
 
 /**
@@ -57,7 +57,7 @@ export function getAssetUrl(path: string): string {
 
   const base = normalizeBaseUrl(cdnBase);
   // Ensure path starts with /
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${base}${normalizedPath}`;
 }
 
@@ -83,17 +83,13 @@ export function preloadCriticalAssets(): string[] {
 
   return CRITICAL_ASSETS.map(({ path, as, type }) => {
     const href = getAssetUrl(path);
-    const parts = [
-      'rel="preload"',
-      `href="${href}"`,
-      `as="${as}"`,
-    ];
+    const parts = ['rel="preload"', `href="${href}"`, `as="${as}"`];
     if (useCrossorigin) {
-      parts.push('crossorigin');
+      parts.push("crossorigin");
     }
     if (type) {
       parts.push(`type="${type}"`);
     }
-    return `<link ${parts.join(' ')} />`;
+    return `<link ${parts.join(" ")} />`;
   });
 }

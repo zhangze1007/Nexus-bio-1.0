@@ -48,8 +48,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
       ...input,
       targetProduct: context.targetProduct ?? "artemisinin",
     }),
-    reason: (error) =>
-      `Empty target product detected (${error}); injecting workbench target or default`,
+    reason: (error) => `Empty target product detected (${error}); injecting workbench target or default`,
   },
 
   // Infeasible FBA — loosen constraints
@@ -61,8 +60,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
       oxygenUptake: 25 * attempt,
       knockouts: [], // clear knockouts on infeasible
     }),
-    reason: () =>
-      "FBA infeasible; increasing substrate uptake and clearing knockouts",
+    reason: () => "FBA infeasible; increasing substrate uptake and clearing knockouts",
   },
 
   // Empty result / no data
@@ -73,9 +71,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
       // On first retry: add a broader search hint
       // On subsequent retries: simplify inputs
       ...(attempt === 1 ? { hint: "broaden search" } : {}),
-      ...(attempt >= 2
-        ? { species: "ecoli", objective: "biomass" }
-        : {}),
+      ...(attempt >= 2 ? { species: "ecoli", objective: "biomass" } : {}),
     }),
     reason: () => "Empty result; broadening search parameters",
   },
@@ -88,8 +84,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
       // Simplify the request to reduce computation
       maxResults: 5,
     }),
-    reason: () =>
-      "Rate limit or timeout; simplifying request to reduce computation",
+    reason: () => "Rate limit or timeout; simplifying request to reduce computation",
   },
 
   // HTTP/network errors
@@ -108,12 +103,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
     adjust: (input, context, _attempt) => {
       // Strip non-essential params, keep only known-good fields
       const cleaned: Record<string, unknown> = {};
-      const keepFields = [
-        "targetProduct",
-        "species",
-        "objective",
-        "tool",
-      ];
+      const keepFields = ["targetProduct", "species", "objective", "tool"];
       for (const key of keepFields) {
         if (key in input) cleaned[key] = input[key];
       }
@@ -123,8 +113,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
       }
       return cleaned;
     },
-    reason: () =>
-      "Invalid parameters detected; stripping to known-good fields",
+    reason: () => "Invalid parameters detected; stripping to known-good fields",
   },
 
   // Binding affinity or catalyst issues
@@ -135,8 +124,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
       minAffinity: 0, // lower the threshold
       expandLibrary: true,
     }),
-    reason: () =>
-      "Binding affinity issues; lowering threshold and expanding candidate library",
+    reason: () => "Binding affinity issues; lowering threshold and expanding candidate library",
   },
 
   // Genome/chassis issues
@@ -146,8 +134,7 @@ const CORRECTION_RULES: CorrectionRule[] = [
       ...input,
       maxKnockouts: Math.max(1, 5 - attempt * 2), // reduce knockouts progressively
     }),
-    reason: () =>
-      "Essential gene conflict; reducing number of knockouts",
+    reason: () => "Essential gene conflict; reducing number of knockouts",
   },
 ];
 
@@ -178,11 +165,7 @@ export function attemptCorrection(
   // Find matching correction rule
   for (const rule of CORRECTION_RULES) {
     if (rule.pattern.test(error)) {
-      const suggestedInput = rule.adjust(
-        { ...task.inputs },
-        context,
-        attempt,
-      );
+      const suggestedInput = rule.adjust({ ...task.inputs }, context, attempt);
 
       return {
         originalInput: { ...task.inputs },
@@ -211,10 +194,7 @@ export function attemptCorrection(
  * Returns false if suggested inputs are identical to original.
  */
 export function isCorrectionMeaningful(correction: CorrectionAttempt): boolean {
-  return (
-    JSON.stringify(correction.suggestedInput) !==
-    JSON.stringify(correction.originalInput)
-  );
+  return JSON.stringify(correction.suggestedInput) !== JSON.stringify(correction.originalInput);
 }
 
 /**
@@ -222,7 +202,5 @@ export function isCorrectionMeaningful(correction: CorrectionAttempt): boolean {
  */
 export function summariseCorrections(attempts: CorrectionAttempt[]): string {
   if (attempts.length === 0) return "No correction attempts";
-  return attempts
-    .map((a) => `Attempt ${a.attempt}: ${a.reason}`)
-    .join("; ");
+  return attempts.map((a) => `Attempt ${a.attempt}: ${a.reason}`).join("; ");
 }

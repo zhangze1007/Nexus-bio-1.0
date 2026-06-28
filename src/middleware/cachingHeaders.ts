@@ -9,26 +9,26 @@
  * - immutable (1 year): hashed/static assets that never change
  */
 
-export type CacheStrategy = 'no-store' | 'short' | 'medium' | 'long' | 'immutable';
+export type CacheStrategy = "no-store" | "short" | "medium" | "long" | "immutable";
 
 const STRATEGY_MAP: Record<CacheStrategy, Record<string, string>> = {
-  'no-store': {
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    Pragma: 'no-cache',
-    Expires: '0',
-    'Surrogate-Control': 'no-store',
+  "no-store": {
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+    "Surrogate-Control": "no-store",
   },
   short: {
-    'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
+    "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=60",
   },
   medium: {
-    'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=300',
+    "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=300",
   },
   long: {
-    'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=3600',
+    "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=3600",
   },
   immutable: {
-    'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable',
+    "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
   },
 };
 

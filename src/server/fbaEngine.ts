@@ -176,9 +176,11 @@ const ECOLI_NETWORK: NetworkSpec = {
     const biomass = vars.BIOMASS ?? 0;
     const product = vars.PRODUCT ?? 0;
     /** ATP yield from glycolysis per glucose: GAPD produces 1 ATP, PYK produces 1 ATP, PFK consumes 1 ATP. PDH is excluded as it produces NADH, not ATP. */
-    const atpYield =
-      glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0)) / glc : 0;
-    const carbonEfficiency = glc > 1e-9 ? ((biomass * BIOMASS_CARBON_CONTENT_ECOLI + product * PRODUCT_CARBON_ECOLI) / (glc * GLUCOSE_CARBON)) * 100 : 0;
+    const atpYield = glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0)) / glc : 0;
+    const carbonEfficiency =
+      glc > 1e-9
+        ? ((biomass * BIOMASS_CARBON_CONTENT_ECOLI + product * PRODUCT_CARBON_ECOLI) / (glc * GLUCOSE_CARBON)) * 100
+        : 0;
     const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {
@@ -315,7 +317,10 @@ const YEAST_NETWORK: NetworkSpec = {
     const product = vars.PRODUCT_y ?? 0;
     const atpYield =
       glc > 1e-9 ? ((vars.TPI ?? 0) + (vars.ADH ?? 0) * 0.4 + (vars.IDH ?? 0) - (vars.PFK_y ?? 0)) / glc : 0;
-    const carbonEfficiency = glc > 1e-9 ? ((biomass * BIOMASS_CARBON_CONTENT_YEAST + product * PRODUCT_CARBON_YEAST) / (glc * GLUCOSE_CARBON)) * 100 : 0;
+    const carbonEfficiency =
+      glc > 1e-9
+        ? ((biomass * BIOMASS_CARBON_CONTENT_YEAST + product * PRODUCT_CARBON_YEAST) / (glc * GLUCOSE_CARBON)) * 100
+        : 0;
     const growthRate = biomass;
     const feasible = status === 2 && objectiveValue > 1e-6;
     return {

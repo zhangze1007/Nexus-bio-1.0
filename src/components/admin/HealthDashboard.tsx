@@ -220,12 +220,10 @@ export default function HealthDashboard() {
             }}
           >
             <span>
-              Latency:{" "}
-              <span style={{ color: THEME.VALUE }}>{formatLatency(check.latencyMs)}</span>
+              Latency: <span style={{ color: THEME.VALUE }}>{formatLatency(check.latencyMs)}</span>
             </span>
             <span>
-              Checked:{" "}
-              <span style={{ color: THEME.VALUE }}>{formatTimestamp(check.lastChecked)}</span>
+              Checked: <span style={{ color: THEME.VALUE }}>{formatTimestamp(check.lastChecked)}</span>
             </span>
           </div>
 

@@ -31,7 +31,7 @@ export interface ConfidenceScores {
 /** Metadata about the prediction run. */
 export interface PredictionMetadata {
   /** Which model produced the structure */
-  model: 'alphafold2' | 'alphafold3' | 'colabfold' | 'esmfold' | 'local_heuristic';
+  model: "alphafold2" | "alphafold3" | "colabfold" | "esmfold" | "local_heuristic";
   /** Chain identifiers in the output PDB */
   chainIds: string[];
   /** Input sequence(s) — single string for monomers, array for complexes */
@@ -67,13 +67,13 @@ export interface ProteinPredictionRequest {
    * - 'alphafold3' / 'colabfold': multi-chain via ColabFold
    * - 'esmfold': fast single-sequence fold
    */
-  model?: 'auto' | 'alphafold2' | 'alphafold3' | 'colabfold' | 'esmfold';
+  model?: "auto" | "alphafold2" | "alphafold3" | "colabfold" | "esmfold";
   /** Use template structures if available (AlphaFold only) */
   useTemplates?: boolean;
 }
 
 /** Quality classification for confidence interpretation. */
-export type QualityLevel = 'high' | 'medium' | 'low' | 'very_low';
+export type QualityLevel = "high" | "medium" | "low" | "very_low";
 
 /** Analysis of prediction confidence with human-readable interpretation. */
 export interface ConfidenceAnalysis {

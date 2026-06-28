@@ -27,8 +27,7 @@ export interface CompositeWorkflow {
 export const COMPOSITES: Record<string, CompositeWorkflow> = {
   designAndSimulate: {
     name: "Design & Simulate",
-    description:
-      "Design a pathway, simulate with FBA, and check thermodynamics",
+    description: "Design a pathway, simulate with FBA, and check thermodynamics",
     tools: ["pathd", "fbasim", "cethx"],
     dependencies: {
       pathd: [],
@@ -90,42 +89,30 @@ export const COMPOSITES: Record<string, CompositeWorkflow> = {
 
   optimizeAndControl: {
     name: "Optimize & Control",
-    description:
-      "Design a catalyst, set up dynamic control, and validate with cell-free",
+    description: "Design a catalyst, set up dynamic control, and validate with cell-free",
     tools: ["catdes", "dyncon", "cellfree"],
     dependencies: {
       catdes: [],
       dyncon: ["catdes"],
       cellfree: ["dyncon"],
     },
-    triggers: [
-      "optimize and control",
-      "optimize & control",
-      "catalyst and control",
-      "enzyme control",
-    ],
+    triggers: ["optimize and control", "optimize & control", "catalyst and control", "enzyme control"],
   },
 
   analyzeAndDesign: {
     name: "Analyze & Design",
-    description:
-      "Check thermodynamics, then design a pathway informed by the analysis",
+    description: "Check thermodynamics, then design a pathway informed by the analysis",
     tools: ["cethx", "pathd"],
     dependencies: {
       cethx: [],
       pathd: ["cethx"],
     },
-    triggers: [
-      "analyze and design",
-      "thermodynamics then design",
-      "check thermodynamics first",
-    ],
+    triggers: ["analyze and design", "thermodynamics then design", "check thermodynamics first"],
   },
 
   chassisEngineering: {
     name: "Chassis Engineering",
-    description:
-      "Minimize the genome, then design a gene circuit for the optimized chassis",
+    description: "Minimize the genome, then design a gene circuit for the optimized chassis",
     tools: ["genmim", "gecair"],
     dependencies: {
       genmim: [],
@@ -196,9 +183,7 @@ export function validateCompositeTools(composite: CompositeWorkflow): string[] {
  * Validate that all dependencies in a composite reference valid tools.
  * Returns an array of error strings (empty if all valid).
  */
-export function validateCompositeDependencies(
-  composite: CompositeWorkflow,
-): string[] {
+export function validateCompositeDependencies(composite: CompositeWorkflow): string[] {
   const errors: string[] = [];
   const toolSet = new Set(composite.tools);
 

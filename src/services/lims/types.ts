@@ -10,11 +10,11 @@
 export interface LIMSConfig {
   id: string;
   name: string;
-  type: 'benchling' | 'labarchives' | 'rspace' | 'generic';
+  type: "benchling" | "labarchives" | "rspace" | "generic";
   baseUrl: string;
-  authType: 'api_key' | 'oauth2' | 'basic';
+  authType: "api_key" | "oauth2" | "basic";
   credentials: Record<string, string>;
-  syncDirection: 'push' | 'pull' | 'bidirectional';
+  syncDirection: "push" | "pull" | "bidirectional";
   lastSyncAt?: string;
 }
 
@@ -23,10 +23,10 @@ export interface LIMSConfig {
 export interface LIMSSample {
   id: string;
   name: string;
-  type: 'strain' | 'plasmid' | 'primer' | 'chemical' | 'other';
+  type: "strain" | "plasmid" | "primer" | "chemical" | "other";
   properties: Record<string, unknown>;
   externalId?: string; // ID in the LIMS
-  source: 'nexus-bio' | 'lims';
+  source: "nexus-bio" | "lims";
 }
 
 // ── Experiment ──
@@ -56,7 +56,7 @@ export interface ELNSignature {
   userId: string;
   userName: string;
   signedAt: string;
-  meaning: 'authored' | 'reviewed' | 'approved' | string;
+  meaning: "authored" | "reviewed" | "approved" | string;
   contentHash: string;
 }
 
@@ -76,11 +76,11 @@ export interface ELNEntry {
 export interface FieldMapping {
   nexusField: string;
   limsField: string;
-  transform?: 'direct' | 'json' | 'date' | 'custom';
+  transform?: "direct" | "json" | "date" | "custom";
 }
 
 export interface SyncResult {
-  direction: 'push' | 'pull' | 'bidirectional';
+  direction: "push" | "pull" | "bidirectional";
   entityType: string;
   pushed: number;
   pulled: number;

@@ -17,11 +17,7 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import type {
-  AuthenticationResponseJSON,
-  RegistrationResponseJSON,
-  WebAuthnCredential,
-} from "@simplewebauthn/server";
+import type { AuthenticationResponseJSON, RegistrationResponseJSON, WebAuthnCredential } from "@simplewebauthn/server";
 import { getLibsqlClient } from "../../lib/db";
 
 // ─── Configuration ───────────────────────────────────────────────────────
@@ -111,7 +107,11 @@ function storedToWebAuthnCredential(stored: StoredCredential): WebAuthnCredentia
 
 // ─── Challenge persistence helpers ───────────────────────────────────────
 
-async function storeChallenge(userId: string, challenge: string, type: "registration" | "authentication"): Promise<void> {
+async function storeChallenge(
+  userId: string,
+  challenge: string,
+  type: "registration" | "authentication",
+): Promise<void> {
   const client = getLibsqlClient();
   const now = Date.now();
   await client.execute({
@@ -160,10 +160,7 @@ async function getAndConsumeChallenge(userId: string, type: "registration" | "au
  * Returns `PublicKeyCredentialCreationOptionsJSON` to send to the browser,
  * where `startRegistration()` will consume it.
  */
-export async function generateRegistrationOptionsForUser(
-  userId: string,
-  userName: string,
-) {
+export async function generateRegistrationOptionsForUser(userId: string, userName: string) {
   await ensureWebAuthnSchema();
 
   const existingCredentials = await getCredentialsByUserId(userId);
@@ -263,9 +260,7 @@ export async function verifyRegistrationResponseForUser(
  * credentials. Otherwise, returns options suitable for passkey discovery
  * (no `allowCredentials`).
  */
-export async function generateAuthenticationOptionsForUser(
-  userId?: string,
-) {
+export async function generateAuthenticationOptionsForUser(userId?: string) {
   await ensureWebAuthnSchema();
 
   const rpID = getRPID();
@@ -392,10 +387,7 @@ export async function listCredentialsForUser(userId: string): Promise<
  * Delete a specific WebAuthn credential.
  * Returns true if a row was deleted.
  */
-export async function deleteCredential(
-  userId: string,
-  credentialId: string,
-): Promise<boolean> {
+export async function deleteCredential(userId: string, credentialId: string): Promise<boolean> {
   await ensureWebAuthnSchema();
   const client = getLibsqlClient();
   const result = await client.execute({

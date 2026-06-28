@@ -123,10 +123,7 @@ export function resetSchemaReady(): void {
  * Publish a new community template.
  * Returns the created template with server-generated id, counts, and timestamps.
  */
-export async function publishTemplate(
-  userId: string,
-  template: PublishTemplateInput,
-): Promise<CommunityTemplate> {
+export async function publishTemplate(userId: string, template: PublishTemplateInput): Promise<CommunityTemplate> {
   await ensureSchema();
   const id = randomUUID();
   const timestamp = now();
@@ -176,9 +173,7 @@ export async function listTemplates(category?: string): Promise<CommunityTemplat
       [category],
     );
   } else {
-    rows = await sqlAll(
-      "SELECT * FROM community_templates WHERE is_public = 1 ORDER BY created_at DESC",
-    );
+    rows = await sqlAll("SELECT * FROM community_templates WHERE is_public = 1 ORDER BY created_at DESC");
   }
   return rows.map(rowToTemplate);
 }
@@ -198,10 +193,7 @@ export async function getTemplate(id: string): Promise<CommunityTemplate | undef
  * Creates a copy owned by the given user and increments the source template's fork count.
  * Returns the new forked template, or undefined if the source template does not exist.
  */
-export async function forkTemplate(
-  templateId: string,
-  userId: string,
-): Promise<CommunityTemplate | undefined> {
+export async function forkTemplate(templateId: string, userId: string): Promise<CommunityTemplate | undefined> {
   await ensureSchema();
   const source = await sqlGet("SELECT * FROM community_templates WHERE id = ?", [templateId]);
   if (!source) return undefined;
@@ -262,23 +254,25 @@ export async function rateTemplate(
   const template = await sqlGet("SELECT * FROM community_templates WHERE id = ?", [templateId]);
   if (!template) return undefined;
 
-  const existing = await sqlGet(
-    "SELECT score FROM community_template_ratings WHERE template_id = ? AND user_id = ?",
-    [templateId, userId],
-  );
+  const existing = await sqlGet("SELECT score FROM community_template_ratings WHERE template_id = ? AND user_id = ?", [
+    templateId,
+    userId,
+  ]);
 
   if (existing) {
     // Update existing rating
-    await sqlRun(
-      "UPDATE community_template_ratings SET score = ? WHERE template_id = ? AND user_id = ?",
-      [score, templateId, userId],
-    );
+    await sqlRun("UPDATE community_template_ratings SET score = ? WHERE template_id = ? AND user_id = ?", [
+      score,
+      templateId,
+      userId,
+    ]);
   } else {
     // Insert new rating
-    await sqlRun(
-      "INSERT INTO community_template_ratings (template_id, user_id, score) VALUES (?, ?, ?)",
-      [templateId, userId, score],
-    );
+    await sqlRun("INSERT INTO community_template_ratings (template_id, user_id, score) VALUES (?, ?, ?)", [
+      templateId,
+      userId,
+      score,
+    ]);
   }
 
   // Recalculate aggregates
@@ -291,10 +285,12 @@ export async function rateTemplate(
   const ratingAvg = Number(agg?.avg ?? 0);
   const starCount = ratingCount; // star_count equals number of raters
 
-  await sqlRun(
-    "UPDATE community_templates SET rating_avg = ?, rating_count = ?, star_count = ? WHERE id = ?",
-    [ratingAvg, ratingCount, starCount, templateId],
-  );
+  await sqlRun("UPDATE community_templates SET rating_avg = ?, rating_count = ?, star_count = ? WHERE id = ?", [
+    ratingAvg,
+    ratingCount,
+    starCount,
+    templateId,
+  ]);
 
   const updated = await sqlGet("SELECT * FROM community_templates WHERE id = ?", [templateId]);
   return updated ? rowToTemplate(updated) : undefined;

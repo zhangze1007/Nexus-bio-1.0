@@ -26,7 +26,7 @@ export interface ActivitySummary {
 
 export interface TimeRange {
   start: number; // Unix ms
-  end: number;   // Unix ms
+  end: number; // Unix ms
 }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────

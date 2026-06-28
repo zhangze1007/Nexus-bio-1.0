@@ -9,21 +9,14 @@
  * Pure TypeScript, zero external dependencies.
  */
 
-import {
-  parsePlateReaderData,
-  type PlateReaderResult,
-} from './plateReaderParser';
+import { parsePlateReaderData, type PlateReaderResult } from "./plateReaderParser";
 
-import {
-  parseFcs,
-  isFcsFile,
-  type FcsParseResult,
-} from './fcsParser';
+import { parseFcs, isFcsFile, type FcsParseResult } from "./fcsParser";
 
 // ─── Types ───────────────────────────────────────────────────────
 
 /** Supported ingest formats. */
-export type IngestFormat = 'plate-reader' | 'fcs' | 'unknown';
+export type IngestFormat = "plate-reader" | "fcs" | "unknown";
 
 /** Unified result returned by every ingestion function. */
 export interface IngestResult {
@@ -52,14 +45,14 @@ export interface IngestResult {
 export function ingestPlateReaderData(content: string): IngestResult {
   const warnings: string[] = [];
 
-  if (typeof content !== 'string' || content.trim().length === 0) {
+  if (typeof content !== "string" || content.trim().length === 0) {
     return {
-      format: 'plate-reader',
+      format: "plate-reader",
       records: 0,
       metadata: {},
       warnings,
       data: null,
-      error: 'Empty or non-string content provided for plate reader ingestion.',
+      error: "Empty or non-string content provided for plate reader ingestion.",
     };
   }
 
@@ -68,18 +61,16 @@ export function ingestPlateReaderData(content: string): IngestResult {
     const wellCount = Object.keys(result.wells).length;
 
     if (wellCount === 0) {
-      warnings.push('No well values were extracted from the input.');
+      warnings.push("No well values were extracted from the input.");
     }
 
     // Warn on unusual well counts that may indicate partial parse
     if (wellCount > 0 && wellCount < 96) {
-      warnings.push(
-        `Only ${wellCount} wells parsed; expected 96 or 384 for a full plate.`,
-      );
+      warnings.push(`Only ${wellCount} wells parsed; expected 96 or 384 for a full plate.`);
     }
 
     return {
-      format: 'plate-reader',
+      format: "plate-reader",
       records: wellCount,
       metadata: result.metadata,
       warnings,
@@ -87,7 +78,7 @@ export function ingestPlateReaderData(content: string): IngestResult {
     };
   } catch (err) {
     return {
-      format: 'plate-reader',
+      format: "plate-reader",
       records: 0,
       metadata: {},
       warnings,
@@ -109,23 +100,23 @@ export function ingestFCSData(buffer: ArrayBuffer): IngestResult {
 
   if (!(buffer instanceof ArrayBuffer) || buffer.byteLength === 0) {
     return {
-      format: 'fcs',
+      format: "fcs",
       records: 0,
       metadata: {},
       warnings,
       data: null,
-      error: 'Empty or non-ArrayBuffer input provided for FCS ingestion.',
+      error: "Empty or non-ArrayBuffer input provided for FCS ingestion.",
     };
   }
 
   if (!isFcsFile(buffer)) {
     return {
-      format: 'fcs',
+      format: "fcs",
       records: 0,
       metadata: {},
       warnings,
       data: null,
-      error: 'Input does not have a valid FCS header.',
+      error: "Input does not have a valid FCS header.",
     };
   }
 
@@ -134,7 +125,7 @@ export function ingestFCSData(buffer: ArrayBuffer): IngestResult {
     const eventCount = result.events.length;
 
     if (eventCount === 0) {
-      warnings.push('FCS file parsed successfully but contains zero events.');
+      warnings.push("FCS file parsed successfully but contains zero events.");
     }
 
     // Surface text-param keys as flat metadata
@@ -148,7 +139,7 @@ export function ingestFCSData(buffer: ArrayBuffer): IngestResult {
     };
 
     return {
-      format: 'fcs',
+      format: "fcs",
       records: eventCount,
       metadata,
       warnings,
@@ -156,7 +147,7 @@ export function ingestFCSData(buffer: ArrayBuffer): IngestResult {
     };
   } catch (err) {
     return {
-      format: 'fcs',
+      format: "fcs",
       records: 0,
       metadata: {},
       warnings,
@@ -169,23 +160,23 @@ export function ingestFCSData(buffer: ArrayBuffer): IngestResult {
 // ─── Auto-detect & Ingest ────────────────────────────────────────
 
 /** File extensions that indicate plate reader CSV/XML data. */
-const PLATE_EXTENSIONS = ['.csv', '.tsv', '.xml', '.txt'];
+const PLATE_EXTENSIONS = [".csv", ".tsv", ".xml", ".txt"];
 
 /** File extensions that indicate FCS data. */
-const FCS_EXTENSIONS = ['.fcs'];
+const FCS_EXTENSIONS = [".fcs"];
 
 /**
  * Detect format from filename extension.
  */
 function detectFormatFromFilename(filename: string): IngestFormat {
   const lower = filename.toLowerCase();
-  const dotIndex = lower.lastIndexOf('.');
-  if (dotIndex === -1) return 'unknown';
+  const dotIndex = lower.lastIndexOf(".");
+  if (dotIndex === -1) return "unknown";
   const ext = lower.slice(dotIndex);
 
-  if (FCS_EXTENSIONS.includes(ext)) return 'fcs';
-  if (PLATE_EXTENSIONS.includes(ext)) return 'plate-reader';
-  return 'unknown';
+  if (FCS_EXTENSIONS.includes(ext)) return "fcs";
+  if (PLATE_EXTENSIONS.includes(ext)) return "plate-reader";
+  return "unknown";
 }
 
 /**
@@ -196,13 +187,13 @@ function detectFormatFromFilename(filename: string): IngestFormat {
 function detectFormatFromContent(content: string): IngestFormat {
   // FCS files start with "FCS2.0" or "FCS3.0" — check first 6 chars
   if (content.length >= 6 && /^FCS[23]\.0/.test(content.slice(0, 6))) {
-    return 'fcs';
+    return "fcs";
   }
   // If content has commas, tabs, or well-like patterns, assume plate reader
   if (/[,\t]/.test(content) || /[A-P]\d{1,2}/i.test(content)) {
-    return 'plate-reader';
+    return "plate-reader";
   }
-  return 'unknown';
+  return "unknown";
 }
 
 /**
@@ -214,63 +205,59 @@ function detectFormatFromContent(content: string): IngestFormat {
  *
  * For `ArrayBuffer` input without a filename, only FCS header check is used.
  */
-export function autoDetectAndIngest(
-  content: string | ArrayBuffer,
-  filename: string,
-): IngestResult {
+export function autoDetectAndIngest(content: string | ArrayBuffer, filename: string): IngestResult {
   const warnings: string[] = [];
 
   // ── Step 1: Determine format ──
   let format = detectFormatFromFilename(filename);
 
-  if (format === 'unknown' && typeof content === 'string') {
+  if (format === "unknown" && typeof content === "string") {
     format = detectFormatFromContent(content);
-    if (format !== 'unknown') {
+    if (format !== "unknown") {
       warnings.push(
         `Format "${format}" detected from content inspection (filename "${filename}" had no recognized extension).`,
       );
     }
   }
 
-  if (format === 'unknown' && content instanceof ArrayBuffer) {
+  if (format === "unknown" && content instanceof ArrayBuffer) {
     // Last resort: check FCS header on raw bytes
     if (isFcsFile(content)) {
-      format = 'fcs';
+      format = "fcs";
       warnings.push('Format "fcs" detected from binary header inspection.');
     }
   }
 
   // ── Step 2: Dispatch to the appropriate ingester ──
-  if (format === 'fcs') {
+  if (format === "fcs") {
     if (content instanceof ArrayBuffer) {
       return ingestFCSData(content);
     }
     // String that looks like FCS — cannot parse; return error
     return {
-      format: 'fcs',
+      format: "fcs",
       records: 0,
       metadata: {},
       warnings,
       data: null,
-      error:
-        'Filename or content suggests FCS format, but input is a string, not an ArrayBuffer.',
+      error: "Filename or content suggests FCS format, but input is a string, not an ArrayBuffer.",
     };
   }
 
-  if (format === 'plate-reader') {
-    if (typeof content === 'string') {
+  if (format === "plate-reader") {
+    if (typeof content === "string") {
       const result = ingestPlateReaderData(content);
       return { ...result, warnings: [...warnings, ...result.warnings] };
     }
     // ArrayBuffer for plate reader — try decoding as UTF-8 text
     try {
-      const text = new TextDecoder('utf-8').decode(content);
+      const text = new TextDecoder("utf-8").decode(content);
       const result = ingestPlateReaderData(text);
-      warnings.push('ArrayBuffer decoded as UTF-8 for plate reader parsing.');
+      warnings.push("ArrayBuffer decoded as UTF-8 for plate reader parsing.");
       return { ...result, warnings: [...warnings, ...result.warnings] };
     } catch (err) {
       return {
-        format: 'plate-reader',
+        format: "plate-reader",
         records: 0,
         metadata: {},
         warnings,
@@ -282,11 +269,11 @@ export function autoDetectAndIngest(
 
   // ── Step 3: Unknown format ──
   return {
-    format: 'unknown',
+    format: "unknown",
     records: 0,
     metadata: {},
     warnings,
     data: null,
-    error: `Unable to detect data format for "${filename}". Supported extensions: ${[...PLATE_EXTENSIONS, ...FCS_EXTENSIONS].join(', ')}.`,
+    error: `Unable to detect data format for "${filename}". Supported extensions: ${[...PLATE_EXTENSIONS, ...FCS_EXTENSIONS].join(", ")}.`,
   };
 }

@@ -172,7 +172,11 @@ export function buildAnalyzeArtifactFromStructuredAnalysis(
 }
 
 // ── Re-export buildCanonicalSlice for the persist middleware ──
-import { buildCanonicalSlice, buildWorkflowControlSnapshot, createInitialWorkflowControl } from "./slices/sharedHelpers";
+import {
+  buildCanonicalSlice,
+  buildWorkflowControlSnapshot,
+  createInitialWorkflowControl,
+} from "./slices/sharedHelpers";
 
 // ── Composed store ──
 export const useWorkbenchStore = create<WorkbenchState>()(

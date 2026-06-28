@@ -44,10 +44,7 @@ async function ensureSchema(): Promise<void> {
 /**
  * Add a new changelog entry. Throws if the version already exists.
  */
-export async function addChangelogEntry(
-  version: string,
-  changes: ChangeItem[],
-): Promise<void> {
+export async function addChangelogEntry(version: string, changes: ChangeItem[]): Promise<void> {
   if (!version || typeof version !== "string") {
     throw new Error("version is required and must be a non-empty string");
   }
@@ -72,10 +69,11 @@ export async function addChangelogEntry(
 
   const id = randomUUID();
   const changesJson = JSON.stringify(changes);
-  await sqlRun(
-    "INSERT INTO changelog (id, version, changes_json, published_at) VALUES (?, ?, ?, datetime('now'))",
-    [id, version, changesJson],
-  );
+  await sqlRun("INSERT INTO changelog (id, version, changes_json, published_at) VALUES (?, ?, ?, datetime('now'))", [
+    id,
+    version,
+    changesJson,
+  ]);
 }
 
 /**
@@ -103,8 +101,6 @@ export async function getChangelog(limit = 50): Promise<ChangelogEntry[]> {
 export async function getLatestVersion(): Promise<string | null> {
   await ensureSchema();
 
-  const row = await sqlGet(
-    "SELECT version FROM changelog ORDER BY published_at DESC LIMIT 1",
-  );
+  const row = await sqlGet("SELECT version FROM changelog ORDER BY published_at DESC LIMIT 1");
   return row ? (row.version as string) : null;
 }

@@ -12,7 +12,7 @@
  *   REFERENCE: Kabsch W (1978) Acta Cryst A34:827-828
  */
 
-import type { BackboneAtom } from './backboneGenerator';
+import type { BackboneAtom } from "./backboneGenerator";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,11 +41,7 @@ function dot(a: Vec3, b: Vec3): number {
 }
 
 function cross(a: Vec3, b: Vec3): Vec3 {
-  return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
-  ];
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
 function norm(v: Vec3): number {
@@ -56,7 +52,9 @@ function norm(v: Vec3): number {
 function centroid(points: Vec3[]): Vec3 {
   const n = points.length;
   if (n === 0) return [0, 0, 0];
-  let cx = 0, cy = 0, cz = 0;
+  let cx = 0,
+    cy = 0,
+    cz = 0;
   for (const p of points) {
     cx += p[0];
     cy += p[1];
@@ -96,7 +94,11 @@ function svd3x3(A: number[][]): { U: number[][]; S: number[]; Vt: number[][] } {
   const sortedV = indices.map((i) => V[i]);
 
   // U = A * V * diag(1/S)
-  const U: number[][] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  const U: number[][] = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ];
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 3; j++) {
       for (let k = 0; k < 3; k++) {
@@ -129,17 +131,24 @@ function jacobiEigen(M: number[][]): { eigenvalues: number[]; eigenvectors: numb
   const maxIter = 100;
   for (let iter = 0; iter < maxIter; iter++) {
     // Find largest off-diagonal element
-    let p = 0, q = 1;
+    let p = 0,
+      q = 1;
     let maxVal = Math.abs(A[0][1]);
-    if (Math.abs(A[0][2]) > maxVal) { p = 0; q = 2; maxVal = Math.abs(A[0][2]); }
-    if (Math.abs(A[1][2]) > maxVal) { p = 1; q = 2; maxVal = Math.abs(A[1][2]); }
+    if (Math.abs(A[0][2]) > maxVal) {
+      p = 0;
+      q = 2;
+      maxVal = Math.abs(A[0][2]);
+    }
+    if (Math.abs(A[1][2]) > maxVal) {
+      p = 1;
+      q = 2;
+      maxVal = Math.abs(A[1][2]);
+    }
 
     if (maxVal < 1e-14) break;
 
     // Compute rotation angle
-    const theta = A[p][p] === A[q][q]
-      ? Math.PI / 4
-      : 0.5 * Math.atan2(2 * A[p][q], A[p][p] - A[q][q]);
+    const theta = A[p][p] === A[q][q] ? Math.PI / 4 : 0.5 * Math.atan2(2 * A[p][q], A[p][p] - A[q][q]);
 
     const c = Math.cos(theta);
     const s = Math.sin(theta);
@@ -185,7 +194,7 @@ function jacobiEigen(M: number[][]): { eigenvalues: number[]; eigenvectors: numb
  */
 export function calculateRMSD(atoms1: BackboneAtom[], atoms2: BackboneAtom[]): number {
   if (atoms1.length === 0 || atoms2.length === 0) {
-    throw new Error('Cannot calculate RMSD for empty atom arrays');
+    throw new Error("Cannot calculate RMSD for empty atom arrays");
   }
   if (atoms1.length !== atoms2.length) {
     throw new Error(`Atom arrays must have same length: ${atoms1.length} vs ${atoms2.length}`);
@@ -217,10 +226,7 @@ export function calculateRMSD(atoms1: BackboneAtom[], atoms2: BackboneAtom[]): n
  * @param reference Fixed reference structure
  * @returns New array of aligned backbone atoms
  */
-export function alignStructures(
-  mobile: BackboneAtom[],
-  reference: BackboneAtom[],
-): BackboneAtom[] {
+export function alignStructures(mobile: BackboneAtom[], reference: BackboneAtom[]): BackboneAtom[] {
   if (mobile.length !== reference.length) {
     throw new Error(`Structures must have same length: ${mobile.length} vs ${reference.length}`);
   }

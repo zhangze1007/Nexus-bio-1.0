@@ -99,10 +99,7 @@ function rowToTrigger(row: Record<string, unknown>): ZapierTrigger {
  * @returns The newly created trigger id.
  * @throws {Error} If eventType or webhookUrl are invalid.
  */
-export async function registerZapierTrigger(
-  eventType: string,
-  webhookUrl: string,
-): Promise<string> {
+export async function registerZapierTrigger(eventType: string, webhookUrl: string): Promise<string> {
   if (!eventType || !eventType.trim()) {
     throw new Error("eventType is required and must be non-empty");
   }
@@ -115,10 +112,12 @@ export async function registerZapierTrigger(
   const id = generateId();
   const createdAt = new Date().toISOString();
 
-  await sqlRun(
-    "INSERT INTO zapier_triggers (id, event_type, webhook_url, active, created_at) VALUES (?, ?, ?, 1, ?)",
-    [id, eventType.trim(), webhookUrl.trim(), createdAt],
-  );
+  await sqlRun("INSERT INTO zapier_triggers (id, event_type, webhook_url, active, created_at) VALUES (?, ?, ?, 1, ?)", [
+    id,
+    eventType.trim(),
+    webhookUrl.trim(),
+    createdAt,
+  ]);
 
   return id;
 }
@@ -146,9 +145,7 @@ export async function removeZapierTrigger(id: string): Promise<void> {
 export async function listZapierTriggers(): Promise<ZapierTrigger[]> {
   await ensureSchema();
 
-  const rows = await sqlAll(
-    "SELECT * FROM zapier_triggers ORDER BY created_at DESC",
-  );
+  const rows = await sqlAll("SELECT * FROM zapier_triggers ORDER BY created_at DESC");
 
   return rows.map(rowToTrigger);
 }
@@ -163,20 +160,14 @@ export async function listZapierTriggers(): Promise<ZapierTrigger[]> {
  * @param eventType  The event type to fire triggers for.
  * @param payload    Arbitrary data to include in the webhook body.
  */
-export async function fireZapierTriggers(
-  eventType: string,
-  payload: Record<string, unknown>,
-): Promise<void> {
+export async function fireZapierTriggers(eventType: string, payload: Record<string, unknown>): Promise<void> {
   if (!eventType || !eventType.trim()) {
     throw new Error("eventType is required and must be non-empty");
   }
 
   await ensureSchema();
 
-  const rows = await sqlAll(
-    "SELECT * FROM zapier_triggers WHERE event_type = ? AND active = 1",
-    [eventType.trim()],
-  );
+  const rows = await sqlAll("SELECT * FROM zapier_triggers WHERE event_type = ? AND active = 1", [eventType.trim()]);
 
   const triggers = rows.map(rowToTrigger);
 

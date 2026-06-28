@@ -15,10 +15,7 @@
  *     PNAS 95(4): 1460-1465.
  */
 
-import {
-  COMMON_ENZYMES,
-  type RestrictionEnzyme,
-} from "../../components/sequence/restrictionEnzymes";
+import { COMMON_ENZYMES, type RestrictionEnzyme } from "../../components/sequence/restrictionEnzymes";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -127,10 +124,7 @@ function reverseComplement(seq: string): string {
  * @param enzymes  - Array of enzyme names (must match COMMON_ENZYMES names)
  * @returns Fragments and cut site metadata
  */
-export function simulateRestrictionDigest(
-  sequence: string,
-  enzymeNames: string[],
-): RestrictionDigestResult {
+export function simulateRestrictionDigest(sequence: string, enzymeNames: string[]): RestrictionDigestResult {
   if (!sequence || enzymeNames.length === 0) {
     return { fragments: [], cutSites: [] };
   }
@@ -159,10 +153,7 @@ export function simulateRestrictionDigest(
       if (pos === -1) break;
 
       const watsonCut = pos + enz.cutSite;
-      const crickCut =
-        enz.overhang === "blunt"
-          ? pos + enz.cutSite
-          : pos + recog.length - enz.cutSite;
+      const crickCut = enz.overhang === "blunt" ? pos + enz.cutSite : pos + recog.length - enz.cutSite;
 
       sites.push({
         enzyme: enz.name,
@@ -187,10 +178,7 @@ export function simulateRestrictionDigest(
 
         // On the Crick strand, the cut positions are mirrored
         const crickWatsonCut = pos + enz.cutSite;
-        const crickCrickCut =
-          enz.overhang === "blunt"
-            ? pos + enz.cutSite
-            : pos + recog.length - enz.cutSite;
+        const crickCrickCut = enz.overhang === "blunt" ? pos + enz.cutSite : pos + recog.length - enz.cutSite;
 
         sites.push({
           enzyme: enz.name,
@@ -271,9 +259,7 @@ export function simulateGibsonAssembly(fragments: GibsonFragment[]): GibsonResul
     const overlapLen = fragments[i].overlap;
 
     if (overlapLen <= 0) {
-      errors.push(
-        `Fragment ${i}: overlap must be positive (got ${overlapLen})`,
-      );
+      errors.push(`Fragment ${i}: overlap must be positive (got ${overlapLen})`);
       continue;
     }
 
@@ -289,9 +275,7 @@ export function simulateGibsonAssembly(fragments: GibsonFragment[]): GibsonResul
     const currHead = currSeq.slice(0, overlapLen);
 
     if (prevTail !== currHead) {
-      errors.push(
-        `Fragment ${i}: overlap mismatch — expected "${prevTail}" at 3' end, got "${currHead}" at 5' end`,
-      );
+      errors.push(`Fragment ${i}: overlap mismatch — expected "${prevTail}" at 3' end, got "${currHead}" at 5' end`);
       continue;
     }
 
@@ -320,10 +304,7 @@ export function simulateGibsonAssembly(fragments: GibsonFragment[]): GibsonResul
  * @param enzyme   - Type IIS enzyme name (BsaI, BpiI, BsmBI)
  * @returns Assembled sequence and success status
  */
-export function simulateGoldenGate(
-  sequence: string,
-  enzymeName: string,
-): GoldenGateResult {
+export function simulateGoldenGate(sequence: string, enzymeName: string): GoldenGateResult {
   const errors: string[] = [];
 
   if (!sequence) {
@@ -485,10 +466,7 @@ export function simulateGoldenGate(
  * @param concentration - Total strand concentration in nM (default: 250)
  * @returns Melting temperature in degrees Celsius
  */
-export function calculateTm(
-  sequence: string,
-  concentration: number = 250,
-): number {
+export function calculateTm(sequence: string, concentration: number = 250): number {
   if (!sequence || sequence.length < 2) return 0;
 
   const upper = sequence.toUpperCase().replace(/[^ATCG]/g, "");
@@ -521,9 +499,7 @@ export function calculateTm(
   const concFactor = isSelfComplementary ? 1 : 4;
 
   // Tm = dH * 1000 / (dS + R * ln(C/concFactor)) - 273.15
-  const tmCelsius =
-    (dH * 1000) / (dS + R * Math.log(concentration * 1e-9 / concFactor)) -
-    273.15;
+  const tmCelsius = (dH * 1000) / (dS + R * Math.log((concentration * 1e-9) / concFactor)) - 273.15;
 
   return Math.round(tmCelsius * 100) / 100;
 }

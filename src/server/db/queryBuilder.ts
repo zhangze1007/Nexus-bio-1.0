@@ -50,14 +50,14 @@ export interface WhereConditions {
   isNull?: Record<string, boolean>;
 }
 
-export type SortDirection = 'ASC' | 'DESC';
+export type SortDirection = "ASC" | "DESC";
 
 export interface OrderByClause {
   column: string;
   direction?: SortDirection;
 }
 
-export type JoinType = 'INNER' | 'LEFT' | 'RIGHT' | 'CROSS';
+export type JoinType = "INNER" | "LEFT" | "RIGHT" | "CROSS";
 
 export interface JoinClause {
   type: JoinType;
@@ -99,7 +99,7 @@ export interface SelectOptions {
  */
 function qid(name: string): string {
   // Disallow obviously malicious input
-  if (name.includes(';') || name.includes('--') || name.includes('/*')) {
+  if (name.includes(";") || name.includes("--") || name.includes("/*")) {
     throw new Error(`Invalid identifier: ${name}`);
   }
   return `"${name}"`;
@@ -116,31 +116,73 @@ function buildWhere(conditions: WhereConditions): [string, unknown[]] {
 
   // Operator map: key -> SQL operator (or special handler)
   const operators: Array<{ key: keyof WhereConditions; handler: (col: string, val: unknown) => void }> = [
-    { key: 'eq',    handler: (col, val) => { clauses.push(`${qid(col)} = ?`); params.push(val); } },
-    { key: 'neq',   handler: (col, val) => { clauses.push(`${qid(col)} <> ?`); params.push(val); } },
-    { key: 'gt',    handler: (col, val) => { clauses.push(`${qid(col)} > ?`); params.push(val); } },
-    { key: 'gte',   handler: (col, val) => { clauses.push(`${qid(col)} >= ?`); params.push(val); } },
-    { key: 'lt',    handler: (col, val) => { clauses.push(`${qid(col)} < ?`); params.push(val); } },
-    { key: 'lte',   handler: (col, val) => { clauses.push(`${qid(col)} <= ?`); params.push(val); } },
-    { key: 'like',  handler: (col, val) => { clauses.push(`${qid(col)} LIKE ?`); params.push(val); } },
     {
-      key: 'in',
+      key: "eq",
+      handler: (col, val) => {
+        clauses.push(`${qid(col)} = ?`);
+        params.push(val);
+      },
+    },
+    {
+      key: "neq",
+      handler: (col, val) => {
+        clauses.push(`${qid(col)} <> ?`);
+        params.push(val);
+      },
+    },
+    {
+      key: "gt",
+      handler: (col, val) => {
+        clauses.push(`${qid(col)} > ?`);
+        params.push(val);
+      },
+    },
+    {
+      key: "gte",
+      handler: (col, val) => {
+        clauses.push(`${qid(col)} >= ?`);
+        params.push(val);
+      },
+    },
+    {
+      key: "lt",
+      handler: (col, val) => {
+        clauses.push(`${qid(col)} < ?`);
+        params.push(val);
+      },
+    },
+    {
+      key: "lte",
+      handler: (col, val) => {
+        clauses.push(`${qid(col)} <= ?`);
+        params.push(val);
+      },
+    },
+    {
+      key: "like",
+      handler: (col, val) => {
+        clauses.push(`${qid(col)} LIKE ?`);
+        params.push(val);
+      },
+    },
+    {
+      key: "in",
       handler: (col, val) => {
         const vals = val as unknown[];
         if (!Array.isArray(vals) || vals.length === 0) {
-          clauses.push('0');
+          clauses.push("0");
         } else {
-          const placeholders = vals.map(() => '?').join(', ');
+          const placeholders = vals.map(() => "?").join(", ");
           clauses.push(`${qid(col)} IN (${placeholders})`);
           params.push(...vals);
         }
       },
     },
     {
-      key: 'isNull',
+      key: "isNull",
       handler: (col, val) => {
         const shouldBeNull = val as boolean;
-        clauses.push(`${qid(col)} ${shouldBeNull ? 'IS NULL' : 'IS NOT NULL'}`);
+        clauses.push(`${qid(col)} ${shouldBeNull ? "IS NULL" : "IS NOT NULL"}`);
       },
     },
   ];
@@ -155,7 +197,7 @@ function buildWhere(conditions: WhereConditions): [string, unknown[]] {
     }
   }
 
-  return [clauses.join(' AND '), params];
+  return [clauses.join(" AND "), params];
 }
 
 /**
@@ -163,7 +205,7 @@ function buildWhere(conditions: WhereConditions): [string, unknown[]] {
  * The dot is allowed for qualified references like `table.column`.
  */
 function isValidColumn(name: string): boolean {
-  return /^[a-zA-Z_][a-zA-Z0-9_.]*$/.test(name) && !name.includes(' ');
+  return /^[a-zA-Z_][a-zA-Z0-9_.]*$/.test(name) && !name.includes(" ");
 }
 
 function validateColumn(name: string): void {
@@ -193,17 +235,22 @@ function validateColumn(name: string): void {
  */
 export function buildSelect(table: string, options: SelectOptions = {}): QueryResult {
   const params: unknown[] = [];
-  const cols = options.distinct ? 'DISTINCT ' : '';
+  const cols = options.distinct ? "DISTINCT " : "";
   const selectCols = options.columns?.length
-    ? options.columns.map((c) => { validateColumn(c); return qid(c); }).join(', ')
-    : '*';
+    ? options.columns
+        .map((c) => {
+          validateColumn(c);
+          return qid(c);
+        })
+        .join(", ")
+    : "*";
 
   let sql = `SELECT ${cols}${selectCols} FROM ${qid(table)}`;
 
   // Joins
   if (options.joins?.length) {
     for (const join of options.joins) {
-      if (join.type === 'CROSS') {
+      if (join.type === "CROSS") {
         sql += ` CROSS JOIN ${qid(join.table)}`;
       } else {
         validateColumn(join.onLeft);
@@ -232,9 +279,9 @@ export function buildSelect(table: string, options: SelectOptions = {}): QueryRe
   if (options.orderBy?.length) {
     const parts = options.orderBy.map((o) => {
       validateColumn(o.column);
-      return `${qid(o.column)} ${o.direction ?? 'ASC'}`;
+      return `${qid(o.column)} ${o.direction ?? "ASC"}`;
     });
-    sql += ` ORDER BY ${parts.join(', ')}`;
+    sql += ` ORDER BY ${parts.join(", ")}`;
   }
 
   // Limit / Offset
@@ -270,11 +317,16 @@ export function buildSelect(table: string, options: SelectOptions = {}): QueryRe
 export function buildInsert(table: string, data: Record<string, unknown>): QueryResult {
   const entries = Object.entries(data);
   if (entries.length === 0) {
-    throw new Error('INSERT requires at least one column/value pair');
+    throw new Error("INSERT requires at least one column/value pair");
   }
 
-  const columns = entries.map(([col]) => { validateColumn(col); return qid(col); }).join(', ');
-  const placeholders = entries.map(() => '?').join(', ');
+  const columns = entries
+    .map(([col]) => {
+      validateColumn(col);
+      return qid(col);
+    })
+    .join(", ");
+  const placeholders = entries.map(() => "?").join(", ");
   const params = entries.map(([, val]) => val);
 
   const sql = `INSERT INTO ${qid(table)} (${columns}) VALUES (${placeholders})`;
@@ -291,17 +343,18 @@ export function buildInsert(table: string, data: Record<string, unknown>): Query
  * // params: ['inactive', 42]
  * ```
  */
-export function buildUpdate(
-  table: string,
-  data: Record<string, unknown>,
-  where: WhereConditions,
-): QueryResult {
+export function buildUpdate(table: string, data: Record<string, unknown>, where: WhereConditions): QueryResult {
   const entries = Object.entries(data);
   if (entries.length === 0) {
-    throw new Error('UPDATE requires at least one column/value pair for SET');
+    throw new Error("UPDATE requires at least one column/value pair for SET");
   }
 
-  const setClauses = entries.map(([col]) => { validateColumn(col); return `${qid(col)} = ?`; }).join(', ');
+  const setClauses = entries
+    .map(([col]) => {
+      validateColumn(col);
+      return `${qid(col)} = ?`;
+    })
+    .join(", ");
   const params: unknown[] = entries.map(([, val]) => val);
 
   let sql = `UPDATE ${qid(table)} SET ${setClauses}`;

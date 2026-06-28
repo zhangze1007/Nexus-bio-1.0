@@ -20,7 +20,7 @@
  *     PCR Methods Appl 3(2):S30-S37
  */
 
-import { computeGC, computeTm } from './sequenceAnalysis';
+import { computeGC, computeTm } from "./sequenceAnalysis";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -89,15 +89,18 @@ const DEFAULT_OPTIONS: Required<PrimerDesignOptions> = {
 
 /** Normalize DNA to uppercase, replace U→T, strip non-ACGT. */
 function normalize(seq: string): string {
-  return seq.toUpperCase().replace(/U/g, 'T').replace(/[^ATGC]/g, '');
+  return seq
+    .toUpperCase()
+    .replace(/U/g, "T")
+    .replace(/[^ATGC]/g, "");
 }
 
 /** Get the reverse complement of a DNA sequence. */
 function reverseComplement(seq: string): string {
-  const comp: Record<string, string> = { A: 'T', T: 'A', G: 'C', C: 'G' };
-  let rc = '';
+  const comp: Record<string, string> = { A: "T", T: "A", G: "C", C: "G" };
+  let rc = "";
   for (let i = seq.length - 1; i >= 0; i--) {
-    rc += comp[seq[i]] ?? 'N';
+    rc += comp[seq[i]] ?? "N";
   }
   return rc;
 }
@@ -115,10 +118,7 @@ function reverseComplement(seq: string): string {
  * @param sequence  Primer sequence (5'→3')
  * @param windowSize  Number of 3'-terminal bases to check (default: 6)
  */
-export function checkSelfComplementarity(
-  sequence: string,
-  windowSize: number = 6,
-): number {
+export function checkSelfComplementarity(sequence: string, windowSize: number = 6): number {
   const seq = normalize(sequence);
   if (seq.length === 0) return 0;
 
@@ -128,7 +128,7 @@ export function checkSelfComplementarity(
   // Check the tail against every position in the full sequence for
   // Watson-Crick complementarity. We count matching complementary bases
   // in an alignment-free sliding approach.
-  const comp: Record<string, string> = { A: 'T', T: 'A', G: 'C', C: 'G' };
+  const comp: Record<string, string> = { A: "T", T: "A", G: "C", C: "G" };
   let maxMatches = 0;
 
   // Compare tail (reversed) against each window in the sequence
@@ -155,18 +155,13 @@ export function checkSelfComplementarity(
 function hasGcClamp(sequence: string): boolean {
   if (sequence.length === 0) return false;
   const last = sequence[sequence.length - 1].toUpperCase();
-  return last === 'G' || last === 'C';
+  return last === "G" || last === "C";
 }
 
 /**
  * Build a Primer object for a candidate subsequence of the template.
  */
-function buildPrimer(
-  template: string,
-  start: number,
-  end: number,
-  ct: number,
-): Primer {
+function buildPrimer(template: string, start: number, end: number, ct: number): Primer {
   const seq = template.slice(start, end);
   return {
     sequence: seq,
@@ -263,10 +258,7 @@ export function calculateTm(sequence: string, ct: number = 250e-9): number {
  * @param options   Design constraints (all optional; sensible defaults)
  * @returns  Array of PrimerPair objects sorted by ascending tmDiff
  */
-export async function designPrimers(
-  template: string,
-  options?: PrimerDesignOptions,
-): Promise<PrimerPair[]> {
+export async function designPrimers(template: string, options?: PrimerDesignOptions): Promise<PrimerPair[]> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const seq = normalize(template);
 

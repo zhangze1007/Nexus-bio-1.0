@@ -12,14 +12,9 @@
  *   REFERENCE: Levitt M, Lifson S (1969) J Mol Biol 46:269-279
  */
 
-import type { BackboneAtom } from './backboneGenerator';
-import {
-  calculateEnergy,
-  calculateForces,
-  DEFAULT_FORCE_FIELD_PARAMS,
-  type ForceFieldParams,
-} from './forceField';
-import { calculateRMSD } from './rmsd';
+import type { BackboneAtom } from "./backboneGenerator";
+import { calculateEnergy, calculateForces, DEFAULT_FORCE_FIELD_PARAMS, type ForceFieldParams } from "./forceField";
+import { calculateRMSD } from "./rmsd";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,7 +52,7 @@ const DEFAULT_CONFIG: Required<EnergyMinimizationConfig> = {
   maxIterations: 1000,
   convergenceThreshold: 0.1,
   stepSize: 0.01,
-  forceField: 'simple',
+  forceField: "simple",
 };
 
 // ---------------------------------------------------------------------------
@@ -94,10 +89,7 @@ function maxForceMagnitude(forces: Array<[number, number, number]>): number {
  * @param config Minimization configuration
  * @returns MinimizationResult with trajectory and statistics
  */
-export function minimizeEnergy(
-  atoms: BackboneAtom[],
-  config?: EnergyMinimizationConfig,
-): MinimizationResult {
+export function minimizeEnergy(atoms: BackboneAtom[], config?: EnergyMinimizationConfig): MinimizationResult {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const ffParams: ForceFieldParams = DEFAULT_FORCE_FIELD_PARAMS;
 
@@ -117,7 +109,7 @@ export function minimizeEnergy(
   let currentAtoms = deepCopyAtoms(atoms);
 
   const initialEnergy = calculateEnergy(currentAtoms, ffParams);
-  const trajectory: MinimizationResult['trajectory'] = [];
+  const trajectory: MinimizationResult["trajectory"] = [];
 
   // Record initial state
   trajectory.push({

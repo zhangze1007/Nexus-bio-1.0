@@ -87,14 +87,13 @@ const MAX_PATHWAY_NODES = 10;
  * @returns A ProjectContext with all available data for the given project.
  */
 export async function buildProjectContext(projectId: string): Promise<ProjectContext> {
-  const [projectBrief, recentExperiments, activePathway, toolResults, inventorySummary] =
-    await Promise.all([
-      fetchProjectBrief(projectId),
-      fetchRecentExperiments(projectId),
-      fetchActivePathway(projectId),
-      fetchToolResults(projectId),
-      fetchInventorySummary(projectId),
-    ]);
+  const [projectBrief, recentExperiments, activePathway, toolResults, inventorySummary] = await Promise.all([
+    fetchProjectBrief(projectId),
+    fetchRecentExperiments(projectId),
+    fetchActivePathway(projectId),
+    fetchToolResults(projectId),
+    fetchInventorySummary(projectId),
+  ]);
 
   return {
     projectBrief,
@@ -233,10 +232,9 @@ export function getRelevantTools(context: ProjectContext): string[] {
  */
 async function fetchProjectBrief(projectId: string): Promise<ProjectBrief | null> {
   try {
-    const row = await sqlGet(
-      "SELECT id, title, description, target_product, status FROM projects WHERE id = ?",
-      [projectId],
-    );
+    const row = await sqlGet("SELECT id, title, description, target_product, status FROM projects WHERE id = ?", [
+      projectId,
+    ]);
     if (!row) return null;
 
     return {

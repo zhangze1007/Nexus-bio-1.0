@@ -52,9 +52,7 @@ interface GlobalWithSyncChannels {
   __NX_SYNC_CHANNELS__?: Map<string, InternalChannel>;
 }
 const g = globalThis as GlobalWithSyncChannels;
-const channels: Map<string, InternalChannel> =
-  g.__NX_SYNC_CHANNELS__ ??
-  (g.__NX_SYNC_CHANNELS__ = new Map());
+const channels: Map<string, InternalChannel> = g.__NX_SYNC_CHANNELS__ ?? (g.__NX_SYNC_CHANNELS__ = new Map());
 
 function getOrCreateChannel(projectId: string): InternalChannel {
   const existing = channels.get(projectId);
@@ -151,14 +149,9 @@ export function broadcastChange(channelId: string, change: Change): void {
  *
  * Returns an `Unsubscribe` function.
  */
-export function subscribeToChanges(
-  channelId: string,
-  callback: ChangeCallback,
-  entityId?: string,
-): Unsubscribe {
+export function subscribeToChanges(channelId: string, callback: ChangeCallback, entityId?: string): Unsubscribe {
   if (!channelId) throw new Error("channelId is required");
-  if (typeof callback !== "function")
-    throw new Error("callback must be a function");
+  if (typeof callback !== "function") throw new Error("callback must be a function");
 
   // Find channel by id
   let target: InternalChannel | undefined;

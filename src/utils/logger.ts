@@ -52,9 +52,7 @@ function formatDev(entry: LogEntry): string {
 }
 
 function emit(level: LogLevel, entry: LogEntry): void {
-  const formatted = isProduction()
-    ? JSON.stringify(entry)
-    : formatDev(entry);
+  const formatted = isProduction() ? JSON.stringify(entry) : formatDev(entry);
 
   switch (level) {
     case "error":

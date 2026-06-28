@@ -93,11 +93,7 @@ async function ensureTables(): Promise<void> {
 // ─── CRUD helpers ───────────────────────────────────────────────────────────
 
 /** Register a new webhook. Returns the created Webhook. */
-export async function registerWebhook(params: {
-  orgId: string;
-  url: string;
-  events: string[];
-}): Promise<Webhook> {
+export async function registerWebhook(params: { orgId: string; url: string; events: string[] }): Promise<Webhook> {
   await ensureTables();
 
   // Validate events
@@ -165,10 +161,7 @@ export async function deleteWebhook(id: string): Promise<boolean> {
 }
 
 /** Get deliveries for a webhook, most recent first. */
-export async function getDeliveries(
-  webhookId: string,
-  limit = 50,
-): Promise<WebhookDelivery[]> {
+export async function getDeliveries(webhookId: string, limit = 50): Promise<WebhookDelivery[]> {
   await ensureTables();
   const rows = await sqlAll(
     "SELECT * FROM webhook_deliveries WHERE webhook_id = ? ORDER BY delivered_at DESC, id DESC LIMIT ?",
@@ -188,10 +181,7 @@ export async function getDeliveries(
  *  3. Records the delivery attempt.
  *  4. On failure, schedules a retry using exponential backoff.
  */
-export async function dispatch(
-  event: string,
-  payload: Record<string, unknown>,
-): Promise<void> {
+export async function dispatch(event: string, payload: Record<string, unknown>): Promise<void> {
   await ensureTables();
 
   if (!VALID_WEBHOOK_EVENTS.has(event)) {
@@ -199,21 +189,14 @@ export async function dispatch(
   }
 
   // Find all active webhooks subscribed to this event
-  const rows = await sqlAll(
-    "SELECT * FROM webhooks WHERE active = 1",
-    [],
-  );
+  const rows = await sqlAll("SELECT * FROM webhooks WHERE active = 1", []);
 
-  const matchingWebhooks = rows
-    .map(rowToWebhook)
-    .filter((wh) => wh.events.includes(event as WebhookEventType));
+  const matchingWebhooks = rows.map(rowToWebhook).filter((wh) => wh.events.includes(event as WebhookEventType));
 
   const body = JSON.stringify({ event, payload, timestamp: new Date().toISOString() });
 
   // Fire-and-record for each matching webhook
-  await Promise.allSettled(
-    matchingWebhooks.map((webhook) => deliverToWebhook(webhook, event, body)),
-  );
+  await Promise.allSettled(matchingWebhooks.map((webhook) => deliverToWebhook(webhook, event, body)));
 }
 
 /**
@@ -238,10 +221,7 @@ export async function retryFailed(): Promise<number> {
     const webhook = await getWebhook(delivery.webhookId);
     if (!webhook || !webhook.active) {
       // Webhook was deleted or deactivated — mark delivery as permanently failed
-      await sqlRun(
-        "UPDATE webhook_deliveries SET status = 'failed', next_retry_at = NULL WHERE id = ?",
-        [delivery.id],
-      );
+      await sqlRun("UPDATE webhook_deliveries SET status = 'failed', next_retry_at = NULL WHERE id = ?", [delivery.id]);
       continue;
     }
 
@@ -263,11 +243,7 @@ export async function retryFailed(): Promise<number> {
 /**
  * Create a delivery record and attempt the first POST.
  */
-async function deliverToWebhook(
-  webhook: Webhook,
-  event: string,
-  body: string,
-): Promise<void> {
+async function deliverToWebhook(webhook: Webhook, event: string, body: string): Promise<void> {
   const deliveryId = crypto.randomUUID();
 
   // Insert initial delivery record as pending
@@ -292,11 +268,7 @@ async function deliverToWebhook(
 /**
  * Perform an HTTP POST with HMAC signature and record the result.
  */
-async function attemptDelivery(
-  webhook: Webhook,
-  delivery: WebhookDelivery,
-  body: string,
-): Promise<void> {
+async function attemptDelivery(webhook: Webhook, delivery: WebhookDelivery, body: string): Promise<void> {
   const signature = signPayload(body, webhook.secret);
 
   try {

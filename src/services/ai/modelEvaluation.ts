@@ -69,9 +69,7 @@ export interface DriftResult {
 // Helpers — classification metrics from raw predictions
 // ---------------------------------------------------------------------------
 
-function classifyPairs(
-  data: TestDataPoint[],
-): { tp: number; fp: number; tn: number; fn: number } {
+function classifyPairs(data: TestDataPoint[]): { tp: number; fp: number; tn: number; fn: number } {
   let tp = 0;
   let fp = 0;
   let tn = 0;
@@ -111,14 +109,9 @@ function safeDiv(num: number, den: number): number {
  * @param testData Array of { actual, predicted } pairs.
  * @returns        Full metrics bundle.
  */
-export async function evaluateModelPerformance(
-  modelId: string,
-  testData: TestDataPoint[],
-): Promise<ModelMetrics> {
+export async function evaluateModelPerformance(modelId: string, testData: TestDataPoint[]): Promise<ModelMetrics> {
   if (testData.length === 0) {
-    throw new Error(
-      `evaluateModelPerformance: testData must not be empty (modelId=${modelId})`,
-    );
+    throw new Error(`evaluateModelPerformance: testData must not be empty (modelId=${modelId})`);
   }
 
   const n = testData.length;
@@ -128,10 +121,7 @@ export async function evaluateModelPerformance(
   const accuracy = safeDiv(tp + tn, n);
   const precision = safeDiv(tp, tp + fp);
   const recall = safeDiv(tp, tp + fn);
-  const f1 =
-    precision + recall === 0
-      ? 0
-      : (2 * precision * recall) / (precision + recall);
+  const f1 = precision + recall === 0 ? 0 : (2 * precision * recall) / (precision + recall);
 
   // --- Regression metrics ---
   const actuals = testData.map((d) => d.actual);
@@ -206,22 +196,14 @@ export async function compareModels(
   }));
 
   // Determine which metric varies most.
-  const metricKeys: (keyof ModelMetrics)[] = [
-    "accuracy",
-    "precision",
-    "recall",
-    "f1",
-    "r2",
-    "rmse",
-  ];
+  const metricKeys: (keyof ModelMetrics)[] = ["accuracy", "precision", "recall", "f1", "r2", "rmse"];
   let maxVariance = -1;
   let mostDiscriminating: keyof ModelMetrics = "f1";
 
   for (const key of metricKeys) {
     const values = result.map((r) => r.metrics[key]);
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
-    const variance =
-      values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
     if (variance > maxVariance) {
       maxVariance = variance;
       mostDiscriminating = key;
@@ -249,9 +231,7 @@ export async function getModelDrift(
   newData: TestDataPoint[],
 ): Promise<DriftResult> {
   if (baselineData.length === 0 || newData.length === 0) {
-    throw new Error(
-      `getModelDrift: both baselineData and newData must be non-empty (modelId=${modelId})`,
-    );
+    throw new Error(`getModelDrift: both baselineData and newData must be non-empty (modelId=${modelId})`);
   }
 
   const baseline = await evaluateModelPerformance(modelId, baselineData);
@@ -284,9 +264,7 @@ export async function getModelDrift(
     );
   }
   if (f1Delta > 0.1) {
-    recommendations.push(
-      `F1 score shifted by ${(f1Delta * 100).toFixed(1)}%. Investigate class distribution changes.`,
-    );
+    recommendations.push(`F1 score shifted by ${(f1Delta * 100).toFixed(1)}%. Investigate class distribution changes.`);
   }
   if (rmseDelta > 0.2) {
     recommendations.push(
@@ -294,19 +272,13 @@ export async function getModelDrift(
     );
   }
   if (current.r2 < baseline.r2 * 0.8) {
-    recommendations.push(
-      "R-squared regression detected. Validate input feature ranges against training data.",
-    );
+    recommendations.push("R-squared regression detected. Validate input feature ranges against training data.");
   }
   if (!isDrifting) {
-    recommendations.push(
-      "Model performance is within acceptable bounds. No action required.",
-    );
+    recommendations.push("Model performance is within acceptable bounds. No action required.");
   }
   if (isDrifting && recommendations.length === 0) {
-    recommendations.push(
-      "Drift detected but individual metric changes are moderate. Schedule a review.",
-    );
+    recommendations.push("Drift detected but individual metric changes are moderate. Schedule a review.");
   }
 
   return { driftScore, isDrifting, recommendations };

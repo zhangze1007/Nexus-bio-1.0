@@ -88,11 +88,7 @@ function now(): number {
 }
 
 /** Insert a provenance event for a sample (inside or outside a batch). */
-async function recordEvent(
-  sampleId: string,
-  eventType: string,
-  details: string,
-): Promise<void> {
+async function recordEvent(sampleId: string, eventType: string, details: string): Promise<void> {
   await sqlRun(
     `INSERT INTO sample_events (id, sample_id, event_type, details, timestamp)
      VALUES (?, ?, ?, ?, ?)`,
@@ -135,16 +131,10 @@ function rowToEvent(row: Record<string, unknown>): SampleEvent {
  * @returns        The newly created Sample record
  * @throws         If type is not one of the allowed SampleType values
  */
-export async function createSample(
-  name: string,
-  type: SampleType,
-  location: string,
-): Promise<Sample> {
+export async function createSample(name: string, type: SampleType, location: string): Promise<Sample> {
   const validTypes: SampleType[] = ["strain", "plasmid", "primer", "chemical", "media"];
   if (!validTypes.includes(type)) {
-    throw new Error(
-      `Invalid sample type "${type}". Must be one of: ${validTypes.join(", ")}.`,
-    );
+    throw new Error(`Invalid sample type "${type}". Must be one of: ${validTypes.join(", ")}.`);
   }
 
   if (!name || name.trim().length === 0) {
@@ -188,10 +178,7 @@ export async function createSample(
  * @param newLocation Target location string
  * @throws            If the sample does not exist
  */
-export async function moveSample(
-  sampleId: string,
-  newLocation: string,
-): Promise<void> {
+export async function moveSample(sampleId: string, newLocation: string): Promise<void> {
   const sample = await sqlGet("SELECT * FROM samples WHERE id = ?", [sampleId]);
   if (!sample) {
     throw new Error(`Sample not found: ${sampleId}`);
@@ -208,13 +195,7 @@ export async function moveSample(
     {
       sql: `INSERT INTO sample_events (id, sample_id, event_type, details, timestamp)
             VALUES (?, ?, ?, ?, ?)`,
-      args: [
-        randomUUID(),
-        sampleId,
-        "moved",
-        `Moved from "${oldLocation}" to "${newLocation}"`,
-        ts,
-      ],
+      args: [randomUUID(), sampleId, "moved", `Moved from "${oldLocation}" to "${newLocation}"`, ts],
     },
   ]);
 }
@@ -226,9 +207,7 @@ export async function moveSample(
  * @returns         Array of SampleEvent records (oldest first)
  * @throws          If the sample does not exist
  */
-export async function getSampleHistory(
-  sampleId: string,
-): Promise<SampleEvent[]> {
+export async function getSampleHistory(sampleId: string): Promise<SampleEvent[]> {
   const sample = await sqlGet("SELECT id FROM samples WHERE id = ?", [sampleId]);
   if (!sample) {
     throw new Error(`Sample not found: ${sampleId}`);
@@ -253,10 +232,7 @@ export async function getSampleHistory(
  * @param type    Optional type filter
  * @returns       Matching Sample records, ordered by most recently updated
  */
-export async function searchSamples(
-  query: string,
-  type?: SampleType,
-): Promise<Sample[]> {
+export async function searchSamples(query: string, type?: SampleType): Promise<Sample[]> {
   if (type) {
     const rows = await sqlAll(
       `SELECT * FROM samples

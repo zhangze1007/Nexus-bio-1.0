@@ -13,11 +13,7 @@ import { sqlAll, sqlGet, sqlRun } from "../../server/libsqlDb";
 // ── Types ──
 
 /** Valid data processing categories. */
-export type ProcessingCategory =
-  | "user_data"
-  | "research_data"
-  | "financial_data"
-  | "operational_data";
+export type ProcessingCategory = "user_data" | "research_data" | "financial_data" | "operational_data";
 
 /** All valid processing categories, used for validation. */
 export const VALID_PROCESSING_CATEGORIES: readonly ProcessingCategory[] = [
@@ -237,10 +233,7 @@ export async function listRecords(orgId: string): Promise<DataProcessingRecord[]
  * @param id      - The record identifier.
  * @param updates - Partial update payload.
  */
-export async function updateRecord(
-  id: string,
-  updates: DataProcessingRecordUpdates,
-): Promise<void> {
+export async function updateRecord(id: string, updates: DataProcessingRecordUpdates): Promise<void> {
   if (!id || typeof id !== "string" || id.trim().length === 0) {
     throw new Error("id must be a non-empty string.");
   }
@@ -311,8 +304,5 @@ export async function updateRecord(
 
   params.push(id.trim());
 
-  await sqlRun(
-    `UPDATE data_processing_records SET ${setClauses.join(", ")} WHERE id = ?`,
-    params,
-  );
+  await sqlRun(`UPDATE data_processing_records SET ${setClauses.join(", ")} WHERE id = ?`, params);
 }

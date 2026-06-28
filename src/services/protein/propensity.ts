@@ -20,7 +20,7 @@
 // ---------------------------------------------------------------------------
 
 /** All 20 standard amino acid single-letter codes */
-export const ALL_AMINO_ACIDS: readonly string[] = 'ACDEFGHIKLMNPQRSTVWY'.split('');
+export const ALL_AMINO_ACIDS: readonly string[] = "ACDEFGHIKLMNPQRSTVWY".split("");
 
 // ---------------------------------------------------------------------------
 // Chou-Fasman Propensity Tables
@@ -39,11 +39,11 @@ export const HELIX_PROPENSITIES: Record<string, number> = {
   R: 0.98, // Arg
   N: 0.67, // Asn — helix breaker
   D: 1.01, // Asp
-  C: 0.70, // Cys
+  C: 0.7, // Cys
   Q: 1.11, // Gln
   E: 1.51, // Glu — strongest helix former
   G: 0.57, // Gly — helix breaker
-  H: 1.00, // His — neutral
+  H: 1.0, // His — neutral
   I: 1.08, // Ile
   L: 1.21, // Leu — strong helix former
   K: 1.16, // Lys
@@ -71,12 +71,12 @@ export const SHEET_PROPENSITIES: Record<string, number> = {
   N: 0.89, // Asn
   D: 0.54, // Asp — sheet breaker
   C: 1.19, // Cys
-  Q: 1.10, // Gln
+  Q: 1.1, // Gln
   E: 0.37, // Glu — strongest sheet breaker
   G: 0.75, // Gly
   H: 0.87, // His
-  I: 1.60, // Ile — strong sheet former
-  L: 1.30, // Leu
+  I: 1.6, // Ile — strong sheet former
+  L: 1.3, // Leu
   K: 0.74, // Lys
   M: 1.05, // Met
   F: 1.38, // Phe — strong sheet former
@@ -85,7 +85,7 @@ export const SHEET_PROPENSITIES: Record<string, number> = {
   T: 1.19, // Thr
   W: 1.37, // Trp
   Y: 1.47, // Tyr — strong sheet former
-  V: 1.70, // Val — strongest sheet former
+  V: 1.7, // Val — strongest sheet former
 };
 
 /**
@@ -110,12 +110,12 @@ export const LOOP_PROPENSITIES: Record<string, number> = {
   I: 0.47, // Ile — rare in turns
   L: 0.59, // Leu
   K: 1.01, // Lys
-  M: 0.60, // Met
-  F: 0.60, // Phe
+  M: 0.6, // Met
+  F: 0.6, // Phe
   P: 1.91, // Pro — strongest turn former (rigid, breaks helix/sheet)
   S: 1.43, // Ser — common in turns
   T: 0.88, // Thr
-  W: 0.60, // Trp
+  W: 0.6, // Trp
   Y: 1.14, // Tyr
   V: 0.39, // Val — rare in turns
 };
@@ -134,12 +134,12 @@ export const LOOP_PROPENSITIES: Record<string, number> = {
  * atoms because their large hydrophobic surface area dominates burial.
  */
 export const HYDROPHOBIC_CORE: ReadonlySet<string> = new Set([
-  'V', // Val — branched aliphatic
-  'I', // Ile — branched aliphatic
-  'L', // Leu — branched aliphatic
-  'F', // Phe — aromatic
-  'W', // Trp — aromatic (large, mostly hydrophobic)
-  'M', // Met — sulfur-containing, hydrophobic
+  "V", // Val — branched aliphatic
+  "I", // Ile — branched aliphatic
+  "L", // Leu — branched aliphatic
+  "F", // Phe — aromatic
+  "W", // Trp — aromatic (large, mostly hydrophobic)
+  "M", // Met — sulfur-containing, hydrophobic
 ]);
 
 // ---------------------------------------------------------------------------
@@ -161,10 +161,10 @@ export const HYDROPHOBIC_CORE: ReadonlySet<string> = new Set([
  *   His(+) -- Glu(-)
  */
 export const CHARGE_PAIRS: ReadonlyArray<[string, string]> = [
-  ['D', 'K'], // Asp(-) -- Lys(+)
-  ['E', 'R'], // Glu(-) -- Arg(+)
-  ['D', 'R'], // Asp(-) -- Arg(+)
-  ['E', 'K'], // Glu(-) -- Lys(+)
-  ['H', 'D'], // His(+) -- Asp(-)
-  ['H', 'E'], // His(+) -- Glu(-)
+  ["D", "K"], // Asp(-) -- Lys(+)
+  ["E", "R"], // Glu(-) -- Arg(+)
+  ["D", "R"], // Asp(-) -- Arg(+)
+  ["E", "K"], // Glu(-) -- Lys(+)
+  ["H", "D"], // His(+) -- Asp(-)
+  ["H", "E"], // His(+) -- Glu(-)
 ];

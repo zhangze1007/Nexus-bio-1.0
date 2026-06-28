@@ -82,10 +82,7 @@ export function calculateDistanceMatrix(data: number[][]): number[][] {
  * @param labels - Optional labels for leaf nodes.
  * @returns Root ClusterNode of the dendrogram.
  */
-export function upgma(
-  distanceMatrix: number[][],
-  labels?: string[],
-): ClusterNode {
+export function upgma(distanceMatrix: number[][], labels?: string[]): ClusterNode {
   const n = distanceMatrix.length;
   if (n === 0) {
     throw new Error("UPGMA requires at least one data point.");
@@ -156,9 +153,7 @@ export function upgma(
       const ck = active[ak];
       if (ck === ci || ck === cj) continue;
       // UPGMA linkage: weighted average of distances.
-      const newDist =
-        (niBefore * dist[ci][ck] + njBefore * dist[cj][ck]) /
-        (niBefore + njBefore);
+      const newDist = (niBefore * dist[ci][ck] + njBefore * dist[cj][ck]) / (niBefore + njBefore);
       dist[ci][ck] = newDist;
       dist[ck][ci] = newDist;
     }

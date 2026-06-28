@@ -98,15 +98,7 @@ export async function setPresence(
        cursor_y = excluded.cursor_y,
        cursor_tool = excluded.cursor_tool,
        last_seen_at = excluded.last_seen_at`,
-    [
-      userId,
-      projectId,
-      status,
-      cursor?.x ?? null,
-      cursor?.y ?? null,
-      cursor?.tool ?? null,
-      now,
-    ],
+    [userId, projectId, status, cursor?.x ?? null, cursor?.y ?? null, cursor?.tool ?? null, now],
   );
 }
 
@@ -123,10 +115,7 @@ export async function getPresence(projectId: string): Promise<Presence[]> {
   const cutoff = Date.now() - INACTIVITY_THRESHOLD_MS;
 
   // Clean up expired entries for this project.
-  await sqlRun(
-    "DELETE FROM user_presence WHERE project_id = ? AND last_seen_at < ?",
-    [projectId, cutoff],
-  );
+  await sqlRun("DELETE FROM user_presence WHERE project_id = ? AND last_seen_at < ?", [projectId, cutoff]);
 
   const rows = await sqlAll(
     `SELECT user_id, project_id, status, cursor_x, cursor_y, cursor_tool, last_seen_at
@@ -148,19 +137,13 @@ export async function getPresence(projectId: string): Promise<Presence[]> {
 export async function clearPresence(userId: string): Promise<void> {
   await ensurePresenceSchema();
 
-  await sqlRun(
-    "DELETE FROM user_presence WHERE user_id = ?",
-    [userId],
-  );
+  await sqlRun("DELETE FROM user_presence WHERE user_id = ?", [userId]);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function mapRowToPresence(row: Record<string, unknown>): Presence {
-  const hasCursor =
-    row.cursor_x !== null &&
-    row.cursor_y !== null &&
-    row.cursor_tool !== null;
+  const hasCursor = row.cursor_x !== null && row.cursor_y !== null && row.cursor_tool !== null;
 
   return {
     userId: row.user_id as string,

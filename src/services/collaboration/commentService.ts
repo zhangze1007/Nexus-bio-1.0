@@ -140,20 +140,14 @@ export async function createThread(
     createdBy: userId,
     resolved: false,
     createdAt: timestamp,
-    replies: [
-      { id: replyId, threadId, userId, message, createdAt: timestamp },
-    ],
+    replies: [{ id: replyId, threadId, userId, message, createdAt: timestamp }],
   };
 }
 
 /**
  * Add a reply to an existing thread.
  */
-export async function replyToThread(
-  threadId: string,
-  userId: string,
-  message: string,
-): Promise<CommentReply> {
+export async function replyToThread(threadId: string, userId: string, message: string): Promise<CommentReply> {
   await ensureCommentSchema();
 
   const thread = await sqlGet("SELECT id FROM comment_threads WHERE id = ?", [threadId]);
@@ -176,10 +170,7 @@ export async function replyToThread(
 /**
  * Get all threads for a given entity, including their replies.
  */
-export async function getThreads(
-  entityType: string,
-  entityId: string,
-): Promise<ThreadWithReplies[]> {
+export async function getThreads(entityType: string, entityId: string): Promise<ThreadWithReplies[]> {
   await ensureCommentSchema();
 
   const threads = await sqlAll(
@@ -233,10 +224,7 @@ export async function getThreads(
 export async function resolveThread(threadId: string): Promise<void> {
   await ensureCommentSchema();
 
-  const result = await sqlRun(
-    "UPDATE comment_threads SET resolved = 1 WHERE id = ?",
-    [threadId],
-  );
+  const result = await sqlRun("UPDATE comment_threads SET resolved = 1 WHERE id = ?", [threadId]);
 
   if (result.rowsAffected === 0) {
     throw new Error(`Thread not found: ${threadId}`);
@@ -246,10 +234,7 @@ export async function resolveThread(threadId: string): Promise<void> {
 /**
  * Get recent comment activity across a project, ordered by most recent reply.
  */
-export async function getRecentActivity(
-  projectId: string,
-  limit = 20,
-): Promise<RecentActivity[]> {
+export async function getRecentActivity(projectId: string, limit = 20): Promise<RecentActivity[]> {
   await ensureCommentSchema();
 
   const safeLimit = Math.max(1, Math.min(limit, 100));

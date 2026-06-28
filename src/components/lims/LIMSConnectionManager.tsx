@@ -329,13 +329,10 @@ function AddConnectionForm({
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
 
-  const setField = useCallback(
-    <K extends keyof FormState>(key: K, value: FormState[K]) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
-      setErrors((prev) => ({ ...prev, [key]: undefined }));
-    },
-    [],
-  );
+  const setField = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  }, []);
 
   const validate = useCallback((): boolean => {
     const next: Partial<Record<keyof FormState, string>> = {};
@@ -666,9 +663,7 @@ export default function LIMSConnectionManager({
       </div>
 
       {/* Add form */}
-      {showForm && (
-        <AddConnectionForm onSubmit={handleAdd} onCancel={() => setShowForm(false)} />
-      )}
+      {showForm && <AddConnectionForm onSubmit={handleAdd} onCancel={() => setShowForm(false)} />}
 
       {/* Empty state */}
       {connections.length === 0 && !showForm && (

@@ -253,7 +253,7 @@ pre,
 
 /* ── Focus ring — WCAG 2.1 AA ── */
 *:focus-visible {
-  outline: 2px solid #C8D8E8;
+  outline: 2px solid #c8d8e8;
   outline-offset: 2px;
 }
 

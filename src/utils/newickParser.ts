@@ -112,9 +112,7 @@ function parseSubtree(tok: NewickTokenizer): PhyloNode {
 
     tok.skipWS();
     if (tok.peek() !== ")") {
-      throw new NewickParseError(
-        `Expected ')' at position ${getPosition(tok)}, got '${tok.peek()}'`,
-      );
+      throw new NewickParseError(`Expected ')' at position ${getPosition(tok)}, got '${tok.peek()}'`);
     }
     tok.consume(); // ')'
 
@@ -208,9 +206,7 @@ function countNodes(node: PhyloNode): number {
 /** Assign depth (root = 0) via BFS. */
 function computeNodeDepths(root: PhyloNode): number {
   let maxDepth = 0;
-  const queue: Array<{ node: PhyloNode; depth: number }> = [
-    { node: root, depth: 0 },
-  ];
+  const queue: Array<{ node: PhyloNode; depth: number }> = [{ node: root, depth: 0 }];
   while (queue.length > 0) {
     const { node, depth } = queue.shift()!;
     node.depth = depth;
@@ -264,9 +260,7 @@ export function parseNewick(newick: string): ParseResult {
   // Verify we consumed everything
   tok.skipWS();
   if (!tok.done) {
-    throw new NewickParseError(
-      `Unexpected trailing characters: '${trimmed.slice(trimmed.length - 20)}'`,
-    );
+    throw new NewickParseError(`Unexpected trailing characters: '${trimmed.slice(trimmed.length - 20)}'`);
   }
 
   // Post-process
@@ -316,10 +310,7 @@ export function collectInternalNodes(node: PhyloNode): PhyloNode[] {
 /**
  * Find a node by name (DFS, returns first match).
  */
-export function findNodeByName(
-  root: PhyloNode,
-  name: string,
-): PhyloNode | null {
+export function findNodeByName(root: PhyloNode, name: string): PhyloNode | null {
   if (root.name === name) return root;
   for (const child of root.children) {
     const found = findNodeByName(child, name);

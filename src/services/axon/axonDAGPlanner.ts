@@ -55,19 +55,14 @@ function defaultIdFactory(): string {
  * The planner maps goal keywords to tool sequences with explicit
  * dependency edges. Independent tools get parallel-ready (empty dependsOn).
  */
-export function planDAG(
-  goal: string,
-  context: WorkbenchCopilotContext,
-  options: DAGPlannerOptions = {},
-): DAGPlan {
+export function planDAG(goal: string, context: WorkbenchCopilotContext, options: DAGPlannerOptions = {}): DAGPlan {
   const idFactory = options.idFactory ?? defaultIdFactory;
   const now = options.now ?? (() => new Date());
   const text = goal.toLowerCase().trim();
   const tasks: DAGTask[] = [];
 
   // Map goal keywords to tool selections with dependency resolution
-  const wantsPathd = /pathway|design|route|biosynthesis|produce/i.test(text) ||
-    context.targetProduct !== null;
+  const wantsPathd = /pathway|design|route|biosynthesis|produce/i.test(text) || context.targetProduct !== null;
   const wantsFbasim = /flux|fba|yield|growth|balance|bottleneck/i.test(text);
   const wantsCatdes = /catalyst|enzyme|binding|mutagenesis/i.test(text);
   const wantsCethx = /thermodynamic|delta.?g|gibbs|atp/i.test(text);
@@ -208,50 +203,30 @@ export function planDAG(
  * dependencies are 'completed'.
  */
 export function getExecutableTasks(plan: DAGPlan): DAGTask[] {
-  const completedIds = new Set(
-    plan.tasks.filter((t) => t.status === "completed").map((t) => t.id),
-  );
+  const completedIds = new Set(plan.tasks.filter((t) => t.status === "completed").map((t) => t.id));
 
   return plan.tasks.filter(
-    (task) =>
-      task.status === "pending" &&
-      task.dependsOn.every((depId) => completedIds.has(depId)),
+    (task) => task.status === "pending" && task.dependsOn.every((depId) => completedIds.has(depId)),
   );
 }
 
 /**
  * Mark a task as completed with its result. Returns a new plan (immutable).
  */
-export function markTaskComplete(
-  plan: DAGPlan,
-  taskId: string,
-  result: unknown,
-): DAGPlan {
+export function markTaskComplete(plan: DAGPlan, taskId: string, result: unknown): DAGPlan {
   return {
     ...plan,
-    tasks: plan.tasks.map((task) =>
-      task.id === taskId
-        ? { ...task, status: "completed" as const, result }
-        : task,
-    ),
+    tasks: plan.tasks.map((task) => (task.id === taskId ? { ...task, status: "completed" as const, result } : task)),
   };
 }
 
 /**
  * Mark a task as failed with an error message. Returns a new plan (immutable).
  */
-export function markTaskFailed(
-  plan: DAGPlan,
-  taskId: string,
-  error: string,
-): DAGPlan {
+export function markTaskFailed(plan: DAGPlan, taskId: string, error: string): DAGPlan {
   return {
     ...plan,
-    tasks: plan.tasks.map((task) =>
-      task.id === taskId
-        ? { ...task, status: "failed" as const, error }
-        : task,
-    ),
+    tasks: plan.tasks.map((task) => (task.id === taskId ? { ...task, status: "failed" as const, error } : task)),
   };
 }
 
@@ -261,11 +236,7 @@ export function markTaskFailed(
 export function markTaskRunning(plan: DAGPlan, taskId: string): DAGPlan {
   return {
     ...plan,
-    tasks: plan.tasks.map((task) =>
-      task.id === taskId
-        ? { ...task, status: "running" as const }
-        : task,
-    ),
+    tasks: plan.tasks.map((task) => (task.id === taskId ? { ...task, status: "running" as const } : task)),
   };
 }
 
@@ -273,24 +244,16 @@ export function markTaskRunning(plan: DAGPlan, taskId: string): DAGPlan {
  * Check if the plan has any remaining pending tasks (executable or blocked).
  */
 export function hasRemainingTasks(plan: DAGPlan): boolean {
-  return plan.tasks.some(
-    (t) => t.status === "pending" || t.status === "running",
-  );
+  return plan.tasks.some((t) => t.status === "pending" || t.status === "running");
 }
 
 /**
  * Get all tasks that are blocked because a dependency failed.
  */
 export function getBlockedTasks(plan: DAGPlan): DAGTask[] {
-  const failedIds = new Set(
-    plan.tasks.filter((t) => t.status === "failed").map((t) => t.id),
-  );
+  const failedIds = new Set(plan.tasks.filter((t) => t.status === "failed").map((t) => t.id));
 
-  return plan.tasks.filter(
-    (task) =>
-      task.status === "pending" &&
-      task.dependsOn.some((depId) => failedIds.has(depId)),
-  );
+  return plan.tasks.filter((task) => task.status === "pending" && task.dependsOn.some((depId) => failedIds.has(depId)));
 }
 
 /**

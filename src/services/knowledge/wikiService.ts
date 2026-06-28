@@ -262,10 +262,7 @@ export async function getPage(id: string): Promise<WikiPage | undefined> {
  * Increments the version number and creates a new revision record.
  * Returns the updated page, or undefined if the page does not exist.
  */
-export async function updatePage(
-  id: string,
-  input: UpdatePageInput,
-): Promise<WikiPage | undefined> {
+export async function updatePage(id: string, input: UpdatePageInput): Promise<WikiPage | undefined> {
   await ensureSchema();
 
   const existing = await sqlGet("SELECT * FROM wiki_pages WHERE id = ?", [id]);
@@ -286,15 +283,7 @@ export async function updatePage(
       sql: `INSERT INTO wiki_revisions
               (id, page_id, version, content, edited_by, change_summary, edited_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        randomUUID(),
-        id,
-        newVersion,
-        input.content,
-        input.userId ?? null,
-        input.changeSummary ?? null,
-        timestamp,
-      ],
+      args: [randomUUID(), id, newVersion, input.content, input.userId ?? null, input.changeSummary ?? null, timestamp],
     },
   ]);
 
@@ -311,15 +300,12 @@ export async function listPages(projectId: string, category?: string): Promise<W
 
   let rows: Record<string, unknown>[];
   if (category) {
-    rows = await sqlAll(
-      "SELECT * FROM wiki_pages WHERE project_id = ? AND category = ? ORDER BY updated_at DESC",
-      [projectId, category],
-    );
+    rows = await sqlAll("SELECT * FROM wiki_pages WHERE project_id = ? AND category = ? ORDER BY updated_at DESC", [
+      projectId,
+      category,
+    ]);
   } else {
-    rows = await sqlAll(
-      "SELECT * FROM wiki_pages WHERE project_id = ? ORDER BY updated_at DESC",
-      [projectId],
-    );
+    rows = await sqlAll("SELECT * FROM wiki_pages WHERE project_id = ? ORDER BY updated_at DESC", [projectId]);
   }
 
   return rows.map(rowToPage);
@@ -332,10 +318,7 @@ export async function listPages(projectId: string, category?: string): Promise<W
 export async function getPageHistory(pageId: string): Promise<WikiRevision[]> {
   await ensureSchema();
 
-  const rows = await sqlAll(
-    "SELECT * FROM wiki_revisions WHERE page_id = ? ORDER BY version DESC",
-    [pageId],
-  );
+  const rows = await sqlAll("SELECT * FROM wiki_revisions WHERE page_id = ? ORDER BY version DESC", [pageId]);
 
   return rows.map(rowToRevision);
 }

@@ -118,9 +118,7 @@ export function validateInputs(
     // Type check
     const typeOk = checkType(decl.type, value);
     if (!typeOk) {
-      errors.push(
-        `Input "${decl.name}" expected type "${decl.type}", got "${typeof value}"`,
-      );
+      errors.push(`Input "${decl.name}" expected type "${decl.type}", got "${typeof value}"`);
     }
   }
 
@@ -131,10 +129,7 @@ export function validateInputs(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function checkType(
-  expected: "string" | "number" | "boolean" | "file" | "json",
-  value: unknown,
-): boolean {
+function checkType(expected: "string" | "number" | "boolean" | "file" | "json", value: unknown): boolean {
   switch (expected) {
     case "string":
     case "file":
