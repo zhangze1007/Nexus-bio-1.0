@@ -7,9 +7,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CommunityFBAOutput, FBAOutput } from "../../../data/mockFBA";
 import { BASE_REACTIONS, REACTION_DEFS } from "../../../data/mockFBA";
+import type { FBAArtifact } from "../../../domain/toolDataContract";
 import type { BiGGModel, BiGGReaction } from "../../../services/database/biggClient";
 import { getModelReactions, listBiGGModels } from "../../../services/database/biggClient";
 import type { FallbackResult } from "../../../services/database/fetchWithFallback";
+import { useArtifactStore } from "../../../store/artifactStore";
 import {
   solveAuthorityCommunityFBAWithProvenance,
   solveAuthorityFBAWithProvenance,
@@ -631,6 +633,26 @@ export function useFBASimState(): FBASimState {
       },
       updatedAt: now,
     });
+
+    // Store artifact for inter-tool data flow
+    const fbaArtifact: FBAArtifact = {
+      type: "fba",
+      species: "ecoli",
+      objective,
+      fluxes: activeResult.fluxes,
+      shadowPrices: activeResult.sensitivityCoefficients ?? {},
+      growthRate: activeResult.growthRate,
+      atpYield: activeResult.atpYield,
+      carbonEfficiency: activeResult.carbonEfficiency,
+      feasible: activeResult.feasible,
+      bottleneckReactions: Object.entries(activeResult.fluxes)
+        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+        .slice(0, 5)
+        .map(([id, flux]) => ({ id, flux, shadowPrice: 0 })),
+      knockouts,
+      timestamp: now,
+    };
+    useArtifactStore.getState().setFBA(fbaArtifact);
   }, [
     analyzeArtifact?.id,
     communityLoading,
