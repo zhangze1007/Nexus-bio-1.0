@@ -43,7 +43,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   fbasim: {
     level: "real",
     caption:
-      "Single-species FBA uses a real two-phase simplex LP (HiGHS solver) on the full iJO1366 genome-scale model (2583 reactions, 1805 metabolites). Two-Species mode uses a joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective. BiGG model selector with full genome-scale models. growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).",
+      "Single-species FBA: real two-phase simplex LP (HiGHS solver) on iJO1366 genome-scale model (2583 reactions, 1805 metabolites). Community mode: two independent LPs with heuristic cross-feeding scaling (NOT a joint LP — validity: partial). BiGG model selector. growthRate = LP objective value directly.",
   },
   cethx: {
     level: "real",
@@ -80,9 +80,9 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
 
   // Stage 4 — DBTL
   cellfree: {
-    level: "real",
+    level: "partial",
     caption:
-      "Resource-aware TX-TL ODE structure exists with RK4 integration. Kinetic constants from Silverman et al. 2010 (TX-TL calibration) and Sun et al. 2013 (PURE system). BRENDA integration for enzyme-specific Km/kcat overrides. Levenberg-Marquardt fitting for user plate-reader data. uncertainty quantification via parameter sensitivity analysis.",
+      "Resource-aware TX-TL ODE structure with RK4 integration. Kinetic constants from Silverman et al. 2010 and Sun et al. 2013. BRENDA integration for enzyme-specific Km/kcat. Parameters are literature-sourced but NOT calibrated to user's specific extract. Levenberg-Marquardt fitting for plate-reader data.",
   },
   dbtlflow: {
     level: "real",
@@ -90,9 +90,9 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
       "Design-Build-Test-Learn cycle tracking with iteration ledger, SBOL serialization, and protocol generation. Closed-loop tab uses real GP/Bayesian optimization engine (Cholesky-based RBF kernel GP, EI/UCB/PI acquisition functions, Latin Hypercube initial design).",
   },
   multio: {
-    level: "real",
+    level: "partial",
     caption:
-      "Real MOFA+ factor analysis via Python backend (variational Bayes, real MOFA+ engine). Real UMAP projection via Python backend. Deterministic linear embedding with KL penalty for client-side visualization (not a VAE). Toggle between local and Python backend engines. Uses synthetic demo data when no CSV uploaded.",
+      "MOFA+ factor analysis via Python backend (real variational Bayes engine). UMAP projection via Python backend. Client-side fallback uses deterministic linear embedding (NOT a VAE). Toggle between local and Python backend. Uses synthetic demo data when no CSV uploaded.",
   },
   scspatial: {
     level: "real",

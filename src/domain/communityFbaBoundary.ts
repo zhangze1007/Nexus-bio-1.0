@@ -42,18 +42,18 @@ export const FBASIM_COMMUNITY_BOUNDARY: FbaModeBoundary = {
   mode: "community",
   status: "supported-joint-community-lp",
   toolId: "fbasim-community",
-  validityTier: "real",
+  validityTier: "partial",
   payloadAllowed: true,
   formalClaimSurfacesBlocked: COMMUNITY_FBA_FORMAL_SURFACES_BLOCKED,
   assumptionIds: [
-    "fbasim-community.joint_lp_with_exchange_pools",
-    "fbasim-community.genome_scale_model",
-    "fbasim-community.growth_rate_heuristic_scaling",
+    "fbasim-community.two_independent_lps",
+    "fbasim-community.heuristic_exchange_scaling",
+    "fbasim-community.no_joint_stoichiometric_matrix",
     "fbasim-community.inherits_single_assumptions",
   ],
-  label: "Joint community LP",
+  label: "Community FBA (heuristic)",
   explanation:
-    "Community mode uses a real joint community LP with shared exchange metabolite pool constraints and weighted community biomass objective.",
+    "Community mode runs two independent single-species LPs and applies heuristic scaling for cross-feeding. NOT a true joint community LP — exchange fluxes are post-hoc scaled, not LP decision variables.",
 };
 
 export function getFbaModeBoundary(mode: FbaMode): FbaModeBoundary {
