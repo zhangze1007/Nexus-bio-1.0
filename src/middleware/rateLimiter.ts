@@ -42,7 +42,7 @@ export interface RateLimiter {
 
 // ─── Factory ────────────────────────────────────────────────────────────────
 
-let _defaultClient: Client | null = null;
+const _defaultClient: Client | null = null;
 
 /**
  * Create a rate limiter instance with a sliding window algorithm.

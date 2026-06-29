@@ -191,7 +191,7 @@ export class GenericLIMSAdapter {
     const errors: SyncResult["errors"] = [];
     let pushed = 0;
     let pulled = 0;
-    let updated = 0;
+    const updated = 0;
 
     try {
       if (direction === "pull" || direction === "bidirectional") {

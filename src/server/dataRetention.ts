@@ -48,15 +48,12 @@ export async function runRetention(config: RetentionConfig[] = DEFAULT_RETENTION
         // Soft-delete records older than retention period
         const result = await sqlRun(
           `UPDATE ${table} SET soft_deleted = 1 WHERE ${dateColumn} < ? AND (soft_deleted IS NULL OR soft_deleted = 0)`,
-          [cutoff]
+          [cutoff],
         );
         results.push({ table, recordsArchived: result.rowsAffected, recordsPurged: 0 });
       } else {
         // Hard-delete records older than retention period
-        const result = await sqlRun(
-          `DELETE FROM ${table} WHERE ${dateColumn} < ?`,
-          [cutoff]
-        );
+        const result = await sqlRun(`DELETE FROM ${table} WHERE ${dateColumn} < ?`, [cutoff]);
         results.push({ table, recordsArchived: 0, recordsPurged: result.rowsAffected });
       }
     } catch {
@@ -71,14 +68,16 @@ export async function runRetention(config: RetentionConfig[] = DEFAULT_RETENTION
 /**
  * Get retention statistics.
  */
-export async function getRetentionStats(): Promise<Array<{ table: string; totalRecords: number; oldestRecord: number | null }>> {
+export async function getRetentionStats(): Promise<
+  Array<{ table: string; totalRecords: number; oldestRecord: number | null }>
+> {
   const tables = ["sync_audit", "project_history", "soft_deleted_records", "gdpr_requests"];
   const stats: Array<{ table: string; totalRecords: number; oldestRecord: number | null }> = [];
 
   for (const table of tables) {
     try {
       const row = await (await import("./libsqlDb")).sqlGet(
-        `SELECT COUNT(*) as count, MIN(created_at) as oldest FROM ${table}`
+        `SELECT COUNT(*) as count, MIN(created_at) as oldest FROM ${table}`,
       );
       stats.push({
         table,

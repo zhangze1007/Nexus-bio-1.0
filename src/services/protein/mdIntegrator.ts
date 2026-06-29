@@ -199,7 +199,7 @@ export function runMD(atoms: BackboneAtom[], config?: MDConfig): MDResult {
   const masses = new Array(nAtoms).fill(AVG_BACKBONE_MASS);
 
   // Initialize positions
-  let positions = deepCopyAtoms(atoms);
+  const positions = deepCopyAtoms(atoms);
   const initialPositions = deepCopyAtoms(atoms);
 
   // Initialize velocities from Maxwell-Boltzmann distribution at target T

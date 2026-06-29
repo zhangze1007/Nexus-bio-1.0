@@ -58,16 +58,8 @@ const TRANSPORT_SUFFIXES = ["_tex", "_tpp", "_abcpp", "_e", "_p", "_c"];
 /**
  * Convert a BiGG model to an LP model for FBA.
  */
-export function biggToLP(
-  model: FullBiGGModel,
-  options: BiGGToFBAOptions = {},
-): BiGGToFBAResult {
-  const {
-    knockouts = [],
-    glucoseUptake = 10,
-    oxygenUptake = 20,
-    maximize = true,
-  } = options;
+export function biggToLP(model: FullBiGGModel, options: BiGGToFBAOptions = {}): BiGGToFBAResult {
+  const { knockouts = [], glucoseUptake = 10, oxygenUptake = 20, maximize = true } = options;
 
   // 1. Identify reactions
   const reactions = model.reactions;
@@ -83,13 +75,10 @@ export function biggToLP(
   const metaboliteIds = Array.from(metaboliteSet);
 
   // 3. Identify biomass reaction
-  const biomassId = options.objectiveId
-    ?? findBiomassReaction(reactions);
+  const biomassId = options.objectiveId ?? findBiomassReaction(reactions);
 
   // 4. Identify exchange reactions
-  const exchangeReactions = reactions
-    .filter((r) => isExchangeReaction(r.id))
-    .map((r) => r.id);
+  const exchangeReactions = reactions.filter((r) => isExchangeReaction(r.id)).map((r) => r.id);
 
   // 5. Build stoichiometric matrix
   // S[metabolite][reaction] = stoichiometric coefficient
@@ -173,7 +162,7 @@ export function biggToLP(
   });
 
   const lpModel: LPModel = {
-    sense: maximize ? "maximize" : "minimize" as "maximize" | "minimize",
+    sense: maximize ? "maximize" : ("minimize" as "maximize" | "minimize"),
     objective,
     constraints,
     bounds,
@@ -201,14 +190,15 @@ function findBiomassReaction(reactions: BiGGReaction[]): string | null {
   }
 
   // Fallback: find reaction with "biomass" in name
-  const biomass = reactions.find((r) =>
-    r.name.toLowerCase().includes("biomass") ||
-    r.id.toLowerCase().includes("biomass")
+  const biomass = reactions.find(
+    (r) => r.name.toLowerCase().includes("biomass") || r.id.toLowerCase().includes("biomass"),
   );
   return biomass?.id ?? null;
 }
 
 function isExchangeReaction(id: string): boolean {
-  return EXCHANGE_PREFIXES.some((prefix) => id.startsWith(prefix)) ||
-    TRANSPORT_SUFFIXES.some((suffix) => id.endsWith(suffix));
+  return (
+    EXCHANGE_PREFIXES.some((prefix) => id.startsWith(prefix)) ||
+    TRANSPORT_SUFFIXES.some((suffix) => id.endsWith(suffix))
+  );
 }

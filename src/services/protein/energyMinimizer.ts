@@ -106,7 +106,7 @@ export function minimizeEnergy(atoms: BackboneAtom[], config?: EnergyMinimizatio
 
   // Save initial structure for RMSD calculation
   const initialAtoms = deepCopyAtoms(atoms);
-  let currentAtoms = deepCopyAtoms(atoms);
+  const currentAtoms = deepCopyAtoms(atoms);
 
   const initialEnergy = calculateEnergy(currentAtoms, ffParams);
   const trajectory: MinimizationResult["trajectory"] = [];

@@ -23,7 +23,7 @@ const WORKBENCH_KEY = "workbench";
  */
 export function syncWorkbenchToYjs(ydoc: Y.Doc, workbenchState: Record<string, unknown>): void {
   ydoc.transact(() => {
-    let rootMap = ydoc.getMap<unknown>(WORKBENCH_KEY);
+    const rootMap = ydoc.getMap<unknown>(WORKBENCH_KEY);
 
     // If the map is empty, initialize it
     if (rootMap.size === 0) {

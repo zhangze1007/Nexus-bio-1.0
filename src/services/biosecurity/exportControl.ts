@@ -177,16 +177,18 @@ function buildResult(matches: ScreeningMatch[]): ScreeningResult {
     };
   }
 
-  const maxConfidence = Math.max(...matches.map(m => m.confidence));
-  const riskLevel = maxConfidence >= 0.9 ? "critical" : maxConfidence >= 0.7 ? "high" : maxConfidence >= 0.5 ? "medium" : "low";
+  const maxConfidence = Math.max(...matches.map((m) => m.confidence));
+  const riskLevel =
+    maxConfidence >= 0.9 ? "critical" : maxConfidence >= 0.7 ? "high" : maxConfidence >= 0.5 ? "medium" : "low";
 
   return {
     screened: true,
     matches,
     riskLevel,
-    recommendation: riskLevel === "critical" || riskLevel === "high"
-      ? "STOP: This molecule matches a controlled substance. Do not proceed without expert review and legal counsel."
-      : "WARNING: Potential match found. Proceed with caution and consult institutional biosafety committee.",
+    recommendation:
+      riskLevel === "critical" || riskLevel === "high"
+        ? "STOP: This molecule matches a controlled substance. Do not proceed without expert review and legal counsel."
+        : "WARNING: Potential match found. Proceed with caution and consult institutional biosafety committee.",
     disclaimer: DISCLAIMER,
   };
 }

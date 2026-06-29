@@ -315,12 +315,12 @@ export function parseFcs(input: Uint8Array | ArrayBuffer): FcsParseResult {
   // Read segment offsets
   // For FCS 2.0/3.0, the standard header has offsets at bytes 10-57
   // But some files use only the first 3 offsets (text, data, analysis)
-  let textStart = readAsciiInt(data, HEADER_OFFSETS.textStart.start, HEADER_OFFSETS.textStart.end);
-  let textEnd = readAsciiInt(data, HEADER_OFFSETS.textEnd.start, HEADER_OFFSETS.textEnd.end);
+  const textStart = readAsciiInt(data, HEADER_OFFSETS.textStart.start, HEADER_OFFSETS.textStart.end);
+  const textEnd = readAsciiInt(data, HEADER_OFFSETS.textEnd.start, HEADER_OFFSETS.textEnd.end);
   let dataStart = readAsciiInt(data, HEADER_OFFSETS.dataStart.start, HEADER_OFFSETS.dataStart.end);
   let dataEnd = readAsciiInt(data, HEADER_OFFSETS.dataEnd.start, HEADER_OFFSETS.dataEnd.end);
-  let analysisStart = readAsciiInt(data, HEADER_OFFSETS.analysisStart.start, HEADER_OFFSETS.analysisStart.end);
-  let analysisEnd = readAsciiInt(data, HEADER_OFFSETS.analysisEnd.start, HEADER_OFFSETS.analysisEnd.end);
+  const analysisStart = readAsciiInt(data, HEADER_OFFSETS.analysisStart.start, HEADER_OFFSETS.analysisStart.end);
+  const analysisEnd = readAsciiInt(data, HEADER_OFFSETS.analysisEnd.start, HEADER_OFFSETS.analysisEnd.end);
 
   // FCS 3.0: if standard offsets are zero, check the supplemental segment
   // (bytes 58-65 may contain extended data/analysis offsets in some implementations)

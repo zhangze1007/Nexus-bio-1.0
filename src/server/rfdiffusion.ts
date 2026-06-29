@@ -25,7 +25,7 @@
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-export type DesignMode = 'unconditional' | 'scaffolding' | 'binder' | 'symmetric';
+export type DesignMode = "unconditional" | "scaffolding" | "binder" | "symmetric";
 
 export interface RFdiffusionConfig {
   /** Design mode */
@@ -37,7 +37,7 @@ export interface RFdiffusionConfig {
   /** Target structure for binder design */
   targetPDB?: string;
   /** Symmetry type for symmetric design */
-  symmetry?: 'C2' | 'C3' | 'C4' | 'C5' | 'C6';
+  symmetry?: "C2" | "C3" | "C4" | "C5" | "C6";
   /** Number of design samples */
   numSamples?: number;
   /** Noise schedule steps */
@@ -112,11 +112,9 @@ export interface RFdiffusionResult {
  * When the Python backend is not available, uses a heuristic fallback
  * that generates plausible but non-optimal designs.
  */
-export async function runRFdiffusion(
-  config: RFdiffusionConfig,
-): Promise<RFdiffusionResult> {
+export async function runRFdiffusion(config: RFdiffusionConfig): Promise<RFdiffusionResult> {
   const {
-    mode = 'unconditional',
+    mode = "unconditional",
     targetLength = 100,
     numSamples = 8,
     diffusionSteps = 50,
@@ -129,8 +127,8 @@ export async function runRFdiffusion(
     const backend = process.env.RFDIFFUSION_BACKEND;
     if (backend) {
       const res = await fetch(`${backend}/design`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
         signal: AbortSignal.timeout(120000),
       });
@@ -159,7 +157,7 @@ export async function runRFdiffusion(
  */
 function heuristicDesign(config: RFdiffusionConfig): RFdiffusionResult {
   const {
-    mode = 'unconditional',
+    mode = "unconditional",
     targetLength = 100,
     numSamples = 8,
     diffusionSteps = 50,
@@ -174,7 +172,7 @@ function heuristicDesign(config: RFdiffusionConfig): RFdiffusionResult {
     const sequence = generateHeuristicSequence(targetLength, mode, motif, temperature);
     const pdb = generateHeuristicPDB(sequence, i);
     const confidence = calculateHeuristicConfidence(sequence, mode);
-    const residueConfidence = sequence.split('').map(() => confidence + (Math.random() - 0.5) * 0.1);
+    const residueConfidence = sequence.split("").map(() => confidence + (Math.random() - 0.5) * 0.1);
 
     proteins.push({
       id: `rfdiff_${i}_${Date.now().toString(36)}`,
@@ -204,14 +202,14 @@ function heuristicDesign(config: RFdiffusionConfig): RFdiffusionResult {
     stats: {
       meanConfidence,
       meanLength,
-      successRate: proteins.filter(p => p.confidence > 0.7).length / proteins.length,
+      successRate: proteins.filter((p) => p.confidence > 0.7).length / proteins.length,
     },
     reference: {
-      title: 'De novo design of protein structure and function with RFdiffusion',
-      authors: 'Watson JL, Juergens D, Bennett NR, et al.',
-      journal: 'Nature',
+      title: "De novo design of protein structure and function with RFdiffusion",
+      authors: "Watson JL, Juergens D, Bennett NR, et al.",
+      journal: "Nature",
       year: 2023,
-      doi: '10.1038/s41586-023-06415-8',
+      doi: "10.1038/s41586-023-06415-8",
     },
   };
 }
@@ -226,23 +224,39 @@ function generateHeuristicSequence(
 ): string {
   // Amino acid frequencies in natural proteins (approximate)
   const aaFreq: Record<string, number> = {
-    A: 0.082, C: 0.013, D: 0.054, E: 0.067, F: 0.039,
-    G: 0.069, H: 0.023, I: 0.053, K: 0.059, L: 0.096,
-    M: 0.023, N: 0.043, P: 0.052, Q: 0.042, R: 0.052,
-    S: 0.074, T: 0.058, V: 0.066, W: 0.013, Y: 0.033,
+    A: 0.082,
+    C: 0.013,
+    D: 0.054,
+    E: 0.067,
+    F: 0.039,
+    G: 0.069,
+    H: 0.023,
+    I: 0.053,
+    K: 0.059,
+    L: 0.096,
+    M: 0.023,
+    N: 0.043,
+    P: 0.052,
+    Q: 0.042,
+    R: 0.052,
+    S: 0.074,
+    T: 0.058,
+    V: 0.066,
+    W: 0.013,
+    Y: 0.033,
   };
 
   const aminoAcids = Object.keys(aaFreq);
   const weights = Object.values(aaFreq);
 
   // Adjust weights based on mode
-  let adjustedWeights = [...weights];
+  const adjustedWeights = [...weights];
 
-  if (mode === 'scaffolding' && motif?.sequence) {
+  if (mode === "scaffolding" && motif?.sequence) {
     // Keep motif residues fixed
     const motifSeq = motif.sequence;
     const startIdx = motif.residueIndices[0] ?? 0;
-    let seq = '';
+    let seq = "";
 
     for (let i = 0; i < length; i++) {
       const motifIdx = i - startIdx;
@@ -256,21 +270,21 @@ function generateHeuristicSequence(
   }
 
   // Generate random sequence
-  let seq = '';
+  let seq = "";
   for (let i = 0; i < length; i++) {
     // Add some local structure bias (helix/sheet formers)
     const pos = i / length;
-    if (mode === 'unconditional') {
+    if (mode === "unconditional") {
       // Alternate between helix and sheet formers
       if (pos < 0.33) {
         // Helix-prone region
-        seq += weightedRandom(['A', 'E', 'L', 'M', 'K'], [0.2, 0.2, 0.2, 0.2, 0.2]);
+        seq += weightedRandom(["A", "E", "L", "M", "K"], [0.2, 0.2, 0.2, 0.2, 0.2]);
       } else if (pos < 0.66) {
         // Sheet-prone region
-        seq += weightedRandom(['V', 'I', 'L', 'F', 'Y'], [0.25, 0.2, 0.2, 0.2, 0.15]);
+        seq += weightedRandom(["V", "I", "L", "F", "Y"], [0.25, 0.2, 0.2, 0.2, 0.15]);
       } else {
         // Loop region
-        seq += weightedRandom(['G', 'S', 'D', 'N', 'P'], [0.25, 0.25, 0.2, 0.15, 0.15]);
+        seq += weightedRandom(["G", "S", "D", "N", "P"], [0.25, 0.25, 0.2, 0.15, 0.15]);
       }
     } else {
       seq += weightedRandom(aminoAcids, adjustedWeights);
@@ -284,17 +298,19 @@ function generateHeuristicSequence(
 
 function generateHeuristicPDB(sequence: string, seed: number): string {
   const lines: string[] = [];
-  lines.push('HEADER    DE NOVO PROTEIN DESIGN');
-  lines.push('TITLE     RFdiffusion heuristic design');
-  lines.push('REMARK   1 This is a heuristic structure, not a real prediction.');
-  lines.push('REMARK   1 Use the Python backend for actual RFdiffusion designs.');
+  lines.push("HEADER    DE NOVO PROTEIN DESIGN");
+  lines.push("TITLE     RFdiffusion heuristic design");
+  lines.push("REMARK   1 This is a heuristic structure, not a real prediction.");
+  lines.push("REMARK   1 Use the Python backend for actual RFdiffusion designs.");
 
   let atomIdx = 1;
-  const phi = -57.8 * Math.PI / 180; // Typical alpha helix phi
-  const psi = -47.0 * Math.PI / 180; // Typical alpha helix psi
+  const phi = (-57.8 * Math.PI) / 180; // Typical alpha helix phi
+  const psi = (-47.0 * Math.PI) / 180; // Typical alpha helix psi
   const bondLength = 3.8; // Angstroms
 
-  let x = 0, y = 0, z = 0;
+  let x = 0,
+    y = 0,
+    z = 0;
 
   for (let i = 0; i < sequence.length; i++) {
     const aa = sequence[i];
@@ -309,31 +325,31 @@ function generateHeuristicPDB(sequence: string, seed: number): string {
 
     // Add some noise for realism
     const noise = 0.1;
-    x += (Math.sin(i * 2.3 + seed) * noise);
-    y += (Math.cos(i * 1.7 + seed) * noise);
-    z += (Math.sin(i * 3.1 + seed * 2) * noise);
+    x += Math.sin(i * 2.3 + seed) * noise;
+    y += Math.cos(i * 1.7 + seed) * noise;
+    z += Math.sin(i * 3.1 + seed * 2) * noise;
 
     // CA atom
     lines.push(
-      `ATOM  ${atomIdx.toString().padStart(5)} CA  ${aa.padEnd(3)} A${resSeq}    ${x.toFixed(3).padStart(8)}${y.toFixed(3).padStart(8)}${z.toFixed(3).padStart(8)}  1.00  0.00           C  `
+      `ATOM  ${atomIdx.toString().padStart(5)} CA  ${aa.padEnd(3)} A${resSeq}    ${x.toFixed(3).padStart(8)}${y.toFixed(3).padStart(8)}${z.toFixed(3).padStart(8)}  1.00  0.00           C  `,
     );
     atomIdx++;
 
     // N atom (offset)
     lines.push(
-      `ATOM  ${atomIdx.toString().padStart(5)} N   ${aa.padEnd(3)} A${resSeq}    ${(x - 1.2).toFixed(3).padStart(8)}${(y + 0.8).toFixed(3).padStart(8)}${(z - 0.5).toFixed(3).padStart(8)}  1.00  0.00           N  `
+      `ATOM  ${atomIdx.toString().padStart(5)} N   ${aa.padEnd(3)} A${resSeq}    ${(x - 1.2).toFixed(3).padStart(8)}${(y + 0.8).toFixed(3).padStart(8)}${(z - 0.5).toFixed(3).padStart(8)}  1.00  0.00           N  `,
     );
     atomIdx++;
 
     // C atom (offset)
     lines.push(
-      `ATOM  ${atomIdx.toString().padStart(5)} C   ${aa.padEnd(3)} A${resSeq}    ${(x + 1.5).toFixed(3).padStart(8)}${(y - 0.3).toFixed(3).padStart(8)}${(z + 0.8).toFixed(3).padStart(8)}  1.00  0.00           C  `
+      `ATOM  ${atomIdx.toString().padStart(5)} C   ${aa.padEnd(3)} A${resSeq}    ${(x + 1.5).toFixed(3).padStart(8)}${(y - 0.3).toFixed(3).padStart(8)}${(z + 0.8).toFixed(3).padStart(8)}  1.00  0.00           C  `,
     );
     atomIdx++;
   }
 
-  lines.push('END');
-  return lines.join('\n');
+  lines.push("END");
+  return lines.join("\n");
 }
 
 // ── Confidence Calculation ─────────────────────────────────────────────
@@ -363,8 +379,8 @@ function calculateHeuristicConfidence(sequence: string, mode: DesignMode): numbe
   else if (maxRepeat <= 3) confidence += 0.05;
 
   // Mode-specific adjustments
-  if (mode === 'scaffolding') confidence += 0.1;
-  if (mode === 'binder') confidence -= 0.05; // Harder to design
+  if (mode === "scaffolding") confidence += 0.1;
+  if (mode === "binder") confidence -= 0.05; // Harder to design
 
   return Math.max(0.3, Math.min(0.95, confidence));
 }

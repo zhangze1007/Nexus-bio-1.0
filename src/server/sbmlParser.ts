@@ -75,7 +75,7 @@ export interface SBMLSpeciesRef {
 
 export interface SBMLObjective {
   id: string;
-  type: 'maximize' | 'minimize';
+  type: "maximize" | "minimize";
   reactions: Array<{ reaction: string; coefficient: number }>;
 }
 
@@ -86,21 +86,21 @@ export interface SBMLObjective {
  */
 export function parseSBML(xml: string): SBMLModel {
   // Validate basic SBML structure
-  if (!xml.includes('<sbml') && !xml.includes('<SBML')) {
-    throw new Error('Invalid SBML: missing <sbml> root element');
+  if (!xml.includes("<sbml") && !xml.includes("<SBML")) {
+    throw new Error("Invalid SBML: missing <sbml> root element");
   }
 
   const level = extractSBMLLevel(xml);
   const version = extractSBMLVersion(xml);
 
   // Extract model element
-  const modelXml = extractTag(xml, 'model');
+  const modelXml = extractTag(xml, "model");
   if (!modelXml) {
-    throw new Error('Invalid SBML: missing <model> element');
+    throw new Error("Invalid SBML: missing <model> element");
   }
 
-  const modelId = extractAttribute(modelXml, 'id') ?? 'unknown';
-  const modelName = extractAttribute(modelXml, 'name') ?? modelId;
+  const modelId = extractAttribute(modelXml, "id") ?? "unknown";
+  const modelName = extractAttribute(modelXml, "name") ?? modelId;
 
   // Parse compartments
   const compartments = parseCompartments(modelXml);
@@ -144,7 +144,7 @@ function extractSBMLVersion(xml: string): number {
 
 function parseCompartments(modelXml: string): SBMLCompartment[] {
   const compartments: SBMLCompartment[] = [];
-  const listXml = extractTag(modelXml, 'listOfCompartments');
+  const listXml = extractTag(modelXml, "listOfCompartments");
   if (!listXml) return compartments;
 
   const regex = /<compartment\s+([^>]*)\/>/gi;
@@ -152,10 +152,10 @@ function parseCompartments(modelXml: string): SBMLCompartment[] {
   while ((match = regex.exec(listXml)) !== null) {
     const attrs = match[1];
     compartments.push({
-      id: extractAttribute(attrs, 'id') ?? '',
-      name: extractAttribute(attrs, 'name') ?? '',
-      size: parseFloat(extractAttribute(attrs, 'size') ?? '1'),
-      constant: extractAttribute(attrs, 'constant') !== 'false',
+      id: extractAttribute(attrs, "id") ?? "",
+      name: extractAttribute(attrs, "name") ?? "",
+      size: parseFloat(extractAttribute(attrs, "size") ?? "1"),
+      constant: extractAttribute(attrs, "constant") !== "false",
     });
   }
 
@@ -166,24 +166,24 @@ function parseCompartments(modelXml: string): SBMLCompartment[] {
 
 function parseSpecies(modelXml: string): SBMLSpecies[] {
   const species: SBMLSpecies[] = [];
-  const listXml = extractTag(modelXml, 'listOfSpecies');
+  const listXml = extractTag(modelXml, "listOfSpecies");
   if (!listXml) return species;
 
   const regex = /<species\s+([^>]*)\/?>/gi;
   let match;
   while ((match = regex.exec(listXml)) !== null) {
     const attrs = match[1];
-    const id = extractAttribute(attrs, 'id') ?? '';
+    const id = extractAttribute(attrs, "id") ?? "";
 
     // Check for FBC charge and formula
-    const chargeStr = extractAttribute(attrs, 'fbc:charge') ?? extractAttribute(attrs, 'charge');
-    const formula = extractAttribute(attrs, 'fbc:chemicalFormula') ?? extractAttribute(attrs, 'chemicalFormula');
+    const chargeStr = extractAttribute(attrs, "fbc:charge") ?? extractAttribute(attrs, "charge");
+    const formula = extractAttribute(attrs, "fbc:chemicalFormula") ?? extractAttribute(attrs, "chemicalFormula");
 
     species.push({
       id,
-      name: extractAttribute(attrs, 'name') ?? id,
-      compartment: extractAttribute(attrs, 'compartment') ?? '',
-      boundaryCondition: extractAttribute(attrs, 'boundaryCondition') === 'true',
+      name: extractAttribute(attrs, "name") ?? id,
+      compartment: extractAttribute(attrs, "compartment") ?? "",
+      boundaryCondition: extractAttribute(attrs, "boundaryCondition") === "true",
       charge: chargeStr ? parseInt(chargeStr) : null,
       chemicalFormula: formula ?? null,
     });
@@ -196,7 +196,7 @@ function parseSpecies(modelXml: string): SBMLSpecies[] {
 
 function parseReactions(modelXml: string): SBMLReaction[] {
   const reactions: SBMLReaction[] = [];
-  const listXml = extractTag(modelXml, 'listOfReactions');
+  const listXml = extractTag(modelXml, "listOfReactions");
   if (!listXml) return reactions;
 
   const reactionRegex = /<reaction\s+([^>]*)>([\s\S]*?)<\/reaction>/gi;
@@ -206,15 +206,15 @@ function parseReactions(modelXml: string): SBMLReaction[] {
     const attrs = match[1];
     const body = match[2];
 
-    const id = extractAttribute(attrs, 'id') ?? '';
-    const name = extractAttribute(attrs, 'name') ?? id;
-    const reversible = extractAttribute(attrs, 'reversible') !== 'false';
+    const id = extractAttribute(attrs, "id") ?? "";
+    const name = extractAttribute(attrs, "name") ?? id;
+    const reversible = extractAttribute(attrs, "reversible") !== "false";
 
     // Parse reactants
-    const reactants = parseSpeciesReferences(body, 'listOfReactants');
+    const reactants = parseSpeciesReferences(body, "listOfReactants");
 
     // Parse products
-    const products = parseSpeciesReferences(body, 'listOfProducts');
+    const products = parseSpeciesReferences(body, "listOfProducts");
 
     // Parse kinetic law bounds (if present)
     const { lowerBound, upperBound } = parseBounds(body);
@@ -251,8 +251,8 @@ function parseSpeciesReferences(reactionXml: string, listTag: string): SBMLSpeci
   while ((match = regex.exec(listXml)) !== null) {
     const attrs = match[1];
     refs.push({
-      species: extractAttribute(attrs, 'species') ?? '',
-      stoichiometry: parseFloat(extractAttribute(attrs, 'stoichiometry') ?? '1'),
+      species: extractAttribute(attrs, "species") ?? "",
+      stoichiometry: parseFloat(extractAttribute(attrs, "stoichiometry") ?? "1"),
     });
   }
 
@@ -261,8 +261,8 @@ function parseSpeciesReferences(reactionXml: string, listTag: string): SBMLSpeci
 
 function parseBounds(reactionXml: string): { lowerBound: number; upperBound: number } {
   // Try FBC bounds first
-  const fbcLower = extractAttribute(reactionXml, 'fbc:lowerFluxBound');
-  const fbcUpper = extractAttribute(reactionXml, 'fbc:upperFluxBound');
+  const fbcLower = extractAttribute(reactionXml, "fbc:lowerFluxBound");
+  const fbcUpper = extractAttribute(reactionXml, "fbc:upperFluxBound");
 
   if (fbcLower && fbcUpper) {
     return {
@@ -272,14 +272,16 @@ function parseBounds(reactionXml: string): { lowerBound: number; upperBound: num
   }
 
   // Try kinetic law parameters
-  const kineticLaw = extractTag(reactionXml, 'kineticLaw');
+  const kineticLaw = extractTag(reactionXml, "kineticLaw");
   if (kineticLaw) {
-    const lowerParam = extractParameterValue(kineticLaw, 'LOWER_BOUND') ??
-                       extractParameterValue(kineticLaw, 'lb') ??
-                       extractParameterValue(kineticLaw, 'LOWER');
-    const upperParam = extractParameterValue(kineticLaw, 'UPPER_BOUND') ??
-                       extractParameterValue(kineticLaw, 'ub') ??
-                       extractParameterValue(kineticLaw, 'UPPER');
+    const lowerParam =
+      extractParameterValue(kineticLaw, "LOWER_BOUND") ??
+      extractParameterValue(kineticLaw, "lb") ??
+      extractParameterValue(kineticLaw, "LOWER");
+    const upperParam =
+      extractParameterValue(kineticLaw, "UPPER_BOUND") ??
+      extractParameterValue(kineticLaw, "ub") ??
+      extractParameterValue(kineticLaw, "UPPER");
 
     return {
       lowerBound: lowerParam ? parseFloat(lowerParam) : -1000,
@@ -292,23 +294,22 @@ function parseBounds(reactionXml: string): { lowerBound: number; upperBound: num
 }
 
 function extractParameterValue(kineticLawXml: string, paramId: string): string | null {
-  const regex = new RegExp(`<parameter\\s+[^>]*id="${paramId}"[^>]*value="([^"]*)"`, 'i');
+  const regex = new RegExp(`<parameter\\s+[^>]*id="${paramId}"[^>]*value="([^"]*)"`, "i");
   const match = regex.exec(kineticLawXml);
   return match ? match[1] : null;
 }
 
 function parseGPR(reactionXml: string): string | null {
   // Check FBC gene product association
-  const gprXml = extractTag(reactionXml, 'fbc:geneProductAssociation');
+  const gprXml = extractTag(reactionXml, "fbc:geneProductAssociation");
   if (gprXml) {
-    return extractAttribute(gprXml, 'fbc:geneProduct') ?? gprXml;
+    return extractAttribute(gprXml, "fbc:geneProduct") ?? gprXml;
   }
 
   // Check notes for GPR
-  const notes = extractTag(reactionXml, 'notes');
+  const notes = extractTag(reactionXml, "notes");
   if (notes) {
-    const gprMatch = notes.match(/GENE_ASSOCIATION:\s*([^<\n]+)/i) ??
-                     notes.match(/GPR:\s*([^<\n]+)/i);
+    const gprMatch = notes.match(/GENE_ASSOCIATION:\s*([^<\n]+)/i) ?? notes.match(/GPR:\s*([^<\n]+)/i);
     if (gprMatch) return gprMatch[1].trim();
   }
 
@@ -316,10 +317,9 @@ function parseGPR(reactionXml: string): string | null {
 }
 
 function parseSubsystem(reactionXml: string): string | null {
-  const notes = extractTag(reactionXml, 'notes');
+  const notes = extractTag(reactionXml, "notes");
   if (notes) {
-    const subMatch = notes.match(/SUBSYSTEM:\s*([^<\n]+)/i) ??
-                     notes.match(/PATHWAY:\s*([^<\n]+)/i);
+    const subMatch = notes.match(/SUBSYSTEM:\s*([^<\n]+)/i) ?? notes.match(/PATHWAY:\s*([^<\n]+)/i);
     if (subMatch) return subMatch[1].trim();
   }
   return null;
@@ -329,18 +329,21 @@ function parseSubsystem(reactionXml: string): string | null {
 
 function parseFBCObjective(modelXml: string): SBMLObjective | null {
   // Look for FBC objective
-  const objectiveList = extractTag(modelXml, 'fbc:listOfObjectives');
+  const objectiveList = extractTag(modelXml, "fbc:listOfObjectives");
   if (!objectiveList) return null;
 
-  const activeObj = extractAttribute(objectiveList, 'fbc:activeObjective');
+  const activeObj = extractAttribute(objectiveList, "fbc:activeObjective");
   if (!activeObj) return null;
 
-  const objectiveRegex = new RegExp(`<fbc:objective\\s+[^>]*fbc:id="${activeObj}"[^>]*>([\\s\\S]*?)<\\/fbc:objective>`, 'i');
+  const objectiveRegex = new RegExp(
+    `<fbc:objective\\s+[^>]*fbc:id="${activeObj}"[^>]*>([\\s\\S]*?)<\\/fbc:objective>`,
+    "i",
+  );
   const objMatch = objectiveRegex.exec(objectiveList);
   if (!objMatch) return null;
 
   const objBody = objMatch[1];
-  const type = extractAttribute(objMatch[0], 'fbc:type') ?? 'maximize';
+  const type = extractAttribute(objMatch[0], "fbc:type") ?? "maximize";
 
   const fluxObjRegex = /<fbc:fluxObjective\s+([^>]*)\/>/gi;
   const reactions: Array<{ reaction: string; coefficient: number }> = [];
@@ -349,14 +352,14 @@ function parseFBCObjective(modelXml: string): SBMLObjective | null {
   while ((fluxMatch = fluxObjRegex.exec(objBody)) !== null) {
     const attrs = fluxMatch[1];
     reactions.push({
-      reaction: extractAttribute(attrs, 'fbc:reaction') ?? '',
-      coefficient: parseFloat(extractAttribute(attrs, 'fbc:coefficient') ?? '1'),
+      reaction: extractAttribute(attrs, "fbc:reaction") ?? "",
+      coefficient: parseFloat(extractAttribute(attrs, "fbc:coefficient") ?? "1"),
     });
   }
 
   return {
     id: activeObj,
-    type: type as 'maximize' | 'minimize',
+    type: type as "maximize" | "minimize",
     reactions,
   };
 }
@@ -367,15 +370,15 @@ function parseGeneAssociations(modelXml: string): Map<string, string[]> {
   const geneMap = new Map<string, string[]>();
 
   // Parse FBC gene products
-  const gpList = extractTag(modelXml, 'fbc:listOfGeneProducts');
+  const gpList = extractTag(modelXml, "fbc:listOfGeneProducts");
   if (!gpList) return geneMap;
 
   const gpRegex = /<fbc:geneProduct\s+([^>]*)\/?>/gi;
   let match;
   while ((match = gpRegex.exec(gpList)) !== null) {
     const attrs = match[1];
-    const id = extractAttribute(attrs, 'fbc:id') ?? '';
-    const label = extractAttribute(attrs, 'fbc:label') ?? id;
+    const id = extractAttribute(attrs, "fbc:id") ?? "";
+    const label = extractAttribute(attrs, "fbc:label") ?? id;
     geneMap.set(id, [label]);
   }
 
@@ -385,13 +388,13 @@ function parseGeneAssociations(modelXml: string): Map<string, string[]> {
 // ── XML Utilities ──────────────────────────────────────────────────────
 
 function extractTag(xml: string, tag: string): string | null {
-  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
   const match = regex.exec(xml);
   return match ? match[1] : null;
 }
 
 function extractAttribute(attrs: string, name: string): string | null {
-  const regex = new RegExp(`${name}="([^"]*)"`, 'i');
+  const regex = new RegExp(`${name}="([^"]*)"`, "i");
   const match = regex.exec(attrs);
   return match ? match[1] : null;
 }
@@ -410,11 +413,9 @@ export function sbmlToFBARequest(model: SBMLModel): {
   objective: string;
   externalMetabolites: string[];
 } {
-  const reactions = model.reactions.map(r => r.id);
-  const metabolites = model.species.map(s => s.id);
-  const externalMetabolites = model.species
-    .filter(s => s.boundaryCondition)
-    .map(s => s.id);
+  const reactions = model.reactions.map((r) => r.id);
+  const metabolites = model.species.map((s) => s.id);
+  const externalMetabolites = model.species.filter((s) => s.boundaryCondition).map((s) => s.id);
 
   // Build stoichiometric matrix
   const stoichMatrix: number[][] = metabolites.map(() => reactions.map(() => 0));
@@ -433,8 +434,8 @@ export function sbmlToFBARequest(model: SBMLModel): {
     }
   }
 
-  const lowerBounds = model.reactions.map(r => r.lowerBound);
-  const upperBounds = model.reactions.map(r => r.upperBound);
+  const lowerBounds = model.reactions.map((r) => r.lowerBound);
+  const upperBounds = model.reactions.map((r) => r.upperBound);
 
   // Determine objective
   let objective = reactions[0];

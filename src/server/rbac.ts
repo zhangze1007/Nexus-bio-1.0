@@ -17,7 +17,7 @@
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-export type Role = 'owner' | 'editor' | 'viewer';
+export type Role = "owner" | "editor" | "viewer";
 
 export interface Permission {
   /** Can read project state */
@@ -105,7 +105,7 @@ export function hasPermission(role: Role, permission: keyof Permission): boolean
 export function requirePermission(context: RBACContext, permission: keyof Permission): void {
   if (!hasPermission(context.role, permission)) {
     throw new Error(
-      `Permission denied: ${context.userId} does not have '${permission}' permission on project ${context.projectId} (role: ${context.role})`
+      `Permission denied: ${context.userId} does not have '${permission}' permission on project ${context.projectId} (role: ${context.role})`,
     );
   }
 }
@@ -125,7 +125,7 @@ export function canPerformAction(
   members: ProjectMember[],
   permission: keyof Permission,
 ): boolean {
-  const member = members.find(m => m.actorId === userId);
+  const member = members.find((m) => m.actorId === userId);
   if (!member) return false;
   return hasPermission(member.role, permission);
 }
@@ -141,20 +141,13 @@ export function canPerformAction(
  * @param invitedBy - Who is inviting
  * @returns Updated members list
  */
-export function addMember(
-  members: ProjectMember[],
-  actorId: string,
-  role: Role,
-  invitedBy: string,
-): ProjectMember[] {
+export function addMember(members: ProjectMember[], actorId: string, role: Role, invitedBy: string): ProjectMember[] {
   // Check if already a member
-  const existing = members.find(m => m.actorId === actorId);
+  const existing = members.find((m) => m.actorId === actorId);
   if (existing) {
     // Update role if different
     if (existing.role !== role) {
-      return members.map(m =>
-        m.actorId === actorId ? { ...m, role } : m
-      );
+      return members.map((m) => (m.actorId === actorId ? { ...m, role } : m));
     }
     return members;
   }
@@ -177,11 +170,8 @@ export function addMember(
  * @param actorId - User to remove
  * @returns Updated members list
  */
-export function removeMember(
-  members: ProjectMember[],
-  actorId: string,
-): ProjectMember[] {
-  return members.filter(m => m.actorId !== actorId);
+export function removeMember(members: ProjectMember[], actorId: string): ProjectMember[] {
+  return members.filter((m) => m.actorId !== actorId);
 }
 
 /**
@@ -192,14 +182,8 @@ export function removeMember(
  * @param newRole - New role
  * @returns Updated members list
  */
-export function changeRole(
-  members: ProjectMember[],
-  actorId: string,
-  newRole: Role,
-): ProjectMember[] {
-  return members.map(m =>
-    m.actorId === actorId ? { ...m, role: newRole } : m
-  );
+export function changeRole(members: ProjectMember[], actorId: string, newRole: Role): ProjectMember[] {
+  return members.map((m) => (m.actorId === actorId ? { ...m, role: newRole } : m));
 }
 
 // ── Role Hierarchy ─────────────────────────────────────────────────────
@@ -220,7 +204,7 @@ export function isHigherRole(role1: Role, role2: Role): boolean {
 export function getHighestRole(members: ProjectMember[]): Role | null {
   if (members.length === 0) return null;
 
-  let highest: Role = 'viewer';
+  let highest: Role = "viewer";
   for (const member of members) {
     if (isHigherRole(member.role, highest)) {
       highest = member.role;
@@ -236,9 +220,9 @@ export function getHighestRole(members: ProjectMember[]): Role | null {
  */
 export function getRoleDescription(role: Role): string {
   const descriptions: Record<Role, string> = {
-    owner: 'Full control — can delete project, manage members, and change settings',
-    editor: 'Read/write access — can modify project data and export',
-    viewer: 'Read-only access — can view project data but not modify',
+    owner: "Full control — can delete project, manage members, and change settings",
+    editor: "Read/write access — can modify project data and export",
+    viewer: "Read-only access — can view project data but not modify",
   };
   return descriptions[role];
 }
@@ -248,9 +232,9 @@ export function getRoleDescription(role: Role): string {
  */
 export function getRoleColor(role: Role): string {
   const colors: Record<Role, string> = {
-    owner: '#E8A3A1',   // CORAL
-    editor: '#AFC3D6',  // SKY
-    viewer: '#BFDCCD',  // MINT
+    owner: "#E8A3A1", // CORAL
+    editor: "#AFC3D6", // SKY
+    viewer: "#BFDCCD", // MINT
   };
   return colors[role];
 }

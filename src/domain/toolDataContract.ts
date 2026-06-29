@@ -192,12 +192,13 @@ export const TOOL_DATA_CONTRACTS: Record<string, ToolDataContract> = {
       const pathway = artifacts.pathway as PathwayArtifact | undefined;
       const fba = artifacts.fba as FBAArtifact | undefined;
       return {
-        reactions: pathway?.reactions.map(r => ({
-          id: r.id,
-          name: r.name,
-          stoichiometry: {},
-          deltaG0: r.deltaG ?? 0,
-        })) ?? [],
+        reactions:
+          pathway?.reactions.map((r) => ({
+            id: r.id,
+            name: r.name,
+            stoichiometry: {},
+            deltaG0: r.deltaG ?? 0,
+          })) ?? [],
         conditions: { pH: 7.0, ionicStrength: 0.1, temperature: 298.15 },
         targetProduct: pathway?.targetProduct ?? "product",
       };

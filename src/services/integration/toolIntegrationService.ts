@@ -173,7 +173,7 @@ function getExecutor(toolId: string): ToolExecutor {
   const executor = TOOL_EXECUTORS[toolId];
   if (!executor) {
     throw new Error(
-      `Tool "${toolId}" does not have a server-side pipeline executor. Use POST /api/pipeline/${toolId} for single-tool execution.`
+      `Tool "${toolId}" does not have a server-side pipeline executor. Use POST /api/pipeline/${toolId} for single-tool execution.`,
     );
   }
   return executor;

@@ -46,9 +46,7 @@ export function MockDataBanner({ validity, toolName, message, onDismiss }: MockD
         alignItems: "flex-start",
         gap: "12px",
         padding: "14px 18px",
-        background: isSimulated
-          ? "rgba(255, 193, 7, 0.08)"
-          : "rgba(255, 152, 0, 0.08)",
+        background: isSimulated ? "rgba(255, 193, 7, 0.08)" : "rgba(255, 152, 0, 0.08)",
         border: `1px solid ${isSimulated ? "rgba(255, 193, 7, 0.25)" : "rgba(255, 152, 0, 0.25)"}`,
         borderRadius: "10px",
         marginBottom: "16px",

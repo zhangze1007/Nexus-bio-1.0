@@ -52,8 +52,8 @@ export async function cachedFetch<T = unknown>(
   ttlMs: number = DEFAULT_TTL_MS,
 ): Promise<T> {
   // Only cache GET requests
-  const method = (options?.method ?? 'GET').toUpperCase();
-  if (method !== 'GET') {
+  const method = (options?.method ?? "GET").toUpperCase();
+  if (method !== "GET") {
     const res = await fetch(url, options);
     return res.json() as Promise<T>;
   }

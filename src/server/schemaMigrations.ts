@@ -69,10 +69,11 @@ export async function runMigrations(): Promise<void> {
   for (const migration of MIGRATIONS) {
     if (migration.version > currentVersion) {
       await migration.up();
-      await sqlRun(
-        "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
-        [migration.version, migration.name, Date.now()]
-      );
+      await sqlRun("INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)", [
+        migration.version,
+        migration.name,
+        Date.now(),
+      ]);
     }
   }
 }

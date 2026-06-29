@@ -23,8 +23,8 @@
  *   ENSEMBLE: Steady-state (flux balance)
  */
 
-import type { LPModel, LPConstraint } from './highsSolver';
-import { solveLP } from './highsSolver';
+import type { LPModel, LPConstraint } from "./highsSolver";
+import { solveLP } from "./highsSolver";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -93,18 +93,11 @@ export async function solveLooplessFBA(request: LooplessFBARequest): Promise<Loo
   }
 
   // Step 1: Solve standard FBA
-  const standardLP = buildStandardLP(
-    stoichMatrix,
-    lowerBounds,
-    upperBounds,
-    objIdx,
-    nReactions,
-    nMetabolites,
-  );
+  const standardLP = buildStandardLP(stoichMatrix, lowerBounds, upperBounds, objIdx, nReactions, nMetabolites);
 
   const standardResult = await solveLP(standardLP);
 
-  if (standardResult.status !== 'optimal') {
+  if (standardResult.status !== "optimal") {
     return {
       fluxes: {},
       objectiveValue: 0,
@@ -155,7 +148,7 @@ export async function solveLooplessFBA(request: LooplessFBARequest): Promise<Loo
 
   const looplessResult = await solveLP(looplessLP);
 
-  if (looplessResult.status !== 'optimal') {
+  if (looplessResult.status !== "optimal") {
     // Loopless solution not feasible — return standard solution with warning
     const fluxMap: Record<string, number> = {};
     for (let i = 0; i < nReactions; i++) {
@@ -205,11 +198,7 @@ export async function solveLooplessFBA(request: LooplessFBARequest): Promise<Loo
  * A loop exists when a set of internal reactions can carry flux
  * without any net production or consumption of external metabolites.
  */
-function detectLoops(
-  primals: Record<string, number>,
-  reactions: string[],
-  externalMetabolites: string[],
-): string[] {
+function detectLoops(primals: Record<string, number>, reactions: string[], externalMetabolites: string[]): string[] {
   const loopReactions: string[] = [];
   const threshold = 1e-6;
 
@@ -217,8 +206,8 @@ function detectLoops(
   // exchange reactions are likely in loops
   for (let i = 0; i < reactions.length; i++) {
     const rxn = reactions[i];
-    const isExchange = rxn.startsWith('EX_') || rxn.startsWith('DM_') || rxn.startsWith('SK_');
-    const isTransport = rxn.includes('tex') || rxn.includes('tpp') || rxn.includes('abcpp');
+    const isExchange = rxn.startsWith("EX_") || rxn.startsWith("DM_") || rxn.startsWith("SK_");
+    const isTransport = rxn.includes("tex") || rxn.includes("tpp") || rxn.includes("abcpp");
     const flux = primals[`v${i}`] ?? 0;
 
     if (!isExchange && !isTransport && Math.abs(flux) < threshold && Math.abs(flux) > 0) {
@@ -261,7 +250,7 @@ function buildStandardLP(
   }
 
   return {
-    sense: 'minimize',
+    sense: "minimize",
     objective,
     constraints,
     bounds: Array.from({ length: nReactions }, (_, i) => ({
@@ -306,7 +295,7 @@ function buildLooplessLP(
 
   // Additional constraint: objective must be at optimal value
   constraints.push({
-    name: 'obj_constraint',
+    name: "obj_constraint",
     vars: [{ name: `v${objIdx}`, coef: 1 }],
     lb: optimalObjective * 0.999, // Allow small tolerance
     ub: optimalObjective * 1.001,
@@ -330,7 +319,7 @@ function buildLooplessLP(
   }
 
   return {
-    sense: 'minimize',
+    sense: "minimize",
     objective,
     constraints,
     bounds: Array.from({ length: nReactions }, (_, i) => ({
@@ -354,8 +343,8 @@ export function hasLoops(
   const threshold = 1e-6;
 
   for (const rxn of reactions) {
-    const isExchange = rxn.startsWith('EX_') || rxn.startsWith('DM_') || rxn.startsWith('SK_');
-    const isTransport = rxn.includes('tex') || rxn.includes('tpp') || rxn.includes('abcpp');
+    const isExchange = rxn.startsWith("EX_") || rxn.startsWith("DM_") || rxn.startsWith("SK_");
+    const isTransport = rxn.includes("tex") || rxn.includes("tpp") || rxn.includes("abcpp");
 
     if (!isExchange && !isTransport) {
       const flux = fluxes[rxn] ?? 0;

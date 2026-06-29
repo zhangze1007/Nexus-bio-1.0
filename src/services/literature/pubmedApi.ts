@@ -33,7 +33,7 @@ export interface LiteratureResult {
   /** Citation count (if available) */
   citations: number | null;
   /** Source database */
-  source: 'pubmed' | 'semantic_scholar' | 'openalex';
+  source: "pubmed" | "semantic_scholar" | "openalex";
   /** Relevance score (0-1) */
   relevance: number;
 }
@@ -44,7 +44,7 @@ export interface SearchOptions {
   /** Minimum publication year */
   minYear?: number;
   /** Sort order */
-  sort?: 'relevance' | 'date' | 'citations';
+  sort?: "relevance" | "date" | "citations";
   /** Include abstracts */
   includeAbstracts?: boolean;
 }
@@ -58,18 +58,10 @@ export interface SearchOptions {
  *   1. esearch: get PMIDs matching query
  *   2. efetch: get full records for those PMIDs
  */
-export async function searchPubMed(
-  query: string,
-  options: SearchOptions = {},
-): Promise<LiteratureResult[]> {
-  const {
-    maxResults = 20,
-    minYear,
-    sort = 'relevance',
-    includeAbstracts = true,
-  } = options;
+export async function searchPubMed(query: string, options: SearchOptions = {}): Promise<LiteratureResult[]> {
+  const { maxResults = 20, minYear, sort = "relevance", includeAbstracts = true } = options;
 
-  const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+  const baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 
   // Build search query
   let searchQuery = query;
@@ -77,7 +69,7 @@ export async function searchPubMed(
     searchQuery += ` AND ${minYear}[pdat]`;
   }
 
-  const sortParam = sort === 'date' ? 'date' : 'relevance';
+  const sortParam = sort === "date" ? "date" : "relevance";
 
   try {
     // Step 1: Search for PMIDs
@@ -94,7 +86,7 @@ export async function searchPubMed(
     if (pmids.length === 0) return [];
 
     // Step 2: Fetch full records
-    const fetchUrl = `${baseUrl}/efetch.fcgi?db=pubmed&id=${pmids.join(',')}&rettype=abstract&retmode=xml`;
+    const fetchUrl = `${baseUrl}/efetch.fcgi?db=pubmed&id=${pmids.join(",")}&rettype=abstract&retmode=xml`;
     const fetchRes = await fetch(fetchUrl, { signal: AbortSignal.timeout(15000) });
 
     if (!fetchRes.ok) {
@@ -105,9 +97,8 @@ export async function searchPubMed(
 
     // Parse XML (simple regex-based parsing for Edge Runtime compatibility)
     return parsePubMedXML(xmlText);
-
   } catch (error) {
-    console.error('PubMed API error:', error);
+    console.error("PubMed API error:", error);
     return [];
   }
 }
@@ -126,12 +117,12 @@ function parsePubMedXML(xml: string): LiteratureResult[] {
   while ((match = articleRegex.exec(xml)) !== null) {
     const article = match[1];
 
-    const pmid = extractTag(article, 'PMID') ?? '';
-    const title = extractTag(article, 'ArticleTitle') ?? '';
-    const abstract = extractTag(article, 'AbstractText') ?? '';
-    const journal = extractTag(article, 'Title') ?? extractTag(article, 'ISOAbbreviation') ?? '';
-    const yearStr = extractTag(article, 'Year') ?? '';
-    const doi = extractTag(article, 'ArticleId', 'IdType="doi"');
+    const pmid = extractTag(article, "PMID") ?? "";
+    const title = extractTag(article, "ArticleTitle") ?? "";
+    const abstract = extractTag(article, "AbstractText") ?? "";
+    const journal = extractTag(article, "Title") ?? extractTag(article, "ISOAbbreviation") ?? "";
+    const yearStr = extractTag(article, "Year") ?? "";
+    const doi = extractTag(article, "ArticleId", 'IdType="doi"');
 
     // Extract authors
     const authorRegex = /<Author[^>]*>[\s\S]*?<LastName>(.*?)<\/LastName>[\s\S]*?<\/Author>/g;
@@ -139,11 +130,11 @@ function parsePubMedXML(xml: string): LiteratureResult[] {
     let authorMatch;
     while ((authorMatch = authorRegex.exec(article)) !== null) {
       const lastName = authorMatch[1];
-      const firstName = extractTag(authorMatch[0], 'ForeName') ?? '';
+      const firstName = extractTag(authorMatch[0], "ForeName") ?? "";
       authors.push(firstName ? `${lastName} ${firstName[0]}` : lastName);
       if (authors.length >= 3) break;
     }
-    const authorStr = authors.length >= 3 ? `${authors[0]}, ${authors[1]}, et al.` : authors.join(', ');
+    const authorStr = authors.length >= 3 ? `${authors[0]}, ${authors[1]}, et al.` : authors.join(", ");
 
     results.push({
       pmid,
@@ -151,10 +142,10 @@ function parsePubMedXML(xml: string): LiteratureResult[] {
       authors: authorStr,
       journal,
       year: parseInt(yearStr) || 0,
-      abstract: includeAbstract ? decodeHTML(abstract).slice(0, 300) : '',
+      abstract: includeAbstract ? decodeHTML(abstract).slice(0, 300) : "",
       doi,
       citations: null,
-      source: 'pubmed',
+      source: "pubmed",
       relevance: 0.5, // PubMed doesn't provide relevance scores
     });
   }
@@ -163,17 +154,17 @@ function parsePubMedXML(xml: string): LiteratureResult[] {
 }
 
 function extractTag(xml: string, tag: string, attr?: string): string | null {
-  const attrPattern = attr ? ` ${attr}` : '';
-  const regex = new RegExp(`<${tag}${attrPattern}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+  const attrPattern = attr ? ` ${attr}` : "";
+  const regex = new RegExp(`<${tag}${attrPattern}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
   const match = regex.exec(xml);
   return match ? match[1].trim() : null;
 }
 
 function decodeHTML(text: string): string {
   return text
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
 }
@@ -189,18 +180,10 @@ function decodeHTML(text: string): string {
  *   - Includes preprints
  *   - Faster response times
  */
-export async function searchSemanticScholar(
-  query: string,
-  options: SearchOptions = {},
-): Promise<LiteratureResult[]> {
-  const {
-    maxResults = 20,
-    minYear,
-    sort = 'relevance',
-    includeAbstracts = true,
-  } = options;
+export async function searchSemanticScholar(query: string, options: SearchOptions = {}): Promise<LiteratureResult[]> {
+  const { maxResults = 20, minYear, sort = "relevance", includeAbstracts = true } = options;
 
-  const fields = 'title,authors,year,abstract,citationCount,externalIds,journal';
+  const fields = "title,authors,year,abstract,citationCount,externalIds,journal";
   let url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=${maxResults}&fields=${fields}`;
 
   if (minYear) {
@@ -219,26 +202,24 @@ export async function searchSemanticScholar(
 
     return papers.map((paper: Record<string, unknown>) => {
       const authors = (paper.authors as Array<{ name: string }>) ?? [];
-      const authorStr = authors.length >= 3
-        ? `${authors[0].name}, ${authors[1].name}, et al.`
-        : authors.map((a) => a.name).join(', ');
+      const authorStr =
+        authors.length >= 3 ? `${authors[0].name}, ${authors[1].name}, et al.` : authors.map((a) => a.name).join(", ");
 
       return {
-        pmid: (paper.externalIds as Record<string, string>)?.PubMed ?? '',
-        title: (paper.title as string) ?? '',
+        pmid: (paper.externalIds as Record<string, string>)?.PubMed ?? "",
+        title: (paper.title as string) ?? "",
         authors: authorStr,
-        journal: (paper.journal as { name?: string })?.name ?? '',
+        journal: (paper.journal as { name?: string })?.name ?? "",
         year: (paper.year as number) ?? 0,
-        abstract: includeAbstracts ? ((paper.abstract as string) ?? '').slice(0, 300) : '',
+        abstract: includeAbstracts ? ((paper.abstract as string) ?? "").slice(0, 300) : "",
         doi: (paper.externalIds as Record<string, string>)?.DOI ?? null,
         citations: (paper.citationCount as number) ?? null,
-        source: 'semantic_scholar' as const,
+        source: "semantic_scholar" as const,
         relevance: 0.5,
       };
     });
-
   } catch (error) {
-    console.error('Semantic Scholar API error:', error);
+    console.error("Semantic Scholar API error:", error);
     return [];
   }
 }
@@ -253,15 +234,8 @@ export async function searchSemanticScholar(
  *   - Covers 250M+ works
  *   - Good metadata quality
  */
-export async function searchOpenAlex(
-  query: string,
-  options: SearchOptions = {},
-): Promise<LiteratureResult[]> {
-  const {
-    maxResults = 20,
-    minYear,
-    sort = 'relevance',
-  } = options;
+export async function searchOpenAlex(query: string, options: SearchOptions = {}): Promise<LiteratureResult[]> {
+  const { maxResults = 20, minYear, sort = "relevance" } = options;
 
   let url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=${maxResults}`;
 
@@ -269,15 +243,15 @@ export async function searchOpenAlex(
     url += `&filter=from_publication_date:${minYear}-01-01`;
   }
 
-  if (sort === 'citations') {
-    url += '&sort=cited_by_count:desc';
-  } else if (sort === 'date') {
-    url += '&sort=publication_date:desc';
+  if (sort === "citations") {
+    url += "&sort=cited_by_count:desc";
+  } else if (sort === "date") {
+    url += "&sort=publication_date:desc";
   }
 
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
+      headers: { "User-Agent": "NexusBio/1.0 (contact@nexus-bio.vercel.app)" },
       signal: AbortSignal.timeout(10000),
     });
 
@@ -291,29 +265,26 @@ export async function searchOpenAlex(
     return works.map((work: Record<string, unknown>) => {
       const authorships = (work.authorships as Array<{ author: { display_name: string } }>) ?? [];
       const authors = authorships.map((a) => a.author.display_name);
-      const authorStr = authors.length >= 3
-        ? `${authors[0]}, ${authors[1]}, et al.`
-        : authors.join(', ');
+      const authorStr = authors.length >= 3 ? `${authors[0]}, ${authors[1]}, et al.` : authors.join(", ");
 
       const biblio = work.biblio as Record<string, string> | undefined;
       const doi = work.doi as string | null;
 
       return {
-        pmid: '',
-        title: (work.title as string) ?? '',
+        pmid: "",
+        title: (work.title as string) ?? "",
         authors: authorStr,
-        journal: (work.primary_location as { source?: { display_name?: string } })?.source?.display_name ?? '',
+        journal: (work.primary_location as { source?: { display_name?: string } })?.source?.display_name ?? "",
         year: (work.publication_year as number) ?? 0,
-        abstract: '',
-        doi: doi?.replace('https://doi.org/', '') ?? null,
+        abstract: "",
+        doi: doi?.replace("https://doi.org/", "") ?? null,
         citations: (work.cited_by_count as number) ?? null,
-        source: 'openalex' as const,
+        source: "openalex" as const,
         relevance: 0.5,
       };
     });
-
   } catch (error) {
-    console.error('OpenAlex API error:', error);
+    console.error("OpenAlex API error:", error);
     return [];
   }
 }
@@ -325,10 +296,7 @@ export async function searchOpenAlex(
  *
  * Deduplicates by DOI or title similarity, ranks by relevance.
  */
-export async function searchLiterature(
-  query: string,
-  options: SearchOptions = {},
-): Promise<LiteratureResult[]> {
+export async function searchLiterature(query: string, options: SearchOptions = {}): Promise<LiteratureResult[]> {
   const maxResults = options.maxResults ?? 20;
 
   // Search all sources in parallel
@@ -339,9 +307,9 @@ export async function searchLiterature(
   ]);
 
   const allResults: LiteratureResult[] = [
-    ...(pubmedResults.status === 'fulfilled' ? pubmedResults.value : []),
-    ...(ssResults.status === 'fulfilled' ? ssResults.value : []),
-    ...(oaResults.status === 'fulfilled' ? oaResults.value : []),
+    ...(pubmedResults.status === "fulfilled" ? pubmedResults.value : []),
+    ...(ssResults.status === "fulfilled" ? ssResults.value : []),
+    ...(oaResults.status === "fulfilled" ? oaResults.value : []),
   ];
 
   // Deduplicate by DOI or title
