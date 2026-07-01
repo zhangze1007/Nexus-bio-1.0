@@ -1,8 +1,11 @@
 /**
  * SteadyCom Community FBA Tests
  *
- * Tests for the real SteadyCom algorithm (Heinken et al., 2015).
- * Binary search on community growth rate with per-species LP feasibility checks.
+ * Tests for the real SteadyCom algorithm (Chan, Simons & Maranas, 2017,
+ * PLOS Comput Biol 13(5):e1005539). Bisection on community growth rate mu,
+ * where each candidate mu is checked via ONE joint LP over all species
+ * (per-species mass balance + shared-pool coupling + biomass-abundance
+ * coupling + sum(X)=1) — see buildCommunityLPModel.
  *
  * FBA sign convention used in test models:
  *   - Uptake reaction: S(met) = -1, lb = -10, ub = 0
@@ -11,7 +14,7 @@
  *     -> v > 0 gives net met change = v * (-1) = -v (met consumed = secretion)
  */
 
-import { steadyCom, type SteadyComSpecies } from '../src/server/fbaSteadyCom';
+import { steadyCom, buildCommunityLPModel, type SteadyComSpecies } from '../src/server/fbaSteadyCom';
 
 // -- Test fixtures ------------------------------------------------------------
 
@@ -172,18 +175,28 @@ describe('SteadyCom Community FBA', () => {
 
     expect(result.status).toBe('optimal');
     expect(result.communityGrowthRate).toBeGreaterThan(0);
-    // All species growth rates must equal the community rate
-    expect(result.speciesGrowthRates['S1']).toBeCloseTo(result.communityGrowthRate, 3);
-    expect(result.speciesGrowthRates['S2']).toBeCloseTo(result.communityGrowthRate, 3);
+    // Coupled semantics: species with nonzero abundance (X_i > 0) grow exactly at the
+    // community rate mu (v_biomass = mu * X_i); a species may have zero abundance (and
+    // therefore zero growth) at the community optimum -- this is real SteadyCom behavior
+    // (species can go "extinct" in the community), not an error. At least one species
+    // must realize the community growth rate.
+    const growths = Object.values(result.speciesGrowthRates);
+    expect(growths.some((g) => Math.abs(g - result.communityGrowthRate) < 1e-3)).toBe(true);
+    for (const g of growths) {
+      expect(g).toBeGreaterThanOrEqual(-1e-6);
+      expect(g).toBeLessThanOrEqual(result.communityGrowthRate + 1e-3);
+    }
     expect(result.iterations).toBeLessThan(100);
     expect(result.convergenceHistory.length).toBeGreaterThan(0);
   });
 
-  it('should return infeasible for a model where biomass capacity is zero', async () => {
+  it('should return zero community growth for a model where biomass capacity is zero', async () => {
+    // No species can grow at all (muHigh <= 0): the joint LP at mu=0 is still optimal
+    // (zero growth is always feasible), so this is a valid "no-growth" community, not an error.
     const species = infeasibleModel();
     const result = await steadyCom(species, []);
 
-    expect(result.status).toBe('infeasible');
+    expect(result.status).toBe('optimal');
     expect(result.communityGrowthRate).toBe(0);
   });
 
@@ -211,13 +224,16 @@ describe('SteadyCom Community FBA', () => {
     const species = independentModel();
     const result = await steadyCom(species, []);
 
-    // Both species are individually feasible, so the community rate
-    // should be the minimum of their individual max growth rates
+    // With no shared metabolites, species are only coupled via sum(X)=1 and each
+    // v_biomass_i = mu*X_i. The joint LP can put all abundance on whichever species
+    // reaches the higher community mu (here A, mu_max_A=5 > mu_max_B=3) rather than
+    // being capped at min(individual) -- that old "coupling-less" invariant is exactly
+    // what this rewrite fixes (do not re-assert mu <= min(individual)).
     expect(result.status).toBe('optimal');
     expect(result.communityGrowthRate).toBeGreaterThan(0);
-    expect(result.communityGrowthRate).toBeCloseTo(3, 0); // min(5, 3) = 3
-    expect(result.speciesGrowthRates['A']).toBeCloseTo(result.communityGrowthRate, 3);
-    expect(result.speciesGrowthRates['B']).toBeCloseTo(result.communityGrowthRate, 3);
+    expect(result.communityGrowthRate).toBeLessThanOrEqual(5 + 1e-3);
+    const growths = Object.values(result.speciesGrowthRates);
+    expect(growths.some((g) => Math.abs(g - result.communityGrowthRate) < 1e-3)).toBe(true);
   });
 
   it('should return per-species flux distributions', async () => {
@@ -227,10 +243,21 @@ describe('SteadyCom Community FBA', () => {
     expect(result.status).toBe('optimal');
     expect(result.speciesFluxes['S1']).toBeDefined();
     expect(result.speciesFluxes['S2']).toBeDefined();
-    // S1 should have non-zero glucose uptake
-    expect(Math.abs(result.speciesFluxes['S1']['glucose_uptake'])).toBeGreaterThan(0);
-    // S2 should have non-zero acetate uptake
-    expect(Math.abs(result.speciesFluxes['S2']['acetate_uptake'])).toBeGreaterThan(0);
+    // Every declared reaction has a (possibly zero) flux entry, de-namespaced correctly.
+    for (const r of species.find((s) => s.id === 'S1')!.reactions) {
+      expect(result.speciesFluxes['S1'][r.id]).toBeDefined();
+    }
+    for (const r of species.find((s) => s.id === 'S2')!.reactions) {
+      expect(result.speciesFluxes['S2'][r.id]).toBeDefined();
+    }
+    // Whichever species realizes the community growth rate must carry nonzero flux
+    // through its uptake reaction (it cannot grow on nothing).
+    if (Math.abs(result.speciesGrowthRates['S1'] - result.communityGrowthRate) < 1e-3) {
+      expect(Math.abs(result.speciesFluxes['S1']['glucose_uptake'])).toBeGreaterThan(0);
+    }
+    if (Math.abs(result.speciesGrowthRates['S2'] - result.communityGrowthRate) < 1e-3) {
+      expect(Math.abs(result.speciesFluxes['S2']['acetate_uptake'])).toBeGreaterThan(0);
+    }
   });
 
   it('should respect custom maxIterations', async () => {
@@ -257,5 +284,48 @@ describe('SteadyCom Community FBA', () => {
     }];
     const result = await steadyCom(species, []);
     expect(result.status).toBe('error');
+  });
+});
+
+// Producer P ferments substrate -> shared_c (+ grows); Consumer C grows ONLY on shared_c.
+const producer: SteadyComSpecies = {
+  id: 'P', name: 'P', biomassReaction: 'BIO_P', metabolites: ['s', 'p_int'],
+  reactions: [
+    { id: 'UP_S', stoichiometry: { s: 1 }, lowerBound: 0, upperBound: 10 },
+    { id: 'FERM', stoichiometry: { s: -1, p_int: 1, shared_c: 1 }, lowerBound: 0, upperBound: 100 },
+    { id: 'BIO_P', stoichiometry: { p_int: -1 }, lowerBound: 0, upperBound: 100 },
+  ],
+};
+const consumer: SteadyComSpecies = {
+  id: 'C', name: 'C', biomassReaction: 'BIO_C', metabolites: ['c_int'],
+  reactions: [
+    { id: 'UP_C', stoichiometry: { shared_c: -1, c_int: 1 }, lowerBound: 0, upperBound: 100 },
+    { id: 'BIO_C', stoichiometry: { c_int: -1 }, lowerBound: 0, upperBound: 100 },
+  ],
+};
+
+describe('steadyCom cross-feeding (coupled)', () => {
+  it('consumer that cannot grow alone grows in community on producer secretion (syntrophy)', async () => {
+    // Consumer alone: no shared_c source -> community of just C cannot grow.
+    const soloC = await steadyCom([consumer], ['shared_c']);
+    expect(soloC.communityGrowthRate).toBeCloseTo(0, 4);
+    // Community P+C: C grows on P's secreted shared_c.
+    const comm = await steadyCom([producer, consumer], ['shared_c']);
+    expect(comm.status).toBe('optimal');
+    expect(comm.communityGrowthRate).toBeGreaterThan(0);
+  });
+
+  it('shared pool is conserved: total secretion = total uptake', async () => {
+    const comm = await steadyCom([producer, consumer], ['shared_c']);
+    const secreted = comm.speciesFluxes['P']['FERM'];       // produces shared_c (coef +1)
+    const consumed = comm.speciesFluxes['C']['UP_C'];        // consumes shared_c (coef -1)
+    expect(secreted).toBeGreaterThan(0);
+    expect(secreted).toBeCloseTo(consumed, 4);
+  });
+
+  it('is deterministic', async () => {
+    const a = await steadyCom([producer, consumer], ['shared_c']);
+    const b = await steadyCom([producer, consumer], ['shared_c']);
+    expect(b.communityGrowthRate).toBe(a.communityGrowthRate);
   });
 });

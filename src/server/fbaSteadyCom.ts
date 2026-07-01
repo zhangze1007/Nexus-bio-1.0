@@ -1,24 +1,27 @@
 /**
  * SteadyCom Community FBA
  *
- * Implements the SteadyCom algorithm (Heinken et al., 2015, PLOS Comput Biol)
- * for computing community growth rates in microbial consortia.
+ * Implements the SteadyCom algorithm for computing community growth rates
+ * in microbial consortia.
  *
- * Algorithm: Binary search on community growth rate mu.
+ * Algorithm: Bisection on community growth rate mu.
  *   1. Fix mu (candidate community growth rate)
- *   2. For each species, solve LP: maximize biomass subject to:
- *      - stoichiometric constraints (S . v = 0)
- *      - flux bounds (lb <= v <= ub)
- *      - biomass reaction flux = mu (fixed)
- *   3. If all species feasible at mu -> increase mu
- *   4. If any species infeasible at mu -> decrease mu
+ *   2. Solve ONE joint LP over all species (built by buildCommunityLPModel):
+ *      - per-species stoichiometric mass balance (S . v = 0)
+ *      - shared extracellular metabolite pool coupling
+ *      - biomass-abundance coupling (v_biomass = mu * X_i)
+ *      - sum(X_i) = 1 (community abundance normalization)
+ *   3. If the joint LP is optimal at mu -> increase mu
+ *   4. If the joint LP is infeasible at mu -> decrease mu
  *   5. Repeat until |mu_high - mu_low| < tolerance
  *
  * @scientific_provenance
- *   REFERENCE: Heinken A, Thiele I, Fleming RM (2015).
- *     "Competitive and cooperative metabolic interactions in microbial communities."
- *     PLOS Computational Biology 11(1): e1004010.
- *   ALGORITHM: SteadyCom -- binary search on community growth rate with per-species LP.
+ *   REFERENCE: Chan SHJ, Simons MN, Maranas CD (2017).
+ *     "SteadyCom: Predicting microbial abundances while ensuring community stability."
+ *     PLOS Computational Biology 13(5): e1005539. DOI 10.1371/journal.pcbi.1005539.
+ *   ALGORITHM: SteadyCom -- one joint LP over all species (per-species mass balance +
+ *     shared extracellular pool coupling + biomass-abundance coupling + sum(X)=1),
+ *     bisection on community growth rate mu.
  */
 
 import { type LPModel, type LPVariable, type LPConstraint, type LPBound, solveLP } from "./highsSolver";
@@ -61,66 +64,6 @@ function round(value: number, digits = 6): number {
 }
 
 /**
- * Build an LPModel for a single species at a fixed growth rate mu.
- *
- * The LP checks feasibility: can this species achieve growth rate mu
- * while satisfying all stoichiometric constraints and flux bounds?
- *
- * We maximize biomass as objective (which will be fixed to mu via
- * an equality constraint, so the solver just checks feasibility).
- */
-function buildSpeciesLPModel(species: SteadyComSpecies, mu: number): LPModel {
-  const rxns = species.reactions;
-  const mets = species.metabolites;
-
-  // Validate biomass reaction exists
-  const biomassReaction = rxns.find((r) => r.id === species.biomassReaction);
-  if (!biomassReaction) {
-    throw new Error(`Biomass reaction "${species.biomassReaction}" not found in species "${species.id}"`);
-  }
-
-  // Build stoichiometric constraints: S . v = 0 (mass balance)
-  const constraints: LPConstraint[] = mets.map((metId) => ({
-    name: `${species.id}_${metId}_balance`,
-    vars: rxns
-      .filter((r) => r.stoichiometry[metId] !== undefined)
-      .map((r) => ({ name: r.id, coef: r.stoichiometry[metId] })),
-    lb: 0,
-    ub: 0,
-  }));
-
-  // Add equality constraint: biomass reaction flux = mu
-  constraints.push({
-    name: `${species.id}_growth_fix`,
-    vars: [{ name: species.biomassReaction, coef: 1 }],
-    lb: mu,
-    ub: mu,
-  });
-
-  // Variable bounds
-  const bounds: LPBound[] = rxns.map((r) => ({
-    name: r.id,
-    lb: r.lowerBound,
-    ub: r.upperBound,
-  }));
-
-  // Objective: maximize biomass (will be fixed to mu by constraint,
-  // but gives the solver a direction to pivot toward)
-  const objective: LPVariable[] = rxns.map((r) => ({
-    name: r.id,
-    coef: r.id === species.biomassReaction ? 1 : 0,
-  }));
-
-  return {
-    name: `steadycom_${species.id}_mu${mu.toFixed(4)}`,
-    sense: "maximize",
-    objective,
-    constraints,
-    bounds,
-  };
-}
-
-/**
  * Build an LPModel that maximizes biomass for a species (no mu fixation).
  * Used to find the individual maximum growth rate.
  */
@@ -155,29 +98,6 @@ function buildMaxGrowthLPModel(species: SteadyComSpecies): LPModel {
     constraints,
     bounds,
   };
-}
-
-/**
- * Check if a single species can achieve growth rate mu.
- * Returns { feasible, fluxes } where fluxes is the flux distribution if feasible.
- */
-async function checkSpeciesFeasibility(
-  species: SteadyComSpecies,
-  mu: number,
-): Promise<{ feasible: boolean; fluxes: Record<string, number> }> {
-  const model = buildSpeciesLPModel(species, mu);
-  const result = await solveLP(model);
-
-  const fluxes: Record<string, number> = {};
-  for (const rxn of species.reactions) {
-    fluxes[rxn.id] = round(result.primals[rxn.id] ?? 0);
-  }
-
-  // HiGHS returns "optimal" if feasible; "infeasible" otherwise.
-  // Also check that the solver didn't error out.
-  const feasible = result.status === "optimal";
-
-  return { feasible, fluxes };
 }
 
 /**
@@ -291,9 +211,14 @@ export function buildCommunityLPModel(species: SteadyComSpecies[], sharedMetabol
 /**
  * Run SteadyCom community FBA.
  *
+ * Each candidate community growth rate mu is checked by solving ONE joint LP
+ * over all species (buildCommunityLPModel), so shared-pool cross-feeding and
+ * biomass-abundance coupling are enforced directly by the solver rather than
+ * approximated via independent per-species feasibility checks.
+ *
  * @param species - Array of species in the community
- * @param sharedMetabolites - IDs of metabolites shared between species (for documentation)
- * @param maxIterations - Maximum binary search iterations (default: 100)
+ * @param sharedMetabolites - IDs of metabolites shared between species
+ * @param maxIterations - Maximum bisection iterations (default: 100)
  * @param tolerance - Convergence tolerance on mu (default: 1e-6)
  * @returns SteadyComResult with community growth rate and per-species flux distributions
  */
@@ -329,98 +254,84 @@ export async function steadyCom(
     }
   }
 
-  // ── Step 1: Find upper bound from individual max growth rates ───────
-  // Community rate <= min(individual max growth rates)
-  let muHigh = Infinity;
-  for (const sp of species) {
-    const maxGrowth = await findMaxGrowthRate(sp);
-    if (maxGrowth <= 0) {
-      // This species cannot grow at all -> community infeasible
-      return {
-        status: "infeasible",
-        communityGrowthRate: 0,
-        speciesFluxes: {},
-        speciesGrowthRates: {},
-        iterations: 0,
-        convergenceHistory: [],
-      };
-    }
-    muHigh = Math.min(muHigh, maxGrowth);
+  const check = async (mu: number) => solveLP(buildCommunityLPModel(species, sharedMetabolites, mu));
+
+  // mu = 0 must be feasible (no growth).
+  const zero = await check(0);
+  if (zero.status !== "optimal") {
+    return {
+      status: "infeasible",
+      communityGrowthRate: 0,
+      speciesFluxes: {},
+      speciesGrowthRates: {},
+      iterations: 0,
+      convergenceHistory: [],
+    };
   }
 
-  // ── Step 2: Verify feasibility at mu = 0 ────────────────────────────
-  // (all species should be feasible at zero growth)
-  for (const sp of species) {
-    const check = await checkSpeciesFeasibility(sp, 0);
-    if (!check.feasible) {
-      return {
-        status: "infeasible",
-        communityGrowthRate: 0,
-        speciesFluxes: {},
-        speciesGrowthRates: {},
-        iterations: 0,
-        convergenceHistory: [],
-      };
-    }
+  // Upper bound: max individual growth over species (community mu cannot
+  // exceed the fastest single species' unconstrained max growth rate).
+  let muHigh = 0;
+  for (const sp of species) muHigh = Math.max(muHigh, await findMaxGrowthRate(sp));
+  if (muHigh <= 0) {
+    return {
+      status: "optimal",
+      communityGrowthRate: 0,
+      speciesFluxes: readFluxes(species, zero.primals),
+      speciesGrowthRates: readGrowth(species, zero.primals),
+      iterations: 0,
+      convergenceHistory: [0],
+    };
   }
 
-  // ── Step 3: Binary search on community growth rate ──────────────────
   let muLow = 0;
+  let best = zero;
   const convergenceHistory: number[] = [];
   let iterations = 0;
-
-  for (let iter = 0; iter < maxIterations; iter++) {
-    iterations = iter + 1;
+  while (muHigh - muLow > tolerance && iterations < maxIterations) {
+    iterations++;
     const muMid = (muLow + muHigh) / 2;
     convergenceHistory.push(round(muMid));
-
-    let allFeasible = true;
-    for (const sp of species) {
-      const check = await checkSpeciesFeasibility(sp, muMid);
-      if (!check.feasible) {
-        allFeasible = false;
-        break;
-      }
-    }
-
-    if (allFeasible) {
+    const sol = await check(muMid);
+    if (sol.status === "optimal") {
       muLow = muMid;
+      best = sol;
     } else {
       muHigh = muMid;
     }
-
-    if (muHigh - muLow < tolerance) {
-      break;
-    }
-  }
-
-  // ── Step 4: Final solve at muLow to get flux distributions ──────────
-  const speciesFluxes: Record<string, Record<string, number>> = {};
-  const speciesGrowthRates: Record<string, number> = {};
-
-  for (const sp of species) {
-    const check = await checkSpeciesFeasibility(sp, muLow);
-    if (!check.feasible) {
-      // Shouldn't happen if binary search converged correctly
-      return {
-        status: "infeasible",
-        communityGrowthRate: 0,
-        speciesFluxes: {},
-        speciesGrowthRates: {},
-        iterations,
-        convergenceHistory,
-      };
-    }
-    speciesFluxes[sp.id] = check.fluxes;
-    speciesGrowthRates[sp.id] = round(check.fluxes[sp.biomassReaction] ?? 0);
   }
 
   return {
-    status: muLow > tolerance ? "optimal" : "infeasible",
+    status: "optimal",
     communityGrowthRate: round(muLow),
-    speciesFluxes,
-    speciesGrowthRates,
+    speciesFluxes: readFluxes(species, best.primals),
+    speciesGrowthRates: readGrowth(species, best.primals),
     iterations,
     convergenceHistory,
   };
+}
+
+/**
+ * De-namespace joint LP primals back to per-species reaction fluxes.
+ */
+function readFluxes(
+  species: SteadyComSpecies[],
+  primals: Record<string, number>,
+): Record<string, Record<string, number>> {
+  const out: Record<string, Record<string, number>> = {};
+  for (const sp of species) {
+    out[sp.id] = {};
+    for (const r of sp.reactions) out[sp.id][r.id] = round(primals[`${sp.id}__${r.id}`] ?? 0);
+  }
+  return out;
+}
+
+/**
+ * De-namespace joint LP primals back to per-species growth rates
+ * (the flux through each species' biomass reaction).
+ */
+function readGrowth(species: SteadyComSpecies[], primals: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const sp of species) out[sp.id] = round(primals[`${sp.id}__${sp.biomassReaction}`] ?? 0);
+  return out;
 }
