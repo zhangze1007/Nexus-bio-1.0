@@ -6,6 +6,18 @@ import createNextIntlPlugin from "next-intl/plugin";
 const nextConfig = {
   transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
 
+  /*
+   * Type-checking and linting are enforced in CI (.github/workflows/ci.yml runs
+   * `tsc --noEmit` and `biome check` as dedicated steps before the build), so we
+   * skip them inside `next build`. Running the full-project type-checker inside
+   * the build spawns a second memory-heavy process on top of the webpack/Sentry
+   * compile, which OOM-kills the Vercel build container (8 GB) during the
+   * "Linting and checking validity of types" phase. Skipping it here does NOT
+   * reduce type safety — a type error still fails CI.
+   */
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
+
   /* Enable Turbopack (Next.js 16 default bundler) alongside legacy webpack config */
   turbopack: {
     root: process.cwd(),
@@ -15,8 +27,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'three', '@react-three/drei', 'xstate', '@xstate/react'],
   },
-
-  /* Type checking runs in CI before build */
 
   /* Prevent native modules from being bundled into client code */
   serverExternalPackages: ['better-sqlite3', 'highs'],
