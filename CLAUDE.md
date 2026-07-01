@@ -304,6 +304,8 @@ ESM2_PYTHON_BACKEND       URL of Python ESM-2 backend for real embeddings (optio
 
 7. **AlphaFold and PubChem are proxied** — always call `/api/alphafold` and `/api/pubchem`, never fetch EBI or PubChem directly from the browser (CORS).
 
+8. **Never `import` a `src/server/*Engine` at RUNTIME from a `"use client"` file** — heavy compute (and especially any Node-only engine: `inverseFoldingEngine`, `scspatial*`, `*Db.ts`) must run behind an `app/api/*` route; the client calls `fetch`. `import type { ... }` from a server engine is fine (types are erased at compile time). Engines converted to routes so far: retrosynthesis (`/api/retrosynthesis`), pathway discovery (`/api/pipeline/pathwaydiscovery`), TFA (`/api/tfa`). Known remaining exception: `genmim/CRISPREDITingPanels.tsx` still calls `crisprEditingEngine` in `useMemo` (pure compute, no Node APIs) — convert to `fetch` when that panel is next touched.
+
 ### FORBIDDEN Files — Rationale
 
 The following files are marked `FORBIDDEN: never modify` in the project tree. Modifications require explicit approval and careful testing.
@@ -405,6 +407,14 @@ const SHOWCASE_PUBCHEM_CIDS = {
 Better-SQLite3 ledger (`src/server/workbenchDb.ts`) stores project state server-side. Synced via `app/api/workbench/route.ts` (GET/PUT with revision conflict detection). `WorkbenchSyncProvider` wraps the entire app tree and manages state via Zustand (`src/store/workbenchStore.ts`).
 
 Features: project versioning, experiment ledger, actor/member tracking, immutable audit trail.
+
+### Cross-tool data flow — SINGLE go-forward layer: `workbenchStore`
+
+**Decision (2026-07-01, integrity audit T3-1):** `workbenchStore` (`src/store/workbenchStore.ts`, ~50 consumers) is the **single** go-forward layer for cross-tool data flow. Route ALL new cross-tool state through it.
+
+- **`artifactStore` + `toolDataContract`** (`src/store/artifactStore.ts`, `src/domain/toolDataContract.ts`) are **DEPRECATED / frozen**. They have only 2 consumers (`useFBASimState.ts`, `NextStepButton.tsx`). Leave those working, but **add no new consumers**. Do not extend this layer.
+- **Do NOT use `sessionStorage` for cross-tool tool data.** Existing `sessionStorage` usage is limited to subsystem-local persistence (Axon queue durability in `axonQueuePersistence.ts` / `AxonOrchestratorProvider.tsx`, and `goal-context.ts`) — do not add more, and prefer `workbenchStore` for anything cross-tool.
+- **Rule for new tools:** a new tool must reference exactly ONE store — `workbenchStore`. Introducing a competing data-flow abstraction is a bug.
 
 
 

@@ -15,6 +15,7 @@
  * Reference: Hastie et al. (2009) The Elements of Statistical Learning
  */
 
+import { SeededRNG } from "../../utils/seededRng";
 import type { ModelType } from "./types";
 
 // ── Public Interface ────────────────────────────────────────────────────────
@@ -786,6 +787,8 @@ export class RandomForest implements MLModel {
   private minSamplesSplit: number;
   private minSamplesLeaf: number;
   private featureImportances: number[] = [];
+  private seed: number;
+  private rng: SeededRNG;
 
   /**
    * @param nEstimators - Number of trees (default: 10)
@@ -793,6 +796,7 @@ export class RandomForest implements MLModel {
    * @param maxDepth - Maximum tree depth (default: 10)
    * @param minSamplesSplit - Minimum samples to split (default: 2)
    * @param minSamplesLeaf - Minimum samples in a leaf (default: 1)
+   * @param seed - PRNG seed for reproducible bootstrap + feature subsets (default: 42)
    */
   constructor(
     nEstimators: number = 10,
@@ -800,12 +804,15 @@ export class RandomForest implements MLModel {
     maxDepth: number = 10,
     minSamplesSplit: number = 2,
     minSamplesLeaf: number = 1,
+    seed: number = 42,
   ) {
     this.nEstimators = nEstimators;
     this.maxFeatures = maxFeatures;
     this.maxDepth = maxDepth;
     this.minSamplesSplit = minSamplesSplit;
     this.minSamplesLeaf = minSamplesLeaf;
+    this.seed = seed;
+    this.rng = new SeededRNG(seed);
   }
 
   /**
@@ -828,6 +835,8 @@ export class RandomForest implements MLModel {
         ? Math.min(this.maxFeatures, this.nFeatures)
         : Math.max(1, Math.round(Math.sqrt(this.nFeatures)));
 
+    // Re-seed so repeated fit() calls on the same data are identical.
+    this.rng = new SeededRNG(this.seed);
     this.forest = [];
     const aggImportances = new Array(this.nFeatures).fill(0);
 
@@ -939,7 +948,7 @@ export class RandomForest implements MLModel {
     const sampleY: number[] = [];
 
     for (let i = 0; i < n; i++) {
-      const idx = Math.floor(Math.random() * n);
+      const idx = Math.floor(this.rng.next() * n);
       sampleX.push(X[idx]);
       sampleY.push(y[idx]);
     }
@@ -953,9 +962,9 @@ export class RandomForest implements MLModel {
   private randomFeatureSubset(maxFeat: number): number[] {
     const indices = Array.from({ length: this.nFeatures }, (_, i) => i);
 
-    // Fisher-Yates shuffle
+    // Fisher-Yates shuffle (seeded)
     for (let i = this.nFeatures - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(this.rng.next() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
@@ -1033,6 +1042,7 @@ export function createModel(type: ModelType, params?: Record<string, unknown>): 
         typeof params?.maxDepth === "number" ? params.maxDepth : 10,
         typeof params?.minSamplesSplit === "number" ? params.minSamplesSplit : 2,
         typeof params?.minSamplesLeaf === "number" ? params.minSamplesLeaf : 1,
+        typeof params?.seed === "number" ? params.seed : 42,
       );
     default:
       throw new Error(`Unknown model type: ${type}`);

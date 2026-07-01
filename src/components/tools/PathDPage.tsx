@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { getToolValidity } from "../../config/toolValidity";
 import type { DiscoveredPathway, PathwayDiscoveryResult } from "../../server/pathwayDiscoveryEngine";
 import type { RetrosynthesisResult } from "../../server/retrosynthesis";
-import { findPathways } from "../../server/retrosynthesis";
 import type { FallbackResult } from "../../services/database/fetchWithFallback";
 import type { KEGGPathwayResult } from "../../services/database/keggClient";
 import { searchKEGGPathway } from "../../services/database/keggClient";
@@ -89,15 +88,20 @@ export default React.memo(function PathDPage() {
     resetPathway();
   }, [resetPathway]);
 
-  const handleRetrosynthesis = useCallback(() => {
+  const handleRetrosynthesis = useCallback(async () => {
     if (!retroTarget.trim()) return;
     setRetroLoading(true);
     try {
-      const result = findPathways({
-        targetSmiles: retroTarget,
-        maxSteps: 5,
-        maxPathways: 10,
+      // Compute runs server-side (see /api/retrosynthesis) so the engine stays
+      // out of the client bundle (integrity audit T3-3).
+      const res = await fetch("/api/retrosynthesis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetSmiles: retroTarget, maxSteps: 5, maxPathways: 10 }),
       });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "Retrosynthesis failed");
+      const result = json.result as RetrosynthesisResult;
       setRetroResult(result);
       setToolPayload("pathd", {
         validity: "demo",
@@ -130,28 +134,36 @@ export default React.memo(function PathDPage() {
     if (!discoverTarget.trim()) return;
     setDiscoverLoading(true);
     try {
-      const { runPathwayDiscovery } = await import("../../server/pathwayDiscoveryEngine");
       const precursorList = discoverPrecursors
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-      const result = await runPathwayDiscovery({
-        target: {
-          id: discoverTarget.toLowerCase().replace(/\s+/g, "_"),
-          name: discoverTarget,
-          functionalGroups: [],
-          isPrecursor: false,
-        },
-        precursors: precursorList.map((p) => ({
-          id: p.toLowerCase().replace(/\s+/g, "_"),
-          name: p,
-          functionalGroups: [],
-          isPrecursor: true,
-        })),
-        maxLength: 8,
-        topN: 5,
-        preferredOrganism: discoverOrganism,
+      // Compute runs server-side via the pipeline route so the engine stays out
+      // of the client bundle (integrity audit T3-3).
+      const res = await fetch("/api/pipeline/pathwaydiscovery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: {
+            id: discoverTarget.toLowerCase().replace(/\s+/g, "_"),
+            name: discoverTarget,
+            functionalGroups: [],
+            isPrecursor: false,
+          },
+          precursors: precursorList.map((p) => ({
+            id: p.toLowerCase().replace(/\s+/g, "_"),
+            name: p,
+            functionalGroups: [],
+            isPrecursor: true,
+          })),
+          maxLength: 8,
+          topN: 5,
+          preferredOrganism: discoverOrganism,
+        }),
       });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "Pathway discovery failed");
+      const result = json.result as PathwayDiscoveryResult;
       setDiscoverResult(result);
       if (result.pathways.length > 0) {
         const best = result.pathways[0];

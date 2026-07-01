@@ -8,6 +8,9 @@
 export { AnalyzeRequestSchema, type AnalyzeRequest } from "./analyze";
 export { FBARequestSchema, type FBARequest } from "./fba";
 export { WorkbenchPutSchema, type WorkbenchPutBody } from "./workbench";
+export { RetrosynthesisRequestSchema, type RetrosynthesisRequestInput } from "./retrosynthesis";
+export { TFARequestSchema, type TFARequestInput } from "./tfa";
+export { ProEvolMLRequestSchema, type ProEvolMLRequestInput } from "./proevolMl";
 
 import type { z } from "zod";
 

@@ -9,7 +9,6 @@ import { computeThermo, PATHWAY_STEPS } from "../../../data/mockCETHX";
 import { computeDGAtConditions, getPrecomputedDGMap, PHYSIOLOGICAL } from "../../../data/precomputedDG";
 import { KEGG_REACTIONS } from "../../../hooks/useEquilibrator";
 import type { TFAReaction, TFAResult } from "../../../server/tfaEngine";
-import { runTFA } from "../../../server/tfaEngine";
 import type { PubChemCompound } from "../../../services/database/pubchemClient";
 import { searchPubChemCompound } from "../../../services/database/pubchemClient";
 import { calcTransformedGibbs, calcTransformedKeq } from "../../../services/thermoEngine";
@@ -484,13 +483,25 @@ export default function useCETHXState(): CETHXState {
   const [tfaReactions, setTfaReactions] = useState<TFAReaction[]>(GLYCOLYSIS_TFA_REACTIONS);
   const [tfaResult, setTfaResult] = useState<TFAResult | null>(null);
 
-  const handleRunTFA = useCallback(() => {
+  const handleRunTFA = useCallback(async () => {
     if (tfaReactions.length === 0) return;
-    const result = runTFA({
-      reactions: tfaReactions,
-      conditions: { pH, ionicStrength: 0.1, temperature: tempC + 273.15 },
-    });
-    setTfaResult(result);
+    // Compute runs server-side (see /api/tfa) so the engine stays out of the
+    // client bundle (integrity audit T3-3).
+    try {
+      const res = await fetch("/api/tfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reactions: tfaReactions,
+          conditions: { pH, ionicStrength: 0.1, temperature: tempC + 273.15 },
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "TFA failed");
+      setTfaResult(json.result as TFAResult);
+    } catch {
+      setTfaResult(null);
+    }
   }, [tfaReactions, pH, tempC]);
 
   // Retry handler for equilibrator
