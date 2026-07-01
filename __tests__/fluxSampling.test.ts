@@ -157,6 +157,15 @@ describe('sampleFlux', () => {
     expect(samples).toHaveLength(5);
   });
 
+  // T2 reproducibility: seeded hit-and-run sampler.
+  test('same seed => identical samples; different seed => different', async () => {
+    const a = await sampleFlux(buildDegenerateModel(), 8, 1e-6, 123);
+    const b = await sampleFlux(buildDegenerateModel(), 8, 1e-6, 123);
+    const c = await sampleFlux(buildDegenerateModel(), 8, 1e-6, 999);
+    expect(b).toEqual(a);
+    expect(c).not.toEqual(a);
+  });
+
   test('returns single sample for unique optimum model', async () => {
     const samples = await sampleFlux(buildSimpleModel(), 5);
     // Simple model has a unique optimum, so only 1 distinct sample

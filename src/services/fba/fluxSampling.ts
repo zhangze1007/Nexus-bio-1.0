@@ -40,6 +40,7 @@
  */
 
 import { type LPModel, solveLP } from "../../server/highsSolver";
+import { SeededRNG } from "../../utils/seededRng";
 
 /* ------------------------------------------------------------------ */
 /*  Public types                                                        */
@@ -187,15 +188,13 @@ function projectOntoSpan(direction: number[], basis: number[][]): number[] {
  * Generate a random direction in the null space of the equality constraints.
  * Generates a random vector and projects it onto the null space basis.
  */
-function randomNullSpaceDirection(n: number, nullBasis: number[][]): number[] {
+function randomNullSpaceDirection(n: number, nullBasis: number[][], rng: SeededRNG): number[] {
   if (nullBasis.length === 0) return Array(n).fill(0);
 
-  // Generate random vector
+  // Generate random Gaussian vector (seeded → reproducible sampling).
   const rand: number[] = [];
   for (let i = 0; i < n; i++) {
-    const u1 = Math.random() || 1e-300;
-    const u2 = Math.random();
-    rand.push(Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2));
+    rand.push(rng.gaussian());
   }
 
   // Project onto null space
@@ -308,8 +307,14 @@ function findStepBounds(
  * @param tolerance - Fraction of objective to allow (default 1e-6)
  * @returns Array of FluxSample objects with fluxes and objective values
  */
-export async function sampleFlux(model: LPModel, nSamples: number, tolerance = 1e-6): Promise<FluxSample[]> {
+export async function sampleFlux(
+  model: LPModel,
+  nSamples: number,
+  tolerance = 1e-6,
+  seed = 42,
+): Promise<FluxSample[]> {
   if (nSamples <= 0) return [];
+  const rng = new SeededRNG(seed);
 
   // Collect variable names from model bounds (in order)
   const varNames = (model.bounds ?? []).map((b) => b.name);
@@ -424,7 +429,7 @@ export async function sampleFlux(model: LPModel, nSamples: number, tolerance = 1
 
   for (let i = 0; i < nSamples; i++) {
     // Generate random direction in the null space of equality constraints
-    const direction = randomNullSpaceDirection(n, nullBasis);
+    const direction = randomNullSpaceDirection(n, nullBasis, rng);
 
     // Check direction is non-trivial
     const dirNorm = Math.sqrt(direction.reduce((s, v) => s + v * v, 0));
@@ -449,8 +454,8 @@ export async function sampleFlux(model: LPModel, nSamples: number, tolerance = 1
       continue;
     }
 
-    // Sample uniformly along the feasible segment
-    const t = minStep + Math.random() * (maxStep - minStep);
+    // Sample uniformly along the feasible segment (seeded)
+    const t = minStep + rng.next() * (maxStep - minStep);
 
     // Update current point
     for (let j = 0; j < n; j++) {

@@ -1,33 +1,26 @@
 /**
- * RFdiffusion De Novo Protein Design
+ * Backbone Sketch (heuristic) — De Novo Protein Design prototype
  *
- * RFdiffusion (Watson et al., Nature 2023) is a generative model for
- * protein design. It uses a fine-tuned RoseTTAFold structure prediction
- * network to generate novel protein backbones from noise.
+ * VALIDITY TIER: demo.
  *
- * This module provides:
- *   1. Unconditional protein generation
- *   2. Scaffolding of functional motifs
- *   3. Binder design (protein-protein interaction)
- *   4. Symmetric oligomer design
+ * This module is a HEURISTIC backbone/sequence generator for UI prototyping.
+ * It is NOT a generative diffusion model and implements no learned weights,
+ * no denoising process, and no structure-prediction network. Sequences are
+ * drawn from natural amino-acid frequencies with a simple secondary-structure
+ * position bias; backbones are placed on an idealized helical trace. Outputs
+ * are plausible-looking placeholders, not predictions.
  *
- * Reference:
- *   Watson JL, Juergens D, Bennett NR, et al.
- *   De novo design of protein structure and function with RFdiffusion.
- *   Nature. 2023;620:1089-1100. doi:10.1038/s41586-023-06415-8
- *
- * @scientific_provenance
- *   ALGORITHM: Denoising diffusion probabilistic model (DDPM) for protein structures
- *   ARCHITECTURE: Fine-tuned RoseTTAFold (RF) structure prediction network
- *   TRAINING: PDB structures (experimentally determined)
- *   VALIDATION: Experimental validation of designed proteins (Watson et al. 2023)
+ * To obtain real de novo designs, set the DENOVO_DESIGN_BACKEND env var to a
+ * hosted model endpoint; when present, `runBackboneSketch` delegates to it and
+ * this heuristic is bypassed entirely. Provenance/citations belong to that
+ * backend's response, not to this file.
  */
 
 // ── Types ──────────────────────────────────────────────────────────────
 
 export type DesignMode = "unconditional" | "scaffolding" | "binder" | "symmetric";
 
-export interface RFdiffusionConfig {
+export interface BackboneSketchConfig {
   /** Design mode */
   mode: DesignMode;
   /** Target length (amino acids) for unconditional design */
@@ -83,7 +76,7 @@ export interface DesignedProtein {
   };
 }
 
-export interface RFdiffusionResult {
+export interface BackboneSketchResult {
   /** Designed proteins */
   proteins: DesignedProtein[];
   /** Best design (highest confidence) */
@@ -107,12 +100,12 @@ export interface RFdiffusionResult {
 // ── Main Design Function ───────────────────────────────────────────────
 
 /**
- * Run RFdiffusion protein design.
+ * Run heuristic backbone sketch (or delegate to a real de novo design backend).
  *
- * When the Python backend is not available, uses a heuristic fallback
- * that generates plausible but non-optimal designs.
+ * When DENOVO_DESIGN_BACKEND is unset, uses the heuristic fallback that
+ * generates plausible but non-predictive designs (validity tier: demo).
  */
-export async function runRFdiffusion(config: RFdiffusionConfig): Promise<RFdiffusionResult> {
+export async function runBackboneSketch(config: BackboneSketchConfig): Promise<BackboneSketchResult> {
   const {
     mode = "unconditional",
     targetLength = 100,
@@ -124,7 +117,7 @@ export async function runRFdiffusion(config: RFdiffusionConfig): Promise<RFdiffu
 
   // Try Python backend first
   try {
-    const backend = process.env.RFDIFFUSION_BACKEND;
+    const backend = process.env.DENOVO_DESIGN_BACKEND;
     if (backend) {
       const res = await fetch(`${backend}/design`, {
         method: "POST",
@@ -153,9 +146,9 @@ export async function runRFdiffusion(config: RFdiffusionConfig): Promise<RFdiffu
  * This is NOT a real diffusion model — it uses simplified rules to
  * generate plausible protein sequences and structures.
  *
- * For real designs, use the Python backend with the actual RFdiffusion model.
+ * For real designs, set DENOVO_DESIGN_BACKEND to a hosted model endpoint.
  */
-function heuristicDesign(config: RFdiffusionConfig): RFdiffusionResult {
+function heuristicDesign(config: BackboneSketchConfig): BackboneSketchResult {
   const {
     mode = "unconditional",
     targetLength = 100,
@@ -172,7 +165,7 @@ function heuristicDesign(config: RFdiffusionConfig): RFdiffusionResult {
     const sequence = generateHeuristicSequence(targetLength, mode, motif, temperature);
     const pdb = generateHeuristicPDB(sequence, i);
     const confidence = calculateHeuristicConfidence(sequence, mode);
-    const residueConfidence = sequence.split("").map(() => confidence + (Math.random() - 0.5) * 0.1);
+    const residueConfidence = heuristicResidueConfidence(sequence, confidence);
 
     proteins.push({
       id: `rfdiff_${i}_${Date.now().toString(36)}`,
@@ -205,11 +198,11 @@ function heuristicDesign(config: RFdiffusionConfig): RFdiffusionResult {
       successRate: proteins.filter((p) => p.confidence > 0.7).length / proteins.length,
     },
     reference: {
-      title: "De novo design of protein structure and function with RFdiffusion",
-      authors: "Watson JL, Juergens D, Bennett NR, et al.",
-      journal: "Nature",
-      year: 2023,
-      doi: "10.1038/s41586-023-06415-8",
+      title: "Backbone Sketch (heuristic generator) — not a diffusion model; for UI prototyping only",
+      authors: "Nexus-Bio heuristic generator",
+      journal: "N/A (no published method — outputs are placeholders)",
+      year: new Date().getFullYear(),
+      doi: "",
     },
   };
 }
@@ -299,9 +292,9 @@ function generateHeuristicSequence(
 function generateHeuristicPDB(sequence: string, seed: number): string {
   const lines: string[] = [];
   lines.push("HEADER    DE NOVO PROTEIN DESIGN");
-  lines.push("TITLE     RFdiffusion heuristic design");
+  lines.push("TITLE     Backbone Sketch (heuristic design)");
   lines.push("REMARK   1 This is a heuristic structure, not a real prediction.");
-  lines.push("REMARK   1 Use the Python backend for actual RFdiffusion designs.");
+  lines.push("REMARK   1 Set DENOVO_DESIGN_BACKEND for actual de novo model designs.");
 
   let atomIdx = 1;
   const phi = (-57.8 * Math.PI) / 180; // Typical alpha helix phi
@@ -383,6 +376,29 @@ function calculateHeuristicConfidence(sequence: string, mode: DesignMode): numbe
   if (mode === "binder") confidence -= 0.05; // Harder to design
 
   return Math.max(0.3, Math.min(0.95, confidence));
+}
+
+/**
+ * Deterministic per-residue confidence proxy.
+ *
+ * NOT model per-residue pLDDT. This is a clearly-heuristic estimate: buried
+ * hydrophobic core residues are treated as more "confident" than exposed/loop
+ * residues, and chain termini are down-weighted (they are typically flexible).
+ * The result is fully deterministic given the sequence and base confidence —
+ * no randomness — so the same input always yields the same profile.
+ */
+function heuristicResidueConfidence(sequence: string, baseConfidence: number): number[] {
+  const hydrophobic = new Set(["V", "I", "L", "F", "M", "W", "Y", "A", "C"]);
+  const n = sequence.length;
+  return sequence.split("").map((aa, i) => {
+    // Terminal down-weight: cosine taper over the first/last ~10% of the chain.
+    const edge = Math.min(i, n - 1 - i) / Math.max(1, n - 1);
+    const terminusFactor = 0.85 + 0.15 * Math.min(1, edge / 0.1);
+    // Hydrophobic residues get a small confidence bump (core-forming proxy).
+    const coreBonus = hydrophobic.has(aa) ? 0.05 : -0.03;
+    const v = baseConfidence * terminusFactor + coreBonus;
+    return Math.max(0.1, Math.min(0.99, v));
+  });
 }
 
 // ── Utility ────────────────────────────────────────────────────────────

@@ -17,6 +17,21 @@ describe('closedLoopDBTLEngine', () => {
   });
 
   describe('runClosedLoopDBTL', () => {
+    // T1-4 anti-fabrication: same inputs + same seed => byte-identical suggestions.
+    it('is reproducible for a fixed seed and varies with the seed', () => {
+      const mk = () => createCampaign('Repro', [
+        { name: 'x1', type: 'continuous', bounds: [0, 1] },
+        { name: 'x2', type: 'continuous', bounds: [0, 1] },
+      ], 'maximize');
+
+      const a = runClosedLoopDBTL(mk(), 'EI', 3, 123);
+      const b = runClosedLoopDBTL(mk(), 'EI', 3, 123);
+      const c = runClosedLoopDBTL(mk(), 'EI', 3, 999);
+
+      expect(a.suggestions).toEqual(b.suggestions);       // same seed -> identical
+      expect(a.suggestions).not.toEqual(c.suggestions);   // different seed -> different
+    });
+
     it('generates initial suggestions via LHS', () => {
       const campaign = createCampaign('Test', [
         { name: 'x1', type: 'continuous', bounds: [0, 1] },

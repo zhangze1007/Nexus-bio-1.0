@@ -323,24 +323,108 @@ function optimizeEmbedding(
 }
 
 /**
- * Find UMAP's a/b parameters from minDist and spread.
- * Uses the relationship: w(d) = 1 / (1 + a * d^(2*b))
+ * Find UMAP's a/b parameters from minDist and spread by least-squares fit.
  *
- * For minDist=0.1, spread=1.0: a ≈ 1.577, b ≈ 0.895
+ * Ports UMAP's `find_ab_params` (McInnes et al. 2018): fit the smooth curve
+ *   w(x) = 1 / (1 + a * x^(2*b))
+ * to the piecewise target
+ *   y(x) = 1                              for x < minDist
+ *   y(x) = exp(-(x - minDist) / spread)   for x >= minDist
+ * sampled on x = linspace(0, spread*3, 300), using a Levenberg–Marquardt
+ * nonlinear least-squares solve for (a, b).
+ *
+ * For minDist=0.1, spread=1.0 this reproduces the canonical a ≈ 1.577,
+ * b ≈ 0.895. Unlike the previous implementation, the result genuinely depends
+ * on both inputs.
  *
  * @returns [a, b] parameters for the UMAP curve
  */
-function findAB(minDist: number, spread: number): [number, number] {
-  // Standard UMAP parameterization from McInnes et al. (2018)
-  // Solve: w(minDist) = 1 (full connectivity at minDist)
-  //        w(spread) ≈ 0.1 (low connectivity at spread distance)
-  //
-  // From w(d) = 1 / (1 + a * d^(2*b)):
-  //   At d = minDist: 1 = 1 / (1 + a * minDist^(2*b)) → a * minDist^(2*b) = 0
-  //   At d = spread:  0.1 = 1 / (1 + a * spread^(2*b))
-  //
-  // Practical approximation from UMAP source:
-  const a = 1.929; // Fixed for standard UMAP
-  const b = 0.7915; // Fixed for standard UMAP
+export function findAB(minDist: number, spread: number): [number, number] {
+  const N = 300;
+  const xs: number[] = new Array(N);
+  const ys: number[] = new Array(N);
+  const xmax = spread * 3;
+  for (let i = 0; i < N; i++) {
+    const x = (xmax * i) / (N - 1);
+    xs[i] = x;
+    ys[i] = x < minDist ? 1.0 : Math.exp(-(x - minDist) / spread);
+  }
+
+  // Model and analytic partial derivatives.
+  //   f(x) = 1 / (1 + a * x^(2b)),  u = a * x^(2b)
+  //   df/da = -x^(2b) / (1+u)^2
+  //   df/db = -(u * 2 ln x) / (1+u)^2        (0 at x = 0)
+  const model = (x: number, a: number, b: number): number => {
+    if (x <= 0) return 1.0;
+    return 1.0 / (1.0 + a * Math.pow(x, 2 * b));
+  };
+
+  let a = 1.0;
+  let b = 1.0;
+  let lambda = 1e-3;
+
+  const sse = (aa: number, bb: number): number => {
+    let s = 0;
+    for (let i = 0; i < N; i++) {
+      const r = model(xs[i], aa, bb) - ys[i];
+      s += r * r;
+    }
+    return s;
+  };
+
+  let err = sse(a, b);
+
+  for (let iter = 0; iter < 200; iter++) {
+    // Gauss-Newton normal equations J^T J and J^T r (2x2), with LM damping.
+    let jtj00 = 0,
+      jtj01 = 0,
+      jtj11 = 0;
+    let jtr0 = 0,
+      jtr1 = 0;
+    for (let i = 0; i < N; i++) {
+      const x = xs[i];
+      if (x <= 0) continue; // derivatives are 0 and residual is 0 at x=0
+      const xb = Math.pow(x, 2 * b);
+      const u = a * xb;
+      const denom = (1 + u) * (1 + u);
+      const da = -xb / denom;
+      const db = -(u * 2 * Math.log(x)) / denom;
+      const r = model(x, a, b) - ys[i];
+      jtj00 += da * da;
+      jtj01 += da * db;
+      jtj11 += db * db;
+      jtr0 += da * r;
+      jtr1 += db * r;
+    }
+
+    // Solve (J^T J + lambda*diag) delta = -J^T r
+    let solved = false;
+    for (let tries = 0; tries < 30 && !solved; tries++) {
+      const m00 = jtj00 * (1 + lambda);
+      const m11 = jtj11 * (1 + lambda);
+      const m01 = jtj01;
+      const det = m00 * m11 - m01 * m01;
+      if (Math.abs(det) < 1e-30) {
+        lambda *= 10;
+        continue;
+      }
+      const da = (-jtr0 * m11 + jtr1 * m01) / det;
+      const db = (-jtr1 * m00 + jtr0 * m01) / det;
+      const na = a + da;
+      const nb = b + db;
+      const newErr = sse(na, nb);
+      if (newErr < err && na > 0 && nb > 0) {
+        a = na;
+        b = nb;
+        err = newErr;
+        lambda = Math.max(lambda * 0.5, 1e-12);
+        solved = true;
+      } else {
+        lambda *= 10;
+      }
+    }
+    if (!solved) break; // converged / cannot improve
+  }
+
   return [a, b];
 }

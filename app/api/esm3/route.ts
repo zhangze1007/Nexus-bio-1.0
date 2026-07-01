@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
+import { SeededRNG } from '../../../src/utils/seededRng';
 
 export const runtime = 'edge';
 
@@ -226,7 +227,13 @@ async function handleGenerate(body: ESM3GenerateBody, req: NextRequest, requestI
     }
   }
 
-  // Local heuristic fallback
+  // Local heuristic fallback — seeded so identical requests are reproducible.
+  // Seed derived from request inputs (deterministic per request, differs across
+  // requests). These are HEURISTIC estimates, not ESM-3 model outputs.
+  let seed = targetLength * 31 + numSequences * 7;
+  for (const ch of (targetFunction ?? "") + (fold ?? "")) seed = (seed * 33 + ch.charCodeAt(0)) & 0x7fffffff;
+  const rng = new SeededRNG(seed || 42);
+
   const sequences = [];
   const AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY";
   const functionBiases: Record<string, string> = {
@@ -259,19 +266,21 @@ async function handleGenerate(body: ESM3GenerateBody, req: NextRequest, requestI
         continue;
       }
       // Bias toward function-relevant residues
-      if (biasSet !== AMINO_ACIDS && Math.random() < 0.3) {
-        sequence += biasSet[Math.floor(Math.random() * biasSet.length)];
+      if (biasSet !== AMINO_ACIDS && rng.next() < 0.3) {
+        sequence += biasSet[Math.floor(rng.next() * biasSet.length)];
       } else {
-        sequence += AMINO_ACIDS[Math.floor(Math.random() * AMINO_ACIDS.length)];
+        sequence += AMINO_ACIDS[Math.floor(rng.next() * AMINO_ACIDS.length)];
       }
     }
     const hydrophobic = (sequence.match(/[LIVMFWCA]/g) || []).length / sequence.length;
     sequences.push({
       sequence,
       length: sequence.length,
-      foldability: Math.round((0.4 + 0.3 * hydrophobic + 0.15 * Math.random()) * 100) / 100,
-      functionConfidence: Math.round((0.2 + 0.25 * (biasSet.length / 20) + 0.15 * Math.random()) * 100) / 100,
-      stabilityEstimate: Math.round((-5 + 10 * Math.random()) * 100) / 100,
+      foldability: Math.round((0.4 + 0.3 * hydrophobic + 0.15 * rng.next()) * 100) / 100,
+      functionConfidence: Math.round((0.2 + 0.25 * (biasSet.length / 20) + 0.15 * rng.next()) * 100) / 100,
+      stabilityEstimate: Math.round((-5 + 10 * rng.next()) * 100) / 100,
+      // Provenance: heuristic estimate, NOT ESM-3 model confidence.
+      scoreType: "heuristic_estimate",
     });
   }
 
@@ -290,6 +299,9 @@ async function handleGenerate(body: ESM3GenerateBody, req: NextRequest, requestI
       },
       requestId,
       warning: "No ESM-3 backend available. Using local heuristic (not real ESM-3).",
+      // Machine-readable flag: foldability/functionConfidence are heuristic
+      // estimates, not ESM-3 model confidence. UI must not present them as such.
+      scoresAreHeuristic: true,
     },
     { headers: getCorsHeaders(req) },
   );

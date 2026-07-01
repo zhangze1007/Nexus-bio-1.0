@@ -1,6 +1,8 @@
 import {
   minimizeGenome,
   simulateSCRaMbLE,
+  scrambleFitnessEffect,
+  affectedRegions,
   computeCAI,
   optimizeCodonsForHost,
 } from '../src/server/syntheticGenomicsEngine';
@@ -50,6 +52,30 @@ describe('syntheticGenomicsEngine', () => {
         expect(e.fitnessEffect).toBeGreaterThanOrEqual(-1);
         expect(e.fitnessEffect).toBeLessThanOrEqual(1);
       });
+    });
+
+    // T0-2 anti-decoy: fitnessEffect MUST depend on the CONTENT of the affected
+    // region, not be a random draw by event type.
+    it('penalizes deletion of an essential region more than a redundant region', () => {
+      const essentialSpan = affectedRegions(sampleRegions, 0, 1000);   // gene1 (essential)
+      const redundantSpan = affectedRegions(sampleRegions, 1000, 2000); // gene2 (non-essential)
+
+      const essentialEffect = scrambleFitnessEffect('deletion', essentialSpan);
+      const redundantEffect = scrambleFitnessEffect('deletion', redundantSpan);
+
+      // Essential deletion must be strictly MORE negative than redundant deletion.
+      expect(essentialEffect).toBeLessThan(redundantEffect);
+      // And it must be near-lethal, while redundant is near-neutral.
+      expect(essentialEffect).toBeLessThan(-0.8);
+      expect(redundantEffect).toBeGreaterThan(-0.2);
+    });
+
+    it('is reproducible for a fixed seed and varies with the seed', () => {
+      const a = simulateSCRaMbLE(sampleRegions, [500, 1500, 2500], 8, 123);
+      const b = simulateSCRaMbLE(sampleRegions, [500, 1500, 2500], 8, 123);
+      const c = simulateSCRaMbLE(sampleRegions, [500, 1500, 2500], 8, 999);
+      expect(a).toEqual(b);            // same seed -> identical
+      expect(a).not.toEqual(c);        // different seed -> different run
     });
   });
 });

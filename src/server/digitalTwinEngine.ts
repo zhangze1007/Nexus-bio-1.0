@@ -23,7 +23,11 @@
  *     - No spatial heterogeneity (assumes perfect mixing)
  *     - Gaussian noise model (Gaussian only)
  *     - No model selection / switching
+ *   REPRODUCIBILITY: Monte Carlo forecast sampling is seeded (SeededRNG), so
+ *     forecasts/CIs are identical for a given seed (default fixed).
  */
+
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -563,20 +567,18 @@ function monteCarloForecast(
   horizon: number, // hours
   dt: number, // time step
   nSamples: number = 100,
+  rng: SeededRNG = new SeededRNG(42),
 ): ForecastPoint[] {
   const forecast: ForecastPoint[] = [];
   const state = ekf.getState();
   const cov = ekf.getCovariance();
 
-  // Generate samples from current distribution
+  // Generate samples from current distribution (seeded Gaussian sampling).
   const samples: number[][] = [];
   for (let s = 0; s < nSamples; s++) {
     const sample = state.map((mu, i) => {
       const sigma = Math.sqrt(Math.abs(cov[i][i]));
-      // Box-Muller transform
-      const u1 = Math.random() || 1e-10;
-      const u2 = Math.random();
-      const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      const z = rng.gaussian();
       return mu + sigma * z;
     });
     samples.push(sample);
@@ -671,8 +673,10 @@ export function runDigitalTwin(
   config: DigitalTwinConfig,
   sensorReadings: SensorReading[],
   forecastHorizon: number = 24,
+  seed: number = 42,
 ): DigitalTwinResult {
   const ekf = new ExtendedKalmanFilter(config);
+  const forecastRng = new SeededRNG(seed);
   const updateHistory: DigitalTwinUpdate[] = [];
 
   let prevTime = 0;
@@ -720,7 +724,7 @@ export function runDigitalTwin(
   }
 
   // Monte Carlo forecast
-  const forecast = monteCarloForecast(ekf, config, forecastHorizon, 0.5);
+  const forecast = monteCarloForecast(ekf, config, forecastHorizon, 0.5, 100, forecastRng);
 
   // Compute diagnostics
   const currentState = buildState(ekf, config);

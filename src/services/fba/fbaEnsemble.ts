@@ -46,6 +46,7 @@
  */
 
 import { type LPModel, solveLP } from "../../server/highsSolver";
+import { SeededRNG } from "../../utils/seededRng";
 
 /* ------------------------------------------------------------------ */
 /*  Public types                                                       */
@@ -123,10 +124,10 @@ function collectVariableNames(model: LPModel): string[] {
 }
 
 /**
- * Generate a uniform random number in [lo, hi].
+ * Generate a uniform random number in [lo, hi] from a seeded PRNG.
  */
-function uniformRandom(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
+function uniformRandom(lo: number, hi: number, rng: SeededRNG): number {
+  return lo + rng.next() * (hi - lo);
 }
 
 /* ------------------------------------------------------------------ */
@@ -152,19 +153,25 @@ function uniformRandom(lo: number, hi: number): number {
  *                     (default 0.1 = 10% perturbation)
  * @returns EnsembleResult with all solutions and per-reaction statistics
  */
-export async function runEnsembleFBA(model: LPModel, nSamples: number, delta = 0.1): Promise<EnsembleResult> {
+export async function runEnsembleFBA(
+  model: LPModel,
+  nSamples: number,
+  delta = 0.1,
+  seed = 42,
+): Promise<EnsembleResult> {
   if (nSamples <= 0) {
     return { solutions: [], meanFluxes: {}, stdFluxes: {} };
   }
 
   const varNames = collectVariableNames(model);
   const solutions: EnsembleSolution[] = [];
+  const rng = new SeededRNG(seed);
 
   for (let i = 0; i < nSamples; i++) {
     // Build a perturbed model: clone and perturb objective coefficients
     const perturbed = cloneModel(model);
     perturbed.objective = model.objective.map((v) => {
-      const noise = uniformRandom(-delta * Math.abs(v.coef), delta * Math.abs(v.coef));
+      const noise = uniformRandom(-delta * Math.abs(v.coef), delta * Math.abs(v.coef), rng);
       return { name: v.name, coef: v.coef + noise };
     });
 

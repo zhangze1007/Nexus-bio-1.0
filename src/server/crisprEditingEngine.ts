@@ -347,6 +347,29 @@ export function designPrimeEdit(
 // ── Base Editing Design ──────────────────────────────────────────────────
 
 /**
+ * Position-dependent bystander activity profile within the protospacer.
+ *
+ * Base editors edit within a narrow window whose activity peaks near the
+ * center and falls off toward the edges — bystander efficiency therefore
+ * depends on WHERE in the window the base sits, not on a random fraction of
+ * the on-target rate. Modeled as a Gaussian centered on each editor's peak
+ * activity position (protospacer position, 0-indexed, PAM-distal end = 0).
+ *
+ *   ABE8e  peak ~ position 5 (activity window ~4-8)   — Richter et al. 2020
+ *   CBE/CGBE peak ~ position 6 (activity window ~4-8) — Komor et al. 2016
+ *
+ * Fully deterministic: eff(pos=5) > eff(pos=1) for ABE8e, always.
+ *
+ * @returns weight in (0, 1] to scale the on-target efficiency by
+ */
+export function bystanderActivityWeight(editorType: BaseEditorType, protospacerPos: number): number {
+  const center = editorType === "ABE8e" ? 5 : 6;
+  const sigma = editorType === "ABE8e" ? 1.6 : 1.8;
+  const d = protospacerPos - center;
+  return Math.exp(-(d * d) / (2 * sigma * sigma));
+}
+
+/**
  * Design a base edit for a specific nucleotide change.
  *
  * Supports:
@@ -400,7 +423,10 @@ export function designBaseEdit(
   for (let i = editingWindow.start; i <= editingWindow.end; i++) {
     const pos = spacerStart + i;
     if (pos !== editPosition && pos < seq.length && targetBases.includes(seq[pos])) {
-      const bystanderEff = Math.max(0.05, efficiency * (0.5 + 0.3 * Math.random()));
+      // Bystander activity is a DETERMINISTIC function of the base's position
+      // within the protospacer editing window (base editors have a peaked
+      // activity profile), not a random fraction of the on-target rate.
+      const bystanderEff = Math.max(0.02, efficiency * bystanderActivityWeight(editorType, i));
       bystanderEdits.push({
         position: pos,
         original: seq[pos],

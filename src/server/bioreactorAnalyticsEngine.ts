@@ -14,7 +14,12 @@
  *
  * @scientific_provenance
  *   ALGORITHM: PCA-based MSPM + CUSUM change points + LM nonlinear fitting + DTW batch comparison
+ *   REPRODUCIBILITY: PCA power-iteration init and bootstrap resampling are
+ *     seeded (SeededRNG) with a fixed sign convention on eigenvectors, so the
+ *     principal components and confidence intervals are identical run-to-run.
  */
+
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -152,7 +157,7 @@ function linearRegression(x: number[], y: number[]): { slope: number; intercept:
  *
  * Reference: Nomikos & MacGregor (1995) AIChE J 41:1209-1225
  */
-function computePCA(data: number[][]): {
+export function computePCA(data: number[][]): {
   scores: number[][];
   loadings: number[][];
   explainedVariance: number[];
@@ -189,9 +194,11 @@ function computePCA(data: number[][]): {
   const loadings: number[][] = [];
   const eigenvalues: number[] = [];
   const covCopy = cov.map((row) => [...row]);
+  // Seeded init → reproducible principal components (was Math.random()).
+  const rng = new SeededRNG(42);
 
   for (let comp = 0; comp < maxComponents; comp++) {
-    let vec = new Array(p).fill(0).map(() => Math.random());
+    let vec = new Array(p).fill(0).map(() => rng.next());
     const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0));
     vec = vec.map((v) => v / norm);
 
@@ -204,6 +211,19 @@ function computePCA(data: number[][]): {
       if (newNorm < 1e-10) break;
       vec = newVec.map((v) => v / newNorm);
     }
+
+    // Fixed sign convention: make the largest-magnitude component positive so
+    // the eigenvector is deterministic (power iteration sign is otherwise
+    // arbitrary).
+    let maxAbs = 0;
+    let maxIdx = 0;
+    for (let i = 0; i < p; i++) {
+      if (Math.abs(vec[i]) > maxAbs) {
+        maxAbs = Math.abs(vec[i]);
+        maxIdx = i;
+      }
+    }
+    if (vec[maxIdx] < 0) vec = vec.map((v) => -v);
 
     const eigenvalue = vec.reduce((s, v, i) => s + v * covCopy.reduce((ss, row, j) => ss + row[i] * vec[j], 0), 0);
     eigenvalues.push(eigenvalue);
@@ -558,12 +578,13 @@ function estimateKinetics(data: TimeSeriesPoint[]): KineticEstimate {
     lastS = biomassData[biomassData.length - 1].substrate!;
   const yieldCoeff = firstS - lastS > 0 ? (lastB - firstB) / (firstS - lastS) : 0;
 
-  // Confidence intervals (bootstrap)
+  // Confidence intervals (bootstrap) — seeded so CIs are reproducible.
   const nBoot = 100;
+  const bootRng = new SeededRNG(1337);
   const muSamples: number[] = [];
   const ksSamples: number[] = [];
   for (let b = 0; b < nBoot; b++) {
-    const bootS = validData.map(() => validData[Math.floor(Math.random() * validData.length)]);
+    const bootS = validData.map(() => validData[Math.floor(bootRng.next() * validData.length)]);
     const { params: bootParams } = levenbergMarquardt(
       monodModel,
       bootS.map((d) => d.substrate),

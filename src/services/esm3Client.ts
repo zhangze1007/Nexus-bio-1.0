@@ -15,7 +15,15 @@
  * License: MIT (EvolutionaryScale)
  *
  * API: Uses ESM-3 Python backend (ESM3_PYTHON_BACKEND env) or ESM Atlas API
+ *
+ * PROVENANCE: results always carry a `source` field
+ * (esm3_backend | esm_atlas | local_heuristic). When source is
+ * `local_heuristic`, the foldability/functionConfidence values are HEURISTIC
+ * ESTIMATES (composition-based, seeded), NOT model confidence — any UI MUST
+ * render the source and must not present heuristic scores as ESM-3 output.
  */
+
+import { SeededRNG } from "../utils/seededRng";
 
 export interface ESM3GenerateInput {
   /** Target function or activity description (e.g., "fluorescent protein", "serine protease") */
@@ -182,8 +190,10 @@ export async function designProteinForFold(
 export function generateProteinLocalHeuristic(
   targetLength: number = 200,
   targetFunction?: string,
-): { sequence: string; foldability: number; functionConfidence: number } {
+  seed: number = 42,
+): { sequence: string; foldability: number; functionConfidence: number; scoreType: "heuristic_estimate"; source: "local_heuristic" } {
   const AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY";
+  const rng = new SeededRNG(seed);
 
   // Function-based amino acid biases
   const functionBiases: Record<string, string> = {
@@ -235,11 +245,11 @@ export function generateProteinLocalHeuristic(
   let sequence = "";
   for (let i = 0; i < targetLength; i++) {
     // Bias toward function-relevant residues (30% boost)
-    if (biasSet !== AMINO_ACIDS && Math.random() < 0.3) {
-      sequence += biasSet[Math.floor(Math.random() * biasSet.length)];
+    if (biasSet !== AMINO_ACIDS && rng.next() < 0.3) {
+      sequence += biasSet[Math.floor(rng.next() * biasSet.length)];
     } else {
       // Weighted random from natural frequencies
-      const r = Math.random();
+      const r = rng.next();
       let cum = 0;
       for (const [aa, freq] of Object.entries(frequencies)) {
         cum += freq;
@@ -255,12 +265,16 @@ export function generateProteinLocalHeuristic(
   // Compute heuristic quality scores
   // Hydrophobic fraction (folds better with balanced hydrophobic core)
   const hydrophobicFraction = (sequence.match(/[LIVMFCAW]/g) || []).length / sequence.length;
-  const foldability = Math.min(1, 0.4 + 0.3 * hydrophobicFraction + 0.1 * Math.random());
-  const functionConfidence = Math.min(1, 0.2 + 0.2 * (biasSet.length / 20) + 0.1 * Math.random());
+  const foldability = Math.min(1, 0.4 + 0.3 * hydrophobicFraction + 0.1 * rng.next());
+  const functionConfidence = Math.min(1, 0.2 + 0.2 * (biasSet.length / 20) + 0.1 * rng.next());
 
   return {
     sequence,
     foldability: Math.round(foldability * 100) / 100,
     functionConfidence: Math.round(functionConfidence * 100) / 100,
+    // Provenance travels with the numbers: these are heuristic estimates, not
+    // ESM-3 model confidence. Any UI must surface this.
+    scoreType: "heuristic_estimate",
+    source: "local_heuristic",
   };
 }

@@ -22,7 +22,12 @@
  *     - GP scales as O(n³) — practical limit ~200 experiments
  *     - No multi-fidelity optimization (all experiments same cost)
  *     - No transfer learning between campaigns
+ *   REPRODUCIBILITY: the sampler feeding the optimizer (LHS jitter + shuffle,
+ *     candidate initialization) is seeded via SeededRNG, so identical requests
+ *     with the same seed produce byte-identical suggested experiments.
  */
+
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -306,20 +311,24 @@ function normalCDF(x: number): number {
  *
  * Reference: McKay et al. (1979) Technometrics 21:239-245
  */
-function latinHypercubeSample(parameters: DesignParameter[], nSamples: number): Record<string, number>[] {
+function latinHypercubeSample(
+  parameters: DesignParameter[],
+  nSamples: number,
+  rng: SeededRNG = new SeededRNG(42),
+): Record<string, number>[] {
   const samples: Record<string, number>[] = [];
   const d = parameters.length;
 
-  // Generate stratified samples for each dimension
+  // Generate stratified samples for each dimension (seeded jitter + shuffle).
   const stratified: number[][] = [];
   for (let j = 0; j < d; j++) {
     const dim: number[] = [];
     for (let i = 0; i < nSamples; i++) {
-      dim.push((i + Math.random()) / nSamples);
+      dim.push((i + rng.next()) / nSamples);
     }
-    // Shuffle
+    // Fisher-Yates shuffle (seeded)
     for (let i = nSamples - 1; i > 0; i--) {
-      const k = Math.floor(Math.random() * (i + 1));
+      const k = Math.floor(rng.next() * (i + 1));
       [dim[i], dim[k]] = [dim[k], dim[i]];
     }
     stratified.push(dim);
@@ -360,8 +369,10 @@ export function runClosedLoopDBTL(
   campaign: DBTLCampaign,
   acquisitionType: "EI" | "UCB" | "PI" = "EI",
   nSuggestions: number = 3,
+  seed: number = 42,
 ): DBTLResult {
   const { parameters, experiments, objective } = campaign;
+  const rng = new SeededRNG(seed);
 
   // Filter completed experiments
   const completed = experiments.filter((e) => e.status === "completed" && e.objective !== undefined);
@@ -384,7 +395,7 @@ export function runClosedLoopDBTL(
 
   // If no experiments yet, generate initial design via LHS
   if (completed.length === 0) {
-    const initialSamples = latinHypercubeSample(parameters, Math.max(5, parameters.length * 2));
+    const initialSamples = latinHypercubeSample(parameters, Math.max(5, parameters.length * 2), rng);
     const suggestions: NextExperimentSuggestion[] = initialSamples.map((sample, i) => ({
       parameters: sample,
       acquisitionValue: 1.0,
@@ -422,7 +433,7 @@ export function runClosedLoopDBTL(
   const nCandidates = Math.min(1000, 10 ** parameters.length);
   const candidates: number[][] = [];
   for (let i = 0; i < nCandidates; i++) {
-    candidates.push(parameters.map(() => Math.random()));
+    candidates.push(parameters.map(() => rng.next()));
   }
 
   // Evaluate acquisition function at each candidate

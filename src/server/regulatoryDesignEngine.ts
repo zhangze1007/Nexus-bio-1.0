@@ -16,6 +16,8 @@
  *     - No codon optimization integration
  */
 
+import { SeededRNG } from "../utils/seededRng";
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface PromoterDesign {
@@ -99,35 +101,63 @@ function countMatches(a: string, b: string): number {
 }
 
 /**
- * Generate a promoter with specified strength.
+ * Design a promoter candidate that hits a target relative strength.
+ *
+ * This is a TARGETED sampler, not a single random draw: it seeds a PRNG (so the
+ * result is reproducible) and hill-climbs over candidate sequences, keeping the
+ * one whose scorePromoter() value is closest to `targetStrength`, stopping early
+ * once it is within `tolerance`. Because both generation and scoring are
+ * deterministic given the seed, the same (targetStrength, seed) always returns
+ * the same sequence.
+ *
+ * @param targetStrength desired relative strength (0-1)
+ * @param seed           PRNG seed for reproducibility
+ * @param tolerance      acceptable |score - target| to stop early
  */
-export function designPromoter(targetStrength: number): PromoterDesign {
-  // Generate -35 and -10 boxes with strength-dependent consensus matching
-  const matchRate = 0.3 + targetStrength * 0.7; // 30% to 100% consensus match
+export function designPromoter(targetStrength: number, seed: number = 42, tolerance: number = 0.05): PromoterDesign {
+  const rng = new SeededRNG(seed);
+  const target = Math.max(0, Math.min(1, targetStrength));
+  const maxAttempts = 800;
 
-  const minus35 = generateConsensusBox(CONSENSUS_MINUS_35, matchRate);
-  const minus10 = generateConsensusBox(CONSENSUS_MINUS_10, matchRate);
-  const spacer = "N".repeat(SPACER_LENGTH).replace(/N/g, () => "ATCG"[Math.floor(Math.random() * 4)]);
-  const tail = "AATG"; // common promoter tail
+  let best: { sequence: string; score: number } | null = null;
 
-  const sequence = minus35 + spacer + minus10 + tail;
-  const strength = scorePromoter(sequence);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Explore a range of consensus match rates around the target so the search
+    // can climb toward the requested strength from both directions.
+    const jitter = (rng.next() - 0.5) * 0.5;
+    const matchRate = Math.max(0, Math.min(1, 0.3 + target * 0.7 + jitter));
 
+    const minus35 = generateConsensusBox(CONSENSUS_MINUS_35, matchRate, rng);
+    const minus10 = generateConsensusBox(CONSENSUS_MINUS_10, matchRate, rng);
+    let spacer = "";
+    for (let i = 0; i < SPACER_LENGTH; i++) spacer += "ATCG"[Math.floor(rng.next() * 4)];
+    const tail = "AATG"; // common promoter tail
+
+    const sequence = minus35 + spacer + minus10 + tail;
+    const score = scorePromoter(sequence);
+
+    if (best === null || Math.abs(score - target) < Math.abs(best.score - target)) {
+      best = { sequence, score };
+      if (Math.abs(score - target) <= tolerance) break;
+    }
+  }
+
+  const result = best as { sequence: string; score: number };
   return {
-    sequence,
-    strength: Math.round(strength * 100) / 100,
-    consensusScore: strength,
+    sequence: result.sequence,
+    strength: Math.round(result.score * 100) / 100,
+    consensusScore: result.score,
     type: "constitutive",
   };
 }
 
-function generateConsensusBox(consensus: string, matchRate: number): string {
+function generateConsensusBox(consensus: string, matchRate: number, rng: SeededRNG): string {
   return consensus
     .split("")
     .map((base) => {
-      if (Math.random() < matchRate) return base;
+      if (rng.next() < matchRate) return base;
       const others = "ACGT".replace(base, "");
-      return others[Math.floor(Math.random() * others.length)];
+      return others[Math.floor(rng.next() * others.length)];
     })
     .join("");
 }

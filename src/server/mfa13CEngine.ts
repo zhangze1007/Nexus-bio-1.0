@@ -20,7 +20,11 @@
  *     - No GC-MS/MS raw data parsing
  *     - Flux estimation uses Levenberg-Marquardt nonlinear least-squares optimization
  *     - No uncertainty quantification (no Monte Carlo confidence intervals)
+ *   REPRODUCIBILITY: Monte Carlo MID perturbation is seeded (SeededRNG), so
+ *     confidence intervals are reproducible for a given seed (default fixed).
  */
+
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -578,6 +582,7 @@ export function run13CMFA(input: MFAInput): MFAResult {
 export function monteCarloConfidenceIntervals(
   input: MFAInput,
   nSamples: number = 100,
+  seed: number = 42,
 ): {
   fluxMeans: number[];
   fluxCIs: Array<[number, number]>;
@@ -585,16 +590,14 @@ export function monteCarloConfidenceIntervals(
 } {
   const nReactions = input.reactions.length;
   const allFluxes: number[][] = [];
+  const rng = new SeededRNG(seed);
 
   for (let s = 0; s < nSamples; s++) {
-    // Perturb measured MIDs with Gaussian noise
+    // Perturb measured MIDs with Gaussian noise (seeded → reproducible CIs).
     const perturbedMIDs: Record<string, number[]> = {};
     for (const [metId, mid] of Object.entries(input.measuredMIDs ?? {})) {
       perturbedMIDs[metId] = mid.map((m) => {
-        // Box-Muller transform for Gaussian noise
-        const u1 = Math.random() || 1e-10;
-        const u2 = Math.random();
-        const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        const z = rng.gaussian();
         return Math.max(0, Math.min(1, m + z * 0.01)); // σ = 0.01
       });
     }

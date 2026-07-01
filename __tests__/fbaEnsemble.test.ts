@@ -185,6 +185,15 @@ describe('runEnsembleFBA', () => {
     expect(result.solutions).toHaveLength(5);
   });
 
+  // T2 reproducibility: seeded objective perturbation.
+  test('same seed => identical ensemble; different seed => different', async () => {
+    const a = await runEnsembleFBA(buildSimpleModel(), 6, 0.2, 123);
+    const b = await runEnsembleFBA(buildSimpleModel(), 6, 0.2, 123);
+    const c = await runEnsembleFBA(buildSimpleModel(), 6, 0.2, 999);
+    expect(b.solutions).toEqual(a.solutions);
+    expect(c.solutions).not.toEqual(a.solutions);
+  });
+
   test('each solution has fluxes and objectiveValue', async () => {
     const result = await runEnsembleFBA(buildSimpleModel(), 3);
     for (const sol of result.solutions) {

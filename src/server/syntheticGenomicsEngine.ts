@@ -16,11 +16,20 @@
  *
  * @scientific_provenance
  *   ALGORITHM: Essential gene FBA + codon optimization + assembly planning
+ *   SCRaMbLE: event occurrence is stochastic (seeded, reproducible); the
+ *     fitness EFFECT of each event is deterministic and content-dependent —
+ *     it is derived from the essentiality of the genome regions spanned by the
+ *     affected loxP interval, NOT drawn from a random range by event type.
  *   KNOWN_LIMITATIONS:
  *     - No 3D genome structure prediction
  *     - No epigenetic modification modeling
  *     - Assembly costs are estimates
+ *     - Fitness effect uses region essentiality annotation as a proxy; for a
+ *       growth-rate ratio, drive fitnessEffect from single-deletion FBA
+ *       (fbaEngine) on the affected reactions.
  */
+
+import { SeededRNG } from "../utils/seededRng";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -257,35 +266,40 @@ function planAssembly(genomeSize: number): AssemblyStep[] {
  *
  * Reference: Richardson et al. (2017) Science 355:1040-1044
  */
-export function simulateSCRaMbLE(regions: GenomeRegion[], loxPSites: number[], nEvents: number = 10): SCRaMbLEEvent[] {
+export function simulateSCRaMbLE(
+  regions: GenomeRegion[],
+  loxPSites: number[],
+  nEvents: number = 10,
+  seed: number = 42,
+): SCRaMbLEEvent[] {
   const events: SCRaMbLEEvent[] = [];
+  const rng = new SeededRNG(seed);
 
   for (let i = 0; i < nEvents; i++) {
-    // Randomly select event type
+    // Which event fires is stochastic (biologically appropriate) but SEEDED,
+    // so the same seed reproduces the same run.
     const types: SCRaMbLEEvent["type"][] = ["deletion", "inversion", "duplication", "translocation"];
-    const type = types[Math.floor(Math.random() * types.length)];
+    const type = types[Math.floor(rng.next() * types.length)];
 
-    // Randomly select loxP sites
-    const idx1 = Math.floor(Math.random() * loxPSites.length);
-    let idx2 = Math.floor(Math.random() * loxPSites.length);
+    // Select loxP sites (seeded).
+    const idx1 = Math.floor(rng.next() * loxPSites.length);
+    let idx2 = Math.floor(rng.next() * loxPSites.length);
     if (idx2 === idx1) idx2 = (idx2 + 1) % loxPSites.length;
 
-    const region1 = `loxP_${loxPSites[Math.min(idx1, idx2)]}`;
-    const region2 = type !== "deletion" ? `loxP_${loxPSites[Math.max(idx1, idx2)]}` : undefined;
+    const lo = Math.min(loxPSites[idx1], loxPSites[idx2]);
+    const hi = Math.max(loxPSites[idx1], loxPSites[idx2]);
+    const region1 = `loxP_${lo}`;
+    const region2 = type !== "deletion" ? `loxP_${hi}` : undefined;
 
-    // Probability depends on event type and distance
-    const distance = Math.abs(loxPSites[idx1] - loxPSites[idx2]);
+    // Probability depends on event type and distance.
+    const distance = hi - lo;
     const baseProb = type === "deletion" ? 0.4 : type === "inversion" ? 0.3 : 0.15;
     const distanceFactor = Math.exp(-distance / 50000);
     const probability = baseProb * distanceFactor;
 
-    // Fitness effect (deletions generally harmful, inversions neutral)
-    const fitnessEffect =
-      type === "deletion"
-        ? -0.5 - Math.random() * 0.5
-        : type === "inversion"
-          ? -0.1 + Math.random() * 0.2
-          : -0.2 + Math.random() * 0.4;
+    // Fitness effect is DETERMINISTIC and depends on what the affected loxP
+    // interval actually contains — not a random draw by event type.
+    const fitnessEffect = scrambleFitnessEffect(type, affectedRegions(regions, lo, hi));
 
     events.push({
       type,
@@ -297,6 +311,54 @@ export function simulateSCRaMbLE(regions: GenomeRegion[], loxPSites: number[], n
   }
 
   return events;
+}
+
+/** Genome regions overlapping the affected loxP interval [lo, hi]. */
+export function affectedRegions(regions: GenomeRegion[], lo: number, hi: number): GenomeRegion[] {
+  return regions.filter((r) => r.start < hi && r.end > lo);
+}
+
+/**
+ * Deterministic fitness effect of a SCRaMbLE event, from the essentiality of
+ * the genes/regions in the affected interval.
+ *
+ * Rationale: a deletion spanning an essential gene should be (near-)lethal; a
+ * deletion in a redundant/intergenic region should be near-neutral. The old
+ * implementation drew this from a random range by event type and so could not
+ * tell these apart. Here the magnitude is a function of region CONTENT.
+ *
+ * For a growth-rate–grounded number, replace the essentiality lookup below with
+ * single-deletion FBA (fbaEngine) on the reactions encoded by the affected
+ * genes and use Δgrowth / wildtype_growth. The essentiality annotation is the
+ * proxy used when no metabolic model is attached.
+ *
+ * @returns fitnessEffect in [-1, 1]
+ */
+export function scrambleFitnessEffect(type: SCRaMbLEEvent["type"], affected: GenomeRegion[]): number {
+  const isEssential = (r: GenomeRegion) => r.essential || r.type === "essential" || r.type === "auxotrophic";
+  const essentialCount = affected.filter(isEssential).length;
+  const geneCount = affected.filter((r) => r.type === "gene" || r.type === "essential" || r.type === "auxotrophic").length;
+  const nonEssentialGenes = geneCount - essentialCount;
+
+  let effect: number;
+  switch (type) {
+    case "deletion":
+      // Deleting essential content is (near-)lethal; deleting redundant content
+      // is only mildly costly (loss of function), intergenic ~neutral.
+      effect = essentialCount > 0 ? -0.9 - 0.05 * (essentialCount - 1) : -0.03 - 0.05 * nonEssentialGenes;
+      break;
+    case "duplication":
+      // Extra copy: mild dosage cost; essential dosage imbalance slightly worse.
+      effect = -0.02 * geneCount - 0.1 * essentialCount;
+      break;
+    case "inversion":
+    case "translocation":
+      // Breakpoint disruption: harmful if it hits essential genes, else near-neutral.
+      effect = essentialCount > 0 ? -0.4 - 0.1 * (essentialCount - 1) : -0.02 - 0.02 * nonEssentialGenes;
+      break;
+  }
+
+  return Math.max(-1, Math.min(1, effect));
 }
 
 // ── Pathway Refactoring ────────────────────────────────────────────────────

@@ -1,17 +1,18 @@
 /**
- * RFdiffusion Client — De Novo Protein Design Interface
+ * Backbone Sketch Client — De Novo Protein Design Interface (HEURISTIC)
  *
- * High-level interface for de novo protein backbone design. Since
- * RFdiffusion requires GPU and has no public API, this implements a
- * client-side heuristic using the backboneGenerator for plausible
- * backbone structures.
+ * VALIDITY TIER: demo. This is NOT a generative diffusion model and uses no
+ * learned weights. It is a client-side heuristic (backboneGenerator) that
+ * produces plausible-looking backbone structures for UI prototyping only —
+ * the confidence "scores" are heuristic estimates, not model outputs.
  *
  * Design types:
  * - unconditional: Generate a backbone of specified length
  * - scaffolded: Generate around a partial structure
  * - binder: Generate a binder with hotspot constraints
  *
- * Reference: Watson et al. (2023) Nature 620:1089-1100 (RFdiffusion)
+ * For real de novo designs, wire a hosted model backend; provenance/citations
+ * then belong to that backend, not to this heuristic.
  */
 
 import { generateBackbone, backboneToPDB, type BackboneConfig, type BackboneAtom } from "./backboneGenerator";

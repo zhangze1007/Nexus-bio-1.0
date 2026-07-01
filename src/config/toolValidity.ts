@@ -154,6 +154,11 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
     caption:
       "Turner 2009 nearest-neighbor stacking parameters (Turner & Mathews 2010 NAR) and Watson-Crick/wobble complementarity rules are genuine. Optional ViennaRNA/RNAfold integration (Lorenz et al. 2011) for production-quality MFE prediction via Python backend (set RNA_PYTHON_BACKEND env var). Fallback: local Nussinov DP with Turner NN parameters. Limitations: off-target scoring uses simplified similarity, not full alignment.",
   },
+  rfdiffusion: {
+    level: "demo",
+    caption:
+      "Backbone Sketch (heuristic): NOT RFdiffusion and NOT a diffusion model. Sequences are sampled from natural amino-acid frequencies with a secondary-structure position bias; backbones are placed on an idealized helical trace; per-residue confidence is a deterministic hydrophobicity/terminus proxy, not model pLDDT. Set DENOVO_DESIGN_BACKEND to delegate to a real hosted de novo design model.",
+  },
   biosafety: {
     level: "real",
     caption:

@@ -24,6 +24,7 @@
 import type { BackboneAtom } from "./backboneGenerator";
 import { calculateEnergy, calculateForces, DEFAULT_FORCE_FIELD_PARAMS, type ForceFieldParams } from "./forceField";
 import { calculateRMSD } from "./rmsd";
+import { SeededRNG } from "../../utils/seededRng";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,6 +41,8 @@ export interface MDConfig {
   friction?: number; // default: 1.0
   /** Save interval (steps) */
   saveInterval?: number; // default: 100
+  /** PRNG seed for reproducible Langevin dynamics (default: 42) */
+  seed?: number;
 }
 
 export interface MDFrame {
@@ -69,6 +72,7 @@ const DEFAULT_MD_CONFIG: Required<MDConfig> = {
   numSteps: 1000,
   friction: 1.0,
   saveInterval: 100,
+  seed: 42,
 };
 
 /**
@@ -114,13 +118,9 @@ function deepCopyAtoms(atoms: BackboneAtom[]): BackboneAtom[] {
   return atoms.map((a) => ({ ...a }));
 }
 
-/** Box-Muller transform for generating Gaussian random numbers. */
-function gaussianRandom(): number {
-  let u1 = 0;
-  let u2 = 0;
-  while (u1 === 0) u1 = Math.random();
-  while (u2 === 0) u2 = Math.random();
-  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+/** Box-Muller transform for generating Gaussian random numbers (seeded). */
+function gaussianRandom(rng: SeededRNG): number {
+  return rng.gaussian();
 }
 
 /**
@@ -173,6 +173,8 @@ function convertForcesToMD(forces: Array<[number, number, number]>): Array<[numb
 export function runMD(atoms: BackboneAtom[], config?: MDConfig): MDResult {
   const cfg = { ...DEFAULT_MD_CONFIG, ...config };
   const ffParams: ForceFieldParams = DEFAULT_FORCE_FIELD_PARAMS;
+  // Seeded PRNG → reproducible Langevin trajectory for a given seed.
+  const rng = new SeededRNG(cfg.seed ?? 42);
 
   if (atoms.length === 0) {
     return {
@@ -207,7 +209,7 @@ export function runMD(atoms: BackboneAtom[], config?: MDConfig): MDResult {
   const vSigma = Math.sqrt((KB_MD * T) / AVG_BACKBONE_MASS);
   const velocities: Array<[number, number, number]> = [];
   for (let i = 0; i < nAtoms; i++) {
-    velocities.push([vSigma * gaussianRandom(), vSigma * gaussianRandom(), vSigma * gaussianRandom()]);
+    velocities.push([vSigma * gaussianRandom(rng), vSigma * gaussianRandom(rng), vSigma * gaussianRandom(rng)]);
   }
 
   // Remove center-of-mass velocity to prevent drift
@@ -271,9 +273,9 @@ export function runMD(atoms: BackboneAtom[], config?: MDConfig): MDResult {
     // O: thermostat step — Ornstein-Uhlenbeck
     // v = c*v + σ*ξ
     for (let i = 0; i < nAtoms; i++) {
-      velocities[i][0] = c * velocities[i][0] + sigmaV * gaussianRandom();
-      velocities[i][1] = c * velocities[i][1] + sigmaV * gaussianRandom();
-      velocities[i][2] = c * velocities[i][2] + sigmaV * gaussianRandom();
+      velocities[i][0] = c * velocities[i][0] + sigmaV * gaussianRandom(rng);
+      velocities[i][1] = c * velocities[i][1] + sigmaV * gaussianRandom(rng);
+      velocities[i][2] = c * velocities[i][2] + sigmaV * gaussianRandom(rng);
     }
 
     // A: x += (dt/2) * v
