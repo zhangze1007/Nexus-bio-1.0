@@ -337,7 +337,9 @@ export function affectedRegions(regions: GenomeRegion[], lo: number, hi: number)
 export function scrambleFitnessEffect(type: SCRaMbLEEvent["type"], affected: GenomeRegion[]): number {
   const isEssential = (r: GenomeRegion) => r.essential || r.type === "essential" || r.type === "auxotrophic";
   const essentialCount = affected.filter(isEssential).length;
-  const geneCount = affected.filter((r) => r.type === "gene" || r.type === "essential" || r.type === "auxotrophic").length;
+  const geneCount = affected.filter(
+    (r) => r.type === "gene" || r.type === "essential" || r.type === "auxotrophic",
+  ).length;
   const nonEssentialGenes = geneCount - essentialCount;
 
   let effect: number;

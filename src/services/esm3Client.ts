@@ -191,7 +191,13 @@ export function generateProteinLocalHeuristic(
   targetLength: number = 200,
   targetFunction?: string,
   seed: number = 42,
-): { sequence: string; foldability: number; functionConfidence: number; scoreType: "heuristic_estimate"; source: "local_heuristic" } {
+): {
+  sequence: string;
+  foldability: number;
+  functionConfidence: number;
+  scoreType: "heuristic_estimate";
+  source: "local_heuristic";
+} {
   const AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY";
   const rng = new SeededRNG(seed);
 

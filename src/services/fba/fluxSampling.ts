@@ -307,12 +307,7 @@ function findStepBounds(
  * @param tolerance - Fraction of objective to allow (default 1e-6)
  * @returns Array of FluxSample objects with fluxes and objective values
  */
-export async function sampleFlux(
-  model: LPModel,
-  nSamples: number,
-  tolerance = 1e-6,
-  seed = 42,
-): Promise<FluxSample[]> {
+export async function sampleFlux(model: LPModel, nSamples: number, tolerance = 1e-6, seed = 42): Promise<FluxSample[]> {
   if (nSamples <= 0) return [];
   const rng = new SeededRNG(seed);
 
