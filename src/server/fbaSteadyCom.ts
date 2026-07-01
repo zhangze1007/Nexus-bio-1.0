@@ -194,6 +194,96 @@ async function findMaxGrowthRate(species: SteadyComSpecies): Promise<number> {
   return result.objectiveValue;
 }
 
+/**
+ * Build ONE joint community LP at a fixed community growth rate mu (SteadyCom).
+ * Couples species through a shared extracellular metabolite pool and scales
+ * each species' fluxes by its abundance X_i (balanced growth: biomass = mu*X_i).
+ * Reference: Chan, Simons & Maranas (2017) PLOS Comput Biol 13(5):e1005539.
+ */
+export function buildCommunityLPModel(species: SteadyComSpecies[], sharedMetabolites: string[], mu: number): LPModel {
+  const shared = new Set(sharedMetabolites);
+  const vname = (sp: string, rxn: string) => `${sp}__${rxn}`;
+  const xname = (sp: string) => `X__${sp}`;
+
+  const bounds: LPBound[] = [];
+  const constraints: LPConstraint[] = [];
+
+  for (const sp of species) {
+    // Flux variable bounds (coupling constraints tighten these).
+    for (const r of sp.reactions) {
+      bounds.push({ name: vname(sp.id, r.id), lb: Math.min(0, r.lowerBound), ub: Math.max(0, r.upperBound) });
+    }
+    // Abundance variable.
+    bounds.push({ name: xname(sp.id), lb: 0, ub: 1 });
+
+    // Per-species internal mass balance (shared metabolites excluded — pooled below).
+    for (const met of sp.metabolites) {
+      if (shared.has(met)) continue;
+      const vars = sp.reactions
+        .filter((r) => r.stoichiometry[met] !== undefined)
+        .map((r) => ({ name: vname(sp.id, r.id), coef: r.stoichiometry[met] }));
+      constraints.push({ name: `${sp.id}__bal__${met}`, vars, lb: 0, ub: 0 });
+    }
+
+    // Flux-abundance coupling: lb_j*X <= v <= ub_j*X.
+    for (const r of sp.reactions) {
+      constraints.push({
+        name: `${sp.id}__${r.id}__ub_couple`,
+        vars: [
+          { name: vname(sp.id, r.id), coef: 1 },
+          { name: xname(sp.id), coef: -r.upperBound },
+        ],
+        lb: -Infinity,
+        ub: 0,
+      });
+      constraints.push({
+        name: `${sp.id}__${r.id}__lb_couple`,
+        vars: [
+          { name: vname(sp.id, r.id), coef: 1 },
+          { name: xname(sp.id), coef: -r.lowerBound },
+        ],
+        lb: 0,
+        ub: Infinity,
+      });
+    }
+
+    // Biomass-abundance coupling: v_biomass - mu*X = 0.
+    constraints.push({
+      name: `${sp.id}__growthcouple`,
+      vars: [
+        { name: vname(sp.id, sp.biomassReaction), coef: 1 },
+        { name: xname(sp.id), coef: -mu },
+      ],
+      lb: 0,
+      ub: 0,
+    });
+  }
+
+  // Community shared-pool balance: sum over all species/reactions of S[m]*v = 0.
+  for (const m of sharedMetabolites) {
+    const vars: LPVariable[] = [];
+    for (const sp of species) {
+      for (const r of sp.reactions) {
+        if (r.stoichiometry[m] !== undefined) vars.push({ name: vname(sp.id, r.id), coef: r.stoichiometry[m] });
+      }
+    }
+    constraints.push({ name: `pool__${m}`, vars, lb: 0, ub: 0 });
+  }
+
+  // Normalization: sum X_i = 1.
+  constraints.push({
+    name: "community__abundance_sum",
+    vars: species.map((sp) => ({ name: xname(sp.id), coef: 1 })),
+    lb: 1,
+    ub: 1,
+  });
+
+  // Objective: feasibility (maximize first species' biomass for a direction).
+  const objective: LPVariable[] = [{ name: vname(species[0].id, species[0].biomassReaction), coef: 1 }];
+
+  return { name: `steadycom_community_mu${mu.toFixed(4)}`, sense: "maximize", objective, constraints, bounds };
+}
+
 /* ------------------------------------------------------------------ */
 /*  SteadyCom main algorithm                                           */
 /* ------------------------------------------------------------------ */
