@@ -9,9 +9,11 @@
  * - Orth, J.D., Thiele, I. & Palsson, B.O. (2010). What is flux balance analysis? Nat. Biotechnol. 28(3), 245-248.
  */
 
+import { buildCommunityModel } from "../data/communityModel";
 import { IJO1366_METABOLITES, IJO1366_REACTIONS, IJO1366_STATS } from "../data/iJO1366Subset";
-import { type CommunityFBAOutput, type FBAOutput, SHARED_METABOLITES } from "../data/mockFBA";
+import { type CommunityFBAOutput, type FBAOutput } from "../data/mockFBA";
 import type { BiGGReaction } from "../services/database/biggClient";
+import { steadyCom } from "./fbaSteadyCom";
 import { type LPModel, solveLP } from "./highsSolver";
 
 export type FBAObjective = "biomass" | "atp" | "product";
@@ -479,37 +481,39 @@ export function buildAuthorityFBAModel(request: SingleSpeciesFBARequest): LPMode
 }
 
 /**
+ * Community FBA via the SteadyCom joint-LP engine.
+ *
+ * Builds the curated 2-species community model (E. coli + S. cerevisiae, closed
+ * shared acetate/ethanol pool) and solves ONE joint LP with biomass-abundance
+ * coupling and bisection on the community growth rate mu (Chan et al. 2017).
+ * Community growth, per-species growth, and cross-feeding exchange fluxes are all
+ * REAL decision variables read directly from the LP solution — there are no
+ * fabricated scalars, feeding bonuses, or invented flux-direction tables.
+ *
+ * The per-species `atpYield`, `nadhProduction`, `carbonEfficiency`, and shadow
+ * prices reported alongside each strain come from the real single-species LP
+ * (`solveAuthorityFBA`); the strain `growthRate`, community `communityGrowthRate`,
+ * and `exchangeFluxes` come exclusively from the joint SteadyCom solve.
+ *
+ * When `alpha` is supplied (0 < alpha < 1) the community composition is pinned
+ * via `fixedAbundance` (X_yeast = alpha, X_ecoli = 1 - alpha), threaded into the
+ * joint LP as equality constraints on the abundance variables.
+ *
  * @scientific_provenance
- *
- * REFERENCE:
- *   MOCK_DATA: no peer-reviewed source for this community wrapper.
- *   The single-species LP solver is real, but this function is only a
- *   two-species heuristic and is not SteadyCom, cFBA, or a joint community LP.
- *
- * NOT_IMPLEMENTED:
- *   - Joint community stoichiometric matrix
- *   - Species-specific biomass variables in one optimization problem
- *   - Shared exchange metabolite mass-balance constraints
- *   - Cross-feeding uptake/secretion coupling constraints
- *   - Community objective with feasibility proof
- *   - Community-level infeasibility diagnostics
- *
- * KNOWN_LIMITATIONS:
- *   - Exchange fluxes are post-hoc scaled comparisons, not LP decision variables.
- *   - Community growth is a linear blend of two independent host optima.
- *   - Knockouts and uptake bounds do not propagate through shared metabolite pools.
- *   - Outputs must not be interpreted as microbiome stoichiometric optima.
+ *   METHOD: Chan SHJ, Simons MN, Maranas CD (2017). "SteadyCom: Predicting
+ *     microbial abundances while ensuring community stability." PLOS
+ *     Computational Biology 13(5): e1005539. DOI 10.1371/journal.pcbi.1005539.
  */
 export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): Promise<CommunityFBAOutput> {
-  const alpha = clamp(request.alpha ?? 0.5, 0, 1);
-  const ecoli = await solveAuthorityFBA({
+  // Real single-species LP metrics (ATP yield, carbon efficiency, shadow prices).
+  const ecoliMetrics = await solveAuthorityFBA({
     species: "ecoli",
     objective: request.objective,
     glucoseUptake: request.ecoli.glucoseUptake,
     oxygenUptake: request.ecoli.oxygenUptake,
     knockouts: request.ecoli.knockouts ?? [],
   });
-  const yeast = await solveAuthorityFBA({
+  const yeastMetrics = await solveAuthorityFBA({
     species: "yeast",
     objective: request.objective,
     glucoseUptake: request.yeast.glucoseUptake,
@@ -517,44 +521,54 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
     knockouts: request.yeast.knockouts ?? [],
   });
 
-  // Community FBA cross-feeding estimation (HEURISTIC — not derived from stoichiometric models)
-  // Scaling factors (1.6, 2.4, 1.4, 2, 0.018) are empirical approximations for visualization.
-  // For quantitative community FBA, use dynamic FBA (dFBA) or SteadyCom instead.
-  const exchangeFluxes = SHARED_METABOLITES.map((metabolite) => {
-    const exporter = metabolite.exporterStrain === "ecoli" ? ecoli : yeast;
-    const importer = metabolite.importerStrain === "ecoli" ? ecoli : yeast;
-    const exporterScale = exporter.feasible ? Math.max(exporter.growthRate, exporter.carbonEfficiency / 100) : 0;
-    const importerScale = importer.feasible ? Math.max(importer.growthRate, importer.atpYield / 4) : 0;
-    const flux = metabolite.baseFlux * clamp(exporterScale * 1.6, 0, 2.4) * clamp(importerScale * 1.4, 0, 2);
+  // Real SteadyCom joint community LP (shared-pool coupling + biomass-abundance).
+  const model = buildCommunityModel({
+    ecoli: { glucoseUptake: request.ecoli.glucoseUptake, oxygenUptake: request.ecoli.oxygenUptake },
+    yeast: { glucoseUptake: request.yeast.glucoseUptake, oxygenUptake: request.yeast.oxygenUptake },
+    alpha: request.alpha,
+  });
+  const result = await steadyCom(model.species, model.sharedMetabolites, undefined, undefined, model.fixedAbundance);
 
+  // Cross-feeding exchange fluxes: for each shared metabolite, the producer is the
+  // species whose reaction has a positive coefficient (secretion), the consumer the
+  // one with a negative coefficient (uptake). Direction and magnitude are derived
+  // from the model + the LP solution — never hardcoded.
+  const exchangeFluxes = model.sharedMetabolites.map((metabolite) => {
+    let fromStrain = "";
+    let toStrain = "";
+    let secretionReaction = "";
+    for (const sp of model.species) {
+      for (const r of sp.reactions) {
+        const coef = r.stoichiometry[metabolite];
+        if (coef === undefined || coef === 0) continue;
+        if (coef > 0) {
+          fromStrain = sp.id;
+          secretionReaction = r.id;
+        } else {
+          toStrain = sp.id;
+        }
+      }
+    }
+    const flux = result.speciesFluxes[fromStrain]?.[secretionReaction] ?? 0;
     return {
-      id: `EX_${metabolite.id}`,
-      metabolite: metabolite.name,
-      fromStrain: metabolite.exporterStrain,
-      toStrain: metabolite.importerStrain,
-      flux: round(flux, 3),
+      id: `EX_${metabolite}`,
+      metabolite,
+      fromStrain,
+      toStrain,
+      flux: round(flux, 4),
     };
   });
 
-  const ecoliFeedingBonus = exchangeFluxes
-    .filter((flux) => flux.toStrain === "ecoli")
-    .reduce((sum, flux) => sum + flux.flux * 0.018, 0);
-  const yeastFeedingBonus = exchangeFluxes
-    .filter((flux) => flux.toStrain === "yeast")
-    .reduce((sum, flux) => sum + flux.flux * 0.018, 0);
-
-  const adjustedEcoliGrowth = round(ecoli.growthRate + ecoliFeedingBonus, 4);
-  const adjustedYeastGrowth = round(yeast.growthRate + yeastFeedingBonus, 4);
-  const communityObjective = round((1 - alpha) * adjustedEcoliGrowth + alpha * adjustedYeastGrowth, 4);
+  const communityGrowthRate = round(result.communityGrowthRate, 4);
+  const feasible = result.status === "optimal" && communityGrowthRate > 0;
 
   return {
-    ecoli: { ...ecoli, growthRate: adjustedEcoliGrowth },
-    yeast: { ...yeast, growthRate: adjustedYeastGrowth },
+    ecoli: { ...ecoliMetrics, growthRate: round(result.speciesGrowthRates.ecoli ?? 0, 4), feasible },
+    yeast: { ...yeastMetrics, growthRate: round(result.speciesGrowthRates.yeast ?? 0, 4), feasible },
     exchangeFluxes,
-    communityGrowthRate: communityObjective,
-    communityBiomassObjective: communityObjective,
-    // Community is feasible only if BOTH species solve successfully
-    feasible: ecoli.feasible && yeast.feasible,
+    communityGrowthRate,
+    communityBiomassObjective: communityGrowthRate,
+    feasible,
   };
 }
 

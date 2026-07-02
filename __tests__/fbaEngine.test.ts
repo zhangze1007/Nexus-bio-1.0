@@ -427,70 +427,84 @@ describe('FBA Engine — buildAuthorityFBAModel', () => {
 // 8. Community FBA — two-species wrapper
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe('FBA Engine — Community FBA', () => {
-  test('community FBA returns feasible when both species are feasible', async () => {
-    const result = await solveAuthorityCommunityFBA({
-      objective: 'biomass',
-      ecoli: { glucoseUptake: 10, oxygenUptake: 20 },
-      yeast: { glucoseUptake: 10, oxygenUptake: 20 },
-    });
+// These tests exercise the REAL SteadyCom joint-LP community engine. Community
+// growth, per-species growth, and exchange fluxes are LP decision variables — not
+// a post-hoc weighted blend of independent single-species optima. No magic
+// constants (1.6/2.4/1.4/2/0.018) may reappear here.
+describe('FBA Engine — Community FBA (real SteadyCom)', () => {
+  const baseReq = {
+    objective: 'biomass' as const,
+    ecoli: { glucoseUptake: 10, oxygenUptake: 20 },
+    yeast: { glucoseUptake: 10, oxygenUptake: 20 },
+  };
+
+  test('community FBA is feasible with positive community growth from the joint LP', async () => {
+    const result = await solveAuthorityCommunityFBA(baseReq);
     expect(result.feasible).toBe(true);
     expect(result.ecoli.feasible).toBe(true);
     expect(result.yeast.feasible).toBe(true);
+    expect(result.communityGrowthRate).toBeGreaterThan(0);
+    expect(result.communityBiomassObjective).toBe(result.communityGrowthRate);
+    // Each species grows within the community (biomass flux > 0).
+    expect(result.ecoli.growthRate).toBeGreaterThan(0);
+    expect(result.yeast.growthRate).toBeGreaterThan(0);
   });
 
-  test('community growth rate is a weighted blend of individual rates', async () => {
-    const result = await solveAuthorityCommunityFBA({
-      objective: 'biomass',
-      alpha: 0.5,
-      ecoli: { glucoseUptake: 10, oxygenUptake: 20 },
-      yeast: { glucoseUptake: 10, oxygenUptake: 20 },
-    });
-    // communityGrowthRate should be between the two individual growth rates
-    const minRate = Math.min(result.ecoli.growthRate, result.yeast.growthRate);
-    const maxRate = Math.max(result.ecoli.growthRate, result.yeast.growthRate);
-    expect(result.communityGrowthRate).toBeGreaterThanOrEqual(minRate - 0.01);
-    expect(result.communityGrowthRate).toBeLessThanOrEqual(maxRate + 0.01);
-  });
-
-  test('community FBA produces exchange fluxes', async () => {
-    const result = await solveAuthorityCommunityFBA({
-      objective: 'biomass',
-      ecoli: { glucoseUptake: 10, oxygenUptake: 20 },
-      yeast: { glucoseUptake: 10, oxygenUptake: 20 },
-    });
-    expect(result.exchangeFluxes.length).toBeGreaterThan(0);
-    // Each exchange flux should have required fields
+  test('exchange fluxes are REAL bidirectional cross-feeding derived from the solve', async () => {
+    const result = await solveAuthorityCommunityFBA(baseReq);
+    expect(result.exchangeFluxes.length).toBe(2);
     for (const ef of result.exchangeFluxes) {
-      expect(ef.id).toBeDefined();
-      expect(ef.metabolite).toBeDefined();
-      expect(ef.fromStrain).toBeDefined();
-      expect(ef.toStrain).toBeDefined();
-      expect(typeof ef.flux).toBe('number');
+      expect(ef.id).toBe(`EX_${ef.metabolite}`);
+      expect(Number.isFinite(ef.flux)).toBe(true);
+      expect(ef.flux).toBeGreaterThan(0); // genuine mass transfer, not zero
     }
+    // Direction is derived from model stoichiometry (producer = +coef).
+    const acetate = result.exchangeFluxes.find((e) => e.metabolite === 'acetate_e');
+    const ethanol = result.exchangeFluxes.find((e) => e.metabolite === 'ethanol_e');
+    expect(acetate).toBeDefined();
+    expect(ethanol).toBeDefined();
+    // E. coli secretes acetate to yeast; yeast secretes ethanol to E. coli.
+    expect(acetate?.fromStrain).toBe('ecoli');
+    expect(acetate?.toStrain).toBe('yeast');
+    expect(ethanol?.fromStrain).toBe('yeast');
+    expect(ethanol?.toStrain).toBe('ecoli');
+    // Obligate mutual cross-feeding: both directions carry positive flux.
+    expect(acetate?.flux).toBeGreaterThan(0);
+    expect(ethanol?.flux).toBeGreaterThan(0);
   });
 
-  test('alpha=0 weights entirely toward E. coli', async () => {
-    const result = await solveAuthorityCommunityFBA({
-      objective: 'biomass',
-      alpha: 0,
-      ecoli: { glucoseUptake: 10, oxygenUptake: 20 },
-      yeast: { glucoseUptake: 10, oxygenUptake: 20 },
-    });
-    // With alpha=0, community growth ≈ adjustedEcoliGrowth
-    // (allowing small delta from exchange flux feeding bonus)
-    expect(result.communityGrowthRate).toBeCloseTo(result.ecoli.growthRate, 1);
+  test('is deterministic for identical requests', async () => {
+    const a = await solveAuthorityCommunityFBA(baseReq);
+    const b = await solveAuthorityCommunityFBA(baseReq);
+    expect(b.communityGrowthRate).toBe(a.communityGrowthRate);
+    expect(b.ecoli.growthRate).toBe(a.ecoli.growthRate);
+    expect(b.yeast.growthRate).toBe(a.yeast.growthRate);
+    expect(b.exchangeFluxes).toEqual(a.exchangeFluxes);
   });
 
-  test('alpha=1 weights entirely toward yeast', async () => {
-    const result = await solveAuthorityCommunityFBA({
-      objective: 'biomass',
-      alpha: 1,
-      ecoli: { glucoseUptake: 10, oxygenUptake: 20 },
-      yeast: { glucoseUptake: 10, oxygenUptake: 20 },
-    });
-    // With alpha=1, community growth ≈ adjustedYeastGrowth
-    expect(result.communityGrowthRate).toBeCloseTo(result.yeast.growthRate, 1);
+  test('alpha pins the community composition (fixed-abundance constraint)', async () => {
+    const alpha = 0.7;
+    const result = await solveAuthorityCommunityFBA({ ...baseReq, alpha });
+    expect(result.feasible).toBe(true);
+    expect(result.communityGrowthRate).toBeGreaterThan(0);
+    // SteadyCom balanced growth: v_biomass_i = mu * X_i  =>  X_i = v_biomass_i / mu.
+    // With alpha imposed, the recovered abundances must match the requested split.
+    const mu = result.communityGrowthRate;
+    const xYeast = result.yeast.growthRate / mu;
+    const xEcoli = result.ecoli.growthRate / mu;
+    expect(xYeast).toBeCloseTo(alpha, 3);
+    expect(xEcoli).toBeCloseTo(1 - alpha, 3);
+    expect(xYeast + xEcoli).toBeCloseTo(1, 6);
+  });
+
+  test('a different alpha yields a different (still-constrained) composition', async () => {
+    const r1 = await solveAuthorityCommunityFBA({ ...baseReq, alpha: 0.3 });
+    const r2 = await solveAuthorityCommunityFBA({ ...baseReq, alpha: 0.6 });
+    const xYeast1 = r1.yeast.growthRate / r1.communityGrowthRate;
+    const xYeast2 = r2.yeast.growthRate / r2.communityGrowthRate;
+    expect(xYeast1).toBeCloseTo(0.3, 3);
+    expect(xYeast2).toBeCloseTo(0.6, 3);
+    expect(xYeast2).toBeGreaterThan(xYeast1);
   });
 });
 

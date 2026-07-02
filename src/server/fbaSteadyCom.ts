@@ -120,7 +120,12 @@ async function findMaxGrowthRate(species: SteadyComSpecies): Promise<number> {
  * each species' fluxes by its abundance X_i (balanced growth: biomass = mu*X_i).
  * Reference: Chan, Simons & Maranas (2017) PLOS Comput Biol 13(5):e1005539.
  */
-export function buildCommunityLPModel(species: SteadyComSpecies[], sharedMetabolites: string[], mu: number): LPModel {
+export function buildCommunityLPModel(
+  species: SteadyComSpecies[],
+  sharedMetabolites: string[],
+  mu: number,
+  fixedAbundance?: Record<string, number>,
+): LPModel {
   const shared = new Set(sharedMetabolites);
   const vname = (sp: string, rxn: string) => `${sp}__${rxn}`;
   const xname = (sp: string) => `X__${sp}`;
@@ -198,6 +203,20 @@ export function buildCommunityLPModel(species: SteadyComSpecies[], sharedMetabol
     ub: 1,
   });
 
+  // Optional fixed abundance: pin X_i = value (imposes community composition).
+  if (fixedAbundance) {
+    for (const sp of species) {
+      const value = fixedAbundance[sp.id];
+      if (value === undefined) continue;
+      constraints.push({
+        name: `community__abundance_fixed__${sp.id}`,
+        vars: [{ name: xname(sp.id), coef: 1 }],
+        lb: value,
+        ub: value,
+      });
+    }
+  }
+
   // Objective: feasibility (maximize first species' biomass for a direction).
   const objective: LPVariable[] = [{ name: vname(species[0].id, species[0].biomassReaction), coef: 1 }];
 
@@ -227,6 +246,7 @@ export async function steadyCom(
   sharedMetabolites: string[],
   maxIterations = 100,
   tolerance = 1e-6,
+  fixedAbundance?: Record<string, number>,
 ): Promise<SteadyComResult> {
   // ── Edge cases ──────────────────────────────────────────────────────
   if (species.length === 0) {
@@ -254,7 +274,7 @@ export async function steadyCom(
     }
   }
 
-  const check = async (mu: number) => solveLP(buildCommunityLPModel(species, sharedMetabolites, mu));
+  const check = async (mu: number) => solveLP(buildCommunityLPModel(species, sharedMetabolites, mu, fixedAbundance));
 
   // mu = 0 must be feasible (no growth).
   const zero = await check(0);
