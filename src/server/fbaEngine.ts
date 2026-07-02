@@ -523,8 +523,16 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
 
   // Real SteadyCom joint community LP (shared-pool coupling + biomass-abundance).
   const model = buildCommunityModel({
-    ecoli: { glucoseUptake: request.ecoli.glucoseUptake, oxygenUptake: request.ecoli.oxygenUptake },
-    yeast: { glucoseUptake: request.yeast.glucoseUptake, oxygenUptake: request.yeast.oxygenUptake },
+    ecoli: {
+      glucoseUptake: request.ecoli.glucoseUptake,
+      oxygenUptake: request.ecoli.oxygenUptake,
+      knockouts: request.ecoli.knockouts,
+    },
+    yeast: {
+      glucoseUptake: request.yeast.glucoseUptake,
+      oxygenUptake: request.yeast.oxygenUptake,
+      knockouts: request.yeast.knockouts,
+    },
     alpha: request.alpha,
   });
   const result = await steadyCom(model.species, model.sharedMetabolites, undefined, undefined, model.fixedAbundance);

@@ -107,4 +107,42 @@ describe('communityModel', () => {
     );
     expect(withSecretion.communityGrowthRate).toBeGreaterThan(withoutSecretion.communityGrowthRate);
   });
+
+  it('applies a per-species knockout to the joint SteadyCom solve (was silently discarded)', async () => {
+    // Baseline: no knockouts -> E. coli grows via its own biomass reaction.
+    const baseline = buildCommunityModel({
+      ecoli: { glucoseUptake: 10 },
+      yeast: { glucoseUptake: 10 },
+    });
+    const baseRes = await steadyCom(baseline.species, baseline.sharedMetabolites);
+    expect(baseRes.status).toBe('optimal');
+    expect(baseRes.speciesGrowthRates.ecoli).toBeGreaterThan(1e-4);
+
+    // Knock out E. coli's REAL curated biomass reaction id (BIOMASS_ecoli).
+    const knocked = buildCommunityModel({
+      ecoli: { glucoseUptake: 10, knockouts: ['BIOMASS_ecoli'] },
+      yeast: { glucoseUptake: 10 },
+    });
+    const ecoli = knocked.species.find((s) => s.id === 'ecoli')!;
+    const biomassRxn = ecoli.reactions.find((r) => r.id === 'BIOMASS_ecoli')!;
+    // The knockout is actually applied to the model (bounds pinned to zero),
+    // not silently discarded before ever reaching the LP.
+    expect(biomassRxn.lowerBound).toBe(0);
+    expect(biomassRxn.upperBound).toBe(0);
+
+    const knockedRes = await steadyCom(knocked.species, knocked.sharedMetabolites);
+    // With biomass production disabled, E. coli cannot grow at all.
+    expect(knockedRes.speciesGrowthRates.ecoli).toBeCloseTo(0, 6);
+    // The knockout genuinely changes the outcome relative to baseline.
+    expect(knockedRes.speciesGrowthRates.ecoli).toBeLessThan(baseRes.speciesGrowthRates.ecoli);
+
+    // A non-matching knockout id (not a reaction in this curated model) has no
+    // effect — this is the documented curated-model scope limitation, not a bug.
+    const unaffected = buildCommunityModel({
+      ecoli: { glucoseUptake: 10, knockouts: ['b_iJO1366_fakeGeneId'] },
+      yeast: { glucoseUptake: 10 },
+    });
+    const unaffectedRes = await steadyCom(unaffected.species, unaffected.sharedMetabolites);
+    expect(unaffectedRes.speciesGrowthRates.ecoli).toBeGreaterThan(1e-4);
+  });
 });

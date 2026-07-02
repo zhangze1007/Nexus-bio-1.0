@@ -67,8 +67,8 @@ const DEFAULT_OXYGEN_UPTAKE = 0; // fermentative baseline; O2 is opt-in
 const FLUX_MAX = 1000;
 
 export interface CommunityModelRequest {
-  ecoli: { glucoseUptake?: number; oxygenUptake?: number };
-  yeast: { glucoseUptake?: number; oxygenUptake?: number };
+  ecoli: { glucoseUptake?: number; oxygenUptake?: number; knockouts?: string[] };
+  yeast: { glucoseUptake?: number; oxygenUptake?: number; knockouts?: string[] };
   /** Optional fixed abundance fraction for yeast (0 < alpha < 1). */
   alpha?: number;
 }
@@ -163,6 +163,26 @@ function buildYeast(glucoseUptake: number, oxygenUptake: number): SteadyComSpeci
   };
 }
 
+/**
+ * Disable (zero out) reactions in `species` whose id matches an entry in
+ * `knockouts`. This curated community model has its own small reaction-id
+ * namespace (e.g. `BIOMASS_ecoli`, `GLYC`, `EX_ac`) that does not correspond
+ * 1:1 to genome-scale (e.g. iJO1366) gene/reaction ids. A knockout id that
+ * does not match any reaction in this curated model legitimately has no
+ * effect here — that is an inherent scope limitation of the curated model,
+ * not something this function should fake by inventing a mapping.
+ */
+function applyKnockouts(species: SteadyComSpecies, knockouts: string[] | undefined): void {
+  if (!knockouts || knockouts.length === 0) return;
+  const knockoutSet = new Set(knockouts);
+  for (const reaction of species.reactions) {
+    if (knockoutSet.has(reaction.id)) {
+      reaction.lowerBound = 0;
+      reaction.upperBound = 0;
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Public builder                                                     */
 /* ------------------------------------------------------------------ */
@@ -174,6 +194,12 @@ function buildYeast(glucoseUptake: number, oxygenUptake: number): SteadyComSpeci
  * when `alpha` is provided (0 < alpha < 1), returns a `fixedAbundance` map
  * `{ yeast: alpha, ecoli: 1 - alpha }` for the engine to impose. Returns fresh
  * objects on every call so callers may safely mutate (e.g. knock out reactions).
+ *
+ * When `req.ecoli.knockouts` / `req.yeast.knockouts` are supplied, any listed
+ * id that matches a reaction id IN THIS CURATED MODEL is disabled (bounds
+ * pinned to [0, 0]) before the model is returned. Non-matching ids are simply
+ * not applicable to this curated model's reaction namespace and have no
+ * effect (see `applyKnockouts`).
  */
 export function buildCommunityModel(req: CommunityModelRequest): CommunityModel {
   const ecoli = buildEcoli(
@@ -184,6 +210,9 @@ export function buildCommunityModel(req: CommunityModelRequest): CommunityModel 
     req.yeast.glucoseUptake ?? DEFAULT_GLUCOSE_UPTAKE,
     req.yeast.oxygenUptake ?? DEFAULT_OXYGEN_UPTAKE,
   );
+
+  applyKnockouts(ecoli, req.ecoli.knockouts);
+  applyKnockouts(yeast, req.yeast.knockouts);
 
   const model: CommunityModel = {
     species: [ecoli, yeast],
