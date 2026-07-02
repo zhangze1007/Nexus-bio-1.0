@@ -19,32 +19,41 @@ import { steadyCom, buildCommunityLPModel, type SteadyComSpecies } from '../src/
 // -- Test fixtures ------------------------------------------------------------
 
 /**
- * 2-species cross-feeding model.
+ * 2-species OBLIGATE cross-feeding model.
  *
- * S1 (Producer):
- *   glucose_uptake: {glucose: -1}, [-10, 0] -> uptake glucose
- *   glycolysis: {glucose: -1, atp: 2, acetate: 2}, [0, 100]
- *   acetate_secretion: {acetate: -1}, [0, 100] -> secrete acetate to environment
- *   atp_sink: {atp: -1}, [0, 100]
- *   biomass_S1: {atp: -1, glucose: -0.5}, [0, 100]
+ * Constructed so that NEITHER species can grow alone — the only feasible
+ * positive-growth solution requires S1 to feed S2 through the shared acetate
+ * pool. This is the honest test of SteadyCom coupling: the closed shared pool
+ * forces secretion == uptake, and balanced growth forces both species to grow
+ * at the single community rate mu (v_biomass_i = mu * X_i, sum(X_i) = 1).
  *
- * Mass balance (glucose): (-1)*v_uptake + (-1)*v_glyc + (-0.5)*v_bio = 0
- *   With v_uptake = -10: v_glyc = 10 - 0.5*mu
- *   v_sink = 2*v_glyc - mu = 20 - 2*mu -> requires mu <= 10
- *   mu_max_S1 = 10
+ * S1 (Producer) — acetate is an OBLIGATE byproduct of ATP generation:
+ *   glucose_uptake:    {glucose: -1},                 [-10, 0] -> uptake glucose
+ *   glycolysis:        {glucose: -1, atp: 2, acetate_int: 2}, [0, 100]
+ *   acetate_secretion: {acetate_int: -1, acetate: 1}, [0, 100] -> export to shared pool
+ *   atp_sink:          {atp: -1},                     [0, 100]
+ *   biomass_S1:        {atp: -1, glucose: -0.5},      [0, 100]
  *
- * S2 (Consumer):
- *   acetate_uptake: {acetate: -1}, [-10, 0] -> uptake acetate
- *   acetate_metabolism: {acetate: -1, atp: 3}, [0, 100]
- *   atp_sink_S2: {atp: -1}, [0, 100]
- *   biomass_S2: {atp: -1}, [0, 100]
+ *   acetate_int (internal) balance: 2*v_glyc - v_secr = 0 -> v_secr = 2*v_glyc.
+ *   ATP comes ONLY from glycolysis, which obligately makes acetate_int, which
+ *   can leave ONLY via acetate_secretion into the CLOSED shared pool. So S1
+ *   cannot generate ATP (cannot grow) unless the pool acetate is consumed by
+ *   S2. => S1 alone: mu = 0.
  *
- * Mass balance (acetate): (-1)*v_uptake + (-1)*v_met = 0
- *   With v_uptake = -10: v_met = 10
- *   v_sink = 3*10 - mu = 30 - mu -> requires mu <= 30
- *   mu_max_S2 = 30
+ * S2 (Consumer) — grows ONLY on acetate fed from the shared pool:
+ *   acetate_uptake:     {acetate: -1, acetate_c: 1}, [0, 100] -> CONSUME-ONLY (lb=0)
+ *   acetate_metabolism: {acetate_c: -1, atp: 3},     [0, 100]
+ *   atp_sink_S2:        {atp: -1},                   [0, 100]
+ *   biomass_S2:         {atp: -1},                   [0, 100]
  *
- * Community rate: min(10, 30) = 10
+ *   acetate_uptake is IRREVERSIBLE (lb=0): S2 can only draw acetate FROM the
+ *   pool, never manufacture it by running the exchange in reverse. With no
+ *   producer, the pool has no acetate. => S2 alone: mu = 0.
+ *
+ * Community (shared 'acetate' pool): the closed pool forces
+ *   acetate_secretion (S1) == acetate_uptake (S2), and balanced growth gives
+ *   community mu = 10 with BOTH species growing (v_bio_S1 = 55/7 ~= 7.857,
+ *   v_bio_S2 = 15/7 ~= 2.143, and v_bio_S1 + v_bio_S2 = mu because sum(X)=1).
  */
 function crossFeedingModel(): SteadyComSpecies[] {
   return [
@@ -53,24 +62,24 @@ function crossFeedingModel(): SteadyComSpecies[] {
       name: 'Producer',
       reactions: [
         { id: 'glucose_uptake', stoichiometry: { glucose: -1 }, lowerBound: -10, upperBound: 0 },
-        { id: 'glycolysis', stoichiometry: { glucose: -1, atp: 2, acetate: 2 }, lowerBound: 0, upperBound: 100 },
-        { id: 'acetate_secretion', stoichiometry: { acetate: -1 }, lowerBound: 0, upperBound: 100 },
+        { id: 'glycolysis', stoichiometry: { glucose: -1, atp: 2, acetate_int: 2 }, lowerBound: 0, upperBound: 100 },
+        { id: 'acetate_secretion', stoichiometry: { acetate_int: -1, acetate: 1 }, lowerBound: 0, upperBound: 100 },
         { id: 'atp_sink', stoichiometry: { atp: -1 }, lowerBound: 0, upperBound: 100 },
         { id: 'biomass_S1', stoichiometry: { atp: -1, glucose: -0.5 }, lowerBound: 0, upperBound: 100 },
       ],
-      metabolites: ['glucose', 'atp', 'acetate'],
+      metabolites: ['glucose', 'atp', 'acetate_int'],
       biomassReaction: 'biomass_S1',
     },
     {
       id: 'S2',
       name: 'Consumer',
       reactions: [
-        { id: 'acetate_uptake', stoichiometry: { acetate: -1 }, lowerBound: -10, upperBound: 0 },
-        { id: 'acetate_metabolism', stoichiometry: { acetate: -1, atp: 3 }, lowerBound: 0, upperBound: 100 },
+        { id: 'acetate_uptake', stoichiometry: { acetate: -1, acetate_c: 1 }, lowerBound: 0, upperBound: 100 },
+        { id: 'acetate_metabolism', stoichiometry: { acetate_c: -1, atp: 3 }, lowerBound: 0, upperBound: 100 },
         { id: 'atp_sink_S2', stoichiometry: { atp: -1 }, lowerBound: 0, upperBound: 100 },
         { id: 'biomass_S2', stoichiometry: { atp: -1 }, lowerBound: 0, upperBound: 100 },
       ],
-      metabolites: ['acetate', 'atp'],
+      metabolites: ['acetate', 'acetate_c', 'atp'],
       biomassReaction: 'biomass_S2',
     },
   ];
@@ -115,7 +124,11 @@ function singleSpeciesModel(): SteadyComSpecies[] {
  *   B: b_uptake {b: -1} [-3, 0] -> b_biomass {b: -1} [0, 100]
  *   Mass balance: (-1)*(-3) + (-1)*v_bio = 0 -> v_bio = 3 -> mu_max_B = 3
  *
- * Community rate: min(5, 3) = 3
+ * SteadyCom maximizes the community growth rate mu (abundances are free, so an
+ * uncompetitive species may drop to X=0). With no cross-feeding to couple them,
+ * the max-mu solution concentrates abundance on the faster grower: mu = 5
+ * (species B goes extinct, X_B = 0). This is NOT min(5, 3) — that would only
+ * hold if coexistence were forced.
  */
 function independentModel(): SteadyComSpecies[] {
   return [
@@ -171,21 +184,42 @@ function infeasibleModel(): SteadyComSpecies[] {
 describe('SteadyCom Community FBA', () => {
   it('should solve a 2-species cross-feeding model', async () => {
     const species = crossFeedingModel();
+
+    // Neither species can grow alone: this is OBLIGATE cross-feeding, so any
+    // positive community growth is proof that S1 fed S2 through the shared pool.
+    const s1Solo = await steadyCom([species[0]], ['acetate']);
+    const s2Solo = await steadyCom([species[1]], ['acetate']);
+    expect(s1Solo.communityGrowthRate).toBeCloseTo(0, 4);
+    expect(s2Solo.communityGrowthRate).toBeCloseTo(0, 4);
+
     const result = await steadyCom(species, ['acetate']);
 
     expect(result.status).toBe('optimal');
-    expect(result.communityGrowthRate).toBeGreaterThan(0);
-    // Coupled semantics: species with nonzero abundance (X_i > 0) grow exactly at the
-    // community rate mu (v_biomass = mu * X_i); a species may have zero abundance (and
-    // therefore zero growth) at the community optimum -- this is real SteadyCom behavior
-    // (species can go "extinct" in the community), not an error. At least one species
-    // must realize the community growth rate.
-    const growths = Object.values(result.speciesGrowthRates);
-    expect(growths.some((g) => Math.abs(g - result.communityGrowthRate) < 1e-3)).toBe(true);
-    for (const g of growths) {
-      expect(g).toBeGreaterThanOrEqual(-1e-6);
-      expect(g).toBeLessThanOrEqual(result.communityGrowthRate + 1e-3);
-    }
+
+    // Cross-feeding-capped community rate: mu ~= 10 (the coupled optimum), NOT a
+    // degenerate solo value. It is strictly positive only because cross-feeding
+    // occurred (both solo communities above are 0).
+    expect(result.communityGrowthRate).toBeCloseTo(10, 2);
+
+    // BOTH species grow -- the producer is NOT zeroed and the consumer is NOT zeroed.
+    // (The old degenerate solution zeroed the producer; these assertions FAIL on it.)
+    const g1 = result.speciesGrowthRates['S1'];
+    const g2 = result.speciesGrowthRates['S2'];
+    expect(g1).toBeGreaterThan(1e-3);
+    expect(g2).toBeGreaterThan(1e-3);
+    expect(g1).toBeCloseTo(55 / 7, 2); // v_bio_S1 = mu * X_S1
+    expect(g2).toBeCloseTo(15 / 7, 2); // v_bio_S2 = mu * X_S2
+
+    // Balanced growth at a single community rate mu with sum(X_i) = 1:
+    //   v_bio_i = mu * X_i  =>  sum_i v_bio_i = mu * sum_i X_i = mu.
+    expect(g1 + g2).toBeCloseTo(result.communityGrowthRate, 3);
+
+    // Shared-pool conservation: S1's acetate secretion == S2's acetate uptake > 0.
+    const secretion = result.speciesFluxes['S1']['acetate_secretion'];
+    const uptake = result.speciesFluxes['S2']['acetate_uptake'];
+    expect(secretion).toBeGreaterThan(1e-3);
+    expect(secretion).toBeCloseTo(uptake, 3);
+
     expect(result.iterations).toBeLessThan(100);
     expect(result.convergenceHistory.length).toBeGreaterThan(0);
   });
@@ -250,14 +284,19 @@ describe('SteadyCom Community FBA', () => {
     for (const r of species.find((s) => s.id === 'S2')!.reactions) {
       expect(result.speciesFluxes['S2'][r.id]).toBeDefined();
     }
-    // Whichever species realizes the community growth rate must carry nonzero flux
-    // through its uptake reaction (it cannot grow on nothing).
-    if (Math.abs(result.speciesGrowthRates['S1'] - result.communityGrowthRate) < 1e-3) {
-      expect(Math.abs(result.speciesFluxes['S1']['glucose_uptake'])).toBeGreaterThan(0);
-    }
-    if (Math.abs(result.speciesGrowthRates['S2'] - result.communityGrowthRate) < 1e-3) {
-      expect(Math.abs(result.speciesFluxes['S2']['acetate_uptake'])).toBeGreaterThan(0);
-    }
+    // Both species carry real flux at the coupled optimum (obligate cross-feeding):
+    // the producer draws glucose and the consumer draws acetate from the shared pool.
+    expect(Math.abs(result.speciesFluxes['S1']['glucose_uptake'])).toBeGreaterThan(1e-3);
+    expect(Math.abs(result.speciesFluxes['S2']['acetate_uptake'])).toBeGreaterThan(1e-3);
+    // Both biomass reactions carry flux -- neither species is zeroed out.
+    expect(result.speciesFluxes['S1']['biomass_S1']).toBeGreaterThan(1e-3);
+    expect(result.speciesFluxes['S2']['biomass_S2']).toBeGreaterThan(1e-3);
+    // Shared-pool conservation: producer secretion == consumer uptake > 0.
+    expect(result.speciesFluxes['S1']['acetate_secretion']).toBeGreaterThan(1e-3);
+    expect(result.speciesFluxes['S1']['acetate_secretion']).toBeCloseTo(
+      result.speciesFluxes['S2']['acetate_uptake'],
+      3,
+    );
   });
 
   it('should respect custom maxIterations', async () => {
@@ -313,6 +352,9 @@ describe('steadyCom cross-feeding (coupled)', () => {
     const comm = await steadyCom([producer, consumer], ['shared_c']);
     expect(comm.status).toBe('optimal');
     expect(comm.communityGrowthRate).toBeGreaterThan(0);
+    // The consumer itself actually grows in the community (cross-feeding occurred),
+    // not merely the producer -- self-documents syntrophy without re-deriving LP algebra.
+    expect(comm.speciesGrowthRates['C']).toBeGreaterThan(0);
   });
 
   it('shared pool is conserved: total secretion = total uptake', async () => {
