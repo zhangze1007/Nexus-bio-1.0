@@ -94,6 +94,7 @@ export function scanDecoys(source: string, file: string): DecoyHit[] {
       for (const param of node.parameters) {
         if (param.dotDotDotToken) continue; // rest param — skip
         if (!ts.isIdentifier(param.name)) continue; // destructuring/binding pattern — skip
+        if (param.name.text === 'this') continue; // explicit `this` param — skip (real `this` in the body parses as ts.ThisExpression, not ts.Identifier, so it can never match the identifier-based usage check; no real value-identifier can be named `this` in JS/TS, so this is always safe)
         if (param.name.text.startsWith('_')) continue; // conventionally ignored — skip
         candidateParams.push(param.name.text);
       }

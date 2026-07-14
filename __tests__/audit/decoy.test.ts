@@ -47,4 +47,27 @@ describe('scanDecoys', () => {
     const hits = scanDecoys(src, 'x.ts');
     expect(hits).toEqual([{ file: 'x.ts', line: 1, fn: 'process', param: 'data' }]);
   });
+
+  // Regression: an explicit TypeScript `this` parameter (idiomatic on named
+  // function declarations, e.g. DOM handlers) must never be flagged as an
+  // unused decoy. Its declaration name parses as a `ts.Identifier` with text
+  // "this", but real uses of `this` in the body parse as `ts.ThisExpression`
+  // nodes, not identifiers — so the identifier-based usage check can never
+  // see it as "used". A real value-identifier literally named `this` cannot
+  // exist in JS/TS, so unconditionally skipping it as a candidate is safe.
+  it('does NOT flag an explicit `this` parameter, even though `this` in the body is not an Identifier node', () => {
+    const src = `function handleClick(this: HTMLButtonElement, ev: Event) { console.log(this.textContent, ev); }`;
+    const hits = scanDecoys(src, 'x.ts');
+    expect(hits.find((h) => h.param === 'this')).toBeUndefined();
+    expect(hits.find((h) => h.param === 'ev')).toBeUndefined();
+    expect(hits).toEqual([]);
+  });
+
+  // Regression: skipping `this` must not blind the detector to a genuinely
+  // unused NON-this param declared alongside it.
+  it('still flags a genuinely-unused param declared alongside a used `this`', () => {
+    const src = `function f(this: Window, unused: number) { return this.name; }`;
+    const hits = scanDecoys(src, 'x.ts');
+    expect(hits).toEqual([{ file: 'x.ts', line: 1, fn: 'f', param: 'unused' }]);
+  });
 });
