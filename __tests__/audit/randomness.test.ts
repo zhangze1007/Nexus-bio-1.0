@@ -29,4 +29,10 @@ describe('scanRandomness', () => {
     const hit = hits.find((h) => h.snippet.includes('Math.random()'));
     expect(hit?.klass).toBe('fabrication');
   });
+
+  it('no longer scans Date.now() — monotonic clock/timestamp code is not randomness', () => {
+    const src = `function timing(t0) {\n  const t = Date.now();\n  return { totalTime: Date.now() - t0, t };\n}`;
+    const hits = scanRandomness(src, 'x.ts');
+    expect(hits).toEqual([]);
+  });
 });

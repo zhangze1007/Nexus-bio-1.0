@@ -8,7 +8,7 @@ export interface RandomnessHit {
   reason: string;
 }
 
-const RANDOM_RE = /Math\.random\s*\(\)|Date\.now\s*\(\)/;
+const RANDOM_RE = /Math\.random\s*\(\)/;
 
 export function scanRandomness(source: string, file: string): RandomnessHit[] {
   const lines = source.split('\n');

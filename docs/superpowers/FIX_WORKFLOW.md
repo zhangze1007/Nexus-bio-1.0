@@ -1,4 +1,3 @@
-<!-- docs/superpowers/FIX_WORKFLOW.md -->
 # Phase 2–3 Fix Workflow (per finding)
 
 For each suspect in NEXUS_BIO_INTEGRITY_AUDIT_V2.md, in severity order:
