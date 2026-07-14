@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 import { SeededRNG } from '../../../src/utils/seededRng';
+import { perResiduePlddt } from '../../../src/utils/pdbParser';
 
 export const runtime = 'edge';
 
@@ -126,11 +127,14 @@ async function handleFold(body: ESM3FoldBody, req: NextRequest, requestId: strin
     });
     if (resp.ok) {
       const pdb = await resp.text();
-      // Generate per-residue confidence (pLDDT approximation)
-      const confidence = Array.from({ length: cleanSeq.length }, () =>
-        Math.round((0.7 + 0.25 * Math.random()) * 100) / 100,
-      );
-      const avgConfidence = confidence.reduce((a, b) => a + b, 0) / confidence.length;
+      // Real per-residue pLDDT parsed from the ESMFold / ESM Atlas PDB B-factor
+      // column (ESMFold encodes pLDDT there). Previously this fabricated the
+      // confidence with an unseeded random draw — now it reports the model's
+      // actual per-residue values.
+      const confidence = perResiduePlddt(pdb);
+      const avgConfidence = confidence.length
+        ? Math.round((confidence.reduce((a, b) => a + b, 0) / confidence.length) * 100) / 100
+        : 0;
       return NextResponse.json(
         {
           ok: true,

@@ -1,12 +1,9 @@
 # NEXUS_BIO_INTEGRITY_AUDIT_V2 — suspected fabrication (auto-triage)
 
-Generated 50 suspects. Status starts at "suspected"; Phase 2 confirms each with a code-level test.
+Generated 47 suspects. Status starts at "suspected"; Phase 2 confirms each with a code-level test.
 
 | Severity | Class | File:Line | Reason | Status |
 |---|---|---|---|---|
-| 5 | fabrication | app/api/esm3/route.ts:131 | random-derived value flows into a reported score/return | suspected |
-| 4 | fabrication | app/api/alphafold/route.ts:323 | random-derived value flows into a reported score/return | suspected |
-| 4 | fabrication | src/services/infra/featureFlags.ts:80 | random-derived value flows into a reported score/return | suspected |
 | 3 | decoy | app/api/auth/mfa/enable/route.ts:20 | param 'req' ignored in POST() | suspected |
 | 3 | decoy | app/api/files/[...key]/route.ts:18 | param 'request' ignored in GET() | suspected |
 | 3 | decoy | src/data/mockGenMIM.ts:246 | param 'pamMotif' ignored in designsgRNAs() | suspected |

@@ -19,6 +19,7 @@ export interface Acknowledged { fileIncludes: string; snippetIncludes: string; r
 export const ACKNOWLEDGED: Acknowledged[] = [
   { fileIncludes: 'digitalCellEngine', snippetIncludes: 'p *= Math.random()', reason: 'Knuth Poisson sampler (textbook-correct)' },
   { fileIncludes: 'ProEvolCampaignEngine', snippetIncludes: '// OK for design diversity', reason: 'design-diversity injection (legit, seed optional)' },
+  { fileIncludes: 'featureFlags', snippetIncludes: 'return Math.random() * 100', reason: 'anonymous percentage-rollout bucket (no stable id to hash; not a scientific score)' },
 ];
 
 // Identifier fragments that mean "this value is a REPORTED result" → random-derived = fabrication.

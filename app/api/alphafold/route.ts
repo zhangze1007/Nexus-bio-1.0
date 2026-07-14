@@ -318,14 +318,16 @@ async function handleDock(
     }
   }
 
-  // Local heuristic: estimate binding site from protein centroid
+  // Local heuristic: estimate the binding site from the REAL protein centroid.
+  // A docking SCORE is NOT computed offline (a genuine score needs the DiffDock
+  // backend), so we report the binding-site estimate only rather than fabricating
+  // a number — dockingScore is null and the absence is flagged in `warning`.
   const centroid = estimateProteinCentroid(proteinPdb);
-  const bindingScore = -5 + 3 * Math.random(); // Random docking score
 
   return NextResponse.json(
     {
       ok: true,
-      dockingScore: Math.round(bindingScore * 100) / 100,
+      dockingScore: null,
       bindingSite: {
         x: Math.round(centroid.x * 100) / 100,
         y: Math.round(centroid.y * 100) / 100,
@@ -335,7 +337,7 @@ async function handleDock(
       model: "local_heuristic",
       predictionTime: Date.now() - startTime,
       requestId,
-      warning: "No DiffDock backend available. Returning estimated binding site.",
+      warning: "No DiffDock backend available — returning an estimated binding site only (no docking score computed).",
     },
     { headers },
   );

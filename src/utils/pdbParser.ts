@@ -166,6 +166,25 @@ export function parsePDB(pdbText: string): PDBStructure {
 }
 
 /**
+ * Extract per-residue pLDDT confidence from a predicted-structure PDB's CA-atom
+ * B-factor column. ESMFold / ESM Atlas / AlphaFold all encode pLDDT there, so
+ * this reads the REAL model confidence rather than fabricating it. Values are
+ * normalized to [0,1] (pLDDT is conventionally 0-100, so a value > 1 is divided
+ * by 100) and rounded to 2 decimals. Returns one value per residue (CA atom),
+ * in file order; returns `[]` when the PDB has no CA atoms (no fabricated fallback).
+ */
+export function perResiduePlddt(pdbText: string): number[] {
+  const { atoms } = parsePDB(pdbText);
+  const out: number[] = [];
+  for (const a of atoms) {
+    if (a.isHetero || a.name !== "CA") continue;
+    const norm = a.bFactor > 1 ? a.bFactor / 100 : a.bFactor;
+    out.push(Math.round(norm * 100) / 100);
+  }
+  return out;
+}
+
+/**
  * Parse a single ATOM or HETATM record line.
  *
  * PDB format (fixed-width columns):

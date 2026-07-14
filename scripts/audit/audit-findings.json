@@ -1,26 +1,5 @@
 [
   {
-    "file": "app/api/esm3/route.ts",
-    "line": 131,
-    "klass": "fabrication",
-    "reason": "random-derived value flows into a reported score/return",
-    "severity": 5
-  },
-  {
-    "file": "app/api/alphafold/route.ts",
-    "line": 323,
-    "klass": "fabrication",
-    "reason": "random-derived value flows into a reported score/return",
-    "severity": 4
-  },
-  {
-    "file": "src/services/infra/featureFlags.ts",
-    "line": 80,
-    "klass": "fabrication",
-    "reason": "random-derived value flows into a reported score/return",
-    "severity": 4
-  },
-  {
     "file": "app/api/auth/mfa/enable/route.ts",
     "line": 20,
     "klass": "decoy",
