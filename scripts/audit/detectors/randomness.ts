@@ -27,8 +27,9 @@ export function scanRandomness(source: string, file: string): RandomnessHit[] {
       hits.push({ ...base, klass: 'excluded', reason: `acknowledged: ${ack.reason}` });
       continue;
     }
-    const window = lines.slice(Math.max(0, i - 2), i + 1).join(' ');
-    if (SCORE_NAMES.test(window) || /\breturn\b/.test(line)) {
+    const scoreWindow = lines.slice(Math.max(0, i - 2), i + 1).join(' ');
+    const returnWindow = lines.slice(i, Math.min(lines.length, i + 3)).join(' ');
+    if (SCORE_NAMES.test(scoreWindow) || /\breturn\b/.test(returnWindow)) {
       hits.push({ ...base, klass: 'fabrication', reason: 'random-derived value flows into a reported score/return' });
     } else {
       hits.push({ ...base, klass: 'reproducibility', reason: 'unseeded randomness on a compute path' });

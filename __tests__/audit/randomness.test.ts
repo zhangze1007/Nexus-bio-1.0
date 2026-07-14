@@ -22,4 +22,11 @@ describe('scanRandomness', () => {
     const src = `      p *= Math.random(); // Knuth`;
     expect(scanRandomness(src, 'src/server/digitalCellEngine.ts')[0].klass).toBe('excluded');
   });
+
+  it('flags multi-line fabrication with a neutral variable name via forward-window return check', () => {
+    const src = `function f(seq) {\n  const base = 0.5;\n  const jitter = Math.random() * 0.1;\n  const total = base + jitter;\n  return total;\n}`;
+    const hits = scanRandomness(src, 'x.ts');
+    const hit = hits.find((h) => h.snippet.includes('Math.random()'));
+    expect(hit?.klass).toBe('fabrication');
+  });
 });

@@ -18,7 +18,7 @@ export const FORBIDDEN = [
 export interface Acknowledged { fileIncludes: string; snippetIncludes: string; reason: string; }
 export const ACKNOWLEDGED: Acknowledged[] = [
   { fileIncludes: 'digitalCellEngine', snippetIncludes: 'p *= Math.random()', reason: 'Knuth Poisson sampler (textbook-correct)' },
-  { fileIncludes: 'ProEvolCampaignEngine', snippetIncludes: 'Math.random()', reason: 'design-diversity injection (legit, seed optional)' },
+  { fileIncludes: 'ProEvolCampaignEngine', snippetIncludes: '// OK for design diversity', reason: 'design-diversity injection (legit, seed optional)' },
 ];
 
 // Identifier fragments that mean "this value is a REPORTED result" → random-derived = fabrication.
