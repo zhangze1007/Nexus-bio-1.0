@@ -1,10 +1,13 @@
 # NEXUS_BIO_INTEGRITY_AUDIT_V2 — suspected fabrication (auto-triage)
 
-Generated 47 suspects. Status starts at "suspected"; Phase 2 confirms each with a code-level test.
+Generated 50 suspects. Status starts at "suspected"; Phase 2 confirms each with a code-level test.
 
 | Severity | Class | File:Line | Reason | Status |
 |---|---|---|---|---|
+| 5 | canned | src/server/genmimPipeline.ts:63 | planKnockdowns() uses NONE of its parameters — returns input-independent (canned) output | suspected |
+| 3 | canned | app/api/auth/mfa/enable/route.ts:20 | POST() uses NONE of its parameters — returns input-independent (canned) output | suspected |
 | 3 | decoy | app/api/auth/mfa/enable/route.ts:20 | param 'req' ignored in POST() | suspected |
+| 3 | canned | app/api/files/[...key]/route.ts:18 | GET() uses NONE of its parameters — returns input-independent (canned) output | suspected |
 | 3 | decoy | app/api/files/[...key]/route.ts:18 | param 'request' ignored in GET() | suspected |
 | 3 | decoy | src/data/mockGenMIM.ts:246 | param 'pamMotif' ignored in designsgRNAs() | suspected |
 | 3 | decoy | src/data/mockProEvol.ts:32 | param 'mutationRate' ignored in generateEvolutionTrajectory() | suspected |

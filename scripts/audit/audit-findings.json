@@ -1,9 +1,30 @@
 [
   {
+    "file": "src/server/genmimPipeline.ts",
+    "line": 63,
+    "klass": "canned",
+    "reason": "planKnockdowns() uses NONE of its parameters — returns input-independent (canned) output",
+    "severity": 5
+  },
+  {
+    "file": "app/api/auth/mfa/enable/route.ts",
+    "line": 20,
+    "klass": "canned",
+    "reason": "POST() uses NONE of its parameters — returns input-independent (canned) output",
+    "severity": 3
+  },
+  {
     "file": "app/api/auth/mfa/enable/route.ts",
     "line": 20,
     "klass": "decoy",
     "reason": "param 'req' ignored in POST()",
+    "severity": 3
+  },
+  {
+    "file": "app/api/files/[...key]/route.ts",
+    "line": 18,
+    "klass": "canned",
+    "reason": "GET() uses NONE of its parameters — returns input-independent (canned) output",
     "severity": 3
   },
   {
