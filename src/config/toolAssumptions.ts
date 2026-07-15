@@ -133,7 +133,8 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       id: "fbasim.simplex_real",
       toolId: "fbasim",
       category: "mathematical",
-      statement: "Single-species E. coli solver is a real LP (HiGHS) on the published e_coli_core model (Orth 2010) with its genuine GAM biomass reaction — COBRApy-verified to ~0.87 h⁻¹. Yeast uses a simplified illustrative glycolysis network.",
+      statement:
+        "Single-species E. coli solver is a real LP (HiGHS) on the published e_coli_core model (Orth 2010) with its genuine GAM biomass reaction — COBRApy-verified to ~0.87 h⁻¹. Yeast uses a simplified illustrative glycolysis network.",
       severity: "info",
     },
     {
@@ -181,7 +182,8 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       id: "fbasim-single.simplex_real",
       toolId: "fbasim-single",
       category: "mathematical",
-      statement: "Real LP (HiGHS) on the published e_coli_core stoichiometric model (Orth 2010); genome-scale mass balance S·v = 0, genuine GAM biomass reaction.",
+      statement:
+        "Real LP (HiGHS) on the published e_coli_core stoichiometric model (Orth 2010); genome-scale mass balance S·v = 0, genuine GAM biomass reaction.",
       severity: "info",
     },
   ],
