@@ -11,9 +11,7 @@ import {
   YEAST_NODES,
   YEAST_FLUX_EDGES,
   YEAST_REACTION_DEFS,
-  SHARED_METABOLITES,
   runYeastFBA,
-  calculateCommunityFlux,
 } from '../src/data/mockFBA';
 
 // ── Static data arrays ──────────────────────────────────────────────────────
@@ -108,25 +106,10 @@ describe('YEAST static data', () => {
   });
 });
 
-describe('SHARED_METABOLITES', () => {
-  it('has 4 shared metabolites', () => {
-    expect(SHARED_METABOLITES).toHaveLength(4);
-  });
-
-  it('has valid exporter/importer strains', () => {
-    for (const m of SHARED_METABOLITES) {
-      expect(['ecoli', 'yeast']).toContain(m.exporterStrain);
-      expect(['ecoli', 'yeast']).toContain(m.importerStrain);
-      expect(m.exporterStrain).not.toBe(m.importerStrain);
-    }
-  });
-
-  it('has positive baseFlux', () => {
-    for (const m of SHARED_METABOLITES) {
-      expect(m.baseFlux).toBeGreaterThan(0);
-    }
-  });
-});
+// NOTE: The former `SHARED_METABOLITES` mock edge-list and the
+// `calculateCommunityFlux` post-hoc-blend heuristic have been removed. Community
+// FBA is now a real SteadyCom joint LP — see __tests__/fbaEngine.test.ts
+// ("Community FBA (real SteadyCom)") and __tests__/communityModel.test.ts.
 
 // ── runFBA ──────────────────────────────────────────────────────────────────
 
@@ -332,72 +315,7 @@ describe('runYeastFBA', () => {
   });
 });
 
-// ── calculateCommunityFlux ──────────────────────────────────────────────────
-
-describe('calculateCommunityFlux', () => {
-  it('returns feasible community output', () => {
-    const result = calculateCommunityFlux(10, 20, [], 8, 15, []);
-    expect(result.feasible).toBe(true);
-    expect(result.ecoli).toBeDefined();
-    expect(result.yeast).toBeDefined();
-    expect(result.exchangeFluxes).toBeDefined();
-    expect(result.communityGrowthRate).toBeGreaterThanOrEqual(0);
-    expect(result.communityBiomassObjective).toBeGreaterThanOrEqual(0);
-  });
-
-  it('exchange fluxes cover all shared metabolites', () => {
-    const result = calculateCommunityFlux(10, 20, [], 8, 15, []);
-    expect(result.exchangeFluxes).toHaveLength(SHARED_METABOLITES.length);
-    for (const ef of result.exchangeFluxes) {
-      expect(typeof ef.id).toBe('string');
-      expect(typeof ef.metabolite).toBe('string');
-      expect(['ecoli', 'yeast']).toContain(ef.fromStrain);
-      expect(['ecoli', 'yeast']).toContain(ef.toStrain);
-    }
-  });
-
-  it('alpha=0 weights ecoli fully', () => {
-    const result = calculateCommunityFlux(10, 20, [], 8, 15, [], 0);
-    // Community growth should be close to adjusted ecoli growth
-    expect(result.communityGrowthRate).toBeGreaterThan(0);
-  });
-
-  it('alpha=1 weights yeast fully', () => {
-    const result = calculateCommunityFlux(10, 20, [], 8, 15, [], 1);
-    expect(result.communityGrowthRate).toBeGreaterThan(0);
-  });
-
-  it('knocking out ecoli key enzyme affects community', () => {
-    const base = calculateCommunityFlux(10, 20, [], 8, 15, []);
-    const ko = calculateCommunityFlux(10, 20, ['GLCpts'], 8, 15, []);
-    expect(ko.ecoli.feasible).toBe(false);
-    expect(ko.communityGrowthRate).toBeLessThan(base.communityGrowthRate);
-  });
-
-  it('knocking out yeast key enzyme affects community', () => {
-    const base = calculateCommunityFlux(10, 20, [], 8, 15, []);
-    const ko = calculateCommunityFlux(10, 20, [], 8, 15, ['HXT']);
-    expect(ko.yeast.feasible).toBe(false);
-    expect(ko.communityGrowthRate).toBeLessThan(base.communityGrowthRate);
-  });
-
-  it('both infeasible makes community infeasible', () => {
-    const result = calculateCommunityFlux(0, 0, [], 0, 0, []);
-    expect(result.feasible).toBe(false);
-  });
-
-  it('exchange fluxes are zero when exporter is infeasible', () => {
-    const result = calculateCommunityFlux(10, 20, ['GLCpts'], 8, 15, []);
-    // ecoli exports acetate, succinate, lactate — should be 0 since ecoli is infeasible
-    const ecoliExports = result.exchangeFluxes.filter(e => e.fromStrain === 'ecoli');
-    for (const ef of ecoliExports) {
-      expect(ef.flux).toBe(0);
-    }
-  });
-
-  it('default alpha is 0.5', () => {
-    const explicit = calculateCommunityFlux(10, 20, [], 8, 15, [], 0.5);
-    const implicit = calculateCommunityFlux(10, 20, [], 8, 15, []);
-    expect(explicit.communityGrowthRate).toBe(implicit.communityGrowthRate);
-  });
-});
+// ── Community FBA ─────────────────────────────────────────────────────────────
+// The former `calculateCommunityFlux` post-hoc-blend heuristic has been removed.
+// Community FBA is now a real SteadyCom joint LP; its behavior is covered by
+// __tests__/fbaEngine.test.ts and __tests__/communityModel.test.ts.

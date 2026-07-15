@@ -269,7 +269,9 @@ describe('solveAuthorityCommunityFBA', () => {
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.mode).toBe('community');
     expect(body.objective).toBe('biomass');
-    expect(body.alpha).toBe(0.5); // default
+    // No alpha requested => omitted from the body so SteadyCom optimizes abundances
+    // (the client no longer injects a 0.5 default).
+    expect(body.alpha).toBeUndefined();
     expect(body.ecoli).toEqual({ glucoseUptake: 10, oxygenUptake: 20 });
     expect(body.yeast).toEqual({ glucoseUptake: 8, oxygenUptake: 15 });
   });
@@ -375,7 +377,7 @@ describe('solveAuthorityCommunityFBAWithProvenance', () => {
     expect(body.objective).toBe('atp');
   });
 
-  it('uses default alpha of 0.5', async () => {
+  it('omits alpha when unspecified (SteadyCom optimizes abundances)', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ ok: true, result: {} }),
@@ -388,6 +390,6 @@ describe('solveAuthorityCommunityFBAWithProvenance', () => {
     });
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.alpha).toBe(0.5);
+    expect(body.alpha).toBeUndefined();
   });
 });

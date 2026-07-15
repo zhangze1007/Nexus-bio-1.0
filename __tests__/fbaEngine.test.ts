@@ -5,22 +5,23 @@ import {
   type SingleSpeciesFBARequest,
   type CommunityFBARequest,
 } from '../src/server/fbaEngine';
+import { IJO1366_REACTIONS, IJO1366_METABOLITES } from '../src/data/iJO1366Subset';
+
+// Physical ceiling for E. coli growth on glucose minimal media (real max ≈ 0.87 h⁻¹).
+// The single-species E. coli path solves the real e_coli_core model, so growth must
+// land in a biological band — NOT the 12–20 h⁻¹ the prior 10-reaction toy produced.
+const ECOLI_MAX_GROWTH = 1.5;
 
 /**
  * Tests for the HiGHS-backed FBA engine (src/server/fbaEngine.ts).
  *
- * The E. coli toy network enforces these mass-balance constraints:
- *   GLCpts = PGI = PFK = FBA
- *   GAPD = 2 * FBA
- *   PYK = GAPD
- *   PDH = PYK
- *   O2tx = PDH
- *   BIOMASS + PRODUCT = PDH
+ * E. coli single-species FBA solves the REAL e_coli_core stoichiometric model
+ * (src/data/iJO1366Subset.ts; COBRApy-verified to ~0.87 h⁻¹). Its invariants are
+ * genome-scale mass balance (S·v = 0 over every metabolite) and physical growth,
+ * NOT the fixed linear chain of the old 10-reaction toy. The dedicated ground-truth
+ * anchor lives in __tests__/fbaGroundTruthEcoli.test.ts.
  *
- * With glucose uptake = 10, oxygen uptake = 20:
- *   GLCpts = 10, PDH = 20, BIOMASS + PRODUCT = 20
- *
- * The yeast toy network enforces:
+ * The yeast toy network (no e_coli_core-equivalent bundled offline) still enforces:
  *   HXT = HXK = PGI_y = PFK_y = TPI = PDC
  *   PDC = ADH + ACS
  *   ACS = O2tx_y = IDH
@@ -84,14 +85,14 @@ describe('FBA Engine — Known-Solution Validation (E. coli)', () => {
     expect(rates[1]).toBe(rates[2]);
   });
 
-  test('E. coli LP objective value is in a positive finite range for standard conditions', async () => {
-    // NOTE: growthRate = LP objective value (biomass flux, normalized biomass reaction)
-    // The LP objective already represents h⁻¹ when the biomass reaction is properly normalized.
-    // We only verify it is positive and within a reasonable upper bound.
+  test('E. coli LP objective value is in a positive, physical range for standard conditions', async () => {
+    // growthRate = BIOMASS reaction flux (h⁻¹) from the real e_coli_core solve.
+    // It must be positive and below the biological ceiling — the toy network's
+    // 12–20 h⁻¹ would fail this bound.
     const result = await solveAuthorityFBA(ECOLI_AEROBIC_BIOMASS);
     expect(result.feasible).toBe(true);
     expect(result.growthRate).toBeGreaterThan(0);
-    expect(result.growthRate).toBeLessThanOrEqual(50);
+    expect(result.growthRate).toBeLessThan(ECOLI_MAX_GROWTH);
   });
 
   test('E. coli growth rate scales monotonically with glucose uptake (parameter sensitivity)', async () => {
@@ -107,45 +108,43 @@ describe('FBA Engine — Known-Solution Validation (E. coli)', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('FBA Engine — Invariant Checks', () => {
-  test('E. coli fluxes satisfy mass-balance (S·v = 0) constraints', async () => {
+  test('E. coli fluxes satisfy genome-scale mass balance (S·v = 0) for every metabolite', async () => {
     const result = await solveAuthorityFBA(ECOLI_AEROBIC_BIOMASS);
     const v = result.fluxes;
 
-    // g6p_balance: GLCpts - PGI = 0
-    expect(v.GLCpts).toBeCloseTo(v.PGI, 4);
-    // f6p_balance: PGI - PFK = 0
-    expect(v.PGI).toBeCloseTo(v.PFK, 4);
-    // fbp_balance: PFK - FBA = 0
-    expect(v.PFK).toBeCloseTo(v.FBA, 4);
-    // gap_balance: 2*FBA - GAPD = 0
-    expect(2 * v.FBA).toBeCloseTo(v.GAPD, 4);
-    // pep_balance: GAPD - PYK = 0
-    expect(v.GAPD).toBeCloseTo(v.PYK, 4);
-    // pyr_balance: PYK - PDH = 0
-    expect(v.PYK).toBeCloseTo(v.PDH, 4);
-    // accoa_balance: PDH - BIOMASS - PRODUCT = 0
-    expect(v.PDH).toBeCloseTo(v.BIOMASS + v.PRODUCT, 4);
-    // oxygen_balance: O2tx - PDH = 0
-    expect(v.O2tx).toBeCloseTo(v.PDH, 4);
-  });
-
-  test('all E. coli irreversible fluxes are non-negative', async () => {
-    const result = await solveAuthorityFBA(ECOLI_AEROBIC_BIOMASS);
-    // All reactions in the E. coli network have lb = 0 (irreversible)
-    const irreversibleReactions = [
-      'GLCpts', 'PGI', 'PFK', 'FBA', 'GAPD', 'PYK', 'PDH', 'O2tx', 'BIOMASS', 'PRODUCT',
-    ];
-    for (const rxn of irreversibleReactions) {
-      expect(result.fluxes[rxn]).toBeGreaterThanOrEqual(-1e-6);
+    // Real invariant: for every metabolite, net production across all reactions is 0.
+    // This checks the full e_coli_core stoichiometric matrix, not a fixed toy chain.
+    for (const metId of IJO1366_METABOLITES) {
+      let net = 0;
+      for (const rxn of IJO1366_REACTIONS) {
+        const coef = rxn.stoichiometry[metId];
+        if (coef !== undefined) net += coef * (v[rxn.id] ?? 0);
+      }
+      expect(Math.abs(net)).toBeLessThan(1e-3);
     }
   });
 
-  test('BIOMASS flux is maximized under biomass objective', async () => {
+  test('all E. coli fluxes respect their model bounds [lb, ub]', async () => {
     const result = await solveAuthorityFBA(ECOLI_AEROBIC_BIOMASS);
-    // With biomass objective and no knockouts, BIOMASS should be at its maximum
-    // Given the constraints, BIOMASS = PDH = 2*GLCpts = 20 (PRODUCT = 0)
-    expect(result.fluxes.BIOMASS).toBeCloseTo(20, 1);
-    expect(result.fluxes.PRODUCT).toBeCloseTo(0, 1);
+    // The real model has both irreversible (lb=0) and reversible (lb<0) reactions;
+    // the invariant is that every flux stays within its declared bounds. Exchange
+    // uptake bounds are overridden by the request (glucose/O2), so exempt those.
+    for (const rxn of IJO1366_REACTIONS) {
+      if (rxn.id === 'EX_glc_e' || rxn.id === 'EX_o2_e') continue;
+      const flux = result.fluxes[rxn.id] ?? 0;
+      expect(flux).toBeGreaterThanOrEqual(rxn.lb - 1e-4);
+      expect(flux).toBeLessThanOrEqual(rxn.ub + 1e-4);
+    }
+  });
+
+  test('BIOMASS flux is maximized (physical) under biomass objective', async () => {
+    const result = await solveAuthorityFBA(ECOLI_AEROBIC_BIOMASS);
+    // With the biomass objective the real e_coli_core solve lands in the physical
+    // growth band, and no carbon is diverted to the synthetic PRODUCT drain.
+    expect(result.fluxes.BIOMASS).toBeGreaterThan(0.3);
+    expect(result.fluxes.BIOMASS).toBeLessThan(ECOLI_MAX_GROWTH);
+    expect(result.fluxes.PRODUCT).toBeCloseTo(0, 4);
+    expect(result.growthRate).toBeCloseTo(result.fluxes.BIOMASS, 4);
   });
 
   test('E. coli carbon efficiency is within valid range [0, 100]', async () => {
@@ -168,19 +167,20 @@ describe('FBA Engine — Invariant Checks', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('FBA Engine — Knockout Tests', () => {
-  test('PFK knockout makes E. coli infeasible or zero growth', async () => {
+  test('PFK knockout zeroes PFK flux but E. coli still grows (PPP bypass)', async () => {
+    const wildtype = await solveAuthorityFBA(ECOLI_AEROBIC_BIOMASS);
     const result = await solveAuthorityFBA({
       ...ECOLI_AEROBIC_BIOMASS,
       knockouts: ['PFK'],
     });
 
-    if (result.feasible) {
-      // If the model is still feasible, growth should be zero
-      // because PFK=0 forces all downstream fluxes to zero
-      expect(result.growthRate).toBeCloseTo(0, 4);
-    }
-    // Either way, PFK flux must be zero
+    // PFK flux must be zero after knockout.
     expect(result.fluxes.PFK).toBeCloseTo(0, 4);
+    // In real e_coli_core, ΔPFK is NOT lethal — carbon reroutes through the pentose
+    // phosphate pathway to lower glycolysis. Growth is retained (and ≤ wild-type).
+    expect(result.feasible).toBe(true);
+    expect(result.growthRate).toBeGreaterThan(0);
+    expect(result.growthRate).toBeLessThanOrEqual(wildtype.growthRate + 1e-6);
   });
 
   test('PFK knockout reduces growth rate compared to wild-type', async () => {
@@ -317,31 +317,27 @@ describe('FBA Engine — Objective Tests', () => {
     expect(result.fluxes.BIOMASS).toBeGreaterThan(result.fluxes.PRODUCT);
   });
 
-  test('product objective maximizes PRODUCT flux', async () => {
+  test('product objective maximizes PRODUCT flux (carbon diverted away from biomass)', async () => {
     const result = await solveAuthorityFBA({
       ...ECOLI_AEROBIC_BIOMASS,
       objective: 'product',
     });
-    // Under product objective, PRODUCT should be maximized (BIOMASS ≈ 0)
-    // With constraints: BIOMASS + PRODUCT = 20
-    // Product obj: max PRODUCT + 0.05*BIOMASS = PRODUCT + 0.05*(20-PRODUCT) = 0.95*PRODUCT + 1
-    // → PRODUCT = 20, BIOMASS = 0
+    // Under the product objective, the synthetic PRODUCT drain carries positive flux
+    // and outcompetes biomass for carbon (BIOMASS → ~0).
+    expect(result.feasible).toBe(true);
+    expect(result.fluxes.PRODUCT).toBeGreaterThan(0);
     expect(result.fluxes.PRODUCT).toBeGreaterThan(result.fluxes.BIOMASS);
-    expect(result.fluxes.PRODUCT).toBeCloseTo(20, 1);
   });
 
-  test('atp objective produces feasible solution', async () => {
+  test('atp objective produces a feasible solution maximizing ATP maintenance turnover', async () => {
     const result = await solveAuthorityFBA({
       ...ECOLI_AEROBIC_BIOMASS,
       objective: 'atp',
     });
+    // The 'atp' objective maximizes ATP maintenance (ATPM) flux — the ATP the network
+    // can regenerate. It must be feasible with strongly positive ATPM turnover.
     expect(result.feasible).toBe(true);
-    // ATP objective: max GAPD + PYK + 1.2*PDH + 0.15*BIOMASS
-    // All these are functions of GLCpts, maximized when GLCpts = 10
-    // With GLCpts=10: GAPD=20, PYK=20, PDH=20
-    expect(result.fluxes.GAPD).toBeCloseTo(20, 1);
-    expect(result.fluxes.PYK).toBeCloseTo(20, 1);
-    expect(result.fluxes.PDH).toBeCloseTo(20, 1);
+    expect(result.fluxes.ATPM).toBeGreaterThan(1);
   });
 
   test('product objective yields zero growth rate', async () => {
@@ -386,14 +382,16 @@ describe('FBA Engine — Objective Tests', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('FBA Engine — buildAuthorityFBAModel', () => {
-  test('builds a valid LP model for E. coli', () => {
+  test('builds the real e_coli_core LP model for E. coli (used by FVA/pFBA)', () => {
     const model = buildAuthorityFBAModel(ECOLI_AEROBIC_BIOMASS);
-    expect(model.name).toBe('fba_ecoli');
+    expect(model.name).toBe('fba_ecoli_core');
     expect(model.sense).toBe('maximize');
     expect(model.objective.length).toBeGreaterThan(0);
-    expect(model.constraints.length).toBeGreaterThan(0);
+    // One mass-balance row per metabolite, one bound per reaction — the real model,
+    // not the 10-reaction toy.
+    expect(model.constraints.length).toBe(IJO1366_METABOLITES.length);
     expect(model.bounds).toBeDefined();
-    expect(model.bounds!.length).toBe(10); // 10 reactions
+    expect(model.bounds!.length).toBe(IJO1366_REACTIONS.length);
   });
 
   test('builds a valid LP model for yeast', () => {
@@ -412,14 +410,16 @@ describe('FBA Engine — buildAuthorityFBAModel', () => {
     expect(pfkBound!.ub).toBe(0);
   });
 
-  test('glucose uptake clamp is reflected in bounds', () => {
+  test('glucose uptake clamp is reflected in the exchange lower bound', () => {
     const model = buildAuthorityFBAModel({
       ...ECOLI_AEROBIC_BIOMASS,
       glucoseUptake: 50, // exceeds clamp limit of 25
     });
-    const glcBound = model.bounds!.find(b => b.name === 'GLCpts');
+    // In the real model, glucose uptake capacity is the EX_glc_e lower bound
+    // (negative = uptake), clamped to -25.
+    const glcBound = model.bounds!.find(b => b.name === 'EX_glc_e');
     expect(glcBound).toBeDefined();
-    expect(glcBound!.ub).toBe(25); // clamped to 25
+    expect(glcBound!.lb).toBe(-25); // clamped to 25 mmol/gDW/h uptake
   });
 });
 
@@ -482,6 +482,21 @@ describe('FBA Engine — Community FBA (real SteadyCom)', () => {
     expect(b.exchangeFluxes).toEqual(a.exchangeFluxes);
   });
 
+  test('no alpha => SteadyCom optimizes abundances (not pinned to a default split)', async () => {
+    const optimized = await solveAuthorityCommunityFBA(baseReq); // no alpha provided
+    const pinnedHalf = await solveAuthorityCommunityFBA({ ...baseReq, alpha: 0.5 });
+
+    expect(optimized.feasible).toBe(true);
+    expect(optimized.communityGrowthRate).toBeGreaterThan(0);
+    // Optimizing the abundances can only match or beat any fixed composition
+    // (the fixed-abundance LP is a restriction of the abundance-optimizing LP).
+    expect(optimized.communityGrowthRate).toBeGreaterThanOrEqual(pinnedHalf.communityGrowthRate - 1e-4);
+    // The composition is a genuine LP decision variable in (0,1), not forced to 0.5.
+    const xYeastOpt = optimized.yeast.growthRate / optimized.communityGrowthRate;
+    expect(xYeastOpt).toBeGreaterThan(0);
+    expect(xYeastOpt).toBeLessThan(1);
+  });
+
   test('alpha pins the community composition (fixed-abundance constraint)', async () => {
     const alpha = 0.7;
     const result = await solveAuthorityCommunityFBA({ ...baseReq, alpha });
@@ -514,16 +529,19 @@ describe('FBA Engine — Community FBA (real SteadyCom)', () => {
 
 describe('FBA Engine — Edge Cases', () => {
   test('uptake values are clamped to [0, 25]', async () => {
-    // Request with absurdly high uptake — should be clamped to 25
+    // Request with absurdly high uptake — should be clamped to 25.
     const result = await solveAuthorityFBA({
       species: 'ecoli',
       objective: 'biomass',
       glucoseUptake: 100,
       oxygenUptake: 100,
     });
-    // GLCpts should not exceed 25 (the clamp limit)
+    // Glucose uptake (GLCpts flux) and O2 uptake (|EX_o2_e|) cannot exceed 25 —
+    // this test verifies the clamp, not the growth magnitude (FBA is linear, so a
+    // saturating 25 mmol/gDW/h substrate load legitimately drives growth above the
+    // physiological ~0.87 that holds at the standard glucose uptake of 10).
     expect(result.fluxes.GLCpts).toBeLessThanOrEqual(25 + 1e-4);
-    expect(result.fluxes.O2tx).toBeLessThanOrEqual(25 + 1e-4);
+    expect(result.fluxes.EX_o2_e).toBeGreaterThanOrEqual(-25 - 1e-4);
   });
 
   test('zero glucose uptake yields zero growth', async () => {
@@ -537,17 +555,26 @@ describe('FBA Engine — Edge Cases', () => {
     expect(result.growthRate).toBeCloseTo(0, 4);
   });
 
-  test('zero oxygen uptake with E. coli limits PDH', async () => {
-    const result = await solveAuthorityFBA({
+  test('zero oxygen: E. coli still grows by fermentation, but slower than aerobic', async () => {
+    const anaerobic = await solveAuthorityFBA({
       species: 'ecoli',
       objective: 'biomass',
       glucoseUptake: 10,
       oxygenUptake: 0,
     });
-    // O2tx = PDH = 0, so BIOMASS + PRODUCT = 0
-    expect(result.fluxes.O2tx).toBeCloseTo(0, 4);
-    expect(result.fluxes.PDH).toBeCloseTo(0, 4);
-    expect(result.growthRate).toBeCloseTo(0, 4);
+    const aerobic = await solveAuthorityFBA({
+      species: 'ecoli',
+      objective: 'biomass',
+      glucoseUptake: 10,
+      oxygenUptake: 20,
+    });
+    // No O2 is taken up.
+    expect(anaerobic.fluxes.EX_o2_e).toBeCloseTo(0, 4);
+    // Real e_coli_core grows anaerobically on glucose (mixed-acid fermentation):
+    // growth is positive but strictly below the aerobic optimum.
+    expect(anaerobic.feasible).toBe(true);
+    expect(anaerobic.growthRate).toBeGreaterThan(0);
+    expect(anaerobic.growthRate).toBeLessThan(aerobic.growthRate);
   });
 
   test('duplicate knockouts are deduplicated', async () => {

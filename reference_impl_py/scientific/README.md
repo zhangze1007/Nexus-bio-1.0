@@ -14,11 +14,24 @@ or it doesn't — it cannot be satisfied by self-reporting.
 |-------|--------|--------------------|----------------|--------|
 | UMAP `find_ab_params` | `src/server/umapEngine.ts` `findAB` | `umap.umap_.find_ab_params(1.0, 0.1)` → a≈1.5769, b≈0.8951 | ✅ `__tests__/groundTruthChecks.test.ts` + `umapFindAB.test.ts` | **PASSING** (JS, no Python) |
 | PCA top eigenvector | `bioreactorAnalyticsEngine.ts` `computePCA` | analytic / `numpy.linalg.svd`: perfectly-correlated cols → [1/√2, 1/√2] | ✅ `__tests__/groundTruthChecks.test.ts` | **PASSING** (JS, no Python) |
-| FBA growth rate | `src/server/fbaEngine.ts` | COBRApy on **iJO1366**, glucose minimal media → ~0.98 h⁻¹ (Orth et al. 2011; the audit cites ~0.87 under tighter O₂/media constraints — pin the exact media before asserting) | ❌ | **BLOCKED** — needs Python (see below) |
+| FBA growth rate | `src/server/fbaEngine.ts` (`solveAuthorityFBA` ecoli / `solveExpandedFBA`) | COBRApy on **e_coli_core** (textbook model), glucose uptake 10 / O₂ unconstrained → **0.8739 h⁻¹** (Orth et al. 2010) | ✅ `__tests__/fbaGroundTruthEcoli.test.ts` | **PASSING** — the single-species E. coli path solves the real e_coli_core stoichiometry (COBRApy-exported via `scripts/gen_ecoli_core_data.py`); the HiGHS LP independently reproduces the published optimum and the JS test pins growth to the physical band. (Full 2583-reaction iJO1366 is NOT used — see note below.) |
 | Thermodynamics ΔG′ | `src/server/tfaEngine.ts` / `cethx` | eQuilibrator 3 API ΔG′° per reaction | ❌ | **BLOCKED** — needs Python + network |
 | CRISPR on-target | `crisprEditingEngine` / Doench Rule Set 2 | Doench 2016 Rule Set 2 supplementary data | ❌ | **BLOCKED** — needs dataset |
 
-## Why the Python checks are BLOCKED in this environment
+### Note on the FBA check (unblocked 2026-07)
+
+The FBA row is now PASSING in JS. The single-species E. coli FBA (`solveAuthorityFBA`,
+and the FVA/pFBA model from `buildAuthorityFBAModel`) previously ran a 10-reaction
+hand-written toy network whose biomass pseudo-reaction had no genuine stoichiometry,
+solving to a biologically impossible **12–20 h⁻¹**. It now solves the same real
+e_coli_core model as `solveExpandedFBA` — with the genuine GAM biomass reaction
+(`atp_c` −59.81, real precursor draws) — and reproduces the COBRApy optimum
+(~0.87 h⁻¹ aerobic; lower under O₂ limitation; positive-but-reduced under anaerobic
+fermentation and PPP-bypass knockouts). This is e_coli_core (95 reactions), a real
+published model, **not** the full 2583-reaction iJO1366. Yeast single-species still
+uses a simplified illustrative network (no genome-scale yeast model bundled offline).
+
+## Why the remaining Python checks are BLOCKED in this environment
 
 - **No system Python** is available on the build machine (`python`/`python3` absent).
 - **COBRApy cannot run in Pyodide** (browser/Node Python-in-WASM): Pyodide v314

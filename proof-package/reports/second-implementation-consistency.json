@@ -1,14 +1,14 @@
 {
   "schemaVersion": "second-implementation-consistency-v1",
-  "generatedAt": "2026-06-13T04:31:31Z",
+  "generatedAt": "2026-07-13T14:02:57Z",
   "runLabel": "local-dev",
   "referenceImplementation": "python-stdlib",
   "policySnapshot": "reference_impl_py/policies/claim_surface_policies.json",
   "benchmarkCorpus": [
-    "benchmarks/trust-runtime-cases/p0-step-6-cases.json"
+    "benchmarks\\trust-runtime-cases\\p0-step-6-cases.json"
   ],
-  "expectedLabelsPath": "benchmarks/expected_labels.csv",
-  "typescriptRuntimeResultsPath": "reports/public-benchmark/raw-results.json",
+  "expectedLabelsPath": "benchmarks\\expected_labels.csv",
+  "typescriptRuntimeResultsPath": "reports\\public-benchmark\\raw-results.json",
   "totalCases": 74,
   "typescriptRuntimeRowsFound": 74,
   "pythonVsExpectedMatchingCases": 74,

@@ -364,13 +364,14 @@ describe('iJO1366 GPR rules integration', () => {
     expect(knockedOut).toContain('PGI');
   });
 
-  it('knocking out b3916 does NOT knock out PFK (isozyme b0631 remains)', () => {
+  it('knocking out b3916 does NOT knock out PFK (isozyme b1723 remains)', () => {
+    // e_coli_core PFK GPR = "b3916 OR b1723" (pfkA OR pfkB): either isozyme suffices.
     const knockedOut = getKnockoutReactions(['b3916'], IJO1366_GPR_RULES);
     expect(knockedOut).not.toContain('PFK');
   });
 
-  it('knocking out both b3916 and b0631 knocks out PFK', () => {
-    const knockedOut = getKnockoutReactions(['b3916', 'b0631'], IJO1366_GPR_RULES);
+  it('knocking out both b3916 and b1723 knocks out PFK', () => {
+    const knockedOut = getKnockoutReactions(['b3916', 'b1723'], IJO1366_GPR_RULES);
     expect(knockedOut).toContain('PFK');
   });
 

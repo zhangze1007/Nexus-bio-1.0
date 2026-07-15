@@ -248,21 +248,13 @@ export const YEAST_REACTION_DEFS: ReactionDef[] = [
   { id: "BIOMASS_y", name: "Yeast biomass reaction", subsystem: "Energy" },
 ];
 
-// Shared metabolites exchanged between E. coli and S. cerevisiae
-export interface SharedMetabolite {
-  id: string;
-  name: string;
-  exporterStrain: string;
-  importerStrain: string;
-  baseFlux: number;
-}
-
-export const SHARED_METABOLITES: SharedMetabolite[] = [
-  { id: "acetate", name: "Acetate", exporterStrain: "ecoli", importerStrain: "yeast", baseFlux: 1.8 },
-  { id: "ethanol", name: "Ethanol", exporterStrain: "yeast", importerStrain: "ecoli", baseFlux: 2.1 },
-  { id: "succinate", name: "Succinate", exporterStrain: "ecoli", importerStrain: "yeast", baseFlux: 0.9 },
-  { id: "lactate", name: "Lactate", exporterStrain: "ecoli", importerStrain: "yeast", baseFlux: 0.6 },
-];
+// NOTE: The former `SHARED_METABOLITES` mock edge-list and the `calculateCommunityFlux`
+// heuristic that consumed it have been REMOVED. Community FBA is now a real SteadyCom
+// joint LP: the authoritative shared-pool metabolite list is
+// `COMMUNITY_SHARED_METABOLITES` (['acetate_e','ethanol_e']) in `src/data/communityModel.ts`,
+// and community solving happens in `solveAuthorityCommunityFBA` (src/server/fbaEngine.ts)
+// via `steadyCom` (src/server/fbaSteadyCom.ts). Cross-feeding exchange fluxes are LP
+// decision variables derived from stoichiometry — not scaled from a static edge-list.
 
 // ── Internal yeast flux kernel ────────────────────────────────────────────────
 function _computeYeastFluxes(
@@ -346,65 +338,7 @@ export interface CommunityFBAOutput {
   feasible: boolean;
 }
 
-/**
- * Illustrative two-species demo.
- *
- * This is not a joint community LP. It computes independent host FBA
- * outputs first, then scales exchange-like values and blends growth
- * post hoc for visualization.
- */
-export function calculateCommunityFlux(
-  ecoliGlucose: number,
-  ecoliOxygen: number,
-  ecoliKnockouts: string[],
-  yeastGlucose: number,
-  yeastOxygen: number,
-  yeastKnockouts: string[],
-  alpha = 0.5, // weighting: 0 = all ecoli, 1 = all yeast
-): CommunityFBAOutput {
-  // Compute individual strain FBA
-  const ecoliResult = runFBA(ecoliGlucose, ecoliOxygen, ecoliKnockouts);
-  const yeastResult = runYeastFBA(yeastGlucose, yeastOxygen, yeastKnockouts);
-
-  // Exchange reactions: metabolite transfer between strains via environmental pool
-  const exchangeFluxes = SHARED_METABOLITES.map((sm) => {
-    const exporterResult = sm.exporterStrain === "ecoli" ? ecoliResult : yeastResult;
-    const importerResult = sm.importerStrain === "ecoli" ? ecoliResult : yeastResult;
-
-    // Export flux scales with exporter's growth; import benefit scales with importer need
-    const exporterViability = exporterResult.feasible ? exporterResult.growthRate : 0;
-    const importerViability = importerResult.feasible ? 1 : 0;
-    const flux = sm.baseFlux * (exporterViability / 0.5) * importerViability;
-
-    return {
-      id: `EX_${sm.id}`,
-      metabolite: sm.name,
-      fromStrain: sm.exporterStrain,
-      toStrain: sm.importerStrain,
-      flux: Math.round(flux * 1000) / 1000,
-    };
-  });
-
-  // Cross-feeding bonus: metabolites flowing into a strain boost its effective growth
-  const ecoliFeedingBonus = exchangeFluxes
-    .filter((e) => e.toStrain === "ecoli" && e.flux > 0)
-    .reduce((sum, e) => sum + e.flux * 0.02, 0);
-  const yeastFeedingBonus = exchangeFluxes
-    .filter((e) => e.toStrain === "yeast" && e.flux > 0)
-    .reduce((sum, e) => sum + e.flux * 0.02, 0);
-
-  const adjustedEcoliGrowth = ecoliResult.growthRate + ecoliFeedingBonus;
-  const adjustedYeastGrowth = yeastResult.growthRate + yeastFeedingBonus;
-
-  // Community biomass objective: weighted sum of individual growth rates
-  const communityBiomassObjective = (1 - alpha) * adjustedEcoliGrowth + alpha * adjustedYeastGrowth;
-
-  return {
-    ecoli: { ...ecoliResult, growthRate: Math.round(adjustedEcoliGrowth * 10000) / 10000 },
-    yeast: { ...yeastResult, growthRate: Math.round(adjustedYeastGrowth * 10000) / 10000 },
-    exchangeFluxes,
-    communityGrowthRate: Math.round(communityBiomassObjective * 10000) / 10000,
-    communityBiomassObjective: Math.round(communityBiomassObjective * 10000) / 10000,
-    feasible: ecoliResult.feasible || yeastResult.feasible,
-  };
-}
+// The `CommunityFBAOutput` type above is the shared shape for community results.
+// It is now produced exclusively by the real SteadyCom joint LP in
+// `solveAuthorityCommunityFBA` (src/server/fbaEngine.ts). The former
+// `calculateCommunityFlux` post-hoc-blend heuristic has been removed.

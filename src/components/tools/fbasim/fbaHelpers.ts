@@ -3,8 +3,9 @@
  * Extracted from FBASimPage.tsx for modularity.
  */
 
+import { COMMUNITY_SHARED_METABOLITES } from "../../../data/communityModel";
 import type { CommunityFBAOutput, FBAOutput } from "../../../data/mockFBA";
-import { REACTION_DEFS, SHARED_METABOLITES, YEAST_REACTION_DEFS } from "../../../data/mockFBA";
+import { REACTION_DEFS, YEAST_REACTION_DEFS } from "../../../data/mockFBA";
 
 export type SimMode = "single" | "community";
 
@@ -44,11 +45,15 @@ export function createEmptyCommunityOutput(): CommunityFBAOutput {
         atp: 0,
       },
     },
-    exchangeFluxes: SHARED_METABOLITES.map((metabolite) => ({
-      id: `EX_${metabolite.id}`,
-      metabolite: metabolite.name,
-      fromStrain: metabolite.exporterStrain,
-      toStrain: metabolite.importerStrain,
+    // Empty pre-solve placeholder. The real shared-pool metabolites and their
+    // cross-feeding directions/fluxes are populated by the SteadyCom joint-LP
+    // solve (solveAuthorityCommunityFBA); before a solve there is no direction
+    // to assert, so strain fields are left blank and flux is 0.
+    exchangeFluxes: COMMUNITY_SHARED_METABOLITES.map((metabolite) => ({
+      id: `EX_${metabolite}`,
+      metabolite,
+      fromStrain: "",
+      toStrain: "",
       flux: 0,
     })),
     communityGrowthRate: 0,

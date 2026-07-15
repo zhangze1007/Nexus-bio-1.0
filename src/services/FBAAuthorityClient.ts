@@ -98,7 +98,9 @@ export function solveAuthorityCommunityFBA(request: CommunityAuthorityRequest, s
     {
       mode: "community",
       objective: request.objective,
-      alpha: request.alpha ?? 0.5,
+      // Only forward alpha when the caller explicitly set a fixed composition.
+      // Omitting it lets SteadyCom optimize the relative abundances.
+      ...(request.alpha !== undefined ? { alpha: request.alpha } : {}),
       ecoli: request.ecoli,
       yeast: request.yeast,
     },
@@ -111,7 +113,9 @@ export function solveAuthorityCommunityFBAWithProvenance(request: CommunityAutho
     {
       mode: "community",
       objective: request.objective,
-      alpha: request.alpha ?? 0.5,
+      // Only forward alpha when the caller explicitly set a fixed composition.
+      // Omitting it lets SteadyCom optimize the relative abundances.
+      ...(request.alpha !== undefined ? { alpha: request.alpha } : {}),
       ecoli: request.ecoli,
       yeast: request.yeast,
     },

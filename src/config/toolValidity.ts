@@ -43,7 +43,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   fbasim: {
     level: "real",
     caption:
-      "Single-species FBA: real two-phase simplex LP (HiGHS solver) on iJO1366 genome-scale model (2583 reactions, 1805 metabolites). Community mode: two independent LPs with heuristic cross-feeding scaling (NOT a joint LP — validity: partial). BiGG model selector. growthRate = LP objective value directly.",
+      "Single-species E. coli FBA: real LP (HiGHS solver) on the published e_coli_core stoichiometric model (Orth et al. 2010; 95 reactions + 1 synthetic product drain, 72 metabolites) with the genuine GAM biomass reaction — COBRApy-verified to ~0.87 h⁻¹ on glucose minimal media. FVA and pFBA run on the same model. growthRate = BIOMASS reaction flux. Yeast single-species uses a simplified illustrative glycolysis network (no genome-scale yeast model is bundled offline), so its absolute numbers are not calibrated. Community mode: real SteadyCom joint LP (Chan et al. 2017) — shared extracellular pool coupling + biomass-abundance coupling, bisection on community growth rate; cross-feeding emerges from stoichiometry. The community model is a curated small 2-species model (glycolysis + literature overflow secretion: E. coli acetate, yeast ethanol), so the METHOD is real but absolute numbers are illustrative at this scale; per-strain knockouts apply only to curated community reactions. BiGG model selector for custom models.",
   },
   cethx: {
     level: "real",

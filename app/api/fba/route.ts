@@ -98,9 +98,15 @@ export async function POST(request: Request) {
     if (input.mode === 'community') {
       const ecoli = input.ecoli as Record<string, unknown> | undefined;
       const yeast = input.yeast as Record<string, unknown> | undefined;
+      // alpha is only set when the caller explicitly requests a fixed community
+      // composition. When omitted, alpha stays undefined so SteadyCom OPTIMIZES the
+      // relative abundances (the distinctive abundance-optimizing path) rather than
+      // pinning them to a default split.
+      const explicitAlpha =
+        typeof input.alpha === 'number' && Number.isFinite(input.alpha) ? (input.alpha as number) : undefined;
       const payload: CommunityFBARequest = {
         objective: asObjective(input.objective),
-        alpha: asNumber(input.alpha, 0.5),
+        ...(explicitAlpha !== undefined ? { alpha: explicitAlpha } : {}),
         ecoli: {
           glucoseUptake: asNumber(ecoli?.glucoseUptake, 10),
           oxygenUptake: asNumber(ecoli?.oxygenUptake, 12),
@@ -114,21 +120,25 @@ export async function POST(request: Request) {
       };
 
       const result = await withFbaTimeout(solveAuthorityCommunityFBA(payload));
+      // Provenance tags describe the REAL solve: one joint SteadyCom LP with a closed
+      // shared extracellular pool. validityTier is 'partial' — the method is real, but
+      // the curated 2-species model makes absolute numbers illustrative at this scale.
       const provenanceEntry = createProvenanceEntry({
         toolId: 'fbasim-community',
-        validityTier: 'demo',
+        validityTier: 'partial',
         outputAssumptions: [
-          'fbasim-community.community_not_joint_lp',
-          'fbasim-community.no_cross_feeding_stoich',
-          'fbasim-community.alpha_linear_blend',
-          'fbasim-community.exchange_flux_no_meaning',
+          'fbasim-community.joint_steadycom_lp',
+          'fbasim-community.stoichiometric_cross_feeding',
+          'fbasim-community.abundance_composition',
+          'fbasim-community.curated_model_scale',
           'fbasim-community.inherits_single_assumptions',
         ],
         evidence: [{
           id: `fba-community-${Date.now()}`,
           source: 'computation',
-          reference: 'Two independent single-species LP solves with post-hoc exchange scaling; not a joint community LP.',
-          confidence: 'demo',
+          reference:
+            `Joint SteadyCom community LP (Chan SHJ, Simons MN, Maranas CD 2017, PLOS Comput Biol 13(5):e1005539, DOI 10.1371/journal.pcbi.1005539): shared extracellular pool coupling + biomass-abundance coupling, bisection on community growth rate; cross-feeding exchange fluxes are LP decision variables. Curated 2-species model (E. coli acetate overflow, yeast ethanol fermentation)${explicitAlpha !== undefined ? `; composition pinned at alpha=${explicitAlpha}` : '; abundances optimized by SteadyCom'}.`,
+          confidence: 'medium',
         }],
       });
       return NextResponse.json({ ok: true, mode: 'community', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
@@ -182,7 +192,7 @@ export async function POST(request: Request) {
         evidence: [{
           id: `steadycom-${Date.now()}`,
           source: 'computation',
-          reference: `SteadyCom (Heinken et al. 2015, PLOS Comput Biol 11(1):e1004010) — binary search on community growth rate, ${parsedSpecies.length} species, tolerance=${tolerance}`,
+          reference: `SteadyCom (Chan SHJ, Simons MN, Maranas CD 2017, PLOS Comput Biol 13(5):e1005539, DOI 10.1371/journal.pcbi.1005539) — joint community LP with bisection on community growth rate, ${parsedSpecies.length} species, tolerance=${tolerance}`,
           confidence: 'high',
         }],
       });

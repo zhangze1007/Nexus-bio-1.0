@@ -61,7 +61,9 @@ describe('getToolValidity', () => {
     const result = getToolValidity('fbasim');
     expect(result).toBeDefined();
     expect(result!.level).toBe('real');
-    expect(result!.caption).toContain('simplex');
+    // Caption names the real solver (HiGHS LP) and the real, verified model.
+    expect(result!.caption).toContain('HiGHS');
+    expect(result!.caption).toContain('e_coli_core');
   });
 
   it('returns undefined for an unknown tool', () => {

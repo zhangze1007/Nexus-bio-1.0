@@ -75,16 +75,19 @@ describe('runtime gating', () => {
     expect(decision.reason).toContain('no runProvenance');
   });
 
-  it('blocks fbasim-community blocking assumptions into partial or real targets', () => {
+  it('blocks a payload carrying a blocking assumption into partial or real targets', () => {
+    // Uses a real blocking-severity assumption id from the registry. (Community FBA is
+    // now a real joint SteadyCom LP and no longer carries a blocking assumption, so this
+    // generic gating behavior is exercised with a still-blocking cellfree assumption.)
     const source = payload({
-      toolId: 'fbasim-community',
+      toolId: 'cellfree',
       validity: 'demo',
-      outputAssumptions: ['fbasim-community.community_not_joint_lp'],
+      outputAssumptions: ['cellfree.parameters_unsourced'],
     });
     const decision = canPassToDownstream(source, 'catdes');
     expect(decision.allowed).toBe(false);
     expect(decision.severity).toBe('block');
-    expect(collectBlockingAssumptions(source)).toEqual(['fbasim-community.community_not_joint_lp']);
+    expect(collectBlockingAssumptions(source)).toEqual(['cellfree.parameters_unsourced']);
   });
 
   it('allows fbasim-single partial payload into compatible partial target', () => {

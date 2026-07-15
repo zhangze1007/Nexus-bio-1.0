@@ -102,7 +102,7 @@ describe('community FBA honesty boundary', () => {
       validityTier: 'partial',
       payloadAllowed: true,
     });
-    expect(communityBoundary.assumptionIds).toContain('fbasim-community.two_independent_lps');
+    expect(communityBoundary.assumptionIds).toContain('fbasim-community.joint_steadycom_lp');
     expect(communityBoundary.formalClaimSurfacesBlocked).toEqual([]);
     expect(isCommunityFbaFormalSurfaceBlocked('payload')).toBe(false);
     expect(isCommunityFbaFormalSurfaceBlocked('export')).toBe(false);
@@ -111,25 +111,48 @@ describe('community FBA honesty boundary', () => {
     expect(isCommunityFbaFormalSurfaceBlocked('external-handoff')).toBe(false);
   });
 
-  it('keeps fbasim-community assumptions honest about independent LP limitations', () => {
+  it('keeps fbasim-community assumptions honest about the real joint SteadyCom LP', () => {
     const communityAssumptions = TOOL_ASSUMPTIONS['fbasim-community'];
-    const independentLpAssumption = communityAssumptions.find((assumption) =>
-      assumption.id === 'fbasim-community.two_independent_lps',
+    const jointLpAssumption = communityAssumptions.find((assumption) =>
+      assumption.id === 'fbasim-community.joint_steadycom_lp',
     );
 
-    expect(independentLpAssumption).toBeDefined();
-    expect(independentLpAssumption).toMatchObject({
+    expect(jointLpAssumption).toBeDefined();
+    expect(jointLpAssumption).toMatchObject({
       severity: 'info',
       toolId: 'fbasim-community',
     });
-    expect(independentLpAssumption?.statement.toLowerCase()).toContain('independent');
+    expect(jointLpAssumption?.statement.toLowerCase()).toContain('joint');
+    expect(jointLpAssumption?.statement.toLowerCase()).toContain('steadycom');
+
+    // The curated-model-scale caveat must be present (method real, numbers illustrative).
+    const scaleCaveat = communityAssumptions.find((a) => a.id === 'fbasim-community.curated_model_scale');
+    expect(scaleCaveat?.statement.toLowerCase()).toContain('illustrative');
+
+    // No 'blocking' assumptions remain: community FBA is partial (a real joint LP),
+    // not a demo fallback.
+    expect(communityAssumptions.every((a) => a.severity !== 'blocking')).toBe(true);
+    // The old dishonest tags must not appear in the canonical sub-tier registry.
+    const ids = communityAssumptions.map((a) => a.id);
+    expect(ids).not.toContain('fbasim-community.two_independent_lps');
+    expect(ids).not.toContain('fbasim-community.community_not_joint_lp');
   });
 
-  it('fbasim is real with honest community mode description', () => {
+  it('fbasim is real with an honest joint-SteadyCom community mode description', () => {
     expect(TOOL_VALIDITY.fbasim.level).toBe('real');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('two-phase simplex LP');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('independent LPs');
-    expect(TOOL_VALIDITY.fbasim.caption).toContain('NOT a joint LP');
+    // Single-species E. coli names the real model and its external verification.
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('e_coli_core');
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('COBRApy-verified');
+    // Yeast's simplified status is disclosed, not hidden.
+    expect(TOOL_VALIDITY.fbasim.caption.toLowerCase()).toContain('illustrative');
+    expect(TOOL_VALIDITY.fbasim.caption).toContain('SteadyCom joint LP');
+    // Must NOT carry the old, now-false claims.
+    expect(TOOL_VALIDITY.fbasim.caption).not.toContain('two independent LPs');
+    expect(TOOL_VALIDITY.fbasim.caption).not.toContain('NOT a joint LP');
+    // The single-species solver is e_coli_core, NOT the 2583-reaction genome-scale
+    // iJO1366 the badge used to falsely claim.
+    expect(TOOL_VALIDITY.fbasim.caption).not.toContain('2583');
+    expect(TOOL_VALIDITY.fbasim.caption).not.toContain('genome-scale model');
   });
 
   it('keeps demo community outputs off formal claim surfaces via fbasim policy tiers', () => {
@@ -179,10 +202,48 @@ describe('community FBA honesty boundary', () => {
 
     expect(readme).toContain('joint community LP');
     expect(readme).toContain('shared exchange metabolite pools');
-    expect(mockFba).toContain('Illustrative two-species demo.');
-    expect(mockFba).toContain('This is not a joint community LP.');
+    // mockFBA no longer contains the old heuristic; it documents the real SteadyCom path.
+    expect(mockFba).toContain('real SteadyCom joint LP');
+    expect(mockFba).not.toContain('export function calculateCommunityFlux');
+    expect(mockFba).not.toContain('This is not a joint community LP.');
     expect(fbaPage).toContain('Joint Community LP');
     expect(fbaPage).toContain('Community Biomass');
     expect(fbaPage).not.toContain('Two-Species Flux Comparison');
+  });
+});
+
+describe('community FBA anti-fabrication guards', () => {
+  it('solveAuthorityCommunityFBA source contains no magic cross-feeding constants', () => {
+    const src = readRepoFile('src/server/fbaEngine.ts');
+    const start = src.indexOf('export async function solveAuthorityCommunityFBA');
+    expect(start).toBeGreaterThan(-1);
+    // Bound the slice to the community function body (up to the next top-level
+    // export) so unrelated code cannot mask a regression here.
+    const rest = src.slice(start + 'export async function solveAuthorityCommunityFBA'.length);
+    const nextExport = rest.indexOf('\nexport ');
+    const body = nextExport === -1 ? rest : rest.slice(0, nextExport);
+
+    // The old post-hoc-blend heuristic used these magic scalars — none may reappear.
+    expect(body).not.toMatch(/0\.018|\* 1\.6|\* 2\.4|\* 1\.4/);
+    expect(body).not.toContain('MOCK_DATA');
+    expect(body).not.toContain('SHARED_METABOLITES');
+    // Positive assertion: it genuinely calls the joint SteadyCom engine.
+    expect(body).toContain('steadyCom(');
+    expect(body).toContain('buildCommunityModel(');
+  });
+
+  it('syntrophy: a species with no carbon grows only via community cross-feeding', async () => {
+    const { buildCommunityModel } = await import('../src/data/communityModel');
+    const { steadyCom } = await import('../src/server/fbaSteadyCom');
+    // E. coli gets zero glucose; it can only grow on yeast-secreted ethanol.
+    const m = buildCommunityModel({ ecoli: { glucoseUptake: 0 }, yeast: { glucoseUptake: 10 } });
+    const res = await steadyCom(m.species, m.sharedMetabolites);
+    expect(res.status).toBe('optimal');
+    expect(res.speciesGrowthRates.ecoli).toBeGreaterThan(0); // grows on cross-fed ethanol
+    // The growth is genuinely fed by yeast's ethanol secretion (closed pool: secretion == uptake).
+    const ethanolSecretion = res.speciesFluxes.yeast.EX_etoh;
+    const ethanolUptake = res.speciesFluxes.ecoli.UP_etoh;
+    expect(ethanolSecretion).toBeGreaterThan(1e-4);
+    expect(ethanolSecretion).toBeCloseTo(ethanolUptake, 4);
   });
 });

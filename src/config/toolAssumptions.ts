@@ -33,11 +33,11 @@
  *      breaking any existing import call sites.
  *    - 'fbasim-single' (partial) and 'fbasim-community' (partial)
  *      are the canonical sub-tier entries going forward.
- *    - 'fbasim-community.community_not_joint_lp' is 'blocking' here,
- *      whereas the legacy 'fbasim.community_not_joint_lp' is only
- *      'warning'. The sub-tier entry is authoritative for downstream
- *      gating; the legacy entry is kept for backward compatibility
- *      until Phase 2 migrates call sites.
+ *    - Community FBA is now a REAL joint SteadyCom LP (Chan et al. 2017),
+ *      so the 'fbasim-community' assumptions describe a genuine joint solve
+ *      (no 'blocking' assumption; the tool is partial, not demo). The legacy
+ *      'fbasim.community_not_joint_lp' entry below is retained only for
+ *      backward compatibility with pre-SteadyCom call sites.
  */
 
 import type { ToolAssumption } from "../types/assumptions";
@@ -133,7 +133,7 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       id: "fbasim.simplex_real",
       toolId: "fbasim",
       category: "mathematical",
-      statement: "Single-species solver is two-phase simplex LP on the iJO1366 subset (real implementation).",
+      statement: "Single-species E. coli solver is a real LP (HiGHS) on the published e_coli_core model (Orth 2010) with its genuine GAM biomass reaction — COBRApy-verified to ~0.87 h⁻¹. Yeast uses a simplified illustrative glycolysis network.",
       severity: "info",
     },
     {
@@ -181,35 +181,46 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       id: "fbasim-single.simplex_real",
       toolId: "fbasim-single",
       category: "mathematical",
-      statement: "Two-phase simplex LP on the iJO1366 subset (real implementation).",
+      statement: "Real LP (HiGHS) on the published e_coli_core stoichiometric model (Orth 2010); genome-scale mass balance S·v = 0, genuine GAM biomass reaction.",
       severity: "info",
     },
   ],
 
-  // Sub-tier: community/two-species mode of fbasim (canonical, partial)
+  // Sub-tier: community/two-species mode of fbasim (canonical, partial).
+  // Community FBA is a REAL joint SteadyCom LP (Chan et al. 2017); these
+  // assumptions describe the genuine solve and its curated-model scope.
   "fbasim-community": [
     {
-      id: "fbasim-community.two_independent_lps",
+      id: "fbasim-community.joint_steadycom_lp",
       toolId: "fbasim-community",
       category: "mathematical",
       statement:
-        "Two independent single-species LPs with heuristic cross-feeding scaling. NOT a joint community LP — exchange fluxes are post-hoc scaled, not LP decision variables.",
+        "One joint SteadyCom LP (Chan et al. 2017): shared extracellular pool + biomass-abundance coupling, bisection on community growth rate. A true joint community LP.",
       severity: "info",
     },
     {
-      id: "fbasim-community.genome_scale_model",
+      id: "fbasim-community.stoichiometric_cross_feeding",
+      toolId: "fbasim-community",
+      category: "mathematical",
+      statement:
+        "Cross-feeding exchange fluxes are LP decision variables from a closed shared acetate/ethanol pool; secretion equals uptake (not post-hoc scaled).",
+      severity: "info",
+    },
+    {
+      id: "fbasim-community.abundance_composition",
+      toolId: "fbasim-community",
+      category: "mathematical",
+      statement:
+        "When alpha is set, community composition is pinned (fixed relative abundance); when unset, SteadyCom optimizes the abundances.",
+      severity: "info",
+    },
+    {
+      id: "fbasim-community.curated_model_scale",
       toolId: "fbasim-community",
       category: "biological",
       statement:
-        "Full iJO1366 genome-scale model (2583 reactions, 1805 metabolites) with complete exchange metabolite coverage.",
-      severity: "info",
-    },
-    {
-      id: "fbasim-community.growth_rate_from_normalized_biomass",
-      toolId: "fbasim-community",
-      category: "mathematical",
-      statement: "growthRate equals the LP objective value directly (normalized biomass reaction in h⁻¹).",
-      severity: "info",
+        "Curated small 2-species model (glycolysis + E. coli acetate / yeast ethanol overflow). Method is real; absolute numbers are illustrative at this scale.",
+      severity: "warning",
     },
     {
       id: "fbasim-community.inherits_single_assumptions",
@@ -217,13 +228,6 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       category: "biological",
       statement: "Inherits all fbasim-single biological assumptions (steady state, biomass objective, no regulation).",
       severity: "info",
-    },
-    {
-      id: "fbasim-community.community_not_joint_lp",
-      toolId: "fbasim-community",
-      category: "mathematical",
-      statement: "Fallback: two independent LPs with post-hoc exchange scaling; NOT a joint community LP.",
-      severity: "blocking",
     },
   ],
 

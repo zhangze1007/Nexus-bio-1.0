@@ -164,6 +164,46 @@ describe('POST /api/fba', () => {
       expect(data.mode).toBe('community');
       expect(mockSolveCommunityFBA).toHaveBeenCalledTimes(1);
     });
+
+    it('leaves alpha undefined when not provided (SteadyCom optimizes abundances)', async () => {
+      // No alpha in the body → the route must NOT inject a default (e.g. 0.5).
+      const req = createFbaRequest({
+        mode: 'community',
+        objective: 'biomass',
+        ecoli: { glucoseUptake: 10, oxygenUptake: 12 },
+        yeast: { glucoseUptake: 8, oxygenUptake: 6 },
+      });
+      await POST(req);
+
+      expect(mockSolveCommunityFBA).toHaveBeenCalledTimes(1);
+      const callArg = mockSolveCommunityFBA.mock.calls[0][0];
+      expect(callArg.alpha).toBeUndefined();
+    });
+
+    it('forwards an explicit alpha to pin the community composition', async () => {
+      const req = createFbaRequest({
+        mode: 'community',
+        objective: 'biomass',
+        alpha: 0.7,
+        ecoli: { glucoseUptake: 10, oxygenUptake: 12 },
+        yeast: { glucoseUptake: 8, oxygenUptake: 6 },
+      });
+      await POST(req);
+
+      expect(mockSolveCommunityFBA).toHaveBeenCalledTimes(1);
+      const callArg = mockSolveCommunityFBA.mock.calls[0][0];
+      expect(callArg.alpha).toBe(0.7);
+    });
+
+    it('attaches honest partial-tier provenance for the real joint SteadyCom LP', async () => {
+      const req = createFbaRequest(validCommunityPayload);
+      const res = await POST(req);
+      const data = await res.json();
+
+      expect(data.provenance.validityTier).toBe('partial');
+      expect(data.provenance.outputAssumptions).toContain('fbasim-community.joint_steadycom_lp');
+      expect(data.provenance.outputAssumptions).not.toContain('fbasim-community.community_not_joint_lp');
+    });
   });
 
   describe('invalid input', () => {

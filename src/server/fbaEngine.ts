@@ -82,6 +82,12 @@ const PRODUCT_CARBON_ECOLI = 6;
 /** Product carbon content for yeast product (mol C per mol product) */
 const PRODUCT_CARBON_YEAST = 5.6;
 
+// ⚠️ LEGACY / SUPERSEDED — DO NOT wire this back into the E. coli solve path.
+// This 10-reaction toy network has no genuine biomass stoichiometry, so it solves
+// to a biologically impossible 12–20 h⁻¹. E. coli single-species FBA now goes
+// through the real e_coli_core model (see `solveEcoliCoreFBA` / `buildExpandedModel`
+// below; COBRApy-verified ~0.87 h⁻¹). It is retained ONLY because `NETWORKS` is
+// typed as a full Record<FBASpecies, …>; nothing selects `NETWORKS.ecoli` anymore.
 const ECOLI_NETWORK: NetworkSpec = {
   species: "ecoli",
   reactions: [
@@ -434,13 +440,21 @@ async function solveNetwork(request: SingleSpeciesFBARequest): Promise<FBAOutput
 }
 
 export async function solveAuthorityFBA(request: SingleSpeciesFBARequest): Promise<FBAOutput> {
-  return solveNetwork({
+  const clamped: SingleSpeciesFBARequest = {
     species: request.species,
     objective: request.objective,
     glucoseUptake: clamp(request.glucoseUptake, 0, 25),
     oxygenUptake: clamp(request.oxygenUptake, 0, 25),
     knockouts: Array.from(new Set(request.knockouts ?? [])),
-  });
+  };
+  // E. coli solves the REAL published e_coli_core stoichiometric model (the same
+  // model `solveExpandedFBA` uses; COBRApy-verified to ~0.87 h⁻¹). Only yeast still
+  // uses the 10-reaction legacy toy network below, which has no genome-scale
+  // counterpart bundled offline (see YEAST_NETWORK's own SIMPLIFIED disclaimer).
+  if (clamped.species === "ecoli") {
+    return solveEcoliCoreFBA(clamped);
+  }
+  return solveNetwork(clamped);
 }
 
 /**
@@ -448,7 +462,6 @@ export async function solveAuthorityFBA(request: SingleSpeciesFBARequest): Promi
  * Useful for FVA and pFBA which need the raw model.
  */
 export function buildAuthorityFBAModel(request: SingleSpeciesFBARequest): LPModel {
-  const network = NETWORKS[request.species];
   const clamped: SingleSpeciesFBARequest = {
     species: request.species,
     objective: request.objective,
@@ -457,6 +470,13 @@ export function buildAuthorityFBAModel(request: SingleSpeciesFBARequest): LPMode
     knockouts: Array.from(new Set(request.knockouts ?? [])),
   };
 
+  // FVA / pFBA operate on the SAME model as the FBA solve. For E. coli that is the
+  // real e_coli_core model; only yeast uses the legacy toy network.
+  if (clamped.species === "ecoli") {
+    return buildExpandedModel(clamped);
+  }
+
+  const network = NETWORKS[clamped.species];
   const knockoutSet = new Set(clamped.knockouts);
   const objective = network.objectives[clamped.objective];
   const constraints = network.constraints.map((c) => ({
@@ -580,9 +600,11 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
   };
 }
 
-// ── P3.1: Expanded FBA using iJO1366 subset (~95 rxns, ~78 metabolites) ──
-// This uses the real stoichiometric matrix from the genome-scale model rather
-// than the hand-written 10-reaction legacy networks above.
+// ── Real e_coli_core FBA (single-species E. coli path + solveExpandedFBA) ──
+// Uses the real published stoichiometric matrix (src/data/iJO1366Subset.ts,
+// e_coli_core; COBRApy-verified to ~0.87 h⁻¹) rather than the hand-written
+// 10-reaction legacy networks above. `buildExpandedModel` is the single source of
+// truth for the LP, so the FBA solve, FVA, and pFBA all operate on the same model.
 
 export interface ExpandedFBARequest {
   objective: "biomass" | "product";
@@ -600,15 +622,24 @@ export interface ExpandedFBAOutput {
   subsystemFluxSums: Record<string, number>;
 }
 
-export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<ExpandedFBAOutput> {
+/**
+ * Build the real e_coli_core LPModel (S·v = 0 mass balance) for a single-species
+ * E. coli request. Exchange lower bounds carry the uptake capacities; a knockout
+ * pins its reaction upper bound to 0. Objective: 'product' → PRODUCT, 'atp' →
+ * ATPM (maximize the ATP-maintenance turnover the network can sustain), else
+ * BIOMASS. This is the only place the single-species E. coli LP is assembled.
+ */
+function buildExpandedModel(request: {
+  objective: FBAObjective;
+  glucoseUptake: number;
+  oxygenUptake: number;
+  knockouts?: string[];
+}): LPModel {
   const knockoutSet = new Set(request.knockouts ?? []);
   const rxns = IJO1366_REACTIONS;
   const mets = IJO1366_METABOLITES;
-  const n = rxns.length;
-  const rxnIds = rxns.map((r) => r.id);
 
-  // Build LPModel for HiGHS
-  const objRxn = request.objective === "product" ? "PRODUCT" : "BIOMASS";
+  const objRxn = request.objective === "product" ? "PRODUCT" : request.objective === "atp" ? "ATPM" : "BIOMASS";
   const objective = [{ name: objRxn, coef: 1 }];
 
   // Stoichiometric constraints: S · v = 0 (mass balance)
@@ -621,10 +652,9 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
     ub: 0,
   }));
 
-  // Variable bounds
+  // Variable bounds; exchange reaction lower bounds carry the uptake capacity.
   const bounds = rxns.map((r) => {
     let lb = r.lb;
-    // Set exchange reaction lower bounds as maximum uptake allowed
     if (r.id === "EX_glc_e") lb = -clamp(request.glucoseUptake, 0, 25);
     if (r.id === "EX_o2_e") lb = -clamp(request.oxygenUptake, 0, 25);
     return {
@@ -634,13 +664,92 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
     };
   });
 
-  const model: LPModel = {
-    name: "fba_iJO1366",
+  return {
+    name: "fba_ecoli_core",
     sense: "maximize",
     objective,
     constraints,
     bounds,
   };
+}
+
+/**
+ * Single-species E. coli FBA on the real e_coli_core model, adapted to the
+ * `FBAOutput` contract the FBASim UI consumes. Every reported number is derived
+ * from the LP flux solution and the true stoichiometric matrix — no fabricated
+ * scalars:
+ *   - growthRate       = BIOMASS reaction flux (h⁻¹)
+ *   - atpYield         = gross ATP production Σ_r max(0, S[atp_c][r]·v_r) / glucose uptake
+ *   - nadhProduction   = gross NADH production Σ_r max(0, S[nadh_c][r]·v_r)
+ *   - carbonEfficiency = fraction of substrate carbon retained (not lost as CO₂)
+ *   - sensitivityCoefficients = LP shadow prices (duals) on the glucose / O₂ balances
+ */
+async function solveEcoliCoreFBA(request: SingleSpeciesFBARequest): Promise<FBAOutput> {
+  const model = buildExpandedModel({
+    objective: request.objective,
+    glucoseUptake: request.glucoseUptake,
+    oxygenUptake: request.oxygenUptake,
+    knockouts: request.knockouts,
+  });
+  const result = await solveLP(model);
+  const primals = result.primals;
+
+  const biomass = primals.BIOMASS ?? 0;
+  // EX_glc_e stoichiometry is {glc__D_e: -1}: a negative flux is uptake.
+  const glcUptake = Math.max(0, -(primals.EX_glc_e ?? 0));
+
+  // Real ATP / NADH turnover from the flux solution + true stoichiometry.
+  let atpProduction = 0;
+  let nadhProduction = 0;
+  for (const r of IJO1366_REACTIONS) {
+    const v = primals[r.id] ?? 0;
+    if (v === 0) continue;
+    const sAtp = r.stoichiometry.atp_c;
+    if (sAtp !== undefined && sAtp * v > 0) atpProduction += sAtp * v;
+    const sNadh = r.stoichiometry.nadh_c;
+    if (sNadh !== undefined && sNadh * v > 0) nadhProduction += sNadh * v;
+  }
+  const atpYield = glcUptake > 1e-9 ? atpProduction / glcUptake : 0;
+
+  // Real carbon efficiency: fraction of substrate carbon NOT lost as CO₂.
+  // glucose = 6 C in; CO₂ secretion = positive EX_co2_e flux (1 C each).
+  const co2Secreted = Math.max(0, primals.EX_co2_e ?? 0);
+  const carbonIn = glcUptake * GLUCOSE_CARBON;
+  const carbonEfficiency = carbonIn > 1e-9 ? clamp(((carbonIn - co2Secreted) / carbonIn) * 100, 0, 100) : 0;
+
+  // Shadow prices: LP duals on the extracellular substrate mass-balance rows.
+  const glucoseShadow = result.duals.glc__D_e_balance ?? 0;
+  const oxygenShadow = result.duals.o2_e_balance ?? 0;
+
+  // Expose every e_coli_core reaction flux (BiGG ids). The UI flux-map keys
+  // (GLCpts, PGI, PFK, FBA, GAPD, PYK, PDH, CS, MDH, ATPM, PGK, ENO) all exist in
+  // this model, so the visualization is populated with real fluxes.
+  const fluxes: Record<string, number> = {};
+  for (const r of IJO1366_REACTIONS) fluxes[r.id] = round(primals[r.id] ?? 0);
+
+  const feasible = result.status === "optimal" && result.objectiveValue > 1e-6;
+
+  return {
+    fluxes,
+    growthRate: round(biomass),
+    atpYield: round(atpYield, 2),
+    nadhProduction: round(nadhProduction, 2),
+    carbonEfficiency: round(carbonEfficiency, 1),
+    feasible,
+    sensitivityCoefficients: {
+      glc: round(glucoseShadow, 4),
+      o2: round(oxygenShadow, 4),
+      atp: round(glcUptake > 1e-9 ? atpYield / glcUptake : 0, 4),
+    },
+  };
+}
+
+export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<ExpandedFBAOutput> {
+  const rxns = IJO1366_REACTIONS;
+  const n = rxns.length;
+  const rxnIds = rxns.map((r) => r.id);
+
+  const model = buildExpandedModel(request);
 
   const result = await solveLP(model);
 
