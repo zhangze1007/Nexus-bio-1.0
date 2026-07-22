@@ -7,6 +7,7 @@
  * Supports push, pull, and bidirectional sync with conflict resolution.
  */
 
+import type { AssayPull } from "./benchlingClient";
 import type { FieldMapping, LIMSConfig, SyncResult } from "./types";
 
 export interface GenericLIMSAdapterOptions {
@@ -249,4 +250,41 @@ export class GenericLIMSAdapter {
     const remoteEntities = await this.request<Record<string, unknown>[]>(`${endpoint}${sinceParam}`);
     return remoteEntities.map((e) => this.mapFromLIMS(e, mappings));
   }
+
+  /**
+   * Pull assay results from a generic REST LIMS, normalized to AssayPull — the
+   * same contract as BenchlingClient.pullAssayResults (covers non-Benchling LIMS).
+   * Endpoint and optional field mappings are configurable.
+   */
+  async pullAssayResults(
+    params: { batchId?: string; since?: string },
+    options?: { endpoint?: string; mappings?: FieldMapping[] },
+  ): Promise<AssayPull[]> {
+    const endpoint = options?.endpoint ?? "/api/assay-results";
+    const query: string[] = [];
+    if (params.batchId) query.push(`batchId=${encodeURIComponent(params.batchId)}`);
+    if (params.since) query.push(`since=${encodeURIComponent(params.since)}`);
+    const path = query.length > 0 ? `${endpoint}?${query.join("&")}` : endpoint;
+    const rows = await this.request<Record<string, unknown>[]>(path);
+    const mappings = options?.mappings ?? [];
+    return rows.map((row) => toAssayPull(mappings.length > 0 ? this.mapFromLIMS(row, mappings) : row));
+  }
+}
+
+/** Normalize a generic LIMS row to the shared AssayPull shape. */
+function toAssayPull(o: Record<string, unknown>): AssayPull {
+  const rawTps = Array.isArray(o.timepoints) ? o.timepoints : [];
+  return {
+    externalId: String(o.externalId ?? o.entityId ?? o.id ?? ""),
+    assayType: String(o.assayType ?? "other"),
+    unit: String(o.unit ?? ""),
+    timepoints: rawTps.map((t) => {
+      const tp = t as { timeHours?: unknown; value?: unknown };
+      return { timeHours: Number(tp.timeHours), value: Number(tp.value) };
+    }),
+    ...(o.instrument ? { instrument: String(o.instrument) } : {}),
+    ...(o.operator ? { operator: String(o.operator) } : {}),
+    startedAt: String(o.startedAt ?? new Date(0).toISOString()),
+    ...(o.completedAt ? { completedAt: String(o.completedAt) } : {}),
+  };
 }

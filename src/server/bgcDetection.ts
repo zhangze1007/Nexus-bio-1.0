@@ -322,13 +322,21 @@ function scoreGene(gene: Gene): GeneScore {
 
 // ── Region Clustering ──────────────────────────────────────────────────
 
-function clusterGenesIntoRegions(
+export function clusterGenesIntoRegions(
   allGenes: Gene[],
   coreGenes: Gene[],
   geneScores: GeneScore[],
   upstreamBp: number,
   downstreamBp: number,
 ): Array<{ genes: Gene[]; coreGenes: Gene[]; start: number; end: number }> {
+  // Per-gene biosynthetic confidence (uses `geneScores`): a high-scoring core
+  // gene is a strong cluster signal and can bridge a wider intergenic gap when
+  // deciding whether adjacent core genes belong to the same region.
+  const scoreById = new Map<string, number>();
+  for (const gs of geneScores) scoreById.set(gs.gene.id, gs.score);
+  const gapReach = (gene: Gene): number =>
+    downstreamBp * (1 + Math.min(2, Math.max(0, scoreById.get(gene.id) ?? 0)));
+
   // Sort core genes by position
   const sortedCore = [...coreGenes].sort((a, b) => a.start - b.start);
 
@@ -344,7 +352,7 @@ function clusterGenesIntoRegions(
         start: coreGene.start - upstreamBp,
         end: coreGene.end + downstreamBp,
       };
-    } else if (coreGene.start <= currentRegion.end + downstreamBp) {
+    } else if (coreGene.start <= currentRegion.end + gapReach(coreGene)) {
       // Extend current region
       currentRegion.coreGenes.push(coreGene);
       currentRegion.end = Math.max(currentRegion.end, coreGene.end + downstreamBp);

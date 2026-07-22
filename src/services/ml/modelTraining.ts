@@ -286,7 +286,7 @@ export async function trainModel(trainingData: TrainingData, config: TrainingCon
   const importance = featureImportanceFromWeights(featureNames, weights);
 
   // ── Persist ──
-  const modelId = `lr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const modelId = `lr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; // rng-ok: model artifact id, not a compute path
   const dataHash = hashTrainingData(trainingData);
   const hyperparameters = { learningRate: lr, epochs, testSplit, convergenceThreshold };
 

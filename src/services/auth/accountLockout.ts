@@ -51,7 +51,7 @@ export async function ensureSchema(): Promise<void> {
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function generateId(): string {
-  return `lock_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  return `lock_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; // rng-ok: security token id, deliberately non-deterministic
 }
 
 function nowIso(): string {

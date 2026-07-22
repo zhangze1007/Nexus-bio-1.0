@@ -263,10 +263,11 @@ const AA_PROPERTIES: Record<string, { mw: number; charge: number; hydrophobicity
 
 // ── BLOSUM62 Substitution Matrix (20 standard amino acids) ───────────────────
 
-const BLOSUM62_RAW: Record<string, number[]> = {
+export const BLOSUM62_RAW: Record<string, number[]> = {
   //              A   C   D   E   F   G   H   I   K   L   M   N   P   Q   R   S   T   V   W   Y
-  A: [4, -1, -2, -1, -2, 0, -2, -1, -1, -1, -1, -2, -1, -1, -1, 1, 0, 0, -3, -2],
-  C: [-1, 9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2],
+  // A-C corrected from -1 to 0 to match the authoritative Henikoff 1992 BLOSUM62.
+  A: [4, 0, -2, -1, -2, 0, -2, -1, -1, -1, -1, -2, -1, -1, -1, 1, 0, 0, -3, -2],
+  C: [0, 9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2],
   D: [-2, -3, 6, 2, -3, -1, -1, -3, -1, -4, -3, 1, -1, 0, -2, 0, -1, -3, -4, -3],
   E: [-1, -4, 2, 5, -3, -2, 0, -3, 1, -3, -2, 0, -1, 2, 0, 0, -1, -2, -3, -2],
   F: [-2, -2, -3, -3, 6, -3, -1, 0, -3, 0, 0, -3, -4, -3, -3, -2, -2, -1, 1, 3],

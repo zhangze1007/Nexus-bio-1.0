@@ -727,6 +727,112 @@ export function selectHVGs(cells: CellRecord[], nTop: number = 2000): HVGResult 
 // ══════════════════════════════════════════════════════════════════════
 
 /**
+ * Newman–Girvan modularity Q of a partition, summed over the edges of the
+ * adjacency graph. Each undirected edge is enumerated once by walking `adjList`
+ * (its weight read from `edgeWeights`); an edge whose endpoints share a
+ * community contributes `w_ij − k_i·k_j / 2m`. Driving the sum from `adjList`
+ * (rather than the weight map alone) makes Q reflect the actual graph
+ * connectivity — dropping an adjacency drops that edge from the score.
+ *
+ * Exported for realness sensitivity testing.
+ */
+export function computeModularity(
+  partition: Int32Array,
+  adjList: number[][],
+  deg: Float64Array,
+  edgeWeights: Map<string, number>,
+): number {
+  let m2Local = 0;
+  edgeWeights.forEach((w) => {
+    m2Local += w;
+  });
+  m2Local = m2Local * 2 || 1;
+  let q = 0;
+  const seen = new Set<string>();
+  for (let i = 0; i < adjList.length; i++) {
+    for (const j of adjList[i]) {
+      const key = i < j ? `${i}_${j}` : `${j}_${i}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const w = edgeWeights.get(key);
+      if (w === undefined) continue;
+      const [iStr, jStr] = key.split("_");
+      const ii = parseInt(iStr),
+        jj = parseInt(jStr);
+      if (partition[ii] === partition[jj]) {
+        q += w - (deg[ii] * deg[jj]) / m2Local;
+      }
+    }
+  }
+  return q / (m2Local / 2) || 1;
+}
+
+/**
+ * Louvain Phase 2: aggregate communities into super-nodes and build the
+ * coarsened graph. Inter-community super-edges accumulate the *actual* weights
+ * of the underlying edges from `edgeWeights` (base-level weights are 1, so this
+ * reproduces the edge count at the first level; deeper levels carry the true
+ * accumulated super-edge weight instead of a bare count).
+ *
+ * Exported for realness sensitivity testing.
+ */
+export function louvainPhase2(
+  numNodes: number,
+  adjList: number[][],
+  edgeWeights: Map<string, number>,
+  nodeDeg: Float64Array,
+  partition: Int32Array,
+): {
+  numSuperNodes: number;
+  superAdj: number[][];
+  superWeights: Map<string, number>;
+  superDeg: Float64Array;
+  superToComm: number[];
+} {
+  // Find unique communities
+  const commSet = new Set<number>();
+  for (let i = 0; i < numNodes; i++) commSet.add(partition[i]);
+  const commList = Array.from(commSet).sort((a, b) => a - b);
+  const numSuperNodes = commList.length;
+  const commToSuper = new Map<number, number>();
+  commList.forEach((c, idx) => commToSuper.set(c, idx));
+
+  // Build coarsened graph: aggregate edges between communities
+  const superAdj: number[][] = Array.from({ length: numSuperNodes }, () => []);
+  const superEdgeWeights = new Map<string, number>();
+  const superDeg = new Float64Array(numSuperNodes);
+
+  // Accumulate degrees
+  for (let i = 0; i < numNodes; i++) {
+    const si = commToSuper.get(partition[i])!;
+    superDeg[si] += nodeDeg[i];
+  }
+
+  // Build coarsened adjacency and weights
+  const superAdjSet = Array.from({ length: numSuperNodes }, () => new Set<number>());
+  for (let i = 0; i < numNodes; i++) {
+    const si = commToSuper.get(partition[i])!;
+    for (const j of adjList[i]) {
+      const sj = commToSuper.get(partition[j])!;
+      if (si === sj) continue; // skip intra-community edges
+      superAdjSet[si].add(sj);
+      superAdjSet[sj].add(si);
+      const key = si < sj ? `${si}_${sj}` : `${sj}_${si}`;
+      // Aggregate the actual weight of the underlying edge, not a bare +1.
+      const origKey = i < j ? `${i}_${j}` : `${j}_${i}`;
+      const w = edgeWeights.get(origKey) ?? 1;
+      superEdgeWeights.set(key, (superEdgeWeights.get(key) ?? 0) + w);
+    }
+  }
+
+  for (let si = 0; si < numSuperNodes; si++) {
+    superAdj[si] = Array.from(superAdjSet[si]);
+  }
+
+  return { numSuperNodes, superAdj, superWeights: superEdgeWeights, superDeg, superToComm: commList };
+}
+
+/**
  * Cluster cells via KNN graph construction and Louvain community
  * detection.
  *
@@ -791,29 +897,7 @@ export function clusterCells(
   const degree = new Float64Array(n);
   for (let i = 0; i < n; i++) degree[i] = adj[i].length;
 
-  // Compute modularity Q for current partition
-  function computeModularity(
-    partition: Int32Array,
-    adjList: number[][],
-    deg: Float64Array,
-    edgeWeights: Map<string, number>,
-  ): number {
-    let m2Local = 0;
-    edgeWeights.forEach((w) => {
-      m2Local += w;
-    });
-    m2Local = m2Local * 2 || 1;
-    let q = 0;
-    edgeWeights.forEach((w, key) => {
-      const [iStr, jStr] = key.split("_");
-      const ii = parseInt(iStr),
-        jj = parseInt(jStr);
-      if (partition[ii] === partition[jj]) {
-        q += w - (deg[ii] * deg[jj]) / m2Local;
-      }
-    });
-    return q / (m2Local / 2) || 1;
-  }
+  // Modularity Q is computed by the module-scope computeModularity() above.
 
   // Phase 1: local node-moving on a given graph
   // Returns the partition (community assignment) and whether any node moved
@@ -867,60 +951,7 @@ export function clusterCells(
     return { partition, moved: anyMoved };
   }
 
-  // Phase 2: aggregate communities into super-nodes, build coarsened graph
-  // Returns coarsened adj list, edge weights, degrees, and mapping from super-node to community
-  function louvainPhase2(
-    numNodes: number,
-    adjList: number[][],
-    edgeWeights: Map<string, number>,
-    nodeDeg: Float64Array,
-    partition: Int32Array,
-  ): {
-    numSuperNodes: number;
-    superAdj: number[][];
-    superWeights: Map<string, number>;
-    superDeg: Float64Array;
-    superToComm: number[];
-  } {
-    // Find unique communities
-    const commSet = new Set<number>();
-    for (let i = 0; i < numNodes; i++) commSet.add(partition[i]);
-    const commList = Array.from(commSet).sort((a, b) => a - b);
-    const numSuperNodes = commList.length;
-    const commToSuper = new Map<number, number>();
-    commList.forEach((c, idx) => commToSuper.set(c, idx));
-
-    // Build coarsened graph: aggregate edges between communities
-    const superAdj: number[][] = Array.from({ length: numSuperNodes }, () => []);
-    const superEdgeWeights = new Map<string, number>();
-    const superDeg = new Float64Array(numSuperNodes);
-
-    // Accumulate degrees
-    for (let i = 0; i < numNodes; i++) {
-      const si = commToSuper.get(partition[i])!;
-      superDeg[si] += nodeDeg[i];
-    }
-
-    // Build coarsened adjacency and weights
-    const superAdjSet = Array.from({ length: numSuperNodes }, () => new Set<number>());
-    for (let i = 0; i < numNodes; i++) {
-      const si = commToSuper.get(partition[i])!;
-      for (const j of adjList[i]) {
-        const sj = commToSuper.get(partition[j])!;
-        if (si === sj) continue; // skip intra-community edges
-        superAdjSet[si].add(sj);
-        superAdjSet[sj].add(si);
-        const key = si < sj ? `${si}_${sj}` : `${sj}_${si}`;
-        superEdgeWeights.set(key, (superEdgeWeights.get(key) ?? 0) + 1);
-      }
-    }
-
-    for (let si = 0; si < numSuperNodes; si++) {
-      superAdj[si] = Array.from(superAdjSet[si]);
-    }
-
-    return { numSuperNodes, superAdj, superWeights: superEdgeWeights, superDeg, superToComm: commList };
-  }
+  // Phase 2 (community aggregation) is the module-scope louvainPhase2() above.
 
   // Multi-level Louvain: repeat Phase 1 + Phase 2 until modularity stops improving
   const MAX_LEVELS = 5;

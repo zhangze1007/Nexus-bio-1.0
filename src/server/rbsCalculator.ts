@@ -218,15 +218,25 @@ function extractStartCodon(cds: string): string {
  * Count the number of nucleotides between the 3' end of the SD match
  * and the first nucleotide of the start codon in the full mRNA.
  */
-function computeSpacing(rbsSeq: string, cdsSeq: string, sdEndPos: number): number {
-  // The spacing is measured from the end of the SD match to the start codon
-  // In the full mRNA: ...rbs...|cds...
-  // The start codon begins at position rbs.length in the full mRNA
-  // SD match ends at position sdEndPos in the rbsSequence
-  // So spacing = rbs.length - sdEndPos
+export function computeSpacing(rbsSeq: string, cdsSeq: string, sdEndPos: number): number {
+  // Spacing is measured from the 3' end of the SD match to the START CODON.
+  // If the CDS carries a 5' leader before its start codon, the effective spacing
+  // increases by that offset (uses `cdsSeq`, previously ignored). When the CDS
+  // begins with a start codon (offset 0) this reduces to rbs.length - sdEndPos.
   if (sdEndPos < 0) return OPTIMAL_SPACING; // no match → neutral spacing
-  const spacing = rbsSeq.length - sdEndPos;
+  const startOffset = findStartCodonOffset(cdsSeq);
+  const spacing = rbsSeq.length - sdEndPos + startOffset;
   return Math.max(0, spacing);
+}
+
+/** Offset of the first start codon (ATG/GTG/TTG) in a CDS; 0 if it begins at position 0 or none found. */
+function findStartCodonOffset(cds: string): number {
+  const s = cds.toUpperCase();
+  for (let i = 0; i + 3 <= s.length; i++) {
+    const codon = s.substring(i, i + 3);
+    if (codon === "ATG" || codon === "GTG" || codon === "TTG") return i;
+  }
+  return 0;
 }
 
 /* -------------------------------------------------------------------------- */

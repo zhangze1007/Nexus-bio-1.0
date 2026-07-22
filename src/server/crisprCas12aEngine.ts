@@ -416,13 +416,41 @@ function calculateSpCas9Efficiency(spacer: string, pam: string): number {
   return Math.max(0, Math.min(1, score));
 }
 
-function calculateGenericEfficiency(spacer: string, pam: string, variant: CasVariant): number {
-  let score = 0.5;
+const VARIANT_BASELINE: Record<CasVariant, number> = {
+  SpCas9: 0.55,
+  SaCas9: 0.5,
+  Cas12a: 0.5,
+  Cas12b: 0.45,
+  Cas12e: 0.4,
+  Cas13a: 0.35,
+  Cas13b: 0.35,
+};
+
+/** PAM-quality contribution by Cas family: Cas12* favor TTTV, Cas9/Cas13 favor NGG. */
+function pamQualityForVariant(pam: string, variant: CasVariant): number {
+  const p = pam.toUpperCase();
+  if (variant.startsWith("Cas12")) {
+    if (/^TTT[ACG]$/.test(p)) return 0.15; // canonical TTTV
+    if (/^TTT/.test(p)) return 0.05; // TTTT — weaker
+    if (/^TT/.test(p)) return 0.0;
+    return -0.1; // not T-rich — poor for Cas12
+  }
+  if (/GG$/.test(p)) return 0.12; // NGG optimal
+  if (/AG$/.test(p)) return 0.03; // NAG weak
+  return -0.08;
+}
+
+export function calculateGenericEfficiency(spacer: string, pam: string, variant: CasVariant): number {
+  // Per-variant baseline cutting efficiency (enzyme-dependent).
+  let score = VARIANT_BASELINE[variant] ?? 0.45;
 
   const gc = calculateGCContent(spacer);
   if (gc >= 0.4 && gc <= 0.6) score += 0.15;
 
   if (calculateSelfComplementarity(spacer) > 0.5) score -= 0.1;
+
+  // PAM matching + enzyme-family preference (uses `pam` and `variant`).
+  score += pamQualityForVariant(pam, variant);
 
   return Math.max(0, Math.min(1, score));
 }

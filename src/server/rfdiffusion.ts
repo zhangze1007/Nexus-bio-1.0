@@ -1,3 +1,5 @@
+import { makeRng } from "../utils/rng";
+
 /**
  * Backbone Sketch (heuristic) — De Novo Protein Design prototype
  *
@@ -162,7 +164,9 @@ function heuristicDesign(config: BackboneSketchConfig): BackboneSketchResult {
   const proteins: DesignedProtein[] = [];
 
   for (let i = 0; i < numSamples; i++) {
-    const sequence = generateHeuristicSequence(targetLength, mode, motif, temperature);
+    // Deterministic per-sample stream: same config → identical designs across runs.
+    const rng = makeRng(1234 + i * 7919);
+    const sequence = generateHeuristicSequence(targetLength, mode, motif, temperature, rng);
     const pdb = generateHeuristicPDB(sequence, i);
     const confidence = calculateHeuristicConfidence(sequence, mode);
     const residueConfidence = heuristicResidueConfidence(sequence, confidence);
@@ -209,11 +213,12 @@ function heuristicDesign(config: BackboneSketchConfig): BackboneSketchResult {
 
 // ── Heuristic Sequence Generation ──────────────────────────────────────
 
-function generateHeuristicSequence(
+export function generateHeuristicSequence(
   length: number,
   mode: DesignMode,
-  motif?: MotifSpec,
-  temperature: number = 1.0,
+  motif: MotifSpec | undefined,
+  temperature: number,
+  rng: () => number,
 ): string {
   // Amino acid frequencies in natural proteins (approximate)
   const aaFreq: Record<string, number> = {
@@ -242,6 +247,12 @@ function generateHeuristicSequence(
   const aminoAcids = Object.keys(aaFreq);
   const weights = Object.values(aaFreq);
 
+  // Temperature modulates the sampling distribution: w^(1/T). T=1 is a no-op;
+  // T<1 sharpens toward dominant residues, T>1 flattens toward uniform. This is
+  // where `temperature` enters the heuristic sampler (previously ignored).
+  const tSampling = Math.max(temperature, 1e-6);
+  const tw = (w: number[]): number[] => w.map((x) => x ** (1 / tSampling));
+
   // Adjust weights based on mode
   const adjustedWeights = [...weights];
 
@@ -256,7 +267,7 @@ function generateHeuristicSequence(
       if (motifIdx >= 0 && motifIdx < motifSeq.length) {
         seq += motifSeq[motifIdx];
       } else {
-        seq += weightedRandom(aminoAcids, adjustedWeights);
+        seq += weightedRandom(aminoAcids, tw(adjustedWeights), rng);
       }
     }
     return seq;
@@ -271,16 +282,16 @@ function generateHeuristicSequence(
       // Alternate between helix and sheet formers
       if (pos < 0.33) {
         // Helix-prone region
-        seq += weightedRandom(["A", "E", "L", "M", "K"], [0.2, 0.2, 0.2, 0.2, 0.2]);
+        seq += weightedRandom(["A", "E", "L", "M", "K"], tw([0.2, 0.2, 0.2, 0.2, 0.2]), rng);
       } else if (pos < 0.66) {
         // Sheet-prone region
-        seq += weightedRandom(["V", "I", "L", "F", "Y"], [0.25, 0.2, 0.2, 0.2, 0.15]);
+        seq += weightedRandom(["V", "I", "L", "F", "Y"], tw([0.25, 0.2, 0.2, 0.2, 0.15]), rng);
       } else {
         // Loop region
-        seq += weightedRandom(["G", "S", "D", "N", "P"], [0.25, 0.25, 0.2, 0.15, 0.15]);
+        seq += weightedRandom(["G", "S", "D", "N", "P"], tw([0.25, 0.25, 0.2, 0.15, 0.15]), rng);
       }
     } else {
-      seq += weightedRandom(aminoAcids, adjustedWeights);
+      seq += weightedRandom(aminoAcids, tw(adjustedWeights), rng);
     }
   }
 
@@ -403,9 +414,9 @@ function heuristicResidueConfidence(sequence: string, baseConfidence: number): n
 
 // ── Utility ────────────────────────────────────────────────────────────
 
-function weightedRandom(items: string[], weights: number[]): string {
+function weightedRandom(items: string[], weights: number[], rng: () => number): string {
   const total = weights.reduce((s, w) => s + w, 0);
-  let r = Math.random() * total;
+  let r = rng() * total;
   for (let i = 0; i < items.length; i++) {
     r -= weights[i];
     if (r <= 0) return items[i];

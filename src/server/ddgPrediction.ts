@@ -154,13 +154,48 @@ function getLJParams(atom: PDBAtom): { sigma: number; epsilon: number } {
   return { sigma: radius * 2, epsilon };
 }
 
+/** Mean (x, y, z) of a set of atoms. */
+function atomCentroid(atoms: PDBAtom[]): { x: number; y: number; z: number } {
+  const n = Math.max(atoms.length, 1);
+  return {
+    x: atoms.reduce((s, a) => s + a.x, 0) / n,
+    y: atoms.reduce((s, a) => s + a.y, 0) / n,
+    z: atoms.reduce((s, a) => s + a.z, 0) / n,
+  };
+}
+
+/** Count structure atoms within `radius` Å of a point — a local packing/density proxy. */
+function countAtomsWithin(structure: PDBStructure, c: { x: number; y: number; z: number }, radius: number): number {
+  const r2 = radius * radius;
+  let count = 0;
+  for (const a of structure.atoms) {
+    const dx = a.x - c.x;
+    const dy = a.y - c.y;
+    const dz = a.z - c.z;
+    if (dx * dx + dy * dy + dz * dz <= r2) count++;
+  }
+  return count;
+}
+
+/** Keep only ATOM/HETATM records for `chainId` (PDB chain column 22), plus all header/footer lines. */
+function filterPdbByChain(pdbText: string, chainId: string): string {
+  return pdbText
+    .split("\n")
+    .filter((line) => {
+      const rec = line.slice(0, 6).trim();
+      if (rec !== "ATOM" && rec !== "HETATM") return true;
+      return line[21] === chainId;
+    })
+    .join("\n");
+}
+
 // ─── Energy Components ───────────────────────────────────────────────────────
 
 /**
  * Compute van der Waals energy change using LJ 6-12 potential.
  * Evaluates interactions between mutation site atoms and neighbors within 5A.
  */
-function computeVdW(
+export function computeVdW(
   structure: PDBStructure,
   mutationAtoms: PDBAtom[],
   neighborAtoms: PDBAtom[],
@@ -196,10 +231,15 @@ function computeVdW(
   const volumeRatio = mutProps.volume / Math.max(wtProps.volume, 1);
   eMut = eWt * volumeRatio;
 
-  // The ddG contribution is the difference in packing energy
-  // Larger side chains in tight spaces cause steric clashes (positive ddG)
+  // The ddG contribution is the difference in packing energy. Larger side chains
+  // in tight spaces cause steric clashes (positive ddG). The clash is amplified by
+  // the LOCAL PACKING DENSITY around the site, read from the full structure's atom
+  // coordinates (buried/packed cores clash more) — this is where `structure` enters
+  // the van der Waals term. Bounded to stay a mild modulation.
   const volumeDelta = mutProps.volume - wtProps.volume;
-  const stericPenalty = volumeDelta > 0 ? 0.02 * volumeDelta * Math.abs(eWt) : 0;
+  const packingDensity = countAtomsWithin(structure, atomCentroid(mutationAtoms), 10);
+  const packingFactor = Math.min(1.5, 1 + packingDensity / 200);
+  const stericPenalty = volumeDelta > 0 ? 0.02 * volumeDelta * Math.abs(eWt) * packingFactor : 0;
 
   return eMut - eWt + stericPenalty;
 }
@@ -209,7 +249,7 @@ function computeVdW(
  * Estimates burial from B-factor and neighbor count, then penalizes charged
  * residues in hydrophobic environments.
  */
-function computeSolvation(
+export function computeSolvation(
   structure: PDBStructure,
   mutationAtoms: PDBAtom[],
   neighborAtoms: PDBAtom[],
@@ -235,8 +275,14 @@ function computeSolvation(
     }
   }
 
-  // Burial score: 0 = fully exposed, 1 = deeply buried
-  const burialScore = totalNeighbors > 0 ? Math.min(nonPolarNeighbors / Math.max(totalNeighbors, 1), 1.0) : 0;
+  // Burial score: 0 = fully exposed, 1 = deeply buried. The neighbor-composition
+  // ratio is refined by the LOCAL ATOM DENSITY from the full structure (a solvent-
+  // accessibility proxy: more surrounding atoms ⇒ less solvent exposure) — this is
+  // where `structure` enters the solvation term.
+  const packingDensity = countAtomsWithin(structure, atomCentroid(mutationAtoms), 8);
+  const accessibilityFactor = Math.max(0.7, Math.min(1.4, 0.7 + packingDensity / 100));
+  const rawBurial = totalNeighbors > 0 ? nonPolarNeighbors / Math.max(totalNeighbors, 1) : 0;
+  const burialScore = Math.min(rawBurial * accessibilityFactor, 1.0);
 
   // Lazaridis-Karplus style: charged residues in hydrophobic burial are penalized
   // Reference energy scale: ~1 kcal/mol per unit charge per unit burial
@@ -611,6 +657,10 @@ export function scanAllMutations(
   const results: Array<{ position: number; wt: string; mut: string; ddg: number; confidence: number }> = [];
   const heatmap: number[][] = [];
 
+  // Restrict the structure to the requested chain (if any) so ΔΔG is computed in
+  // that chain's atomic context rather than the whole assembly — uses `chainId`.
+  const scanPdb = chainId ? filterPdbByChain(pdbText, chainId) : pdbText;
+
   for (let i = 0; i < sequence.length; i++) {
     const wt = sequence[i].toUpperCase();
     if (!AA_PROPERTIES[wt]) {
@@ -627,7 +677,7 @@ export function scanAllMutations(
       }
 
       try {
-        const result = predictDDG(pdbText, { position: i + 1, wtResidue: wt, mutantResidue: mut });
+        const result = predictDDG(scanPdb, { position: i + 1, wtResidue: wt, mutantResidue: mut });
         row.push(result.ddG);
         results.push({ position: i + 1, wt, mut, ddg: result.ddG, confidence: result.confidence });
       } catch {

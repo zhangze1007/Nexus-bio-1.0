@@ -205,7 +205,7 @@ async function solveStep(
  *   - Biomass metabolites:  dX/dt = growthRate * X (exponential growth,
  *     where growthRate is the objective reaction flux)
  */
-function computeDerivative(
+export function computeDerivative(
   reactions: DynamicFBAReaction[],
   fluxes: Record<string, number>,
   metIds: string[],
@@ -220,14 +220,23 @@ function computeDerivative(
     if (info.biomassMetIds.has(metId)) {
       // Biomass: exponential growth  dX/dt = mu * X
       dS[metId] = growthRate * clampNonNeg(currentConc[metId] ?? 0);
-    } else if (info.exchangeMetIds.has(metId)) {
-      // External substrate/product: dS/dt = exchange flux
-      const exRxnId = info.exchangeMetIds.get(metId)!;
-      dS[metId] = fluxes[exRxnId] ?? 0;
-    } else {
-      // Internal metabolite: quasi-steady state (FBA assumption)
-      dS[metId] = 0;
+      continue;
     }
+
+    // Extracellular concentration change = negative of the cell's net boundary
+    // exchange for this metabolite, assembled from the exchange reactions'
+    // stoichiometry × their current FBA flux. Internal metabolites (no exchange
+    // reaction) stay at quasi-steady-state (dS/dt = 0). Because a standard
+    // exchange writes the metabolite with coefficient -1, -(-1)·v = v — i.e.
+    // this reproduces "dS/dt = exchange flux" while genuinely using `reactions`.
+    let d = 0;
+    for (const r of reactions) {
+      if (!r.isExchange) continue;
+      const coeff = r.stoichiometry[metId];
+      if (coeff === undefined) continue;
+      d += -coeff * (fluxes[r.id] ?? 0);
+    }
+    dS[metId] = d;
   }
 
   return dS;

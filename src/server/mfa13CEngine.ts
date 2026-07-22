@@ -461,7 +461,7 @@ function solveLinearSystem(A: number[][], b: number[]): number[] | null {
   return x;
 }
 
-function simulateNetworkMIDs(input: MFAInput, fluxes: number[]): Record<string, number[]> {
+export function simulateNetworkMIDs(input: MFAInput, fluxes: number[]): Record<string, number[]> {
   const mids: Record<string, number[]> = {};
 
   // Initialize label substrate
@@ -478,14 +478,31 @@ function simulateNetworkMIDs(input: MFAInput, fluxes: number[]): Record<string, 
     const prevMIDs: Record<string, number[]> = {};
     for (const [k, v] of Object.entries(mids)) prevMIDs[k] = [...v];
 
-    for (const reaction of input.reactions) {
+    // Flux-weighted MID mixing: when several reactions produce the same
+    // metabolite, its MID is the flux-weighted average of their contributions
+    // (the label is carried in proportion to reaction flux — uses `fluxes`).
+    const contributions = new Map<string, Array<{ flux: number; mid: number[] }>>();
+    input.reactions.forEach((reaction, rIdx) => {
+      const flux = Math.abs(fluxes[rIdx] ?? 0);
       for (const product of reaction.products) {
         const met = input.metabolites.find((m) => m.id === product.metabolite);
-        if (met) {
-          const newMID = simulateReactionMID(reaction, mids, product.metabolite, met.nCarbon);
-          mids[product.metabolite] = newMID;
-        }
+        if (!met) continue;
+        const mid = simulateReactionMID(reaction, mids, product.metabolite, met.nCarbon);
+        const arr = contributions.get(product.metabolite) ?? [];
+        arr.push({ flux, mid });
+        contributions.set(product.metabolite, arr);
       }
+    });
+    for (const [metId, contribs] of contributions) {
+      const total = contribs.reduce((s, c) => s + c.flux, 0);
+      const len = contribs[0].mid.length;
+      const mixed = new Array(len).fill(0);
+      if (total > 0) {
+        for (const c of contribs) for (let i = 0; i < len; i++) mixed[i] += (c.flux / total) * c.mid[i];
+      } else {
+        for (const c of contribs) for (let i = 0; i < len; i++) mixed[i] += c.mid[i] / contribs.length;
+      }
+      mids[metId] = mixed;
     }
 
     // Check convergence: max change < 1e-6

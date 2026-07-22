@@ -885,10 +885,42 @@ function identifyBottlenecks(features: ExpressionFeatures): BottleneckAnalysis[]
   return bottlenecks;
 }
 
+/** Map each rate-limiting expression stage to the construct part that relieves it. */
+const BOTTLENECK_INTERVENTION: Record<
+  BottleneckAnalysis["stage"],
+  { component: OptimizationSuggestion["component"]; action: string }
+> = {
+  transcription: {
+    component: "promoter",
+    action: "Boost transcription: stronger promoter or higher plasmid copy number",
+  },
+  translation_initiation: {
+    component: "rbs",
+    action: "Improve translation initiation: optimize RBS strength and SD–aSD pairing",
+  },
+  translation_elongation: {
+    component: "cds",
+    action: "Relieve elongation stalling: recode rare codons to raise tAI",
+  },
+  folding: {
+    component: "cds",
+    action: "Reduce folding burden: co-express chaperones or slow translation at domain boundaries",
+  },
+  degradation: {
+    component: "terminator",
+    action: "Stabilize the transcript: stronger terminator / 5'-UTR structure against exonucleolytic decay",
+  },
+};
+
 /**
  * Generate optimization suggestions.
+ *
+ * Combines feature-threshold heuristics with interventions driven by the
+ * identified `bottlenecks`: each rate-limiting stage yields a targeted fix whose
+ * expected improvement scales with the bottleneck severity, so the suggestion
+ * set genuinely reflects the bottleneck analysis rather than the features alone.
  */
-function generateSuggestions(
+export function generateSuggestions(
   features: ExpressionFeatures,
   bottlenecks: BottleneckAnalysis[],
 ): OptimizationSuggestion[] {
@@ -950,6 +982,22 @@ function generateSuggestions(
       targetValue: "efficiency > 0.9",
       expectedImprovement: 0.1,
       confidence: 0.7,
+    });
+  }
+
+  // Bottleneck-driven suggestions: one targeted intervention per identified
+  // rate-limiting stage, ordered and weighted by severity.
+  for (const bn of bottlenecks) {
+    const mapped = BOTTLENECK_INTERVENTION[bn.stage];
+    if (!mapped) continue;
+    suggestions.push({
+      component: mapped.component,
+      action: mapped.action,
+      currentValue: `${bn.stage} severity=${bn.severity.toFixed(2)}`,
+      targetValue: "severity < 0.3",
+      // Higher-severity bottlenecks promise larger gains when relieved.
+      expectedImprovement: Math.round(bn.severity * 0.4 * 100) / 100,
+      confidence: bn.confidence,
     });
   }
 

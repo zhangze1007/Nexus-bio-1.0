@@ -803,8 +803,39 @@ function detectBiomassReaction(reactions: DynamicReaction[]): string | null {
   return null;
 }
 
-function findExchangeReaction(reactions: DynamicReaction[], metaboliteSuffix: string): DynamicReaction | undefined {
-  return reactions.find((r) => r.id.startsWith("EX_") && r.id.includes(metaboliteSuffix));
+// External metabolite ids whose exchange uptake bound the FBASim UI controls.
+// Identifying the substrate by its metabolite id — NOT by an "EX_"-name
+// substring — prevents mis-clamping EX_co2_e (name contains "o2") or
+// EX_glu__L_e (name contains "glu"); both are present in the bundled
+// e_coli_core model, so the old `.includes("o2")` / `.includes("glu")` test
+// forced their bounds open incorrectly.
+// Exported so the strain-design modules (fbaFSEOF / fbaOptKnock / fbaRobustKnock)
+// reuse the SAME correct identification instead of re-deriving the buggy
+// name-substring test.
+export const GLUCOSE_EXCHANGE_METS = new Set(["glc__D_e", "glc_e", "glc_D_e"]);
+export const OXYGEN_EXCHANGE_METS = new Set(["o2_e"]);
+
+/**
+ * The single external metabolite id of a standard exchange reaction (id prefixed
+ * "EX_", exactly one metabolite), or null if the reaction is not such an exchange.
+ * Typed on the minimal `{ id, stoichiometry }` shape so every FBA module's
+ * reaction type can pass its reactions in.
+ */
+export function exchangeMetaboliteId(r: { id: string; stoichiometry: Record<string, number> }): string | null {
+  if (!r.id.startsWith("EX_")) return null;
+  const metIds = Object.keys(r.stoichiometry);
+  return metIds.length === 1 ? metIds[0] : null;
+}
+
+/** Find the exchange reaction whose external metabolite id is in `mets`. */
+export function findExchangeByMetabolite<R extends { id: string; stoichiometry: Record<string, number> }>(
+  reactions: R[],
+  mets: Set<string>,
+): R | undefined {
+  return reactions.find((r) => {
+    const m = exchangeMetaboliteId(r);
+    return m !== null && mets.has(m);
+  });
 }
 
 function findMetaboliteConstraint(metId: string): string {
@@ -832,26 +863,29 @@ function buildMetaboliteReactionIndex(
   return index;
 }
 
-export async function solveDynamicFBA(
+/**
+ * Build the LPModel for a dynamic/BiGG FBA solve (S·v = 0 mass balance).
+ *
+ * The user-controlled glucose / oxygen uptake bounds are applied ONLY to the
+ * true glucose and oxygen uptake exchanges, matched by their external metabolite
+ * id (`GLUCOSE_EXCHANGE_METS` / `OXYGEN_EXCHANGE_METS`). Every other exchange —
+ * including `EX_co2_e` and `EX_glu__L_e`, whose ids contain the substrings "o2"
+ * and "glu" — keeps its native model bounds. Extracted (and exported) so the
+ * bound assignment is unit-testable without a solver round-trip.
+ */
+export function buildDynamicFBAModel(
   reactions: DynamicReaction[],
   objectiveId: string,
   options: DynamicFBAOptions = {},
-): Promise<FBAOutput> {
+): LPModel {
   const knockoutSet = new Set(options.knockouts ?? []);
   const glucoseUptake = options.glucoseUptake ?? 10;
   const oxygenUptake = options.oxygenUptake ?? 12;
 
-  // Auto-detect biomass if objectiveId not found in reactions
-  let effectiveObjectiveId = objectiveId;
-  if (!reactions.find((r) => r.id === objectiveId)) {
-    const detected = detectBiomassReaction(reactions);
-    if (detected) effectiveObjectiveId = detected;
-  }
-
   // Build optimized metabolite → reaction index (O(total_stoich_entries) instead of O(mets * rxns))
   const metRxnIndex = buildMetaboliteReactionIndex(reactions);
 
-  const objective = [{ name: effectiveObjectiveId, coef: 1 }];
+  const objective = [{ name: objectiveId, coef: 1 }];
 
   const constraints = Array.from(metRxnIndex.entries()).map(([metId, rxns]) => ({
     name: `${metId}_balance`,
@@ -862,11 +896,10 @@ export async function solveDynamicFBA(
 
   const bounds = reactions.map((r) => {
     let lb = r.lb;
-    if (r.id.startsWith("EX_")) {
-      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
-      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
-      if (isGlucose) lb = -Math.abs(glucoseUptake);
-      if (isOxygen) lb = -Math.abs(oxygenUptake);
+    const exMet = exchangeMetaboliteId(r);
+    if (exMet !== null) {
+      if (GLUCOSE_EXCHANGE_METS.has(exMet)) lb = -Math.abs(glucoseUptake);
+      else if (OXYGEN_EXCHANGE_METS.has(exMet)) lb = -Math.abs(oxygenUptake);
     }
     return {
       name: r.id,
@@ -875,13 +908,35 @@ export async function solveDynamicFBA(
     };
   });
 
-  const model: LPModel = {
+  return {
     name: "fba_dynamic",
     sense: "maximize",
     objective,
     constraints,
     bounds,
   };
+}
+
+export async function solveDynamicFBA(
+  reactions: DynamicReaction[],
+  objectiveId: string,
+  options: DynamicFBAOptions = {},
+): Promise<FBAOutput> {
+  const glucoseUptake = options.glucoseUptake ?? 10;
+  const oxygenUptake = options.oxygenUptake ?? 12;
+
+  // Auto-detect biomass if objectiveId not found in reactions
+  let effectiveObjectiveId = objectiveId;
+  if (!reactions.find((r) => r.id === objectiveId)) {
+    const detected = detectBiomassReaction(reactions);
+    if (detected) effectiveObjectiveId = detected;
+  }
+
+  const model = buildDynamicFBAModel(reactions, effectiveObjectiveId, {
+    glucoseUptake,
+    oxygenUptake,
+    knockouts: options.knockouts,
+  });
 
   const result = await solveLP(model);
 
@@ -890,8 +945,8 @@ export async function solveDynamicFBA(
     fluxes[r.id] = round(result.primals[r.id] ?? 0);
   }
 
-  const glcRxn = findExchangeReaction(reactions, "glc");
-  const o2Rxn = findExchangeReaction(reactions, "o2");
+  const glcRxn = findExchangeByMetabolite(reactions, GLUCOSE_EXCHANGE_METS);
+  const o2Rxn = findExchangeByMetabolite(reactions, OXYGEN_EXCHANGE_METS);
   const glcConstraint = glcRxn ? findMetaboliteConstraint(Object.keys(glcRxn.stoichiometry)[0]) : "";
   const o2Constraint = o2Rxn ? findMetaboliteConstraint(Object.keys(o2Rxn.stoichiometry)[0]) : "";
 

@@ -50,6 +50,8 @@ export interface gRNADesignResult {
   candidatesAfterFilter: number;
   casProtein: CasProtein;
   scoringMethod: string;
+  /** Target gene the design is scoped to (set when a geneName is supplied). */
+  targetGene?: string;
 }
 
 // ── PAM Definitions ────────────────────────────────────────────────────────
@@ -346,14 +348,21 @@ export function designgRNAs(
     };
   }
 
+  // When a target gene is named, scope the search to its 5' coding window (early
+  // knockout / null-allele targeting): the candidate set is drawn from the
+  // geneName-corresponding sequence window (uses `geneName`).
+  const scanSeq = geneName
+    ? seq.substring(0, Math.max(pam.spacerLength + pam.pamSequence.length + 1, Math.ceil(seq.length * 0.6)))
+    : seq;
+
   const candidates: gRNACandidate[] = [];
-  const rcSeq = reverseComplement(seq);
+  const rcSeq = reverseComplement(scanSeq);
 
   // Scan forward strand
-  for (let i = pam.spacerLength; i < seq.length; i++) {
-    const pamSite = seq.substring(i, i + pam.pamSequence.length);
+  for (let i = pam.spacerLength; i < scanSeq.length; i++) {
+    const pamSite = scanSeq.substring(i, i + pam.pamSequence.length);
     if (matchesPAM(pamSite, pam.pamSequence)) {
-      const spacer = seq.substring(i - pam.spacerLength, i);
+      const spacer = scanSeq.substring(i - pam.spacerLength, i);
       candidates.push(evaluateCandidate(spacer, pamSite, i - pam.spacerLength, "+", pam));
     }
   }
@@ -364,7 +373,7 @@ export function designgRNAs(
     if (matchesPAM(pamSite, pam.pamSequence)) {
       const spacer = reverseComplement(rcSeq.substring(i, i + pam.spacerLength));
       candidates.push(
-        evaluateCandidate(spacer, reverseComplement(pamSite), seq.length - i - pam.pamSequence.length, "-", pam),
+        evaluateCandidate(spacer, reverseComplement(pamSite), scanSeq.length - i - pam.pamSequence.length, "-", pam),
       );
     }
   }
@@ -382,10 +391,28 @@ export function designgRNAs(
     candidatesAfterFilter: filtered.length,
     casProtein,
     scoringMethod: "Rule Set 2 (Doench 2016, 31 features) + CFD",
+    ...(geneName ? { targetGene: geneName } : {}),
   };
 }
 
-function evaluateCandidate(
+const IUPAC_PAM: Record<string, string> = {
+  A: "A", C: "C", G: "G", T: "T", R: "AG", Y: "CT", S: "GC", W: "AT",
+  K: "GT", M: "AC", B: "CGT", D: "AGT", H: "ACT", V: "ACG", N: "ACGT",
+};
+
+/** Fraction of PAM positions satisfying the Cas protein's IUPAC PAM consensus (0..1). */
+function pamMatchQuality(pam: string, pattern: string): number {
+  if (pattern.length === 0) return 0;
+  const p = pam.toUpperCase();
+  let matches = 0;
+  for (let i = 0; i < pattern.length; i++) {
+    const allowed = IUPAC_PAM[pattern[i].toUpperCase()] ?? "ACGT";
+    if (i < p.length && allowed.includes(p[i])) matches++;
+  }
+  return matches / pattern.length;
+}
+
+export function evaluateCandidate(
   spacer: string,
   pam: string,
   position: number,
@@ -395,8 +422,12 @@ function evaluateCandidate(
   const gc = (spacer.match(/[GC]/g) ?? []).length / spacer.length;
   const { score: onTargetScore, features } = computeOnTargetScore(spacer);
   const offTargetScore = computeOffTargetScore(spacer);
+  // PAM-match quality against the Cas protein's IUPAC PAM rule (uses `pamDef`): a
+  // PAM that better fits the consensus supports more efficient cutting.
+  const pamQuality = pamMatchQuality(pam, pamDef.pamSequence);
   const compositeScore =
-    Math.round((0.5 * onTargetScore + 0.3 * offTargetScore + 0.2 * gcContentScore(gc)) * 1000) / 1000;
+    Math.round((0.45 * onTargetScore + 0.25 * offTargetScore + 0.15 * gcContentScore(gc) + 0.15 * pamQuality) * 1000) /
+    1000;
 
   const warnings: string[] = [];
   if (gc < 0.3) warnings.push("Low GC content");

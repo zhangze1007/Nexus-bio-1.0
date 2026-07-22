@@ -1,3 +1,5 @@
+import { makeRng } from "../utils/rng";
+
 /**
  * Digital Cell Engine — Whole-Cell Computational Model
  *
@@ -4984,6 +4986,8 @@ const MINIMAL_GENE_SET: GeneState[] = [
 export function simulateDigitalCell(config: SimulationConfig, initialState?: Partial<CellState>): SimulationResult {
   const dt = config.dt;
   const steps = Math.floor(config.duration / dt);
+  // Seeded stochastic stream → identical trajectory for a fixed seed (default stable).
+  const rng = makeRng((config as { seed?: number }).seed ?? 424242);
 
   // Initialize cell state
   const genes = initialState?.genes ?? MINIMAL_GENE_SET;
@@ -5034,7 +5038,7 @@ export function simulateDigitalCell(config: SimulationConfig, initialState?: Par
       if (config.stochasticGeneExpression) {
         // Poisson noise
         const lambda = txnRate * dt * 60;
-        txnRate = poissonSample(lambda) / (dt * 60);
+        txnRate = poissonSample(lambda, rng) / (dt * 60);
       }
 
       // Degradation
@@ -5185,14 +5189,14 @@ export function simulateDigitalCell(config: SimulationConfig, initialState?: Par
 /**
  * Poisson random variable sampling (Knuth's algorithm).
  */
-function poissonSample(lambda: number): number {
+function poissonSample(lambda: number, rng: () => number): number {
   if (lambda < 0) return 0;
   const L = Math.exp(-lambda);
   let k = 0;
   let p = 1;
   do {
     k++;
-    p *= Math.random();
+    p *= rng();
   } while (p > L);
   return k - 1;
 }

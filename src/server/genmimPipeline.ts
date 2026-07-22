@@ -60,15 +60,32 @@ export interface MinimizationResult {
 /**
  * Identify essential genes and propose knockdown schedules.
  */
-function planKnockdowns(spec: MinimizationSpec): {
+/**
+ * Reactions whose disruption defines essentiality FOR THIS SPEC: biomass always,
+ * plus the reactions the chosen objective depends on — ATP maintenance/synthase
+ * for "atp", product-forming exchange/demand/sink for "product".
+ */
+function objectiveTargetReactions(objective: FBAObjective, reactionIds: string[]): Set<string> {
+  const targets = new Set<string>(["BIOMASS"]);
+  if (objective === "atp") {
+    for (const id of reactionIds) if (/ATPM|ATPS|^ATP/i.test(id)) targets.add(id);
+  } else if (objective === "product") {
+    for (const id of reactionIds) if (/^EX_|^DM_|^SK_|SINK/i.test(id)) targets.add(id);
+  }
+  return targets;
+}
+
+export function planKnockdowns(spec: MinimizationSpec): {
   essentialGenes: string[];
   candidateGenes: string[];
   plans: KnockdownPlan[];
   solverCalls: Array<{ solver: string; description: string }>;
 } {
   const solverCalls: Array<{ solver: string; description: string }> = [];
+  const rules = gprRules();
+  const reactionIds = Object.keys(rules);
 
-  // Get all genes from GPR rules
+  // Collect all genes from GPR rules.
   const allGenes = new Set<string>();
   for (const rxn of IJO1366_REACTIONS) {
     if (rxn.gpr) {
@@ -77,39 +94,55 @@ function planKnockdowns(spec: MinimizationSpec): {
     }
   }
 
-  // Test essentiality: knock out each gene individually
-  solverCalls.push({ solver: "fbaGPR::essentiality", description: `Testing ${allGenes.size} genes for essentiality` });
-  const essentialGenes: string[] = [];
-  const nonEssentialGenes: string[] = [];
+  // Essentiality is driven by the SPEC's objective (target product): a gene is
+  // essential if knocking it out removes a reaction the objective depends on
+  // (biomass, or ATP/product reactions per spec.objective).
+  const targetReactions = objectiveTargetReactions(spec.objective, reactionIds);
+  solverCalls.push({
+    solver: "fbaGPR::essentiality",
+    description: `Testing ${allGenes.size} genes vs objective=${spec.objective}, species=${spec.species}, O2=${spec.oxygenUptake}, glc=${spec.glucoseUptake}`,
+  });
 
+  const essentialGenes: string[] = [];
+  const scoredCandidates: Array<{ gene: string; impact: number }> = [];
   for (const gene of allGenes) {
-    const knockouts = getKnockoutReactions([gene], gprRules());
-    // If knocking out this gene kills growth, it's essential
-    if (knockouts.length > 0) {
-      // Quick check: would this knock out biomass?
-      const biomassKnockouts = knockouts.filter((k) => k === "BIOMASS");
-      if (biomassKnockouts.length > 0) {
-        essentialGenes.push(gene);
-      } else {
-        nonEssentialGenes.push(gene);
-      }
+    const knockouts = getKnockoutReactions([gene], rules);
+    if (knockouts.length === 0) continue; // gene not tied to any modeled reaction
+    if (knockouts.some((k) => targetReactions.has(k))) {
+      essentialGenes.push(gene);
+    } else {
+      // Non-essential: broader knockout impact ⇒ riskier ⇒ lower removal priority.
+      scoredCandidates.push({ gene, impact: knockouts.length });
     }
   }
+  // Safest-to-remove first: fewest disrupted reactions, deterministic tie-break.
+  scoredCandidates.sort((a, b) => a.impact - b.impact || a.gene.localeCompare(b.gene));
+  const candidateGenes = scoredCandidates.map((c) => c.gene);
 
-  // Generate knockdown plans of increasing aggressiveness
+  // Scheduling is driven by the SPEC's constraints: targetGenomeReduction sets how
+  // many genes to remove; a stricter minGrowthFraction keeps more genes (a brake)
+  // and switches full knockout → partial CRISPRi knockdown near the growth limit.
+  const totalGenes = allGenes.size;
+  const targetCount = Math.min(candidateGenes.length, Math.round(spec.targetGenomeReduction * totalGenes));
+  const growthBrake = Math.max(0, Math.min(1, 1 - spec.minGrowthFraction));
+  const maxSafeCount = Math.max(1, Math.round(targetCount * (0.4 + 0.6 * growthBrake)));
+  const knockdownLevel = spec.minGrowthFraction > 0.8 ? 0.5 : 0;
+
   const plans: KnockdownPlan[] = [];
-  const step = Math.max(1, Math.floor(nonEssentialGenes.length / 10));
-
-  for (let i = step; i <= nonEssentialGenes.length; i += step) {
-    const genes = nonEssentialGenes.slice(0, i);
+  const nSteps = 5;
+  for (let s = 1; s <= nSteps; s++) {
+    const count = Math.min(candidateGenes.length, Math.max(1, Math.round((maxSafeCount * s) / nSteps)));
+    const genes = candidateGenes.slice(0, count);
+    if (genes.length === 0) break;
     plans.push({
       genes,
-      knockdownLevel: 0, // full knockout
-      description: `Knock out ${genes.length} non-essential genes`,
+      knockdownLevel,
+      description: `${knockdownLevel === 0 ? "Knock out" : "Knock down"} ${genes.length}/${totalGenes} genes toward ${(spec.targetGenomeReduction * 100).toFixed(0)}% reduction (≥${(spec.minGrowthFraction * 100).toFixed(0)}% growth)`,
     });
   }
+  const uniquePlans = plans.filter((p, i) => i === 0 || p.genes.length !== plans[i - 1].genes.length);
 
-  return { essentialGenes, candidateGenes: nonEssentialGenes, plans, solverCalls };
+  return { essentialGenes, candidateGenes, plans: uniquePlans, solverCalls };
 }
 
 function gprRules(): Record<string, string> {

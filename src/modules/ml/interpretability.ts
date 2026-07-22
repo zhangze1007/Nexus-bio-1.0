@@ -14,6 +14,7 @@
  * Reference: Fisher et al. (2019) arXiv:1801.01489 (Permutation importance)
  */
 
+import { makeRng } from "../../utils/rng";
 import type { MLModel } from "./models";
 import type { FeatureImportance } from "./types";
 
@@ -158,12 +159,14 @@ export function permutationImportance(
   options?: {
     nRepeats?: number;
     metric?: (yTrue: number[], yPred: number[]) => number;
+    seed?: number;
   },
 ): FeatureImportance[] {
   if (featureNames.length === 0 || X.length === 0 || y.length === 0) return [];
 
   const nRepeats = options?.nRepeats ?? 5;
   const metric = options?.metric ?? defaultMetric;
+  const rng = makeRng(options?.seed ?? 42);
 
   const nFeatures = featureNames.length;
   const nSamples = X.length;
@@ -185,7 +188,7 @@ export function permutationImportance(
       // Fisher-Yates shuffle on column f
       const column = XShuffled.map((row) => row[f]);
       for (let i = nSamples - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(rng() * (i + 1));
         [column[i], column[j]] = [column[j], column[i]];
       }
       for (let i = 0; i < nSamples; i++) {

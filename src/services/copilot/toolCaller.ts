@@ -53,7 +53,7 @@ const TOOL_ROUTES: Record<string, string> = {
 // ── Executor ──────────────────────────────────────────────────────────
 
 function generateId(): string {
-  return `tc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+  return `tc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`; // rng-ok: tool-call id, not a compute path
 }
 
 /**

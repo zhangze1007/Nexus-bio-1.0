@@ -12,6 +12,7 @@
  * Reference: Kawashima et al. (2008) Nucleic Acids Res 36:D202 (AAindex)
  */
 
+import { makeRng } from "../../utils/rng";
 import type { Dataset, TrainingSample } from "./types";
 
 // ── Amino Acid Properties ──────────────────────────────────────────────────
@@ -203,6 +204,7 @@ export function buildDataset(
 export function trainTestSplit(
   dataset: Dataset,
   testFraction: number = 0.2,
+  seed: number = 42,
 ): {
   train: Dataset;
   test: Dataset;
@@ -210,10 +212,11 @@ export function trainTestSplit(
   const n = dataset.samples.length;
   const nTest = Math.max(1, Math.floor(n * testFraction));
 
-  // Shuffle indices
+  // Shuffle indices (seeded → deterministic split for a fixed seed)
+  const rng = makeRng(seed);
   const indices = Array.from({ length: n }, (_, i) => i);
   for (let i = n - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [indices[i], indices[j]] = [indices[j], indices[i]];
   }
 

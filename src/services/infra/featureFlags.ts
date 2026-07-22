@@ -67,7 +67,7 @@ function nowISO(): string {
 }
 
 function randomId(): string {
-  return `ff_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  return `ff_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; // rng-ok: feature-flag id, not a compute path
 }
 
 /**
@@ -77,7 +77,7 @@ function randomId(): string {
  */
 function hashRollout(flagName: string, userId?: string): number {
   if (!userId) {
-    return Math.random() * 100;
+    return Math.random() * 100; // rng-ok: rollout bucketing, not a scientific compute path
   }
   const hash = createHash("sha256").update(`${flagName}:${userId}`).digest("hex");
   // Take first 8 hex chars → 32-bit int → mod 100

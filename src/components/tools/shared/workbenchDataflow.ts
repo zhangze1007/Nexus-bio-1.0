@@ -18,7 +18,9 @@ import type {
 import type { DBTLPhase } from "../../../types";
 import type { ProvenanceEntry } from "../../../types/assumptions";
 import type { DBTLLearnedFeedback, DBTLLearnedMetrics, DBTLMetricSource } from "../../../types/dbtlFeedback";
-import type { LearnedDeltaPack } from "../../../types/learnedDelta";
+import { seedField } from "../../../config/seedFieldRegistry";
+import { updateBelief } from "../../../services/learning/bayesianUpdate";
+import type { LearnedDeltaPack, NumericDelta } from "../../../types/learnedDelta";
 
 type AnalyzeArtifactLike = {
   id?: string;
@@ -44,6 +46,8 @@ interface FBASeed {
   objective: "biomass" | "atp" | "product";
   glucoseUptake: number;
   oxygenUptake: number;
+  /** Learnable flux bound for glucose uptake (applied from approved changedBounds). */
+  glucoseUptakeBounds: [number, number];
   knockouts: string[];
 }
 
@@ -75,6 +79,8 @@ interface DynConSeed {
     kd: number;
     n: number;
   };
+  /** Learnable objective weight (applied from approved changedWeights). */
+  weights: { tracking: number };
 }
 
 interface CellFreeSeed {
@@ -150,17 +156,63 @@ function getApprovedDeltaPacksForTool(
   );
 }
 
-function changedPriorAfter(packs: LearnedDeltaPack[], key: string): number | undefined {
+function changedPriorDelta(
+  packs: LearnedDeltaPack[],
+  key: string,
+): { delta: NumericDelta; pack: LearnedDeltaPack } | undefined {
   for (const pack of packs) {
     const delta = pack.changedPriors[key];
-    if (delta && Number.isFinite(delta.after)) return delta.after;
+    if (delta && Number.isFinite(delta.after)) return { delta, pack };
   }
   return undefined;
 }
 
+const DEFAULT_PRIOR_VARIANCE = 1;
+const OBS_VARIANCE_FLOOR = 1e-6;
+
 function applyChangedPrior(current: number, packs: LearnedDeltaPack[], key: string, min: number, max: number): number {
-  const after = changedPriorAfter(packs, key);
-  return after === undefined ? current : clampNumber(after, min, max);
+  const found = changedPriorDelta(packs, key);
+  if (!found) return current;
+  const { delta, pack } = found;
+  // Relative-scale deltas (P0-2 falsification proposals) are a MULTIPLICATIVE
+  // correction folded into a Bayesian posterior: prior = current seed (variance
+  // from the registry), observation = current * scale (variance from the pack's
+  // falsification confidence). Legacy absolute deltas keep single-point replace.
+  if (delta.unit === "relative-scale") {
+    const priorVariance = seedField(key)?.priorVariance ?? DEFAULT_PRIOR_VARIANCE;
+    const target = current * delta.after;
+    const confidence = clampNumber(pack.learnedMetrics.confidenceScore ?? 0.5, 0, 0.95);
+    const obsVariance = priorVariance * (1 - confidence) + OBS_VARIANCE_FLOOR;
+    const posterior = updateBelief({ mean: current, variance: priorVariance }, { value: target, variance: obsVariance });
+    return clampNumber(posterior.mean, min, max);
+  }
+  return clampNumber(delta.after, min, max);
+}
+
+/** Apply the latest approved `changedBounds` tuple for `key` (else keep current). */
+export function applyChangedBound(current: [number, number], packs: LearnedDeltaPack[], key: string): [number, number] {
+  for (const pack of packs) {
+    const delta = pack.changedBounds[key];
+    if (delta && Number.isFinite(delta.after[0]) && Number.isFinite(delta.after[1]) && delta.after[0] <= delta.after[1]) {
+      return [delta.after[0], delta.after[1]];
+    }
+  }
+  return current;
+}
+
+/** Apply the latest approved `changedWeights` value for `key`, clamped (else keep current). */
+export function applyChangedWeight(
+  current: number,
+  packs: LearnedDeltaPack[],
+  key: string,
+  min: number,
+  max: number,
+): number {
+  for (const pack of packs) {
+    const delta = pack.changedWeights[key];
+    if (delta && Number.isFinite(delta.after)) return clampNumber(delta.after, min, max);
+  }
+  return current;
 }
 
 function getTargetProduct(project?: ProjectLike | null, artifact?: AnalyzeArtifactLike | null) {
@@ -280,6 +332,11 @@ export function buildFBASeed(
   const objectiveSeed = objective;
   glucoseUptake = applyChangedPrior(glucoseUptake, approvedDeltas, "fbasim.glucoseUptake", 4, 20);
   oxygenUptake = applyChangedPrior(oxygenUptake, approvedDeltas, "fbasim.oxygenUptake", 2, 20);
+  const glucoseUptakeBounds = applyChangedBound(
+    [0, clampNumber(glucoseUptake * 2, 0, 25)],
+    approvedDeltas,
+    "fbasim.fluxBounds.glucose",
+  );
 
   const allowedKnockouts = new Set(
     REACTION_DEFS.map((reaction) => reaction.id).filter(
@@ -294,6 +351,7 @@ export function buildFBASeed(
     objective: objectiveSeed,
     glucoseUptake: round(glucoseUptake, 1),
     oxygenUptake: round(oxygenUptake, 1),
+    glucoseUptakeBounds: [round(glucoseUptakeBounds[0], 1), round(glucoseUptakeBounds[1], 1)],
     knockouts: unique(knockoutHints).filter((reactionId) => allowedKnockouts.has(reactionId)),
   };
 }
@@ -448,6 +506,7 @@ export function buildDynConSeed(
   vmax = applyChangedPrior(vmax, approvedDeltas, "dyncon.hill.vmax", 0.2, 2);
   hillKd = applyChangedPrior(hillKd, approvedDeltas, "dyncon.hill.kd", 5, 200);
   hillN = applyChangedPrior(hillN, approvedDeltas, "dyncon.hill.n", 1, 4);
+  const trackingWeight = applyChangedWeight(1, approvedDeltas, "dyncon.weights.tracking", 0, 5);
 
   return {
     controller: {
@@ -461,6 +520,7 @@ export function buildDynConSeed(
       kd: round(hillKd, 1),
       n: round(hillN, 2),
     },
+    weights: { tracking: round(trackingWeight, 2) },
   };
 }
 

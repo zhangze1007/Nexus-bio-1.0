@@ -32,6 +32,7 @@ import { SeededRNG } from "../utils/seededRng";
  *     - For large models, random sampling may miss optimal knockouts
  */
 
+import { GLUCOSE_EXCHANGE_METS, OXYGEN_EXCHANGE_METS, exchangeMetaboliteId } from "./fbaEngine";
 import { type LPModel, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
@@ -139,7 +140,7 @@ function buildStoichiometricConstraints(reactions: RobustKnockReaction[], metIds
   }));
 }
 
-function buildBounds(
+export function buildBounds(
   reactions: RobustKnockReaction[],
   knockouts: string[],
   glucoseUptake: number,
@@ -154,11 +155,12 @@ function buildBounds(
     if (objectiveId && growthLB !== undefined && r.id === objectiveId) {
       lb = Math.max(lb, growthLB);
     }
-    if (r.id.startsWith("EX_")) {
-      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
-      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
-      if (isGlucose) lb = -Math.abs(glucoseUptake);
-      if (isOxygen) lb = -Math.abs(oxygenUptake);
+    // Match the substrate by external metabolite id (shared helper from
+    // fbaEngine) so EX_co2_e / EX_glu__L_e are not mis-clamped by name substring.
+    const exMet = exchangeMetaboliteId(r);
+    if (exMet !== null) {
+      if (GLUCOSE_EXCHANGE_METS.has(exMet)) lb = -Math.abs(glucoseUptake);
+      else if (OXYGEN_EXCHANGE_METS.has(exMet)) lb = -Math.abs(oxygenUptake);
     }
     return {
       name: r.id,

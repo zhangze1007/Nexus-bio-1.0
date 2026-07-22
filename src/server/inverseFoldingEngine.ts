@@ -127,7 +127,7 @@ AMINO_ACIDS.split("").forEach((aa, i) => {
 });
 
 /** BLOSUM62 substitution matrix (standard 20×20 matrix) */
-const BLOSUM62: number[][] = [
+export const BLOSUM62: number[][] = [
   //  A   C   D   E   F   G   H   I   K   L   M   N   P   Q   R   S   T   V   W   Y
   [4, 0, -2, -1, -2, 0, -2, -1, -1, -1, -1, -2, -1, -1, -1, 1, 0, 0, -3, -2], // A
   [0, 9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2], // C
@@ -615,7 +615,7 @@ function computePSSM(
 /**
  * Sample a sequence from the PSSM.
  */
-function sampleSequence(
+export function sampleSequence(
   pssm: number[][],
   fixedPositions?: number[],
   wildType?: string,
@@ -634,14 +634,19 @@ function sampleSequence(
       continue;
     }
 
-    // Sample from distribution
+    // Temperature-scaled sampling: p_a^(1/T) renormalized. Low T sharpens toward
+    // the argmax (more deterministic); high T flattens toward uniform. This is
+    // where `temperature` modulates the softmax (previously ignored).
     const probs = pssm[i];
+    const t = Math.max(temperature, 1e-6);
+    const scaled = probs.map((p) => Math.max(p, 0) ** (1 / t));
+    const scaledSum = scaled.reduce((s, v) => s + v, 0) || 1;
+
     const r = rng.next();
     let cumulative = 0;
     let selectedIdx = 0;
-
     for (let a = 0; a < 20; a++) {
-      cumulative += probs[a];
+      cumulative += scaled[a] / scaledSum;
       if (r <= cumulative) {
         selectedIdx = a;
         break;
@@ -760,7 +765,7 @@ function computeStatisticalPotential(
 /**
  * Compute overall design score (higher = better).
  */
-function computeDesignScore(
+export function computeDesignScore(
   sequence: string,
   graph: GraphRepresentation,
   pssm: number[][],
@@ -768,16 +773,29 @@ function computeDesignScore(
 ): number {
   const metrics = computeStatisticalPotential(sequence, graph);
 
-  // Weighted combination
-  const score =
+  const structScore =
     0.3 * metrics.packingQuality +
     0.15 * metrics.loopCompatibility +
     0.25 * metrics.secondaryStructureMatch +
     0.3 * metrics.hydrophobicCoreIntegrity;
 
-  // Penalize low-confidence positions
   const avgConfidence = perPositionScores.reduce((a, b) => a + b, 0) / perPositionScores.length;
-  const finalScore = score * 0.7 + avgConfidence * 0.3;
+
+  // PSSM fit: mean probability the position-specific scoring matrix assigns to the
+  // residue actually chosen at each position (uses `pssm`, previously ignored).
+  let pssmFit = 0;
+  let counted = 0;
+  for (let i = 0; i < sequence.length && i < pssm.length; i++) {
+    const aaIdx = AMINO_ACIDS.indexOf(sequence[i]);
+    if (aaIdx >= 0 && pssm[i]) {
+      pssmFit += pssm[i][aaIdx] ?? 0;
+      counted++;
+    }
+  }
+  const pssmScore = counted > 0 ? pssmFit / counted : 0;
+
+  // Re-weighted (0.55 + 0.25 + 0.2 = 1) so the total stays in [0, 1].
+  const finalScore = 0.55 * structScore + 0.25 * avgConfidence + 0.2 * pssmScore;
 
   return Math.round(finalScore * 1000) / 1000;
 }

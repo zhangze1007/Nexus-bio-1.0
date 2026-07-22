@@ -257,9 +257,11 @@ function tInverse(p: number, df: number): number {
 }
 
 /**
- * Student-t CDF using the regularised incomplete beta function.
+ * Student-t CDF using the regularised incomplete beta function. Returns P(T ≤ t).
+ * Exported for reference-benchmark visibility (e.g. validating the repo's
+ * t-distribution machinery against scipy); behaviour is unchanged.
  */
-function tCDF(t: number, df: number): number {
+export function tCDF(t: number, df: number): number {
   const x = df / (df + t * t);
   const ibeta = regularisedIncompleteBeta(df / 2, 0.5, x);
   if (t >= 0) return 1 - 0.5 * ibeta;

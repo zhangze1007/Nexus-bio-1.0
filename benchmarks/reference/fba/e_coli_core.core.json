@@ -1,0 +1,51 @@
+{
+  "model": "e_coli_core",
+  "source": "COBRApy 0.31.1 load_model('textbook'), default medium, GLPK LP",
+  "status": "optimal",
+  "biomass_flux": 0.873922,
+  "key_fluxes": {
+    "EX_glc__D_e": -10.0,
+    "EX_o2_e": -21.799493,
+    "EX_co2_e": 22.809833,
+    "ATPM": 8.39,
+    "PGK": -16.023526,
+    "PYK": 1.758177,
+    "CS": 6.00725,
+    "PFK": 7.477382,
+    "G6PDH2r": 4.959985,
+    "PGI": 4.860861,
+    "TPI": 7.477382
+  },
+  "single_gene_deletion": {
+    "b2779": {
+      "gene": "eno",
+      "growth": 0.0,
+      "essential": true
+    },
+    "b0720": {
+      "gene": "gltA/CS",
+      "growth": 0.0,
+      "essential": true
+    },
+    "b1136": {
+      "gene": "icd",
+      "growth": 0.0,
+      "essential": true
+    },
+    "b2925": {
+      "gene": "fbaA",
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0451": {
+      "gene": "?",
+      "growth": 0.873922,
+      "essential": false
+    }
+  },
+  "tolerance": {
+    "biomass": 0.01,
+    "flux_abs": 0.5,
+    "note": "rel 1% on biomass; abs on fluxes near zero"
+  }
+}

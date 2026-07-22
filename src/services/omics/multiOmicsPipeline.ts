@@ -647,27 +647,54 @@ export function runDifferentialExpression(
   }
 
   const [g1, g2] = uniqueGroups;
-  const g1Idx: number[] = [];
-  const g2Idx: number[] = [];
-  const groupSizes: Record<string, number> = { [g1]: 0, [g2]: 0 };
 
+  // Collapse technical replicates: columns sharing a sample name within the same
+  // group are one biological sample and are averaged per feature before testing.
+  // With unique sample names this is a no-op (each column is its own sample);
+  // repeated names shrink the effective group size and shift the statistics — so
+  // the result genuinely depends on `sampleNames`, not only on `groups`.
+  const g1Cols = new Map<string, number[]>();
+  const g2Cols = new Map<string, number[]>();
   for (let i = 0; i < groups.length; i++) {
-    if (groups[i] === g1) {
-      g1Idx.push(i);
-      groupSizes[g1]++;
-    } else {
-      g2Idx.push(i);
-      groupSizes[g2]++;
-    }
+    const name = sampleNames[i] ?? `__col_${i}`;
+    const bucket = groups[i] === g1 ? g1Cols : g2Cols;
+    const existing = bucket.get(name);
+    if (existing) existing.push(i);
+    else bucket.set(name, [i]);
   }
+  const g1Samples = [...g1Cols.values()];
+  const g2Samples = [...g2Cols.values()];
+  const groupSizes: Record<string, number> = {
+    [g1]: g1Samples.length,
+    [g2]: g2Samples.length,
+  };
+
+  // Average a feature row over each collapsed sample's columns (ignoring NaN /
+  // missing), yielding one value per biological sample.
+  const collapseRow = (row: number[], samples: number[][]): number[] => {
+    const out: number[] = [];
+    for (const cols of samples) {
+      let sum = 0;
+      let cnt = 0;
+      for (const i of cols) {
+        const v = row[i];
+        if (v !== undefined && !Number.isNaN(v)) {
+          sum += v;
+          cnt++;
+        }
+      }
+      if (cnt > 0) out.push(sum / cnt);
+    }
+    return out;
+  };
 
   const deFeatures: DEFeature[] = [];
   const rawPValues: number[] = [];
 
   for (let fi = 0; fi < data.length; fi++) {
     const row = data[fi];
-    const group1Vals = g1Idx.map((i) => row[i]).filter((v) => v !== undefined && !Number.isNaN(v));
-    const group2Vals = g2Idx.map((i) => row[i]).filter((v) => v !== undefined && !Number.isNaN(v));
+    const group1Vals = collapseRow(row, g1Samples);
+    const group2Vals = collapseRow(row, g2Samples);
 
     const m1 = group1Vals.length > 0 ? group1Vals.reduce((a, b) => a + b, 0) / group1Vals.length : 0;
     const m2 = group2Vals.length > 0 ? group2Vals.reduce((a, b) => a + b, 0) / group2Vals.length : 0;

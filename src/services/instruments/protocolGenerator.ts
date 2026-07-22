@@ -9,6 +9,9 @@
  * implausible values, and ordering issues before a protocol is run.
  */
 
+import type { ProtocolManifest, WellAssignment } from "../../types/protocolManifest";
+import { type DeckLayout, validateDeck, validatePipetteVolumes } from "./deckModel";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -51,20 +54,41 @@ function emitOpentronsStep(
   index: number,
   labwareMap: Map<string, string>,
   pipetteVar: string,
+  plateMap?: WellAssignment[],
 ): string[] {
   const lines: string[] = [];
-  const well = wellId(index);
   const vol = step.volume > 0 ? step.volume : 10;
+  const lc = liquidClass(step.reagent);
+  const touch = lc.touchTip ? ", touch_tip=True" : "";
+
+  // With a manifest plate map, wells come from the manifest and the labware var
+  // from labwareMap (no hard-coded A1/B1); otherwise use the default plates.
+  let srcVar = "source_plate";
+  let srcWell = wellId(index);
+  let destVar = "dest_plate";
+  let destWell = wellId(index + 1);
+  if (plateMap && plateMap.length > 0) {
+    const src = plateMap[index % plateMap.length];
+    const dest = plateMap[(index + 1) % plateMap.length];
+    srcVar = labwareMap.get(src.labwareId) ?? srcVar;
+    srcWell = src.well;
+    destVar = labwareMap.get(dest.labwareId) ?? destVar;
+    destWell = dest.well;
+  }
+  const flowLines = [
+    `    ${pipetteVar}.flow_rate.aspirate = ${lc.flowRate}`,
+    `    ${pipetteVar}.flow_rate.dispense = ${lc.flowRate}`,
+  ];
 
   switch (step.type.toLowerCase()) {
     case "transfer":
     case "pipette":
     case "dilute":
     case "plate": {
-      const destWell = wellId(index + 1);
       lines.push(
-        `    # Step ${index + 1}: ${step.description}`,
-        `    ${pipetteVar}.transfer(${vol}, source_plate['${well}'], dest_plate['${destWell}'], new_tip='always')`,
+        `    # Step ${index + 1}: ${step.description} [${lc.name}]`,
+        ...flowLines,
+        `    ${pipetteVar}.transfer(${vol}, ${srcVar}['${srcWell}'], ${destVar}['${destWell}'], new_tip='always'${touch})`,
       );
       break;
     }
@@ -72,8 +96,9 @@ function emitOpentronsStep(
     case "mix": {
       const cycles = Math.max(3, Math.round(step.duration / 5));
       lines.push(
-        `    # Step ${index + 1}: ${step.description}`,
-        `    ${pipetteVar}.mix(${cycles}, ${vol}, source_plate['${well}'])`,
+        `    # Step ${index + 1}: ${step.description} [${lc.name}]`,
+        ...flowLines,
+        `    ${pipetteVar}.mix(${cycles}, ${vol}, ${srcVar}['${srcWell}'])`,
       );
       break;
     }
@@ -121,8 +146,9 @@ function emitOpentronsStep(
     default: {
       // Generic liquid-handling fallback
       lines.push(
-        `    # Step ${index + 1}: ${step.description}`,
-        `    ${pipetteVar}.transfer(${vol}, source_plate['${well}'], dest_plate['${well}'], new_tip='always')`,
+        `    # Step ${index + 1}: ${step.description} [${lc.name}]`,
+        ...flowLines,
+        `    ${pipetteVar}.transfer(${vol}, ${srcVar}['${srcWell}'], ${destVar}['${destWell}'], new_tip='always'${touch})`,
       );
       break;
     }
@@ -149,6 +175,28 @@ function wellId(index: number): string {
 }
 
 /**
+ * Deterministic liquid-class heuristic → aspirate/dispense flow rate (µL/s) and
+ * whether to touch-tip. Addresses the prior "no liquid class" limitation; no
+ * randomness (compute path).
+ */
+function liquidClass(reagent: string): { name: string; flowRate: number; touchTip: boolean } {
+  const r = (reagent ?? "").toLowerCase();
+  if (/glycerol|dmso|peg|viscous|polyethylene/.test(r)) return { name: "viscous", flowRate: 30, touchTip: true };
+  if (/ethanol|isopropanol|methanol|acetone|volatile/.test(r)) return { name: "volatile", flowRate: 60, touchTip: false };
+  if (/cell|culture|competent|bacter|coli|yeast/.test(r)) return { name: "cell-suspension", flowRate: 50, touchTip: true };
+  return { name: "aqueous", flowRate: 100, touchTip: false };
+}
+
+/** Sanitize a labware/pipette id into a valid python identifier. */
+function pyVar(id: string): string {
+  const s = id
+    .replace(/[^a-zA-Z0-9_]/g, "_")
+    .replace(/^([0-9])/, "_$1")
+    .toLowerCase();
+  return s.length > 0 ? s : "labware";
+}
+
+/**
  * Generate an Opentrons OT-2 Python protocol script.
  *
  * The output is a self-contained Python file that can be uploaded directly to
@@ -156,7 +204,11 @@ function wellId(index: number): string {
  * flat plate, 20 uL tip rack), and translates each {@link ProtocolStep} into
  * the corresponding API call.
  */
-export function generateOpentronsProtocol(steps: ProtocolStep[]): string {
+export function generateOpentronsProtocol(
+  steps: ProtocolStep[],
+  manifest?: ProtocolManifest,
+  layout?: DeckLayout,
+): string {
   if (steps.length === 0) {
     return [
       "# Empty protocol — no steps provided.",
@@ -169,32 +221,70 @@ export function generateOpentronsProtocol(steps: ProtocolStep[]): string {
     ].join("\n");
   }
 
-  const header = [
-    "from opentrons import protocol_api",
-    "",
-    "metadata = {",
-    "    'protocolName': 'Nexus-Bio Generated Protocol',",
-    "    'author': 'Nexus-Bio Protocol Generator',",
-    "    'description': 'Auto-generated Opentrons protocol',",
-    "    'apiLevel': '2.15'",
-    "}",
-    "",
-    "",
-    "def run(protocol: protocol_api.ProtocolContext):",
-    "    # ---- Labware ----",
-    "    source_plate = protocol.load_labware('corning_96_wellplate_360ul_flat', '1')",
-    "    dest_plate   = protocol.load_labware('corning_96_wellplate_360ul_flat', '2')",
-    "    tiprack_20   = protocol.load_labware('opentrons_96_tiprack_20ul', '3')",
-    "    pipette      = protocol.load_instrument('p20_single_gen2', 'left', tip_racks=[tiprack_20])",
-    "",
-    "    # ---- Steps ----",
-  ];
-
   const labwareMap = new Map<string, string>();
-  const bodyLines: string[] = [];
+  const plateMap = manifest?.plateMap;
+  let pipetteVar = "pipette";
+  let header: string[];
 
+  if (manifest && layout && layout.labware.length > 0) {
+    // Deck-driven header: load real labware/pipettes from the layout and build
+    // labwareMap (labwareId → python var) consumed by emitOpentronsStep.
+    const h: string[] = [
+      "from opentrons import protocol_api",
+      "",
+      "metadata = {",
+      "    'protocolName': 'Nexus-Bio Generated Protocol',",
+      "    'author': 'Nexus-Bio Protocol Generator',",
+      `    'description': 'Auto-generated Opentrons protocol (manifest ${manifest.manifestId})',`,
+      "    'apiLevel': '2.15'",
+      "}",
+      "",
+      "",
+      "def run(protocol: protocol_api.ProtocolContext):",
+      "    # ---- Labware (from deck layout) ----",
+    ];
+    const tipracks: string[] = [];
+    for (const lw of layout.labware) {
+      const v = pyVar(lw.id);
+      labwareMap.set(lw.id, v);
+      h.push(`    ${v} = protocol.load_labware('${lw.loadName}', '${lw.slot}')`);
+      if (/tiprack/i.test(lw.loadName)) tipracks.push(v);
+    }
+    const tipArg = tipracks.length > 0 ? `, tip_racks=[${tipracks.join(", ")}]` : "";
+    h.push("    # ---- Pipettes ----");
+    layout.pipettes.forEach((p, i) => {
+      const v = pyVar(p.id);
+      if (i === 0) pipetteVar = v;
+      h.push(`    ${v} = protocol.load_instrument('${p.model}', '${p.mount}'${tipArg})`);
+    });
+    h.push("", "    # ---- Steps ----");
+    header = h;
+  } else {
+    header = [
+      "from opentrons import protocol_api",
+      "",
+      "metadata = {",
+      "    'protocolName': 'Nexus-Bio Generated Protocol',",
+      "    'author': 'Nexus-Bio Protocol Generator',",
+      "    'description': 'Auto-generated Opentrons protocol',",
+      "    'apiLevel': '2.15'",
+      "}",
+      "",
+      "",
+      "def run(protocol: protocol_api.ProtocolContext):",
+      "    # ---- Labware ----",
+      "    source_plate = protocol.load_labware('corning_96_wellplate_360ul_flat', '1')",
+      "    dest_plate   = protocol.load_labware('corning_96_wellplate_360ul_flat', '2')",
+      "    tiprack_20   = protocol.load_labware('opentrons_96_tiprack_20ul', '3')",
+      "    pipette      = protocol.load_instrument('p20_single_gen2', 'left', tip_racks=[tiprack_20])",
+      "",
+      "    # ---- Steps ----",
+    ];
+  }
+
+  const bodyLines: string[] = [];
   for (let i = 0; i < steps.length; i++) {
-    const stepLines = emitOpentronsStep(steps[i], i, labwareMap, "pipette");
+    const stepLines = emitOpentronsStep(steps[i], i, labwareMap, pipetteVar, plateMap);
     bodyLines.push(...stepLines, "");
   }
 
@@ -344,5 +434,22 @@ export function validateProtocol(steps: ProtocolStep[]): ValidationResult {
     }
   }
 
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate a protocol for EXECUTABILITY against a concrete deck + manifest:
+ * base step validation, deck structure (slot/mount conflicts, control/blank
+ * placeholders, well capacity, labware references), and volume↔pipette-range
+ * consistency. Errors are aggregated (empty = executable).
+ */
+export function validateExecutableProtocol(
+  steps: ProtocolStep[],
+  layout: DeckLayout,
+  manifest: ProtocolManifest,
+): ValidationResult {
+  const errors = [...validateProtocol(steps).errors];
+  errors.push(...validateDeck(layout, manifest));
+  errors.push(...validatePipetteVolumes(layout.pipettes, steps.map((s) => s.volume)));
   return { valid: errors.length === 0, errors };
 }

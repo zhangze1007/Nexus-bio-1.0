@@ -504,7 +504,7 @@ const RESTRICTION_SITES = ["GGTCTC", "GAATTC", "GGATCC", "AAGCTT", "CTGCAG", "GC
 /**
  * Optimize CDS with 4 sub-modules, each reporting changes independently.
  */
-function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
+export function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
   const original = cds.toUpperCase();
   let optimized = original;
   const changes: CDSOptimizationResult["changes"] = [];
@@ -514,24 +514,27 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
   const gcBefore = (optimized.match(/[GC]/g) || []).length / optimized.length;
   const rareBefore = countRareCodons(optimized);
 
-  // Module 2a: Codon usage optimization
+  // Module 2a: Codon usage optimization. Host-specific 3rd-position GC preference
+  // (human GC3, yeast AT3, E. coli neutral) refines the E. coli usage ranking;
+  // E. coli (bias 0) reproduces the original ranking, preserving existing behavior.
+  const gc3Pref = host === "human" ? 1 : host === "yeast" ? -1 : 0;
+  const hostScore = (c: string): number => {
+    const gc3 = c[2] === "G" || c[2] === "C" ? 1 : -1;
+    return (ECOLI_CODON_USAGE[c] || 0) * (1 + 0.15 * gc3Pref * gc3);
+  };
   for (let i = 0; i < optimized.length - 2; i += 3) {
     const codon = optimized.substring(i, i + 3);
     const aa = CODON_TABLE[codon];
     if (!aa || aa === "*") continue;
 
-    // Find best synonymous codon
+    // Find best synonymous codon (host-weighted).
     const synonymous = Object.entries(CODON_TABLE)
       .filter(([_, a]) => a === aa)
       .map(([c]) => c)
-      .sort((a, b) => (ECOLI_CODON_USAGE[b] || 0) - (ECOLI_CODON_USAGE[a] || 0));
+      .sort((a, b) => hostScore(b) - hostScore(a));
 
     const bestCodon = synonymous[0];
-    if (
-      bestCodon &&
-      bestCodon !== codon &&
-      (ECOLI_CODON_USAGE[bestCodon] || 0) > (ECOLI_CODON_USAGE[codon] || 0) * 1.5
-    ) {
+    if (bestCodon && bestCodon !== codon && hostScore(bestCodon) > hostScore(codon) * 1.5) {
       optimized = optimized.substring(0, i) + bestCodon + optimized.substring(i + 3);
       changes.push({
         position: i,

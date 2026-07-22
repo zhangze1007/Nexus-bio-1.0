@@ -12,6 +12,7 @@
  *     improvement of lycopene production. BMC Bioinformatics, 11, 616.
  */
 
+import { GLUCOSE_EXCHANGE_METS, OXYGEN_EXCHANGE_METS, exchangeMetaboliteId } from "./fbaEngine";
 import { type LPModel, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
@@ -75,7 +76,7 @@ function round(value: number, digits = 4): number {
 }
 
 /** Build a CPLEX LP model from FSEOF reactions and constraints. */
-function buildFSEOFLP(
+export function buildFSEOFLP(
   reactions: FSEOFReaction[],
   objectiveId: string,
   growthLB: number,
@@ -115,12 +116,13 @@ function buildFSEOFLP(
       lb = Math.max(lb, growthLB);
     }
 
-    // Exchange reactions: set uptake limits
-    if (r.id.startsWith("EX_")) {
-      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
-      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
-      if (isGlucose) lb = -Math.abs(glucoseUptake);
-      if (isOxygen) lb = -Math.abs(oxygenUptake);
+    // Exchange uptake limits — identify the substrate by its external metabolite
+    // id (shared helper from fbaEngine) so EX_co2_e / EX_glu__L_e, whose ids
+    // contain "o2" / "glu", are NOT mis-clamped.
+    const exMet = exchangeMetaboliteId(r);
+    if (exMet !== null) {
+      if (GLUCOSE_EXCHANGE_METS.has(exMet)) lb = -Math.abs(glucoseUptake);
+      else if (OXYGEN_EXCHANGE_METS.has(exMet)) lb = -Math.abs(oxygenUptake);
     }
 
     return {

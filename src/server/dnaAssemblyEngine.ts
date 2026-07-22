@@ -398,9 +398,14 @@ function optimizeOverlap(overlap1: string, overlap2: string, targetTm: number, l
 /**
  * Generate an overhang sequence between two fragments.
  */
-function generateOverhang(frag1End: string, frag2Start: string, length: number): string {
-  // Use the last `length` bases of frag1 as the overhang
-  return frag1End.substring(frag1End.length - length);
+export function generateOverhang(frag1End: string, frag2Start: string, length: number): string {
+  // The junction overhang spans the ligation site: the 3' tail of fragment 1
+  // fused to the 5' head of fragment 2 (the incoming fragment's start defines the
+  // second half of the fusion scar) — uses `frag2Start`.
+  const half = Math.floor(length / 2);
+  const left = frag1End.substring(Math.max(0, frag1End.length - half));
+  const right = frag2Start.substring(0, Math.max(0, length - left.length));
+  return (left + right).substring(0, length);
 }
 
 /**

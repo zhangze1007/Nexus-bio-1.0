@@ -35,6 +35,8 @@ export interface Permission {
 }
 
 export interface ProjectMember {
+  /** Project this membership grants a role on. Authorization is scoped to it. */
+  projectId: string;
   actorId: string;
   role: Role;
   joinedAt: number;
@@ -111,13 +113,20 @@ export function requirePermission(context: RBACContext, permission: keyof Permis
 }
 
 /**
- * Check if a user can perform an action on a project.
+ * Check if a user can perform an action on a specific project.
+ *
+ * Authorization is scoped to `(userId, projectId)`: the user must hold a
+ * membership record ON THIS project. A membership on a *different* project must
+ * never grant access here — otherwise any member of any project could act on an
+ * unrelated one (horizontal / cross-project privilege escalation). `members` may
+ * therefore contain records for other projects; only the one matching
+ * `projectId` counts.
  *
  * @param userId - User ID
- * @param projectId - Project ID
- * @param members - Current project members
+ * @param projectId - Project ID the action targets
+ * @param members - Membership records (may span projects)
  * @param permission - Required permission
- * @returns true if allowed
+ * @returns true only if the user is a member of `projectId` whose role grants `permission`
  */
 export function canPerformAction(
   userId: string,
@@ -125,7 +134,7 @@ export function canPerformAction(
   members: ProjectMember[],
   permission: keyof Permission,
 ): boolean {
-  const member = members.find((m) => m.actorId === userId);
+  const member = members.find((m) => m.actorId === userId && m.projectId === projectId);
   if (!member) return false;
   return hasPermission(member.role, permission);
 }
@@ -133,21 +142,29 @@ export function canPerformAction(
 // ── Member Management ──────────────────────────────────────────────────
 
 /**
- * Add a member to a project.
+ * Add a member to a specific project. Membership is scoped to `projectId`, so
+ * the same actor can hold different roles on different projects.
  *
- * @param members - Current members list
+ * @param members - Current members list (may span projects)
+ * @param projectId - Project the membership is for
  * @param actorId - User to add
  * @param role - Role to assign
  * @param invitedBy - Who is inviting
  * @returns Updated members list
  */
-export function addMember(members: ProjectMember[], actorId: string, role: Role, invitedBy: string): ProjectMember[] {
-  // Check if already a member
-  const existing = members.find((m) => m.actorId === actorId);
+export function addMember(
+  members: ProjectMember[],
+  projectId: string,
+  actorId: string,
+  role: Role,
+  invitedBy: string,
+): ProjectMember[] {
+  // Already a member OF THIS PROJECT?
+  const existing = members.find((m) => m.actorId === actorId && m.projectId === projectId);
   if (existing) {
     // Update role if different
     if (existing.role !== role) {
-      return members.map((m) => (m.actorId === actorId ? { ...m, role } : m));
+      return members.map((m) => (m.actorId === actorId && m.projectId === projectId ? { ...m, role } : m));
     }
     return members;
   }
@@ -155,6 +172,7 @@ export function addMember(members: ProjectMember[], actorId: string, role: Role,
   return [
     ...members,
     {
+      projectId,
       actorId,
       role,
       joinedAt: Date.now(),
@@ -164,26 +182,30 @@ export function addMember(members: ProjectMember[], actorId: string, role: Role,
 }
 
 /**
- * Remove a member from a project.
+ * Remove a member from a specific project. Only the membership on `projectId` is
+ * removed; the actor's memberships on other projects are left intact.
  *
- * @param members - Current members list
+ * @param members - Current members list (may span projects)
+ * @param projectId - Project to remove the membership from
  * @param actorId - User to remove
  * @returns Updated members list
  */
-export function removeMember(members: ProjectMember[], actorId: string): ProjectMember[] {
-  return members.filter((m) => m.actorId !== actorId);
+export function removeMember(members: ProjectMember[], projectId: string, actorId: string): ProjectMember[] {
+  return members.filter((m) => !(m.actorId === actorId && m.projectId === projectId));
 }
 
 /**
- * Change a member's role.
+ * Change a member's role on a specific project. Only the membership on
+ * `projectId` is updated; roles on other projects are unaffected.
  *
- * @param members - Current members list
+ * @param members - Current members list (may span projects)
+ * @param projectId - Project whose membership to update
  * @param actorId - User to update
  * @param newRole - New role
  * @returns Updated members list
  */
-export function changeRole(members: ProjectMember[], actorId: string, newRole: Role): ProjectMember[] {
-  return members.map((m) => (m.actorId === actorId ? { ...m, role: newRole } : m));
+export function changeRole(members: ProjectMember[], projectId: string, actorId: string, newRole: Role): ProjectMember[] {
+  return members.map((m) => (m.actorId === actorId && m.projectId === projectId ? { ...m, role: newRole } : m));
 }
 
 // ── Role Hierarchy ─────────────────────────────────────────────────────

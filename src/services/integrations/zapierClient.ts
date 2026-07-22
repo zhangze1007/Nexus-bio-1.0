@@ -64,7 +64,7 @@ export function resetSchemaFlag(): void {
 
 function generateId(): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).slice(2, 10);
+  const random = Math.random().toString(36).slice(2, 10); // rng-ok: request nonce, not a compute path
   return `zap_${timestamp}_${random}`;
 }
 

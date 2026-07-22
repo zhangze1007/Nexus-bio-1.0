@@ -16,6 +16,7 @@
  */
 
 import { computeMRNAFoldingNN } from "../../server/regulatoryDesignEngine";
+import { makeRng } from "../../utils/rng";
 import type { RibozymeType, RNADesignInput, RNADesignResult } from "./types";
 
 /**
@@ -249,7 +250,7 @@ function computeSiRNAOffTarget(sequence: string): number {
 /**
  * Design an RNA molecule based on the specified type.
  */
-export function designRNA(input: RNADesignInput): RNADesignResult {
+export function designRNA(input: RNADesignInput, seed = 42): RNADesignResult {
   switch (input.type) {
     case "ribozyme":
       return designHammerhead(input.targetSequence);
@@ -258,7 +259,7 @@ export function designRNA(input: RNADesignInput): RNADesignResult {
     case "toehold":
       return designToeholdSwitch(input.targetSequence);
     case "aptamer":
-      return designAptamer(input.targetSequence);
+      return designAptamer(input.targetSequence, seed);
     default:
       return {
         type: input.type,
@@ -328,14 +329,15 @@ function designToeholdSwitch(triggerSequence: string): RNADesignResult {
  *
  * Reference: Tuerk & Gold (1990) Science 249:505-510
  */
-function designAptamer(targetLigand: string): RNADesignResult {
-  // Generate a random RNA sequence as starting point
-  // Real SELEX would iteratively select for binding
+function designAptamer(targetLigand: string, seed = 42): RNADesignResult {
+  // Generate a seeded starting RNA sequence (deterministic for a fixed seed).
+  // Real SELEX would iteratively select for binding.
   const length = 80;
   const bases = ["A", "U", "G", "C"];
+  const rng = makeRng(seed);
   let sequence = "";
   for (let i = 0; i < length; i++) {
-    sequence += bases[Math.floor(Math.random() * 4)];
+    sequence += bases[Math.floor(rng() * 4)];
   }
 
   // Predict activity based on GC content and length

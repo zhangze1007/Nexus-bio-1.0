@@ -198,19 +198,27 @@ export async function solveLooplessFBA(request: LooplessFBARequest): Promise<Loo
  * A loop exists when a set of internal reactions can carry flux
  * without any net production or consumption of external metabolites.
  */
-function detectLoops(primals: Record<string, number>, reactions: string[], externalMetabolites: string[]): string[] {
+export function detectLoops(
+  primals: Record<string, number>,
+  reactions: string[],
+  externalMetabolites: string[],
+): string[] {
   const loopReactions: string[] = [];
   const threshold = 1e-6;
+  const externalSet = new Set(externalMetabolites);
 
-  // Simple heuristic: reactions with very small flux that are not
-  // exchange reactions are likely in loops
+  // ll-FBA loops are INTERNAL: a reaction at the system boundary (named in
+  // externalMetabolites, or an exchange/transport/sink reaction) exchanges mass
+  // with the environment and therefore cannot belong to a zero-net internal
+  // loop — exclude it before flagging small-flux internal cycles.
   for (let i = 0; i < reactions.length; i++) {
     const rxn = reactions[i];
     const isExchange = rxn.startsWith("EX_") || rxn.startsWith("DM_") || rxn.startsWith("SK_");
     const isTransport = rxn.includes("tex") || rxn.includes("tpp") || rxn.includes("abcpp");
+    const isExternal = externalSet.has(rxn) || externalMetabolites.some((m) => m.length > 0 && rxn.includes(m));
     const flux = primals[`v${i}`] ?? 0;
 
-    if (!isExchange && !isTransport && Math.abs(flux) < threshold && Math.abs(flux) > 0) {
+    if (!isExchange && !isTransport && !isExternal && Math.abs(flux) < threshold && Math.abs(flux) > 0) {
       loopReactions.push(rxn);
     }
   }
@@ -341,12 +349,14 @@ export function hasLoops(
   externalMetabolites: string[] = [],
 ): boolean {
   const threshold = 1e-6;
+  const externalSet = new Set(externalMetabolites);
 
   for (const rxn of reactions) {
     const isExchange = rxn.startsWith("EX_") || rxn.startsWith("DM_") || rxn.startsWith("SK_");
     const isTransport = rxn.includes("tex") || rxn.includes("tpp") || rxn.includes("abcpp");
+    const isExternal = externalSet.has(rxn) || externalMetabolites.some((m) => m.length > 0 && rxn.includes(m));
 
-    if (!isExchange && !isTransport) {
+    if (!isExchange && !isTransport && !isExternal) {
       const flux = fluxes[rxn] ?? 0;
       if (Math.abs(flux) < threshold && Math.abs(flux) > 0) {
         return true;

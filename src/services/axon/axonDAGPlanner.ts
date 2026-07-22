@@ -46,7 +46,7 @@ export interface DAGPlannerOptions {
 }
 
 function defaultIdFactory(): string {
-  return `dag-${Math.random().toString(36).slice(2, 10)}`;
+  return `dag-${Math.random().toString(36).slice(2, 10)}`; // rng-ok: run id generator, not a compute path
 }
 
 /**

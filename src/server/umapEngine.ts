@@ -233,7 +233,7 @@ function initializeEmbedding(data: number[][], n: number, rng: SeededRNG): numbe
 
 // ── Step 4: SGD Optimization ────────────────────────────────────────────────
 
-function optimizeEmbedding(
+export function optimizeEmbedding(
   embedding: number[][],
   highDimWeights: Map<string, number>,
   knnGraph: KNNeighbor[][],
@@ -266,6 +266,17 @@ function optimizeEmbedding(
   if (edges.length === 0) {
     return { finalEmbedding: embedding, convergenceLoss: 1.0 };
   }
+
+  // Adjacency from the kNN graph. True neighbours are already pulled together
+  // by the positive edges above; UMAP repels only *non*-neighbours, so these
+  // pairs must be excluded from repulsive negative sampling. This makes the
+  // optimisation genuinely force-directed on `knnGraph` rather than on the
+  // weight map alone.
+  const neighborSets: Set<number>[] = knnGraph.map((neighbors) => {
+    const s = new Set<number>();
+    for (const nb of neighbors) s.add(nb.index);
+    return s;
+  });
 
   // SGD epochs
   let totalLoss = 0;
@@ -300,6 +311,7 @@ function optimizeEmbedding(
       const i = Math.floor(rng.next() * n);
       const j = Math.floor(rng.next() * n);
       if (i === j) continue;
+      if (neighborSets[i]?.has(j)) continue; // never repel a true kNN neighbour
 
       const dx = embedding[i][0] - embedding[j][0];
       const dy = embedding[i][1] - embedding[j][1];

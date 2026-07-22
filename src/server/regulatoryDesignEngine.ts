@@ -599,20 +599,27 @@ export function computeMRNAFoldingNN(sequence: string): number {
  *
  * ΔG_standby = min(ΔG_bind) for sites in region -30 to -1 relative to SD.
  */
-function computeStandbySite(rbs: string, cds: string): number {
-  // Look for AGG/GAG/GA motifs in the upstream region
+export function computeStandbySite(rbs: string, cds: string): number {
+  // Look for AGG/GAG standby motifs in the region upstream of the SD.
   const upstream = rbs.substring(0, Math.max(0, rbs.length - findShineDalgarno(rbs).length));
+  // The standby site's stability depends on pairing with the CDS 5' leader that
+  // follows the SD, so evaluate each motif in the context of that leader (uses `cds`).
+  const leader = cds.substring(0, Math.min(cds.length, 15)).toUpperCase();
   let minDG = 0;
 
   for (let i = 0; i < upstream.length - 2; i++) {
     const motif = upstream.substring(i, i + 3);
     if (motif.includes("AGG") || motif.includes("GAG")) {
-      const localDG = computeMRNAFoldingNN(motif);
+      const localDG = computeMRNAFoldingNN(motif + leader);
       minDG = Math.min(minDG, localDG);
     }
   }
 
-  return minDG * 0.5; // partial contribution
+  // The standby site's availability is also reduced when the CDS 5' leader is
+  // itself structured (it sequesters the region), so fold the leader in directly
+  // with a small weight (keeps the term a minor contribution, per Salis 2009).
+  const leaderStructure = computeMRNAFoldingNN(leader);
+  return minDG * 0.5 + leaderStructure * 0.05; // partial contribution
 }
 
 /**
@@ -954,6 +961,11 @@ export function optimizeCodons(proteinSeq: string, organism: "ecoli" | "yeast" |
     aaToCodons[aa].push(codon);
   }
 
+  // Organism-specific 3rd-position GC bias (documented codon-usage trend): human
+  // favors GC3, yeast favors AT3, E. coli is ~neutral. Multiplicative, so E. coli
+  // (bias 0) reproduces the original tAI selection — existing behavior preserved.
+  const gc3Pref = organism === "human" ? 1 : organism === "yeast" ? -1 : 0;
+
   let optimized = "";
   for (const aa of proteinSeq.toUpperCase()) {
     const codons = aaToCodons[aa];
@@ -975,7 +987,9 @@ export function optimizeCodons(proteinSeq: string, organism: "ecoli" | "yeast" |
       // I-C: 0.8, I-A: 0.8, I-U: 0.5
       const thirdBase = codon[2];
       const wobblePenalty = thirdBase === "G" || thirdBase === "U" ? 0.8 : 1.0;
-      const tai = copyNumber * wobblePenalty;
+      const gc3 = thirdBase === "G" || thirdBase === "C" ? 1 : -1;
+      const organismBias = 1 + 0.3 * gc3Pref * gc3;
+      const tai = copyNumber * wobblePenalty * organismBias;
 
       if (tai > bestTAI) {
         bestTAI = tai;

@@ -156,20 +156,50 @@ export function enzymeClassScore(ecClass: string): number {
   }
 }
 
-function computeScore(steps: PathwayStep[], targetNorm: string, precursors: Set<string>): number {
-  // Length component: shorter pathways score higher
+/** Character-bigram Jaccard similarity of two (normalized) SMILES strings ∈ [0,1]. */
+function smilesSimilarity(a: string, b: string): number {
+  const na = normalizeSmiles(a);
+  const nb = normalizeSmiles(b);
+  if (na.length === 0 || nb.length === 0) return 0;
+  if (na === nb) return 1;
+  const bigrams = (s: string): Set<string> => {
+    const set = new Set<string>();
+    for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
+    if (s.length === 1) set.add(s);
+    return set;
+  };
+  const A = bigrams(na);
+  const B = bigrams(nb);
+  let inter = 0;
+  for (const x of A) if (B.has(x)) inter++;
+  const union = A.size + B.size - inter;
+  return union > 0 ? inter / union : 0;
+}
+
+export function computeScore(steps: PathwayStep[], targetNorm: string, precursors: Set<string>): number {
+  // Length component: shorter pathways score higher.
   const lengthScore = 1 / (steps.length + 1);
 
-  // Thermodynamic feasibility: penalise irreversible steps
-  // (reversible reactions are thermodynamically more favourable in reverse)
+  // Thermodynamic feasibility: reward reversible steps.
   const reversibleCount = steps.filter((s) => s.reversibility).length;
   const thermoScore = steps.length > 0 ? reversibleCount / steps.length : 0;
 
-  // Enzyme availability: average across all steps
+  // Enzyme availability: average EC-class score across steps.
   const enzymeScores = steps.map((s) => enzymeClassScore(s.enzymeClass));
   const enzymeScore = enzymeScores.length > 0 ? enzymeScores.reduce((a, b) => a + b, 0) / enzymeScores.length : 1.0;
 
-  return 0.4 * lengthScore + 0.3 * enzymeScore + 0.3 * thermoScore;
+  // Precursor quality: reward routes resolving to central building blocks and to
+  // precursors structurally close to the target (uses `precursors` + `targetNorm`,
+  // both previously ignored). Kept a minor term so route length still dominates.
+  const precursorArr = [...precursors];
+  const availableScore =
+    precursorArr.length > 0 ? precursorArr.filter((p) => isCentral(p)).length / precursorArr.length : 0.5;
+  const similarityScore =
+    precursorArr.length > 0
+      ? precursorArr.reduce((s, p) => s + smilesSimilarity(p, targetNorm), 0) / precursorArr.length
+      : 0;
+
+  return 0.35 * lengthScore + 0.25 * enzymeScore + 0.2 * thermoScore + 0.12 * availableScore + 0.08 * similarityScore;
 }
 
 /* ------------------------------------------------------------------ */

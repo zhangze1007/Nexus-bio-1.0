@@ -121,9 +121,10 @@ export const VALIDITY_STYLES: Record<string, { bg: string; border: string; color
 /* -- BLOSUM62-based Mutation Impact Computation ---------------------- */
 
 const AA_LETTERS = "ACDEFGHIKLMNPQRSTVWY";
-const BLOSUM62_RAW: Record<string, number[]> = {
-  A: [4, -1, -2, -1, -2, 0, -2, -1, -1, -1, -1, -2, -1, -1, -1, 1, 0, 0, -3, -2],
-  C: [-1, 9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2],
+export const BLOSUM62_RAW: Record<string, number[]> = {
+  // A-C corrected from -1 to 0 to match the authoritative Henikoff 1992 BLOSUM62.
+  A: [4, 0, -2, -1, -2, 0, -2, -1, -1, -1, -1, -2, -1, -1, -1, 1, 0, 0, -3, -2],
+  C: [0, 9, -3, -4, -2, -3, -3, -1, -3, -1, -1, -3, -3, -3, -3, -1, -1, -1, -2, -2],
   D: [-2, -3, 6, 2, -3, -1, -1, -3, -1, -4, -3, 1, -1, 0, -2, 0, -1, -3, -4, -3],
   E: [-1, -4, 2, 5, -3, -2, 0, -3, 1, -3, -2, 0, -1, 2, 0, 0, -1, -2, -3, -2],
   F: [-2, -2, -3, -3, 6, -3, -1, 0, -3, 0, 0, -3, -4, -3, -3, -2, -2, -1, 1, 3],

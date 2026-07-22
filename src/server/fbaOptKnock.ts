@@ -29,6 +29,7 @@ import { SeededRNG } from "../utils/seededRng";
  *     - Returns single optimal knockout set (no Pareto enumeration)
  */
 
+import { GLUCOSE_EXCHANGE_METS, OXYGEN_EXCHANGE_METS, exchangeMetaboliteId } from "./fbaEngine";
 import { type LPBound, type LPConstraint, type LPModel, type LPVariable, solveLP } from "./highsSolver";
 
 /* ------------------------------------------------------------------ */
@@ -127,7 +128,7 @@ function sampleCombinations<T>(arr: T[], k: number, n: number): T[][] {
 /*  LP construction — sequential (wild-type FBA + fallback)            */
 /* ------------------------------------------------------------------ */
 
-function buildOptKnockLP(
+export function buildOptKnockLP(
   reactions: OptKnockReaction[],
   objectiveId: string,
   knockouts: string[],
@@ -160,11 +161,12 @@ function buildOptKnockLP(
     if (r.id === "BIOMASS" || r.id === "BIOMASS_Ec_iML1515" || r.id === "BIOMASS_HP_published") {
       lb = Math.max(lb, growthLB);
     }
-    if (r.id.startsWith("EX_")) {
-      const isGlucose = r.id.includes("glc") || r.id.includes("glu");
-      const isOxygen = r.id.includes("o2") || r.id.includes("O2");
-      if (isGlucose) lb = -Math.abs(glucoseUptake);
-      if (isOxygen) lb = -Math.abs(oxygenUptake);
+    // Match the substrate by external metabolite id (shared helper from
+    // fbaEngine) so EX_co2_e / EX_glu__L_e are not mis-clamped by name substring.
+    const exMet = exchangeMetaboliteId(r);
+    if (exMet !== null) {
+      if (GLUCOSE_EXCHANGE_METS.has(exMet)) lb = -Math.abs(glucoseUptake);
+      else if (OXYGEN_EXCHANGE_METS.has(exMet)) lb = -Math.abs(oxygenUptake);
     }
     return {
       name: r.id,
@@ -207,7 +209,7 @@ function buildOptKnockLP(
  *   Big-M (μ):              μ_i + M · z_i ≤ M                 (candidates)
  *   Big-M (ν):              ν_i + M · z_i ≤ M                 (candidates)
  */
-function buildOptKnockMILP(
+export function buildOptKnockMILP(
   reactions: OptKnockReaction[],
   objectiveId: string,
   productReactionId: string,
@@ -346,11 +348,10 @@ function buildOptKnockMILP(
   for (const rxn of reactions) {
     let lb = rxn.lb;
     const ub = rxn.ub;
-    if (rxn.id.startsWith("EX_")) {
-      const isGlucose = rxn.id.includes("glc") || rxn.id.includes("glu");
-      const isOxygen = rxn.id.includes("o2") || rxn.id.includes("O2");
-      if (isGlucose) lb = -Math.abs(glucoseUptake);
-      if (isOxygen) lb = -Math.abs(oxygenUptake);
+    const exMet = exchangeMetaboliteId(rxn);
+    if (exMet !== null) {
+      if (GLUCOSE_EXCHANGE_METS.has(exMet)) lb = -Math.abs(glucoseUptake);
+      else if (OXYGEN_EXCHANGE_METS.has(exMet)) lb = -Math.abs(oxygenUptake);
     }
     bounds.push({ name: `v_${rxn.id}`, lb, ub });
   }

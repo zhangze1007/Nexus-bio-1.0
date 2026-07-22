@@ -16,9 +16,12 @@
  *   ALGORITHM: Protocol translation from DBTL experiment spec to robot formats
  *   KNOWN_LIMITATIONS:
  *     - OT-2 protocol assumes specific labware (Opentrons tips, plates)
- *     - Does not account for liquid class specifics (viscosity, surface tension)
+ *     - Liquid class is a coarse heuristic (viscous / volatile / cell / aqueous)
+ *       driving flow rate + touch-tip — not a calibrated per-reagent model
  *     - Antha format is a simplified representation
  */
+
+import { type ProtocolManifest, buildManifest, buildPlateMap } from "../types/protocolManifest";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -76,6 +79,8 @@ export interface OT2Protocol {
   estimatedRunTime: number;
   /** Design notes */
   designNotes: string[];
+  /** Plate-map manifest (read-back keys) — present when a manifest spec is supplied. */
+  manifest?: ProtocolManifest;
 }
 
 export interface AnthaExperiment {
@@ -90,40 +95,74 @@ export interface AnthaExperiment {
 // ── OT-2 Protocol Export ─────────────────────────────────────────────────
 
 /**
+ * Experiment-role → real OT-2 labware/module load name. Every value is a
+ * verified identifier from the `opentrons_shared_data` library (labware or
+ * module definitions). Validated against a frozen fixture emitted from the
+ * `opentrons` package by `__tests__/labwareGroundTruth.test.ts` (L1 ground
+ * truth) — do not add a value the external toolchain does not accept.
+ */
+export const LABWARE_MAP: Record<string, string> = {
+  plate_96: "nest_96_wellplate_200ul_flat",
+  // opentrons_shared_data has NO `..._flat` variant for this plate; the real
+  // load name is `nest_24_wellplate_10.4ml`. The `_flat` form raised at OT-2 load.
+  plate_24: "nest_24_wellplate_10.4ml",
+  reservoir: "nest_12_reservoir_15ml",
+  tiprack_20: "opentrons_96_tiprack_20ul",
+  tiprack_300: "opentrons_96_tiprack_300ul",
+  tiprack_1000: "opentrons_96_tiprack_1000ul",
+  tube_rack: "opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap",
+  thermocycler: "thermocyclerModuleV2",
+  temperature: "temperatureModuleV2",
+  magnetic: "magneticModuleV2",
+  heater_shaker: "heaterShakerModuleV1",
+};
+
+/**
+ * Experiment-role → real OT-2 pipette load name (opentrons_shared_data
+ * `pipetteNameSpecs`). Validated by the same L1 ground-truth test.
+ */
+export const PIPETTE_MAP: Record<string, string> = {
+  p20_single: "p20_single_gen2",
+  p300_single: "p300_single_gen2",
+  p1000_single: "p1000_single_gen2",
+  p20_multi: "p20_multi_gen2",
+  p300_multi: "p300_multi_gen2",
+};
+
+/** Coarse liquid-class heuristic from a reagent/step description (deterministic, no RNG). */
+function liquidClassFor(hint: string): { liquidClass: string; flowRate: number; touchTip: boolean } {
+  const h = (hint ?? "").toLowerCase();
+  if (/glycerol|dmso|peg|viscous/.test(h)) return { liquidClass: "viscous", flowRate: 30, touchTip: true };
+  if (/ethanol|isopropanol|soc|media|volatile/.test(h)) return { liquidClass: "volatile", flowRate: 60, touchTip: false };
+  if (/cell|competent|culture|bacter/.test(h)) return { liquidClass: "cell-suspension", flowRate: 50, touchTip: true };
+  return { liquidClass: "aqueous", flowRate: 100, touchTip: false };
+}
+
+/**
  * Export an experiment protocol in OT-2 JSON format.
  *
- * Generates a valid Opentrons protocol JSON that can be loaded into the
- * OT-2 app or executed via the Opentrons API.
+ * Emits a protocol JSON whose labware/module/pipette load names are verified
+ * against the real `opentrons_shared_data` library (see LABWARE_MAP / PIPETTE_MAP
+ * and __tests__/labwareGroundTruth.test.ts). NOTE: schema conformance and an
+ * `opentrons_simulate` dry-run are NOT yet verified (see L4/L5), so this is not
+ * yet a claim that the OT-2 app will execute the protocol end-to-end.
  *
  * @param protocol  Experiment protocol specification
- * @returns OT-2 compatible protocol JSON
+ * @returns OT-2 protocol JSON with verified load names
  */
-export function exportOT2Protocol(protocol: ExperimentProtocol): OT2Protocol {
+export function exportOT2Protocol(
+  protocol: ExperimentProtocol,
+  manifestSpec?: {
+    batchId: string;
+    dbtlRunId: string;
+    samples: Array<{ sampleId: string; constructId: string; barcode?: string }>;
+    sampleLabwareId?: string;
+  },
+): OT2Protocol {
   const startTime = Date.now();
 
-  // Map labware to OT-2 labware names
-  const labwareMap: Record<string, string> = {
-    plate_96: "nest_96_wellplate_200ul_flat",
-    plate_24: "nest_24_wellplate_10.4ml_flat",
-    reservoir: "nest_12_reservoir_15ml",
-    tiprack_20: "opentrons_96_tiprack_20ul",
-    tiprack_300: "opentrons_96_tiprack_300ul",
-    tiprack_1000: "opentrons_96_tiprack_1000ul",
-    tube_rack: "opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap",
-    thermocycler: "thermocyclerModuleV2",
-    temperature: "temperatureModuleV2",
-    magnetic: "magneticModuleV2",
-    heater_shaker: "heaterShakerModuleV1",
-  };
-
-  // Map pipettes to OT-2 pipette names
-  const pipetteMap: Record<string, string> = {
-    p20_single: "p20_single_gen2",
-    p300_single: "p300_single_gen2",
-    p1000_single: "p1000_single_gen2",
-    p20_multi: "p20_multi_gen2",
-    p300_multi: "p300_multi_gen2",
-  };
+  const labwareMap = LABWARE_MAP;
+  const pipetteMap = PIPETTE_MAP;
 
   // Build OT-2 commands
   interface OT2Command {
@@ -145,6 +184,7 @@ export function exportOT2Protocol(protocol: ExperimentProtocol): OT2Protocol {
             destination: step.destination || "B1",
             pipette: Object.values(pipetteMap)[0],
             labware: Object.values(labwareMap)[0],
+            ...liquidClassFor(step.description),
           },
         });
         estimatedRunTime += 5; // ~5 seconds per transfer
@@ -159,6 +199,7 @@ export function exportOT2Protocol(protocol: ExperimentProtocol): OT2Protocol {
             well: step.source || "A1",
             pipette: Object.values(pipetteMap)[0],
             labware: Object.values(labwareMap)[0],
+            ...liquidClassFor(step.description),
           },
         });
         estimatedRunTime += 10;
@@ -240,6 +281,14 @@ export function exportOT2Protocol(protocol: ExperimentProtocol): OT2Protocol {
     liquids: [],
   };
 
+  const manifest: ProtocolManifest | undefined = manifestSpec
+    ? buildManifest({
+        batchId: manifestSpec.batchId,
+        dbtlRunId: manifestSpec.dbtlRunId,
+        plateMap: buildPlateMap(manifestSpec.samples, manifestSpec.sampleLabwareId ?? "sample_plate"),
+      })
+    : undefined;
+
   return {
     protocol: ot2Protocol,
     fileName: `${protocol.name.replace(/\s+/g, "_")}_OT2.json`,
@@ -252,7 +301,11 @@ export function exportOT2Protocol(protocol: ExperimentProtocol): OT2Protocol {
       `Pipettes: ${Object.keys(protocol.pipettes).join(", ")}`,
       `Format: Opentrons OT-2 JSON (schema v8)`,
       `Import: Load in OT-2 App or via opentrons_execute`,
+      ...(manifest
+        ? [`Manifest: ${manifest.manifestId} — ${manifest.plateMap.length} wells, batch ${manifest.batchId}`]
+        : []),
     ],
+    ...(manifest ? { manifest } : {}),
   };
 }
 

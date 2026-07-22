@@ -1,14 +1,18 @@
 import { analyzeBioreactorData } from '../src/server/bioreactorAnalyticsEngine';
+import { makeRng } from '../src/utils/rng';
 
 describe('bioreactorAnalyticsEngine', () => {
+  // Seeded fixture noise → the whole suite is reproducible (test fixture, not a
+  // compute path). Previously unseeded Math.random made this suite flaky.
+  const rng = makeRng(7);
   const sampleData = Array.from({ length: 50 }, (_, i) => ({
     time: i * 0.5,
-    biomass: 0.1 * Math.exp(0.15 * i) + (Math.random() - 0.5) * 0.02,
+    biomass: 0.1 * Math.exp(0.15 * i) + (rng() - 0.5) * 0.02,
     substrate: Math.max(0, 10 - 0.2 * i),
     product: 0.05 * i,
     dissolvedO2: 80 - i * 0.5,
-    pH: 7.0 + (Math.random() - 0.5) * 0.1,
-    temperature: 37 + (Math.random() - 0.5) * 0.2,
+    pH: 7.0 + (rng() - 0.5) * 0.1,
+    temperature: 37 + (rng() - 0.5) * 0.2,
   }));
 
   describe('analyzeBioreactorData', () => {

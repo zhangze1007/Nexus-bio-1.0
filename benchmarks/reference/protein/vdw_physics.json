@@ -1,0 +1,59 @@
+{
+  "name": "protein_vdw_physics",
+  "vdw_radii": {
+    "source": "Bondi 1964 J.Phys.Chem. 68:441, van der Waals radii (\u00c5)",
+    "values": {
+      "H": 1.2,
+      "C": 1.7,
+      "N": 1.55,
+      "O": 1.52,
+      "F": 1.47,
+      "P": 1.8,
+      "S": 1.8,
+      "Cl": 1.75
+    },
+    "tolerance": 0.02
+  },
+  "lj_6_12": {
+    "formula": "4*eps*((sigma/r)^12 - (sigma/r)^6)",
+    "cases": [
+      {
+        "sigma": 3.4,
+        "eps": 0.238,
+        "r": 3.4,
+        "energy": 0.0,
+        "regime": "minimum\u22480 at r=\u03c3"
+      },
+      {
+        "sigma": 3.4,
+        "eps": 0.238,
+        "r": 3.8,
+        "energy": -0.23783751,
+        "regime": "attractive(neg)"
+      },
+      {
+        "sigma": 3.4,
+        "eps": 0.238,
+        "r": 5.0,
+        "energy": -0.08481625,
+        "regime": "attractive(neg)"
+      },
+      {
+        "sigma": 2.8,
+        "eps": 0.1,
+        "r": 3.0,
+        "energy": -0.08962784,
+        "regime": "attractive(neg)"
+      },
+      {
+        "sigma": 3.0,
+        "eps": 0.15,
+        "r": 2.7,
+        "energy": 0.99541784,
+        "regime": "repulsive(pos)"
+      }
+    ],
+    "tolerance": 1e-06,
+    "note": "at r=sigma energy=0; r>sigma attractive(negative); r<sigma repulsive(positive)"
+  }
+}

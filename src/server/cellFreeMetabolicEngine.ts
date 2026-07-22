@@ -83,49 +83,35 @@ export interface CellFreeResult {
  *   - Slow but sustained, cheap
  *   - Reference: Kim & Swartz 2001
  */
-function modelEnergySystem(
+export function modelEnergySystem(
   type: CellFreeSystem["energySystem"],
   initialConc: number,
   dt: number,
 ): { atpRate: number; substrateConsumption: number; halfLife: number } {
-  switch (type) {
-    case "PEP":
-      // PEP system: pyruvate kinase converts PEP → pyruvate + ATP
-      // Rate: ~0.5 mM/min per mM PEP at 37°C
-      // Half-life: ~2h — depends on PK stability
-      // Reference: Silverman et al. (2020) Nat Rev Methods Primers 1:30
-      // Reference: Calhoun & Swartz (2005) Biotechnol Prog 21:1146 (PEP regeneration)
-      // Reference: Kim & Swartz (2001) Biotechnol Bioeng 72:379 (energy systems)
-      return {
-        atpRate: 0.5,
-        substrateConsumption: 0.5,
-        halfLife: 2.0,
-      };
-    case "creatine_phosphate":
-      // CP system: creatine kinase converts CP + ADP → creatine + ATP
-      // Rate: ~2.0 mM/min — fastest energy system
-      // Half-life: ~1h — CK is less stable than PK
-      // Reference: Karim et al. (2020) Nat Commun 11:4031
-      // Reference: Jewett & Swartz (2004) Biotechnol Bioeng 86:17 (CP system)
-      return {
-        atpRate: 2.0,
-        substrateConsumption: 2.0,
-        halfLife: 1.0,
-      };
-    case "maltodextrin":
-      // Maltodextrin system: amylase → glucose → glycolysis → ATP
-      // Rate: ~0.1 mM/min — slow but sustained
-      // Half-life: ~8h — longest lasting
-      // Reference: Kim & Swartz (2001) Biotechnol Bioeng 72:379
-      // Reference: Wang & Zhang (2009) Biotechnol Bioeng 103:544 (maltodextrin)
-      return {
-        atpRate: 0.1,
-        substrateConsumption: 0.05,
-        halfLife: 8.0,
-      };
-    default:
-      return { atpRate: 0, substrateConsumption: 0, halfLife: 0 };
-  }
+  // Per-system base kinetics: Vmax (mM/min), Km (mM), substrate cost, enzyme
+  // half-life (h). The ATP regeneration rate now follows Michaelis–Menten
+  // saturation in the available energy-substrate concentration `initialConc`
+  // and first-order enzyme decay over the step `dt` — both previously ignored.
+  //   PEP:  pyruvate kinase, PEP → pyruvate + ATP. Ref: Silverman 2020; Calhoun & Swartz 2005.
+  //   CP:   creatine kinase, CP + ADP → creatine + ATP. Ref: Karim 2020; Jewett & Swartz 2004.
+  //   malto: amylase → glucose → glycolysis → ATP. Ref: Kim & Swartz 2001; Wang & Zhang 2009.
+  const BASE: Record<string, { vmax: number; km: number; cost: number; halfLife: number }> = {
+    PEP: { vmax: 0.5, km: 15, cost: 0.5, halfLife: 2.0 },
+    creatine_phosphate: { vmax: 2.0, km: 10, cost: 2.0, halfLife: 1.0 },
+    maltodextrin: { vmax: 0.1, km: 20, cost: 0.05, halfLife: 8.0 },
+  };
+  const base = BASE[type];
+  if (!base) return { atpRate: 0, substrateConsumption: 0, halfLife: 0 };
+
+  const conc = Math.max(0, initialConc);
+  const saturation = conc / (base.km + conc); // Michaelis–Menten
+  const decay = base.halfLife > 0 ? Math.exp((-Math.LN2 * Math.max(0, dt)) / base.halfLife) : 1; // first-order over dt
+
+  return {
+    atpRate: base.vmax * saturation * decay,
+    substrateConsumption: base.cost * saturation * decay,
+    halfLife: base.halfLife,
+  };
 }
 
 // ── TX-TL Dynamics ─────────────────────────────────────────────────────────
@@ -156,8 +142,11 @@ export function simulateCellFreePathway(
 
   const timeSeries: CellFreeResult["timeSeries"] = [];
 
-  // Energy system parameters
-  const energy = modelEnergySystem(system.energySystem, 10, dt);
+  // Energy system parameters. Initial energy-substrate concentration is taken
+  // from the system's nucleotide pool (proxy for regeneration capacity) so the
+  // regeneration kinetics respond to the actual reaction setup, not a constant.
+  const energySubstrateConc = Object.values(system.rNTPs).reduce((sum, v) => sum + v, 0);
+  const energy = modelEnergySystem(system.energySystem, energySubstrateConc, dt);
 
   // TX-TL parameters (E. coli S30 extract)
   // Reference: Silverman et al. (2020) Nat Rev Methods Primers 1:30

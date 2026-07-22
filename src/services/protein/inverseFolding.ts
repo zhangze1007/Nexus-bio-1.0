@@ -30,6 +30,7 @@ import {
   ALL_AMINO_ACIDS,
 } from "./propensity";
 import type { BackboneAtom } from "./backboneGenerator";
+import { makeRng } from "../../utils/rng";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,6 +47,8 @@ export interface InverseFoldingRequest {
   fixedPositions?: Map<number, string>;
   /** Wild-type sequence for sequence identity calculation */
   wildType?: string;
+  /** Seed for reproducible sampling. Default: 42 */
+  seed?: number;
 }
 
 export interface InverseFoldingResult {
@@ -223,7 +226,11 @@ function buildPSSM(backbone: BackboneAtom[], ssAssignments: Array<"helix" | "she
  * @param temperature - Sampling temperature (0=greedy, 1=diverse)
  * @returns Index of selected amino acid and its probability
  */
-function sampleAminoAcid(scores: number[], temperature: number): { index: number; probability: number } {
+function sampleAminoAcid(
+  scores: number[],
+  temperature: number,
+  rng: () => number,
+): { index: number; probability: number } {
   if (temperature <= 0) {
     // Greedy: pick the argmax
     let maxIdx = 0;
@@ -245,7 +252,7 @@ function sampleAminoAcid(scores: number[], temperature: number): { index: number
   const probs = expScores.map((e) => e / sumExp);
 
   // Sample from distribution
-  const r = Math.random();
+  const r = rng();
   let cumulative = 0;
   for (let i = 0; i < probs.length; i++) {
     cumulative += probs[i];
@@ -269,7 +276,8 @@ function sampleAminoAcid(scores: number[], temperature: number): { index: number
 function sampleSequence(
   pssm: number[][],
   temperature: number,
-  fixedPositions?: Map<number, string>,
+  fixedPositions: Map<number, string> | undefined,
+  rng: () => number,
 ): { sequence: string; perResidueScores: number[] } {
   const n = pssm.length;
   let sequence = "";
@@ -284,7 +292,7 @@ function sampleSequence(
       continue;
     }
 
-    const { index, probability } = sampleAminoAcid(pssm[i], temperature);
+    const { index, probability } = sampleAminoAcid(pssm[i], temperature, rng);
     sequence += ALL_AMINO_ACIDS[index];
     perResidueScores.push(Math.round(probability * 1000) / 1000);
   }
@@ -382,6 +390,7 @@ function computeSequenceIdentity(seq1: string, seq2: string): number {
  */
 export function inverseFold(request: InverseFoldingRequest): InverseFoldingResult {
   const { backbone, temperature = 1.0, numSequences = 5, fixedPositions, wildType } = request;
+  const rng = makeRng(request.seed ?? 42);
 
   // Validate input
   if (backbone.length < 10) {
@@ -403,7 +412,7 @@ export function inverseFold(request: InverseFoldingRequest): InverseFoldingResul
   while (sequences.length < numSequences && attempts < maxAttempts) {
     attempts++;
 
-    const { sequence, perResidueScores } = sampleSequence(pssm, temperature, fixedPositions);
+    const { sequence, perResidueScores } = sampleSequence(pssm, temperature, fixedPositions, rng);
 
     // Skip duplicates
     if (seenSequences.has(sequence)) continue;

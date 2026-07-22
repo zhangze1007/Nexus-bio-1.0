@@ -99,7 +99,7 @@ export function buildLogEntry(
   options: BuildLogOptions = {},
 ): AxonLogEntry {
   const now = options.now ?? Date.now;
-  const idFactory = options.idFactory ?? (() => `log-${Math.random().toString(36).slice(2, 10)}`);
+  const idFactory = options.idFactory ?? (() => `log-${Math.random().toString(36).slice(2, 10)}`); // rng-ok: log entry id, not a compute path
   return {
     id: input.id ?? idFactory(),
     timestamp: input.timestamp ?? now(),

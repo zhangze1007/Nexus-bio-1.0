@@ -125,7 +125,7 @@ function hasAny(text: string, keywords: string[]): boolean {
 }
 
 function defaultIdFactory(prefix: string): string {
-  return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${prefix}-${Math.random().toString(36).slice(2, 8)}`; // rng-ok: id generator, not a compute path
 }
 
 function truncate(s: string, max: number): string {

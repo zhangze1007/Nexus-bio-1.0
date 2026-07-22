@@ -44,7 +44,7 @@ export interface ToolCall {
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function generateId(): string {
-  return `cop_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+  return `cop_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`; // rng-ok: conversation id, not a compute path
 }
 
 function nowISO(): string {

@@ -336,7 +336,7 @@ const COLUMN_MAP: Record<string, string> = {
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function generateId(): string {
-  return `inv_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  return `inv_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`; // rng-ok: import batch id, not a compute path
 }
 
 /**

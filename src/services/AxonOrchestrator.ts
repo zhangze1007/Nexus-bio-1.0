@@ -381,6 +381,6 @@ export class AxonOrchestrator {
 }
 
 function defaultIdFactory(): string {
-  const rand = Math.random().toString(36).slice(2, 8);
+  const rand = Math.random().toString(36).slice(2, 8); // rng-ok: id suffix, not a compute path
   return `axon-${Date.now().toString(36)}-${rand}`;
 }

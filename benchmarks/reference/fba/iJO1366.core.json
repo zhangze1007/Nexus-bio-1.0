@@ -1,0 +1,21 @@
+{
+  "model": "iJO1366",
+  "source": "COBRApy 0.31.1 load_model('iJO1366'), default medium, genome-scale E. coli",
+  "n_reactions": 2583,
+  "n_metabolites": 1805,
+  "n_genes": 1367,
+  "status": "optimal",
+  "biomass_flux": 0.982372,
+  "key_fluxes": {
+    "EX_glc__D_e": -10.0,
+    "EX_o2_e": -17.578934,
+    "EX_co2_e": 19.675223,
+    "EX_nh4_e": -10.610425,
+    "EX_pi_e": -0.947626,
+    "ATPM": 3.15
+  },
+  "tolerance": {
+    "biomass_rel": 0.01,
+    "flux_abs": 0.5
+  }
+}

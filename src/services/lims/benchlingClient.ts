@@ -16,6 +16,18 @@ export interface BenchlingClientOptions {
   baseUrl?: string;
 }
 
+/** A normalized assay result pulled back from a LIMS (read side of sync). */
+export interface AssayPull {
+  externalId: string;
+  assayType: string;
+  unit: string;
+  timepoints: Array<{ timeHours: number; value: number }>;
+  instrument?: string;
+  operator?: string;
+  startedAt: string;
+  completedAt?: string;
+}
+
 export class BenchlingClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
@@ -178,6 +190,19 @@ export class BenchlingClient {
   }
 
   /**
+   * Pull assay results back from Benchling (bidirectional sync, read side).
+   * Reuses request<T>() and the injected fetchFn — no direct network coupling.
+   * Filters by batch and/or an incremental `since` timestamp.
+   */
+  async pullAssayResults(params: { batchId?: string; since?: string }): Promise<AssayPull[]> {
+    const qs = new URLSearchParams({ limit: "50" });
+    if (params.batchId) qs.set("batchId", params.batchId);
+    if (params.since) qs.set("modifiedAt.gte", params.since);
+    const data = await this.request<BenchlingAssayResultsResponse>(`/api/v2/assay-results?${qs.toString()}`);
+    return (data.assayResults ?? []).map(mapBenchlingAssayResult);
+  }
+
+  /**
    * Get custom entities by type (e.g., strains, cell lines).
    */
   async getCustomEntities(type: string): Promise<LIMSSample[]> {
@@ -246,4 +271,35 @@ interface BenchlingCustomEntity {
 interface BenchlingCustomEntitySearchResponse {
   customEntities?: BenchlingCustomEntity[];
   nextToken?: string;
+}
+
+interface BenchlingAssayResult {
+  id: string;
+  entityId?: string;
+  assayType?: string;
+  unit?: string;
+  startedAt?: string;
+  completedAt?: string;
+  instrument?: string;
+  operator?: string;
+  timepoints?: Array<{ timeHours: number; value: number }>;
+}
+
+interface BenchlingAssayResultsResponse {
+  assayResults?: BenchlingAssayResult[];
+  nextToken?: string;
+}
+
+/** Map a raw Benchling assay result to the normalized AssayPull shape. */
+function mapBenchlingAssayResult(r: BenchlingAssayResult): AssayPull {
+  return {
+    externalId: r.entityId ?? r.id,
+    assayType: r.assayType ?? "other",
+    unit: r.unit ?? "",
+    timepoints: Array.isArray(r.timepoints) ? r.timepoints.map((t) => ({ timeHours: t.timeHours, value: t.value })) : [],
+    ...(r.instrument ? { instrument: r.instrument } : {}),
+    ...(r.operator ? { operator: r.operator } : {}),
+    startedAt: r.startedAt ?? new Date(0).toISOString(),
+    ...(r.completedAt ? { completedAt: r.completedAt } : {}),
+  };
 }

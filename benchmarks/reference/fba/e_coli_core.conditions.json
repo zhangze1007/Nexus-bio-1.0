@@ -1,0 +1,44 @@
+{
+  "model": "e_coli_core",
+  "source": "COBRApy 0.31.1 textbook model, medium perturbations, GLPK LP",
+  "tolerance": {
+    "biomass_rel": 0.01
+  },
+  "conditions": {
+    "aerobic_glucose": {
+      "changes": {},
+      "biomass": 0.873922
+    },
+    "anaerobic_glucose": {
+      "changes": {
+        "EX_o2_e": [
+          0,
+          1000
+        ]
+      },
+      "biomass": 0.211663
+    },
+    "acetate_aerobic": {
+      "changes": {
+        "EX_glc__D_e": [
+          0,
+          1000
+        ],
+        "EX_ac_e": [
+          -10,
+          1000
+        ]
+      },
+      "biomass": 0.173339
+    },
+    "glucose_limited_5": {
+      "changes": {
+        "EX_glc__D_e": [
+          -5,
+          1000
+        ]
+      },
+      "biomass": 0.415598
+    }
+  }
+}

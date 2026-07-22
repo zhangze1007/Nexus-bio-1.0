@@ -1,4 +1,5 @@
 import { predictDDG, predictMultiDDG, scanAllMutations } from "../server/ddgPrediction";
+import { makeRng } from "../utils/rng";
 import {
   assignSecondaryStructure,
   computeDihedrals,
@@ -14,26 +15,28 @@ const _B62: number[][] = [
   [4, -1, -2, -2, 0, -1, -1, 0, -2, -1, -1, -1, -1, -2, -1, 1, 0, -3, -2, 0], // A
   [-1, 5, 0, -2, -3, 1, 0, -2, 0, -3, -2, 2, -1, -3, -2, -1, -1, -3, -2, -3], // R
   [-2, 0, 6, 1, -3, 0, 0, 0, 1, -3, -3, 0, -2, -3, -2, 1, 0, -4, -2, -3], // N
-  [-2, -1, 1, 6, -3, 0, 2, -1, -1, -3, -4, -1, -3, -3, -1, 0, -1, -4, -3, -3], // D
+  [-2, -2, 1, 6, -3, 0, 2, -1, -1, -3, -4, -1, -3, -3, -1, 0, -1, -4, -3, -3], // D  (D-R corrected -1→-2)
   [0, -3, -3, -3, 9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1], // C
   [-1, 1, 0, 0, -3, 5, 2, -2, 0, -3, -2, 1, 0, -3, -1, 0, -1, -2, -1, -2], // Q
   [-1, 0, 0, 2, -4, 2, 5, -2, 0, -3, -3, 1, -2, -3, -1, 0, -1, -3, -2, -2], // E
   [0, -2, 0, -1, -3, -2, -2, 6, -2, -4, -4, -2, -3, -3, -2, 0, -2, -2, -3, -3], // G
   [-2, 0, 1, -1, -3, 0, 0, -2, 8, -3, -3, -1, -2, -1, -2, -1, -2, -2, 2, -3], // H
   [-1, -3, -3, -3, -1, -3, -3, -4, -3, 4, 2, -3, 1, 0, -3, -2, -1, -3, -1, 3], // I
-  [-1, -2, -3, -4, -1, -2, -3, -4, -1, 2, 4, -2, 2, 0, -3, -2, -1, -2, -1, 1], // L
+  [-1, -2, -3, -4, -1, -2, -3, -4, -3, 2, 4, -2, 2, 0, -3, -2, -1, -2, -1, 1], // L  (L-H corrected -1→-3)
   [-1, 2, 0, -1, -3, 1, 1, -2, -1, -3, -2, 5, -1, -3, -1, 0, -1, -3, -2, -2], // K
   [-1, -1, -2, -3, -1, 0, -2, -3, -2, 1, 2, -1, 5, 0, -2, -1, -1, -1, -1, 1], // M
   [-2, -3, -3, -3, -2, -3, -3, -3, -1, 0, 0, -3, 0, 6, -4, -2, -2, 1, 3, -1], // F
   [-1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4, 7, -1, -1, -4, -3, -2], // P
-  [1, -1, 0, 0, -1, 0, 0, 0, -1, -2, -2, 0, -1, -2, -1, 4, 1, -3, -2, -2], // S
+  [1, -1, 1, 0, -1, 0, 0, 0, -1, -2, -2, 0, -1, -2, -1, 4, 1, -3, -2, -2], // S  (S-N corrected 0→1)
   [0, -1, 0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1, 1, 5, -2, -2, 0], // T
-  [-3, -3, -4, -4, -2, -1, -3, -2, -2, -3, -2, -3, -1, 1, -4, -3, -2, 11, 2, -3], // W
+  [-3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3, -1, 1, -4, -3, -2, 11, 2, -3], // W  (W-Q corrected -1→-2)
   [-2, -2, -2, -3, -2, -1, -2, -3, 2, -1, -1, -2, -1, 3, -3, -2, -2, 2, 7, -1], // Y
   [0, -3, -3, -3, -1, -2, -2, -3, -3, 3, 1, -2, 1, -1, -2, -2, 0, -3, -1, 4], // V
 ];
-const AA_ORDER = "ARNDCEQGHILKMFPSTWYV";
-const BLOSUM62: Record<string, Record<string, number>> = {};
+// Standard BLOSUM62 amino-acid order (matches the row/column order of _B62).
+// Previously "ARNDCEQ…" had E and Q transposed, mislabeling every E/Q lookup.
+const AA_ORDER = "ARNDCQEGHILKMFPSTWYV";
+export const BLOSUM62: Record<string, Record<string, number>> = {};
 for (let i = 0; i < 20; i++) {
   BLOSUM62[AA_ORDER[i]] = {};
   for (let j = 0; j < 20; j++) {
@@ -1914,6 +1917,7 @@ export function designSequences(input: {
   fixedPositions?: number[];
   numDesigns?: number;
   esm2Embeddings?: number[][];
+  seed?: number;
 }): {
   designs: Array<{
     sequence: string;
@@ -1922,7 +1926,8 @@ export function designSequences(input: {
   }>;
   esm2Used: boolean;
 } {
-  const { sequence, pdbText, fixedPositions = [], numDesigns = 10, esm2Embeddings } = input;
+  const { sequence, pdbText, fixedPositions = [], numDesigns = 10, esm2Embeddings, seed = 424242 } = input;
+  const rng = makeRng(seed);
   const fixedSet = new Set(fixedPositions);
   const AA_CODES = "ACDEFGHIKLMNPQRSTVWY";
   const esm2Used = Array.isArray(esm2Embeddings) && esm2Embeddings.length > 0;
@@ -2059,7 +2064,7 @@ export function designSequences(input: {
       const probs = expScores.map((v) => v / sumExp);
 
       // Weighted random selection
-      const r = Math.random(); // OK for design diversity
+      const r = rng(); // seeded → reproducible design diversity
       let cumulative = 0;
       let selected = wt;
       for (let j = 0; j < probs.length; j++) {

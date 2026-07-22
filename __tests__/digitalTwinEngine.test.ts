@@ -1,3 +1,4 @@
+import { makeRng } from '../src/utils/rng';
 import {
   runDigitalTwin,
   quickStateEstimate,
@@ -28,6 +29,10 @@ import {
  */
 function generateSensorReadings(config: DigitalTwinConfig, count: number): SensorReading[] {
   const readings: SensorReading[] = [];
+  // Seeded process noise → the fixture is reproducible (test fixture, not a
+  // compute path). Same magnitude as before, so every assertion that tolerated
+  // the unseeded noise still holds — it just no longer flakes.
+  const rng = makeRng(2024);
   let X = 0.1;   // initial biomass
   let S = 10.0;   // initial substrate
   let P = 0.0;    // initial product
@@ -41,9 +46,9 @@ function generateSensorReadings(config: DigitalTwinConfig, count: number): Senso
     const dSdt = -(mu / config.yieldCoeff) * X - config.maintenanceCoeff * X + D * (config.feedConcentration - S);
     const dPdt = config.productYield * mu * X + 0.01 * X - D * P;
 
-    X = Math.max(0.01, X + dXdt + (Math.random() - 0.5) * 0.002);
-    S = Math.max(0.01, S + dSdt + (Math.random() - 0.5) * 0.002);
-    P = Math.max(0, P + dPdt + (Math.random() - 0.5) * 0.001);
+    X = Math.max(0.01, X + dXdt + (rng() - 0.5) * 0.002);
+    S = Math.max(0.01, S + dSdt + (rng() - 0.5) * 0.002);
+    P = Math.max(0, P + dPdt + (rng() - 0.5) * 0.001);
 
     readings.push({
       timestamp,
@@ -521,12 +526,16 @@ describe('Digital Twin Engine — Model Fit', () => {
 
 function makeReadings(count: number, opts?: { biomassNoise?: number }): SensorReading[] {
   const noise = opts?.biomassNoise ?? 0.01;
+  // Seeded fixture noise → reproducible suite (test fixture, not a compute path).
+  // A fixed seed shared across noise levels keeps the noise magnitude the only
+  // difference, so the likelihood-monotonicity assertion holds deterministically.
+  const rng = makeRng(1234);
   const readings: SensorReading[] = [];
   let X = 0.1, S = 10.0, P = 0.0;
   for (let i = 0; i < count; i++) {
     const mu = standardConfig.muMax * S / (standardConfig.ks + S) * standardConfig.dissolvedO2 / (0.5 + standardConfig.dissolvedO2);
     const D = standardConfig.feedRate / standardConfig.volume;
-    X = Math.max(0.01, X + (mu * X - D * X) + (Math.random() - 0.5) * noise);
+    X = Math.max(0.01, X + (mu * X - D * X) + (rng() - 0.5) * noise);
     S = Math.max(0.01, S + (-(mu / standardConfig.yieldCoeff) * X - standardConfig.maintenanceCoeff * X + D * (standardConfig.feedConcentration - S)));
     P = Math.max(0, P + (standardConfig.productYield * mu * X + 0.01 * X - D * P));
     readings.push({ timestamp: i + 1, biomass: +X.toFixed(4), substrate: +S.toFixed(4), product: +P.toFixed(4) });

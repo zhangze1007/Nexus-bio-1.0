@@ -173,7 +173,23 @@ function vecClamp(v: number[], lo: number[], hi: number[]): number[] {
  * using the linearised model  x(k+1) = A·x(k) + B·u(k) + c
  * where  c = f(x0,u0) − A·x0 − B·u0  (affine correction).
  */
-function buildPredictionMatrices(
+/**
+ * Assemble the condensed MPC prediction matrices for the affine linear system
+ *   x(k+1) = A·x(k) + B·u(k) + c
+ * over a prediction horizon `Np` and a control horizon `Nc` (Nc ≤ Np). Stacking
+ * the per-step relation x(k) = A^k·x0 + Σ_j (control influence)·u(j) + Σ_{i<k} A^i·c
+ * as block-rows k = 1…Np gives:
+ *   PhiX : (Np·n) × n        free response  (rows of A^k)
+ *   PhiU : (Np·n) × (Nc·m)   forced response (each control move's influence; the
+ *                            final move u(Nc-1) is held for the remaining steps)
+ *   PhiC : (Np·n)            affine drift accumulated from the offset vector `c`
+ * so that  X_pred = PhiX·x0 + PhiU·[u(0);…;u(Nc-1)] + PhiC.
+ *
+ * Exported for realness sensitivity testing: the result genuinely depends on the
+ * offset `c` (via PhiC) and on the control horizon `Nc` (via PhiU's width and the
+ * control-hold aggregation), which earlier revisions ignored.
+ */
+export function buildPredictionMatrices(
   A: number[][],
   B: number[][],
   c: number[],
@@ -181,27 +197,59 @@ function buildPredictionMatrices(
   Nc: number,
 ): { PhiX: number[][]; PhiU: number[][]; PhiC: number[] } {
   const n = A.length;
-  const m = B[0].length;
+  const m = B[0]?.length ?? 0;
+  // The control horizon cannot exceed the prediction horizon; at least one move.
+  const nc = Math.max(1, Math.min(Nc, Np));
 
-  // PhiX[k] = A^k   — contribution of initial state to step k
-  const PhiXList: number[][][] = [];
+  // Powers of A: Apow[k] = A^k for k = 0…Np.
+  const Apow: number[][][] = [];
   let Ak: number[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
   for (let k = 0; k <= Np; k++) {
-    PhiXList.push(Ak);
+    Apow.push(Ak);
     Ak = matMul(A, Ak);
   }
 
-  // For each prediction step k, we need the cumulative effect of
-  // each control step j (j < min(k, Nc)) on state at step k.
-  // state(k) = PhiX[k]·x0 + Σ_{j=0}^{min(k-1,Nc-1)} A^{k-1-j}·B·u(j) + cumulative c terms
-  //
-  // We build PhiU as a stacked matrix so that:
-  //   x_pred = PhiX[Np]*x0 + PhiU * U_vec + PhiC
-  // where U_vec = [u(0); u(1); …; u(Nc-1)] stacked.
+  const PhiX: number[][] = [];
+  const PhiU: number[][] = [];
+  const PhiC: number[] = [];
 
-  // Instead of building one big matrix, we build the cost directly.
-  // Return per-step PhiX[k], per-step PhiU[k][j] and PhiC[k].
-  return { PhiX: PhiXList.map((m) => matVec(m, new Array(n).fill(0))), PhiU: [], PhiC: new Array(n).fill(0) };
+  for (let k = 1; k <= Np; k++) {
+    // Affine drift accumulated up to step k: Σ_{i=0}^{k-1} A^i · c.
+    const cAcc = new Array(n).fill(0);
+    for (let i = 0; i < k; i++) {
+      const term = matVec(Apow[i], c);
+      for (let r = 0; r < n; r++) cAcc[r] += term[r];
+    }
+
+    // Control-influence block for each move j (an n×m matrix). Move j acts at
+    // step j; the final move (j = nc-1) is held for every remaining step up to
+    // k-1 — the control-horizon blocking that makes PhiU depend on Nc.
+    const uBlocks: number[][][] = [];
+    for (let j = 0; j < nc; j++) {
+      const blk = Array.from({ length: n }, () => new Array(m).fill(0));
+      const tEnd = j === nc - 1 ? k - 1 : j;
+      for (let t = j; t <= tEnd && t <= k - 1; t++) {
+        const AB = matMul(Apow[k - 1 - t], B); // A^{k-1-t}·B
+        for (let r = 0; r < n; r++) {
+          for (let s = 0; s < m; s++) blk[r][s] += AB[r][s];
+        }
+      }
+      uBlocks.push(blk);
+    }
+
+    // Emit the n stacked rows for this prediction step.
+    for (let r = 0; r < n; r++) {
+      PhiX.push(Apow[k][r].slice());
+      PhiC.push(cAcc[r]);
+      const uRow: number[] = [];
+      for (let j = 0; j < nc; j++) {
+        for (let s = 0; s < m; s++) uRow.push(uBlocks[j][r][s]);
+      }
+      PhiU.push(uRow);
+    }
+  }
+
+  return { PhiX, PhiU, PhiC };
 }
 
 /**

@@ -1,0 +1,567 @@
+{
+  "model": "e_coli_core",
+  "source": "COBRApy 0.31.1 single_gene_deletion, textbook model, default medium",
+  "wild_type_growth": 0.873922,
+  "essential_threshold": 1e-06,
+  "n_genes": 137,
+  "n_essential": 7,
+  "essential_genes": [
+    "b0720",
+    "b1136",
+    "b1779",
+    "b2415",
+    "b2416",
+    "b2779",
+    "b2926"
+  ],
+  "per_gene_growth": {
+    "b1241": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0729": {
+      "growth": 0.858307,
+      "essential": false
+    },
+    "b3403": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b4077": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3870": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1779": {
+      "growth": 0.0,
+      "essential": true
+    },
+    "b3952": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2133": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1276": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1676": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3738": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b3739": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0351": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1478": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1854": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1101": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0810": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1611": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2288": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b0978": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0727": {
+      "growth": 0.858307,
+      "essential": false
+    },
+    "b3925": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2297": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2286": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b1723": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2287": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b0724": {
+      "growth": 0.814298,
+      "essential": false
+    },
+    "b0809": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0767": {
+      "growth": 0.863813,
+      "essential": false
+    },
+    "b1524": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1773": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3236": {
+      "growth": 0.825819,
+      "essential": false
+    },
+    "b1136": {
+      "growth": -0.0,
+      "essential": true
+    },
+    "b0474": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2296": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0118": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3737": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b2416": {
+      "growth": 0.0,
+      "essential": true
+    },
+    "b2458": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2935": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0904": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b4232": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2284": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b3733": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b1621": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1602": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0721": {
+      "growth": 0.814298,
+      "essential": false
+    },
+    "b2925": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1380": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2276": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b2465": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3115": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2282": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b2976": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3528": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1603": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2097": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2492": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2587": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0115": {
+      "growth": 0.796696,
+      "essential": false
+    },
+    "b4015": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0114": {
+      "growth": 0.796696,
+      "essential": false
+    },
+    "b3603": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b4090": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2280": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b1761": {
+      "growth": 0.851389,
+      "essential": false
+    },
+    "b1479": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0728": {
+      "growth": 0.858307,
+      "essential": false
+    },
+    "b3956": {
+      "growth": 0.870745,
+      "essential": false
+    },
+    "b2285": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "s0001": {
+      "growth": 0.211141,
+      "essential": false
+    },
+    "b1817": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0356": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b4025": {
+      "growth": 0.86316,
+      "essential": false
+    },
+    "b3919": {
+      "growth": 0.704037,
+      "essential": false
+    },
+    "b2279": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b0008": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0723": {
+      "growth": 0.814298,
+      "essential": false
+    },
+    "b3213": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2281": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b0485": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2277": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b4151": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2417": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0979": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3736": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b4152": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2415": {
+      "growth": 0.0,
+      "essential": true
+    },
+    "b4122": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3735": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b3731": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b2463": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b4154": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3962": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0451": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3612": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1812": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0722": {
+      "growth": 0.814298,
+      "essential": false
+    },
+    "b2579": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1852": {
+      "growth": 0.863813,
+      "essential": false
+    },
+    "b4395": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0116": {
+      "growth": 0.782351,
+      "essential": false
+    },
+    "b0755": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1849": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0903": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1297": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3734": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b2278": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b3732": {
+      "growth": 0.37423,
+      "essential": false
+    },
+    "b3493": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2914": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3916": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1702": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2464": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3212": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3951": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0726": {
+      "growth": 0.858307,
+      "essential": false
+    },
+    "b2283": {
+      "growth": 0.211663,
+      "essential": false
+    },
+    "b3386": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b3114": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2029": {
+      "growth": 0.863813,
+      "essential": false
+    },
+    "b4014": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0733": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0902": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0734": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b4153": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1819": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0875": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2987": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b1612": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2975": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b0811": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2779": {
+      "growth": 0.0,
+      "essential": true
+    },
+    "b4301": {
+      "growth": 0.873922,
+      "essential": false
+    },
+    "b2926": {
+      "growth": 0.0,
+      "essential": true
+    },
+    "b0720": {
+      "growth": 0.0,
+      "essential": true
+    },
+    "b1818": {
+      "growth": 0.873922,
+      "essential": false
+    }
+  }
+}
