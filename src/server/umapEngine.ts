@@ -212,23 +212,54 @@ function computeFuzzySimplicialSet(knnGraph: KNNeighbor[][], sigmas: number[], r
 // ── Step 3: Embedding Initialization ────────────────────────────────────────
 
 function initializeEmbedding(data: number[][], n: number, rng: SeededRNG): number[][] {
-  // Simple PCA-like initialization using first 2 principal components
-  // For small datasets, random initialization works fine
-  if (n < 100) {
-    return Array.from({ length: n }, () => [(rng.next() - 0.5) * 20, (rng.next() - 0.5) * 20]);
-  }
-
-  // For larger datasets, use a simple spectral initialization
-  // Compute centroid and spread
+  // PCA initialization onto the top 2 principal components, then rescaled to a
+  // fixed ~[-10,10] range (as umap-learn scales its spectral/PCA init). This
+  // places well-separated structure apart to begin with — random or raw-dim
+  // inits let the layout collapse or blow up because the a/b force gradients are
+  // calibrated for ~unit-scale distances. Falls back to random init if PCA is
+  // degenerate (e.g. <2 dims or zero variance).
   const dim = data[0]?.length ?? 0;
-  const centroid = new Array(dim).fill(0);
-  for (const point of data) {
-    for (let d = 0; d < dim; d++) centroid[d] += point[d];
-  }
-  for (let d = 0; d < dim; d++) centroid[d] /= n;
+  const randomInit = () => Array.from({ length: n }, () => [(rng.next() - 0.5) * 20, (rng.next() - 0.5) * 20]);
+  if (dim < 2 || n < 3) return randomInit();
 
-  // Project onto first 2 dimensions (simple but effective for initialization)
-  return data.map((point) => [(point[0] - centroid[0]) * 10, (point[1] - centroid[1]) * 10]);
+  const mean = new Array(dim).fill(0);
+  for (const p of data) for (let d = 0; d < dim; d++) mean[d] += p[d];
+  for (let d = 0; d < dim; d++) mean[d] /= n;
+  const Xc = data.map((p) => p.map((v, d) => v - mean[d]));
+
+  // Top-2 principal components via power iteration on the covariance X_cᵀX_c
+  // (computed implicitly as Σ_i x_i (x_i·v) to avoid forming the dim×dim matrix).
+  const dot = (u: number[], v: number[]) => u.reduce((s, x, i) => s + x * v[i], 0);
+  const powerIter = (deflate: number[] | null): number[] => {
+    let v = Array.from({ length: dim }, () => rng.next() - 0.5);
+    let norm0 = Math.sqrt(dot(v, v)) || 1;
+    v = v.map((x) => x / norm0);
+    for (let iter = 0; iter < 50; iter++) {
+      const w = new Array(dim).fill(0);
+      for (const x of Xc) {
+        const c = dot(x, v);
+        for (let d = 0; d < dim; d++) w[d] += x[d] * c;
+      }
+      if (deflate) {
+        const c = dot(w, deflate);
+        for (let d = 0; d < dim; d++) w[d] -= c * deflate[d];
+      }
+      norm0 = Math.sqrt(dot(w, w));
+      if (norm0 < 1e-12) return v;
+      v = w.map((x) => x / norm0);
+    }
+    return v;
+  };
+  const pc1 = powerIter(null);
+  const pc2 = powerIter(pc1);
+
+  const proj = Xc.map((x) => [dot(x, pc1), dot(x, pc2)]);
+  let maxAbs = 0;
+  for (const p of proj) maxAbs = Math.max(maxAbs, Math.abs(p[0]), Math.abs(p[1]));
+  if (maxAbs < 1e-12) return randomInit();
+  const scale = 10 / maxAbs; // fixed target range, matching the force calibration
+  // Tiny seeded noise breaks exact ties (e.g. identical projections).
+  return proj.map((p) => [p[0] * scale + (rng.next() - 0.5) * 1e-3, p[1] * scale + (rng.next() - 0.5) * 1e-3]);
 }
 
 // ── Step 4: SGD Optimization ────────────────────────────────────────────────
@@ -278,57 +309,64 @@ export function optimizeEmbedding(
     return s;
   });
 
-  // SGD epochs
+  // SGD with canonical UMAP edge sampling (McInnes et al. 2018): each edge is
+  // applied at FULL strength but only every `epochsPerSample` epochs — high-
+  // membership edges more often — and negatives are scheduled proportionally.
+  // This keeps attraction and repulsion balanced. (Scaling every edge's pull by
+  // its weight each epoch instead lets repulsion over-power and blows the layout
+  // apart.) Gradients are clamped to ±4 as in umap-learn.
+  const clamp4 = (v: number): number => (v < -4 ? -4 : v > 4 ? 4 : v);
+  const maxWeight = edges.reduce((m, e) => Math.max(m, e.weight), 0);
+  const epochsPerSample = edges.map((e) => (e.weight > 0 ? maxWeight / e.weight : Number.POSITIVE_INFINITY));
+  const epochsPerNeg = epochsPerSample.map((eps) => eps / negativeSampleRate);
+  const nextSample = epochsPerSample.slice();
+  const nextNeg = epochsPerSample.slice();
+
   let totalLoss = 0;
   for (let epoch = 0; epoch < nEpochs; epoch++) {
     const alpha = learningRate * (1 - epoch / nEpochs); // linear decay
     let epochLoss = 0;
+    let applied = 0;
 
-    // Positive edges (attractive)
-    for (const edge of edges) {
-      const { i, j, weight } = edge;
-      const dx = embedding[i][0] - embedding[j][0];
-      const dy = embedding[i][1] - embedding[j][1];
-      const dist = Math.sqrt(dx * dx + dy * dy) + 1e-10;
+    for (let e = 0; e < edges.length; e++) {
+      if (nextSample[e] > epoch) continue;
+      const { i, j } = edges[e];
 
-      // Attractive gradient (UMAP paper eq. 4)
-      const gradCoeff = (-2 * a * b * dist ** (2 * b - 1)) / (1 + a * dist ** (2 * b));
-      const gx = (gradCoeff * dx) / dist;
-      const gy = (gradCoeff * dy) / dist;
-
-      embedding[i][0] -= alpha * weight * gx;
-      embedding[i][1] -= alpha * weight * gy;
-      embedding[j][0] += alpha * weight * gx;
-      embedding[j][1] += alpha * weight * gy;
-
-      epochLoss += weight * dist;
-    }
-
-    // Negative sampling (repulsive)
-    // UMAP uses negativeSampleRate negatives per positive edge per epoch
-    const nNegatives = Math.floor(edges.length * negativeSampleRate);
-    for (let neg = 0; neg < nNegatives; neg++) {
-      const i = Math.floor(rng.next() * n);
-      const j = Math.floor(rng.next() * n);
-      if (i === j) continue;
-      if (neighborSets[i]?.has(j)) continue; // never repel a true kNN neighbour
-
-      const dx = embedding[i][0] - embedding[j][0];
-      const dy = embedding[i][1] - embedding[j][1];
-      const dist = Math.sqrt(dx * dx + dy * dy) + 1e-10;
-
-      // Repulsive gradient (only for close points)
-      if (dist < 2 * spread) {
-        const gradCoeff = 2 / (dist * dist + 1e-10);
-        const gx = (gradCoeff * dx) / dist;
-        const gy = (gradCoeff * dy) / dist;
-
-        embedding[i][0] += alpha * 0.01 * gx;
-        embedding[i][1] += alpha * 0.01 * gy;
+      // Attraction (full strength): pull true neighbours TOGETHER.
+      // grad = -2ab·(d²)^(b-1) / (1 + a·(d²)^b) · (yᵢ - yⱼ).
+      let dx = embedding[i][0] - embedding[j][0];
+      let dy = embedding[i][1] - embedding[j][1];
+      let d2 = dx * dx + dy * dy;
+      if (d2 > 0) {
+        const gc = (-2 * a * b * d2 ** (b - 1)) / (1 + a * d2 ** b);
+        const gx = clamp4(gc * dx);
+        const gy = clamp4(gc * dy);
+        embedding[i][0] += alpha * gx;
+        embedding[i][1] += alpha * gy;
+        embedding[j][0] -= alpha * gx;
+        embedding[j][1] -= alpha * gy;
+        epochLoss += Math.sqrt(d2);
+        applied++;
       }
+      nextSample[e] += epochsPerSample[e];
+
+      // Repulsion: push endpoint i away from scheduled random non-neighbours.
+      // grad = 2b / ((0.001 + d²)(1 + a·(d²)^b)) · (yᵢ - yₖ).
+      const nNeg = Math.floor((epoch - nextNeg[e]) / epochsPerNeg[e]);
+      for (let m = 0; m < nNeg; m++) {
+        const c = Math.floor(rng.next() * n);
+        if (c === i || neighborSets[i]?.has(c)) continue;
+        dx = embedding[i][0] - embedding[c][0];
+        dy = embedding[i][1] - embedding[c][1];
+        d2 = dx * dx + dy * dy;
+        const gc = (2 * b) / ((0.001 + d2) * (1 + a * d2 ** b));
+        embedding[i][0] += alpha * clamp4(gc * dx);
+        embedding[i][1] += alpha * clamp4(gc * dy);
+      }
+      if (nNeg > 0) nextNeg[e] += nNeg * epochsPerNeg[e];
     }
 
-    totalLoss = epochLoss / edges.length;
+    if (applied > 0) totalLoss = epochLoss / applied;
   }
 
   return { finalEmbedding: embedding, convergenceLoss: totalLoss };

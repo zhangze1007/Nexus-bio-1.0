@@ -53,7 +53,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   catdes: {
     level: "real",
     caption:
-      'Real: LJ 6-12 VdW + Warshel electrostatics + Born solvation + SASA (predictBindingAffinity); Levenberg-Marquardt kinetic fitting (kineticsEngine); Eyring thermodynamics (eyringKinetics); BLOSUM62 sequence design + codon optimization (designSequences); Pareto dominance ranking (rankPathways); AlphaFold + RCSB PDB 3D rendering; PubChem SDF + coordinate-based docking score; SABIO-RK live kinetic data (with local fallback). Partial: Mutagenesis uses sequence-distance proxy for 3D distance; bottleneck weights (0.4/0.3/0.3) empirically chosen; ΔΔG uses linear BLOSUM62 model (±2 kcal/mol). Fixed: balancePathway is Newton-Raphson, not "Church-method".',
+      'Real: LJ 6-12 VdW + Warshel electrostatics + Born solvation + SASA (predictBindingAffinity); Levenberg-Marquardt kinetic fitting (kineticsEngine); Eyring thermodynamics (eyringKinetics); BLOSUM62 sequence design + codon optimization (designSequences); Pareto dominance ranking (rankPathways); AlphaFold + RCSB PDB 3D rendering for known structures; de-novo structure prediction of designed sequences via ESMFold2 (Biohub hosted inference API, needs BIOHUB_API_KEY) preferred, with EBI ESMFold (ESM-2 650M) as fallback and fail-closed when neither is reachable — never a fabricated structure (note: without a key it uses EBI, and ESMFold2 returns coordinates that still need a coordinate→PDB step to render; its guardrail behavior for controlled sequences is undocumented); PubChem SDF + coordinate-based docking score; SABIO-RK live kinetic data (with local fallback). Partial: Mutagenesis uses sequence-distance proxy for 3D distance; bottleneck weights (0.4/0.3/0.3) empirically chosen; ΔΔG uses linear BLOSUM62 model (±2 kcal/mol). Fixed: balancePathway is Newton-Raphson, not "Church-method".',
   },
   proevol: {
     level: "real",
@@ -92,12 +92,12 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   multio: {
     level: "partial",
     caption:
-      "MOFA+ factor analysis via Python backend (real variational Bayes engine). UMAP projection via Python backend. Client-side fallback uses deterministic linear embedding (NOT a VAE). Toggle between local and Python backend. Uses synthetic demo data when no CSV uploaded.",
+      "Real client-side TS MOFA+ (runMOFA — alternating variational Bayes with ARD, runs in-browser, NOT Python-only): externally validated on a synthetic 2-factor multi-view benchmark — recovers both known latent factors at |corr| 0.895 / 0.997 (≥0.80 bar) with variance-explained monotone in the number of factors. Not claimed equivalent to the official MOFA2. The MAIN integration view is a deterministic LINEAR projection (z-score + ALS factors + linear embedding) — NOT a VAE and not UMAP; UMAP is available only via the optional Python backend. (The platform's TS UMAP engine, used by ScSpatial, is itself behaviorally validated at trustworthiness 0.979 / silhouette 0.955, above the linear-PCA floor 0.8775 — but is not on MultiO's client path.) Partial, honestly: the primary embedding is linear (not a learned nonlinear model), and sessions with no uploaded CSV run on synthetic demo data.",
   },
   scspatial: {
     level: "real",
     caption:
-      "Full scanpy/squidpy pipeline (Leiden, PAGA, diffusion pseudotime, Moran I, neighborhood enrichment, ligand-receptor) via Python backend. H&E tissue image overlay for Visium data. Auto-detects Visium/MERFISH/generic spatial formats. Real Visium mouse brain demo data.",
+      "Full scanpy/squidpy pipeline (Leiden, PAGA, diffusion pseudotime, Moran I, neighborhood enrichment, ligand-receptor) via Python backend. H&E tissue image overlay for Visium data. Auto-detects Visium/MERFISH/generic spatial formats. Real Visium mouse brain demo data. Client-side TS Moran's I (computeMoranI) is validated against the closed form — exact to ~1e-7 (0.877143 / −0.067033 / −0.454630) when fed the reference row-standardized kNN weight matrix; computed end-to-end from coordinates it is within |Δ|<0.05 (0.870 / −0.067 / −0.479, correct sign), the small residual being kNN tie-breaking in weight construction (which equidistant diagonal is the 4th neighbour), not the statistic. The client-side TS UMAP embedding (runUMAP) is behaviorally validated: swiss-roll trustworthiness 0.979, blobs silhouette 0.955, both above the linear-PCA floor 0.8775.",
   },
 
   // Cross-stage
@@ -163,6 +163,13 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
     level: "real",
     caption:
       "BLAST sequence alignment via Python backend with VFDB (Virulence Factor Database) for real biosafety screening. E-value-based significance filtering with BH FDR correction. k-mer Jaccard similarity fallback when BLAST is unavailable.",
+  },
+
+  // Variant-effect prediction (ML-1, 2026-07-24)
+  varianteffect: {
+    level: "partial",
+    caption:
+      "Supervised variant-effect predictor: real ESM-2 (esm2_t12_35M_UR50D) PER-POSITION embedding → Ridge (coefficients reference-validated vs scikit-learn to 6 dp, Spearman vs scipy). Feature = mutation-site residue-embedding delta (variant−WT at the mutated position), isolating the local signal that mean-pooling diluted. On the published BLAT_ECOLX (TEM-1 β-lactamase) Stiffler 2015 DMS assay (ProteinGym, same 1500 hold-out): per-position supervised OVERTAKES the zero-shot ESM baseline (≈0.55) from ~350 labels and climbs to ≈0.66 at 1000 labels (exported model 0.676); the zero-shot masked-marginal log-odds is returned alongside and serves as the cold-start below ~350 labels. (The earlier mean-pooled head only reached ≈0.48 and lost to zero-shot — that was a feature artifact, now fixed.) Partial/scope: protein-SPECIFIC — scores held-out substitutions WITHIN this one published assay/protein, not arbitrary proteins or novel folds. Runs only when the Python ESM-2 backend (VARIANT_EFFECT_BACKEND) is connected; with no backend the API reports 'backend not connected' rather than fabricating a number.",
   },
 };
 

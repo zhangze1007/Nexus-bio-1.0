@@ -324,7 +324,12 @@ export function runMOFA(input: MOFAInput): MOFAResult {
             for (let i = 0; i < nSamples; i++) {
               if (Mv[i][j]) s += Yv[i][j] * Z[i][a];
             }
-            YtZ[j][a] = t * s;
+            // ZᵀY (NOT tau·ZᵀY): the W posterior mean is
+            //   w = (tau·ZᵀZ + diag(alpha))⁻¹ · tau·ZᵀY = (ZᵀZ + diag(alpha)/tau)⁻¹ · ZᵀY,
+            // and the ridge below already uses the (ZᵀZ + alpha/tau) denominator. Scaling
+            // the numerator by tau too made W ∝ tau, so as the fit improved (tau ↑) the
+            // loadings exploded, then collapsed — the core instability.
+            YtZ[j][a] = s;
           }
         }
 
@@ -383,7 +388,6 @@ export function runMOFA(input: MOFAInput): MOFAResult {
       let countW = 0;
       for (const vn of viewNames) {
         const Wv = W[vn];
-        const t = tau[vn];
         for (let j = 0; j < Wv.length; j++) {
           sumW2 += Wv[j][a] * Wv[j][a];
           countW++;

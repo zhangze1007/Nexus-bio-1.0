@@ -1373,20 +1373,80 @@ export function computeSpatialNeighbors(cells: CellRecord[], k: number = 6): Spa
  * Compute a single Moran's I value for a given expression vector and weight structure.
  * This is the inner kernel used by both the main computation and permutation testing.
  */
+/**
+ * Build symmetric, row-standardized spatial weights from a (possibly directed)
+ * kNN adjacency — the standard Moran's I convention (Moran 1950; squidpy/esda):
+ * the kNN graph is symmetrized (if i→j then j→i), then each row is normalized so
+ * a cell's weights to its d neighbours are 1/d each. Returns the weighted edge
+ * list and S0 = ΣΣ w_ij (= n for row-standardized weights, since every non-isolated
+ * row sums to 1). Binary, directed weights (w=1, S0=edge count) do NOT match the
+ * closed-form Moran's I because per-cell degrees vary after symmetrization.
+ */
+function buildRowStandardizedWeights(
+  adjacency: [number, number][],
+  n: number,
+): { weightedEdges: [number, number, number][]; s0: number } {
+  const nbr: Set<number>[] = Array.from({ length: n }, () => new Set<number>());
+  for (const [i, j] of adjacency) {
+    if (i === j) continue;
+    nbr[i].add(j);
+    nbr[j].add(i); // symmetrize
+  }
+  const weightedEdges: [number, number, number][] = [];
+  let s0 = 0;
+  for (let i = 0; i < n; i++) {
+    const d = nbr[i].size;
+    if (d === 0) continue;
+    const w = 1 / d;
+    for (const j of nbr[i]) {
+      weightedEdges.push([i, j, w]);
+      s0 += w;
+    }
+  }
+  return { weightedEdges, s0 };
+}
+
 function moranICore(
   x: number[],
   xMean: number,
   denom: number,
-  adjacency: [number, number][],
+  weightedEdges: [number, number, number][],
   n: number,
-  W: number,
+  s0: number,
 ): number {
-  if (denom === 0 || W === 0) return 0;
+  if (denom === 0 || s0 === 0) return 0;
+  // I = (n / S0) · (zᵀ W z) / (zᵀ z),  z = x − x̄
   let numer = 0;
-  for (const [i, j] of adjacency) {
-    numer += (x[i] - xMean) * (x[j] - xMean);
+  for (const [i, j, w] of weightedEdges) {
+    numer += w * (x[i] - xMean) * (x[j] - xMean);
   }
-  return (n / W) * (numer / denom);
+  return (n / s0) * (numer / denom);
+}
+
+/**
+ * Moran's I for an expression vector `x` under an explicit spatial weight matrix
+ * `weights` (n×n). Uses the same kernel as the pipeline; exposed so a caller can
+ * benchmark the statistic against a known closed-form weight matrix directly.
+ *   I = (n/S0)·(zᵀ W z)/(zᵀ z),  z = x − x̄,  S0 = ΣΣ w_ij
+ */
+export function moranIFromWeightMatrix(x: number[], weights: number[][]): number {
+  const n = x.length;
+  if (n === 0) return 0;
+  const xMean = x.reduce((s, v) => s + v, 0) / n;
+  let denom = 0;
+  for (const v of x) denom += (v - xMean) ** 2;
+  const weightedEdges: [number, number, number][] = [];
+  let s0 = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const w = weights[i][j];
+      if (w !== 0) {
+        weightedEdges.push([i, j, w]);
+        s0 += w;
+      }
+    }
+  }
+  return moranICore(x, xMean, denom, weightedEdges, n, s0);
 }
 
 /**
@@ -1411,9 +1471,9 @@ function moranIPermutationPValue(
   x: number[],
   xMean: number,
   denom: number,
-  adjacency: [number, number][],
+  weightedEdges: [number, number, number][],
   n: number,
-  W: number,
+  s0: number,
   observedI: number,
   nPermutations: number,
   rng: SeededRNG,
@@ -1432,7 +1492,7 @@ function moranIPermutationPValue(
       shuffled[j] = tmp;
     }
 
-    const permI = moranICore(shuffled, xMean, denom, adjacency, n, W);
+    const permI = moranICore(shuffled, xMean, denom, weightedEdges, n, s0);
     permSum += permI;
     permSumSq += permI * permI;
     if (permI >= observedI) count++;
@@ -1476,8 +1536,9 @@ export function computeMoranI(
   const n = cells.length;
   const genesToTest = genes ?? allGenes(cells);
 
-  // Total spatial weights W
-  const W = neighbors.adjacency.length;
+  // Symmetric, row-standardized spatial weights (standard Moran's I convention;
+  // matches the closed-form I = (n/S0)·(zᵀWz)/(zᵀz)). S0 = ΣΣ w_ij.
+  const { weightedEdges, s0 } = buildRowStandardizedWeights(neighbors.adjacency, n);
 
   // Adaptive permutation count: more cells → fewer permutations for speed
   const nPermutations = n > 500 ? 199 : 999;
@@ -1502,16 +1563,16 @@ export function computeMoranI(
     }
 
     // Compute observed Moran's I
-    const I = moranICore(x, xMean, denom, neighbors.adjacency, n, W);
+    const I = moranICore(x, xMean, denom, weightedEdges, n, s0);
 
     // Permutation-based p-value and z-score
     const { pValue, permMean, permStd } = moranIPermutationPValue(
       x,
       xMean,
       denom,
-      neighbors.adjacency,
+      weightedEdges,
       n,
-      W,
+      s0,
       I,
       nPermutations,
       rng,

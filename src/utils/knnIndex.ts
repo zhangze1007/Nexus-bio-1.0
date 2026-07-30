@@ -38,7 +38,11 @@ export class KDTreeIndex {
 
   constructor(points: number[][]) {
     this._size = points.length;
-    this.root = points.length > 0 ? this.build(points, 0) : null;
+    // Sort a shallow copy: build() sorts in place, and mutating the caller's
+    // array reorders their rows relative to any external per-row metadata
+    // (labels, embeddings), silently corrupting results. Element references are
+    // shared, so identity lookups (indexOf) against the original array still work.
+    this.root = points.length > 0 ? this.build(points.slice(), 0) : null;
   }
 
   /**

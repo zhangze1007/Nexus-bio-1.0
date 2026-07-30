@@ -1,0 +1,223 @@
+{
+  "model": "e_coli_core",
+  "modelSource": {
+    "database": "BiGG Models (e_coli_core); a curated subset of the genome-scale reconstruction iAF1260",
+    "primaryLiterature": "Orth, Fleming & Palsson, EcoSal Plus, DOI 10.1128/ecosalplus.10.2.1 (search-verified this session; commonly cited as 2010, year not independently re-confirmed). Parent reconstruction: iAF1260 — Feist et al. 2007, Molecular Systems Biology (widely cited; exact volume:page not re-verified this session due to a search rate limit).",
+    "traceDepth": "reconstruction-paper"
+  },
+  "annotatedBy": "Claude (Opus 4.8) — exploratory hand-annotation slice",
+  "annotatedOn": "2026-07-30",
+  "note": "Exploratory 14-reaction slice, NOT a database or a finished product. Grades are the annotator's judgment recorded so they are auditable — read basisForJudgment and facetNotes with every grade. KEY CAVEAT discovered while doing this: a reaction is not one datum. Its existence, stoichiometry, GPR, bounds and any specific number each have a DIFFERENT grade and source; `level`+`primaryFacet` capture only the single most decision-relevant facet. See docs/PROVENANCE_SLICE_FINDINGS.md. Only two citations here were search-verified this session (the e_coli_core EcoSal Plus DOI and that e_coli_core ⊂ iAF1260); everything else is established domain knowledge or explicitly marked un-traced/unknown. No citation was fabricated to fill a gap.",
+  "reactions": [
+    {
+      "reactionId": "Biomass_Ecoli_core",
+      "reactionName": "Biomass objective function (with growth-associated maintenance)",
+      "level": "computational-inferred",
+      "primaryFacet": "numeric-parameter",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: Ecoli_core_w_GAM; SBO:0000629 biomass)",
+        "primaryLiterature": "Coefficients curated from iAF1260 (Feist et al. 2007, Mol Syst Biol); underlying E. coli macromolecular composition traces further to classical measurements (e.g. Neidhardt) not traced here.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "Biomass is a pseudo-reaction aggregating dozens of precursor coefficients plus a growth-associated ATP maintenance (GAM) term. The macromolecular composition it is built from is experimental for E. coli, but the specific core-model coefficients are a curated/simplified projection of iAF1260 and the GAM is a fitted parameter — so the object as used is computationally inferred, not a direct measurement.",
+      "facetNotes": "Underlying composition ≈ experimental-direct (E. coli), but transformed; the GAM ATP coefficient specifically would grade closer to database-default/fitted; individual precursor coefficients were not traced to primary sources. Grading this single reaction forced at least three sub-judgments.",
+      "confidence": "medium",
+      "minutesSpent": 25
+    },
+    {
+      "reactionId": "ATPM",
+      "reactionName": "ATP maintenance requirement (non-growth-associated, NGAM)",
+      "level": "database-default",
+      "primaryFacet": "numeric-parameter",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: ATPM)",
+        "primaryLiterature": "The 8.39 mmol ATP gDW^-1 h^-1 lower bound is carried from iAF1260 (Feist et al. 2007, Mol Syst Biol); the exact primary measurement that fixes the number 8.39 was NOT locatable.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "ATPM is a modeling construct (an ATP-hydrolysis pseudo-reaction) whose lower bound encodes non-growth maintenance. 8.39 is the field-standard iAF1260 NGAM, ultimately grounded in experimental chemostat/maintenance fitting but propagated model-to-model as a fixed default. Because it functions as an inherited convention and its primary origin could not be pinned, database-default is the honest grade.",
+      "facetNotes": "This is the sharpest ambiguity in the slice: the NUMBER was originally fitted from experimental data (argues experimental-*) yet is used as a fixed default (argues database-default). The two are not distinguishable without the iAF1260 supplement. The reaction's EXISTENCE is a pure convention.",
+      "confidence": "medium",
+      "minutesSpent": 20
+    },
+    {
+      "reactionId": "EX_glc__D_e",
+      "reactionName": "D-Glucose exchange",
+      "level": "database-default",
+      "primaryFacet": "bounds",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: glc; SBO:0000627 exchange reaction)",
+        "primaryLiterature": null,
+        "traceDepth": "immediate-database"
+      },
+      "basisForJudgment": "Exchange reactions are system-boundary pseudo-reactions (confirmed by the SBO:0000627 tag in the model file itself), not enzymatic reactions. The lb = -10 encodes the standard aerobic-glucose simulation condition. ~10 mmol gDW^-1 h^-1 is a realistic measured E. coli glucose uptake, but the model carries -10 as a default/teaching condition, not as a measurement attached to this strain.",
+      "facetNotes": "The magnitude -10 is defensible as experimental-homolog IF you treat it as a typical measured uptake; it is database-default IF you treat it as a simulation setting. The model does not record which, so the grade depends on annotator convention — a real ambiguity.",
+      "confidence": "high",
+      "minutesSpent": 10
+    },
+    {
+      "reactionId": "EX_o2_e",
+      "reactionName": "O2 exchange",
+      "level": "database-default",
+      "primaryFacet": "bounds",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: o2; SBO:0000627 exchange reaction)",
+        "primaryLiterature": null,
+        "traceDepth": "immediate-database"
+      },
+      "basisForJudgment": "lb = -1000 is the field-standard 'effectively unconstrained' sentinel (aerobic, unlimited O2), not a measured uptake rate. Unambiguously a modeling convention.",
+      "facetNotes": "-1000 is a convention across essentially all COBRA models; no primary source exists or is expected.",
+      "confidence": "high",
+      "minutesSpent": 5
+    },
+    {
+      "reactionId": "EX_co2_e",
+      "reactionName": "CO2 exchange",
+      "level": "database-default",
+      "primaryFacet": "bounds",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: co2; SBO:0000627 exchange reaction)",
+        "primaryLiterature": null,
+        "traceDepth": "immediate-database"
+      },
+      "basisForJudgment": "Open boundary allowing CO2 secretion; bound is a convention, not a measurement.",
+      "facetNotes": "Same class as EX_o2_e — a boundary construct.",
+      "confidence": "high",
+      "minutesSpent": 4
+    },
+    {
+      "reactionId": "EX_ac_e",
+      "reactionName": "Acetate exchange",
+      "level": "database-default",
+      "primaryFacet": "bounds",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: ac; SBO:0000627 exchange reaction)",
+        "primaryLiterature": null,
+        "traceDepth": "immediate-database"
+      },
+      "basisForJudgment": "lb = 0 means acetate uptake is disallowed by default and only secretion is permitted — the standard setting for representing overflow metabolism. A convention, not a measured flux.",
+      "facetNotes": "Acetate overflow IS a real experimental phenomenon in E. coli, but the lb=0 bound encodes a modeling choice, not that measurement.",
+      "confidence": "high",
+      "minutesSpent": 5
+    },
+    {
+      "reactionId": "PFK",
+      "reactionName": "Phosphofructokinase",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: PFK); GPR b3916 (pfkA) or b1723 (pfkB)",
+        "primaryLiterature": "Reaction and GPR inherited from iAF1260 (Feist et al. 2007, Mol Syst Biol); the enzyme is textbook glycolytic biochemistry. Individual primary enzymology papers were NOT traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "F6P + ATP -> FDP + ADP is established, experimentally characterized biochemistry; both E. coli isozymes (pfkA major, pfkB minor) are well studied. Stoichiometry graded experimental-direct on domain knowledge.",
+      "facetNotes": "Category nuance: reaction stoichiometry is 'established biochemistry', which the 5-level enum does not name cleanly — I mapped it to experimental-direct. The grade is CHEAP to assign from domain knowledge but EXPENSIVE to defend with a primary citation, which I did not do. GPR = experimentally supported; bounds (0/1000, irreversible) = thermodynamic convention.",
+      "confidence": "high",
+      "minutesSpent": 15
+    },
+    {
+      "reactionId": "PGI",
+      "reactionName": "Glucose-6-phosphate isomerase",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: PGI); GPR b4025 (pgi)",
+        "primaryLiterature": "Inherited from iAF1260 (Feist et al. 2007); textbook biochemistry; primary enzymology not traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "Reversible G6P <-> F6P isomerization, a core glycolytic step catalysed by a single well-characterised gene (pgi). Established biochemistry.",
+      "facetNotes": "Same category nuance as PFK. Reversible bounds (-1000/1000) are a thermodynamic-reversibility convention. Fast to grade once the PFK pattern was set.",
+      "confidence": "high",
+      "minutesSpent": 6
+    },
+    {
+      "reactionId": "CS",
+      "reactionName": "Citrate synthase",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: CS); GPR b0720 (gltA)",
+        "primaryLiterature": "Inherited from iAF1260 (Feist et al. 2007); textbook TCA biochemistry; primary enzymology not traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "First committed step of the TCA cycle (acetyl-CoA + OAA + H2O -> citrate + CoA), catalysed by gltA. Established biochemistry.",
+      "facetNotes": "Same category nuance. Bounds (0/1000) irreversible by convention.",
+      "confidence": "high",
+      "minutesSpent": 6
+    },
+    {
+      "reactionId": "ICDHyr",
+      "reactionName": "Isocitrate dehydrogenase (NADP)",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: ICDHyr); GPR b1136 (icd)",
+        "primaryLiterature": "Inherited from iAF1260 (Feist et al. 2007); textbook TCA biochemistry; primary enzymology not traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "NADP-dependent isocitrate dehydrogenase (icd), a well-characterised TCA enzyme. Established biochemistry.",
+      "facetNotes": "Same category nuance. Cofactor specificity (NADP vs NAD) is itself an experimentally-determined detail baked into the reaction id.",
+      "confidence": "high",
+      "minutesSpent": 6
+    },
+    {
+      "reactionId": "G6PDH2r",
+      "reactionName": "Glucose-6-phosphate dehydrogenase",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: G6PDH2r); GPR b1852 (zwf)",
+        "primaryLiterature": "Inherited from iAF1260 (Feist et al. 2007); textbook pentose-phosphate biochemistry; primary enzymology not traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "Entry step of the oxidative pentose-phosphate pathway (zwf). Established biochemistry.",
+      "facetNotes": "Same category nuance. Reversible bounds by convention.",
+      "confidence": "high",
+      "minutesSpent": 6
+    },
+    {
+      "reactionId": "GAPD",
+      "reactionName": "Glyceraldehyde-3-phosphate dehydrogenase",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: GAPD); GPR b1779 (gapA)",
+        "primaryLiterature": "Inherited from iAF1260 (Feist et al. 2007); textbook glycolytic biochemistry; primary enzymology not traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "Central glycolytic redox/energy step (gapA). Established biochemistry.",
+      "facetNotes": "Same category nuance.",
+      "confidence": "high",
+      "minutesSpent": 6
+    },
+    {
+      "reactionId": "PYK",
+      "reactionName": "Pyruvate kinase",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: PYK); GPR b1854 (pykA) or b1676 (pykF)",
+        "primaryLiterature": "Inherited from iAF1260 (Feist et al. 2007); textbook glycolytic biochemistry; primary enzymology not traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "Final glycolytic step (PEP + ADP -> pyruvate + ATP); two E. coli isozymes pykA/pykF. Established biochemistry.",
+      "facetNotes": "Same category nuance. Isozyme GPR (pykA or pykF) is experimentally supported.",
+      "confidence": "high",
+      "minutesSpent": 6
+    },
+    {
+      "reactionId": "RPI",
+      "reactionName": "Ribose-5-phosphate isomerase",
+      "level": "experimental-direct",
+      "primaryFacet": "stoichiometry",
+      "source": {
+        "database": "BiGG e_coli_core (bigg.reaction: RPI); GPR b2914 (rpiA) or b4090 (rpiB)",
+        "primaryLiterature": "Inherited from iAF1260 (Feist et al. 2007); textbook pentose-phosphate biochemistry; primary enzymology not traced.",
+        "traceDepth": "reconstruction-paper"
+      },
+      "basisForJudgment": "Pentose-phosphate isomerisation (R5P <-> Ru5P). Established biochemistry.",
+      "facetNotes": "GPR is the softest of the enzymatic slice: rpiA is the constitutive major isozyme; rpiB is a minor/secondary isozyme, so the 'rpiA or rpiB' association mixes strong and weaker evidence — a per-gene distinction the single reaction-level grade cannot express.",
+      "confidence": "medium",
+      "minutesSpent": 8
+    }
+  ]
+}
