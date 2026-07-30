@@ -1,0 +1,3 @@
+# Full local CI gate before code reaches GitHub (mirrors the typecheck-test-build job).
+# Runs: lint -> typecheck -> jest -> build. Skip in an emergency with: git push --no-verify
+npm run preflight
