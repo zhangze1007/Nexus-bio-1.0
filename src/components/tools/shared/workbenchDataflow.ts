@@ -183,7 +183,10 @@ function applyChangedPrior(current: number, packs: LearnedDeltaPack[], key: stri
     const target = current * delta.after;
     const confidence = clampNumber(pack.learnedMetrics.confidenceScore ?? 0.5, 0, 0.95);
     const obsVariance = priorVariance * (1 - confidence) + OBS_VARIANCE_FLOOR;
-    const posterior = updateBelief({ mean: current, variance: priorVariance }, { value: target, variance: obsVariance });
+    const posterior = updateBelief(
+      { mean: current, variance: priorVariance },
+      { value: target, variance: obsVariance },
+    );
     return clampNumber(posterior.mean, min, max);
   }
   return clampNumber(delta.after, min, max);
@@ -193,7 +196,12 @@ function applyChangedPrior(current: number, packs: LearnedDeltaPack[], key: stri
 export function applyChangedBound(current: [number, number], packs: LearnedDeltaPack[], key: string): [number, number] {
   for (const pack of packs) {
     const delta = pack.changedBounds[key];
-    if (delta && Number.isFinite(delta.after[0]) && Number.isFinite(delta.after[1]) && delta.after[0] <= delta.after[1]) {
+    if (
+      delta &&
+      Number.isFinite(delta.after[0]) &&
+      Number.isFinite(delta.after[1]) &&
+      delta.after[0] <= delta.after[1]
+    ) {
       return [delta.after[0], delta.after[1]];
     }
   }

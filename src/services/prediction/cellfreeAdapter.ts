@@ -56,14 +56,31 @@ export const cellFreePredictionAdapter: ToolPredictionAdapter<CellFreePrediction
         byTime.set(s.timeHours, arr);
       }
       timepoints = payload.series.map((pt) => {
-        const iv = intervalFromEnsemble(byTime.get(pt.timeHours) ?? [{ timeHours: pt.timeHours, value: pt.value }], level);
-        return { timeHours: pt.timeHours, value: pt.value, unit, lower: iv.lower, upper: iv.upper, intervalLevel: level };
+        const iv = intervalFromEnsemble(
+          byTime.get(pt.timeHours) ?? [{ timeHours: pt.timeHours, value: pt.value }],
+          level,
+        );
+        return {
+          timeHours: pt.timeHours,
+          value: pt.value,
+          unit,
+          lower: iv.lower,
+          upper: iv.upper,
+          intervalLevel: level,
+        };
       });
     } else if (relStd > 0) {
       method = "analytic-ci";
       timepoints = payload.series.map((pt) => {
         const iv = analyticInterval(pt.value, pt.value * relStd, level);
-        return { timeHours: pt.timeHours, value: pt.value, unit, lower: iv.lower, upper: iv.upper, intervalLevel: level };
+        return {
+          timeHours: pt.timeHours,
+          value: pt.value,
+          unit,
+          lower: iv.lower,
+          upper: iv.upper,
+          intervalLevel: level,
+        };
       });
     } else {
       method = "point-estimate";

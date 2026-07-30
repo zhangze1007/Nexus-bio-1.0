@@ -119,7 +119,10 @@ export function suggestNextBatch(
     seen.add(key);
     points.push(s.point);
     expectedInfoGain.push(s.score);
-    const boost = explore > 0 ? ` Exploration widened by recent falsification residuals (median relErr ${explore.toFixed(3)}).` : "";
+    const boost =
+      explore > 0
+        ? ` Exploration widened by recent falsification residuals (median relErr ${explore.toFixed(3)}).`
+        : "";
     rationale.push(
       `${opts.strategy.toUpperCase()} score ${s.score.toFixed(4)}: predicted ${s.mean.toFixed(3)} ± ${s.sd.toFixed(3)} (${s.mode}).${boost}`,
     );

@@ -51,7 +51,8 @@ function interpolateAt(series: SeriesPoint[], t: number): { value: number; lower
       const span = b.timeHours - a.timeHours;
       const frac = span === 0 ? 0 : (t - a.timeHours) / span;
       const lerp = (x: number, y: number) => x + (y - x) * frac;
-      const hasBounds = a.lower !== undefined && a.upper !== undefined && b.lower !== undefined && b.upper !== undefined;
+      const hasBounds =
+        a.lower !== undefined && a.upper !== undefined && b.lower !== undefined && b.upper !== undefined;
       return {
         value: lerp(a.value, b.value),
         ...(hasBounds
@@ -62,7 +63,10 @@ function interpolateAt(series: SeriesPoint[], t: number): { value: number; lower
   }
   // 单点序列且 t 恰好落在该点。
   if (series.length === 1 && t === first.timeHours) {
-    return { value: first.value, ...(first.lower !== undefined && first.upper !== undefined ? { lower: first.lower, upper: first.upper } : {}) };
+    return {
+      value: first.value,
+      ...(first.lower !== undefined && first.upper !== undefined ? { lower: first.lower, upper: first.upper } : {}),
+    };
   }
   return null;
 }

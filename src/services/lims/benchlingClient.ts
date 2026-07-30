@@ -296,7 +296,9 @@ function mapBenchlingAssayResult(r: BenchlingAssayResult): AssayPull {
     externalId: r.entityId ?? r.id,
     assayType: r.assayType ?? "other",
     unit: r.unit ?? "",
-    timepoints: Array.isArray(r.timepoints) ? r.timepoints.map((t) => ({ timeHours: t.timeHours, value: t.value })) : [],
+    timepoints: Array.isArray(r.timepoints)
+      ? r.timepoints.map((t) => ({ timeHours: t.timeHours, value: t.value }))
+      : [],
     ...(r.instrument ? { instrument: r.instrument } : {}),
     ...(r.operator ? { operator: r.operator } : {}),
     startedAt: r.startedAt ?? new Date(0).toISOString(),

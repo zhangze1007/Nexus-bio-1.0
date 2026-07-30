@@ -100,10 +100,7 @@ export interface GeneDeletionResult {
  * (default 1e-6) marks a gene essential. The base LP is built once and only the
  * disabled reactions' bounds are zeroed per knockout.
  */
-export async function runSingleGeneDeletion(
-  model: CobraModelWithGenes,
-  threshold = 1e-6,
-): Promise<GeneDeletionResult> {
+export async function runSingleGeneDeletion(model: CobraModelWithGenes, threshold = 1e-6): Promise<GeneDeletionResult> {
   const baseLP = cobraToLPModel(model);
   const baseBounds = baseLP.bounds ?? [];
 

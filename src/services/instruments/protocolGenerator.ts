@@ -182,8 +182,10 @@ function wellId(index: number): string {
 function liquidClass(reagent: string): { name: string; flowRate: number; touchTip: boolean } {
   const r = (reagent ?? "").toLowerCase();
   if (/glycerol|dmso|peg|viscous|polyethylene/.test(r)) return { name: "viscous", flowRate: 30, touchTip: true };
-  if (/ethanol|isopropanol|methanol|acetone|volatile/.test(r)) return { name: "volatile", flowRate: 60, touchTip: false };
-  if (/cell|culture|competent|bacter|coli|yeast/.test(r)) return { name: "cell-suspension", flowRate: 50, touchTip: true };
+  if (/ethanol|isopropanol|methanol|acetone|volatile/.test(r))
+    return { name: "volatile", flowRate: 60, touchTip: false };
+  if (/cell|culture|competent|bacter|coli|yeast/.test(r))
+    return { name: "cell-suspension", flowRate: 50, touchTip: true };
   return { name: "aqueous", flowRate: 100, touchTip: false };
 }
 
@@ -450,6 +452,11 @@ export function validateExecutableProtocol(
 ): ValidationResult {
   const errors = [...validateProtocol(steps).errors];
   errors.push(...validateDeck(layout, manifest));
-  errors.push(...validatePipetteVolumes(layout.pipettes, steps.map((s) => s.volume)));
+  errors.push(
+    ...validatePipetteVolumes(
+      layout.pipettes,
+      steps.map((s) => s.volume),
+    ),
+  );
   return { valid: errors.length === 0, errors };
 }

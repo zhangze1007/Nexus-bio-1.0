@@ -25,15 +25,18 @@ interface PriorMapEntry {
 const PRIOR_MAP: Record<string, PriorMapEntry> = {
   cellfree: {
     correlation: 1,
-    rationale: "Cell-free expression scales with the ribosome budget; systematic over-prediction implies the ribosomeTotal prior is too high.",
+    rationale:
+      "Cell-free expression scales with the ribosome budget; systematic over-prediction implies the ribosomeTotal prior is too high.",
   },
   fbasim: {
     correlation: 1,
-    rationale: "Predicted flux scales with substrate (glucose) uptake; systematic over-prediction implies the uptake prior is too high.",
+    rationale:
+      "Predicted flux scales with substrate (glucose) uptake; systematic over-prediction implies the uptake prior is too high.",
   },
   dyncon: {
     correlation: 1,
-    rationale: "Controller output scales with proportional gain (kp); systematic over-prediction implies the kp prior is too high.",
+    rationale:
+      "Controller output scales with proportional gain (kp); systematic over-prediction implies the kp prior is too high.",
   },
 };
 
@@ -71,7 +74,9 @@ export function proposeDeltaFromFalsification(
 
   const actionable = reports.filter(
     (r) =>
-      r.verdict === "falsified" && PRIOR_MAP[r.sourceToolId] !== undefined && PRIMARY_PRIOR_KEY[r.sourceToolId] !== undefined,
+      r.verdict === "falsified" &&
+      PRIOR_MAP[r.sourceToolId] !== undefined &&
+      PRIMARY_PRIOR_KEY[r.sourceToolId] !== undefined,
   );
   if (actionable.length === 0) return null;
 

@@ -1,4 +1,9 @@
-import { ASSAY_TYPES, type AssayType, type ExperimentRecordQcFlag, type ExperimentRecordV1 } from "../../types/experimentRecord";
+import {
+  ASSAY_TYPES,
+  type AssayType,
+  type ExperimentRecordQcFlag,
+  type ExperimentRecordV1,
+} from "../../types/experimentRecord";
 import type { AssayPull } from "./benchlingClient";
 
 function coerceAssayType(value: string): AssayType {

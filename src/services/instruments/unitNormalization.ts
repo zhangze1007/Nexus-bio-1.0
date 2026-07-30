@@ -37,11 +37,7 @@ const LINEAR_FAMILIES: Array<Record<string, number>> = [MASS_CONC, MOLAR, VOLUME
 
 /** Normalize a unit string: trim, lowercase, micro sign (μ/µ) → u, drop whitespace. */
 export function canonicalUnit(unit: string): string {
-  return unit
-    .trim()
-    .toLowerCase()
-    .replace(/μ|µ/g, "u")
-    .replace(/\s+/g, "");
+  return unit.trim().toLowerCase().replace(/μ|µ/g, "u").replace(/\s+/g, "");
 }
 
 /**

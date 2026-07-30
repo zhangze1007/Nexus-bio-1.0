@@ -334,8 +334,7 @@ export function clusterGenesIntoRegions(
   // deciding whether adjacent core genes belong to the same region.
   const scoreById = new Map<string, number>();
   for (const gs of geneScores) scoreById.set(gs.gene.id, gs.score);
-  const gapReach = (gene: Gene): number =>
-    downstreamBp * (1 + Math.min(2, Math.max(0, scoreById.get(gene.id) ?? 0)));
+  const gapReach = (gene: Gene): number => downstreamBp * (1 + Math.min(2, Math.max(0, scoreById.get(gene.id) ?? 0)));
 
   // Sort core genes by position
   const sortedCore = [...coreGenes].sort((a, b) => a.start - b.start);

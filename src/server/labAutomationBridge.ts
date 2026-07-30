@@ -133,7 +133,8 @@ export const PIPETTE_MAP: Record<string, string> = {
 function liquidClassFor(hint: string): { liquidClass: string; flowRate: number; touchTip: boolean } {
   const h = (hint ?? "").toLowerCase();
   if (/glycerol|dmso|peg|viscous/.test(h)) return { liquidClass: "viscous", flowRate: 30, touchTip: true };
-  if (/ethanol|isopropanol|soc|media|volatile/.test(h)) return { liquidClass: "volatile", flowRate: 60, touchTip: false };
+  if (/ethanol|isopropanol|soc|media|volatile/.test(h))
+    return { liquidClass: "volatile", flowRate: 60, touchTip: false };
   if (/cell|competent|culture|bacter/.test(h)) return { liquidClass: "cell-suspension", flowRate: 50, touchTip: true };
   return { liquidClass: "aqueous", flowRate: 100, touchTip: false };
 }

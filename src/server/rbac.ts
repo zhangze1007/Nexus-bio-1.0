@@ -204,7 +204,12 @@ export function removeMember(members: ProjectMember[], projectId: string, actorI
  * @param newRole - New role
  * @returns Updated members list
  */
-export function changeRole(members: ProjectMember[], projectId: string, actorId: string, newRole: Role): ProjectMember[] {
+export function changeRole(
+  members: ProjectMember[],
+  projectId: string,
+  actorId: string,
+  newRole: Role,
+): ProjectMember[] {
   return members.map((m) => (m.actorId === actorId && m.projectId === projectId ? { ...m, role: newRole } : m));
 }
 

@@ -52,7 +52,9 @@ export function validatePredictionRecordV1(value: unknown): PredictionValidation
   if (!isRecord(value)) {
     return {
       ok: false,
-      issues: [{ code: "schema-version", severity: "error", message: "Prediction record must be an object.", path: "$" }],
+      issues: [
+        { code: "schema-version", severity: "error", message: "Prediction record must be an object.", path: "$" },
+      ],
     };
   }
 

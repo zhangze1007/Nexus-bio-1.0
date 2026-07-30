@@ -103,20 +103,32 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body", requestId }, { status: 400, headers: getCorsHeaders(req) });
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON body", requestId },
+      { status: 400, headers: getCorsHeaders(req) },
+    );
   }
   const sequence = body.sequence;
   const name = typeof body.name === "string" ? body.name : undefined;
 
   if (!sequence || typeof sequence !== "string") {
-    return NextResponse.json({ ok: false, error: "Missing or invalid sequence", requestId }, { status: 400, headers: getCorsHeaders(req) });
+    return NextResponse.json(
+      { ok: false, error: "Missing or invalid sequence", requestId },
+      { status: 400, headers: getCorsHeaders(req) },
+    );
   }
   const cleanSeq = sequence.toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, "");
   if (cleanSeq.length < 10) {
-    return NextResponse.json({ ok: false, error: "Sequence too short (minimum 10 residues)", requestId }, { status: 400, headers: getCorsHeaders(req) });
+    return NextResponse.json(
+      { ok: false, error: "Sequence too short (minimum 10 residues)", requestId },
+      { status: 400, headers: getCorsHeaders(req) },
+    );
   }
   if (cleanSeq.length > 1500) {
-    return NextResponse.json({ ok: false, error: "Sequence too long (maximum 1500 residues)", requestId }, { status: 400, headers: getCorsHeaders(req) });
+    return NextResponse.json(
+      { ok: false, error: "Sequence too long (maximum 1500 residues)", requestId },
+      { status: 400, headers: getCorsHeaders(req) },
+    );
   }
 
   const startTime = Date.now();
@@ -184,7 +196,10 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const sequence = req.nextUrl.searchParams.get("sequence");
   if (!sequence) {
-    return NextResponse.json({ ok: false, error: "Missing ?sequence= parameter" }, { status: 400, headers: getCorsHeaders(req) });
+    return NextResponse.json(
+      { ok: false, error: "Missing ?sequence= parameter" },
+      { status: 400, headers: getCorsHeaders(req) },
+    );
   }
   const fakeReq = new Request(req.url, {
     method: "POST",

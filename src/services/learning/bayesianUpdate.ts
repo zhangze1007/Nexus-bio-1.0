@@ -22,9 +22,6 @@ export function updateBelief(prior: Belief, obs: { value: number; variance: numb
 }
 
 /** Fold a sequence of observations into a prior (each posterior becomes the next prior). */
-export function updateBeliefSequence(
-  prior: Belief,
-  observations: Array<{ value: number; variance: number }>,
-): Belief {
+export function updateBeliefSequence(prior: Belief, observations: Array<{ value: number; variance: number }>): Belief {
   return observations.reduce((belief, obs) => updateBelief(belief, obs), prior);
 }

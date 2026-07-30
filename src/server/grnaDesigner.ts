@@ -396,8 +396,21 @@ export function designgRNAs(
 }
 
 const IUPAC_PAM: Record<string, string> = {
-  A: "A", C: "C", G: "G", T: "T", R: "AG", Y: "CT", S: "GC", W: "AT",
-  K: "GT", M: "AC", B: "CGT", D: "AGT", H: "ACT", V: "ACG", N: "ACGT",
+  A: "A",
+  C: "C",
+  G: "G",
+  T: "T",
+  R: "AG",
+  Y: "CT",
+  S: "GC",
+  W: "AT",
+  K: "GT",
+  M: "AC",
+  B: "CGT",
+  D: "AGT",
+  H: "ACT",
+  V: "ACG",
+  N: "ACGT",
 };
 
 /** Fraction of PAM positions satisfying the Cas protein's IUPAC PAM consensus (0..1). */

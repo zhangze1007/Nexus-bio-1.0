@@ -95,7 +95,15 @@ export async function POST(request: Request) {
     if (resp.ok) {
       const data = await resp.json();
       return NextResponse.json(
-        { ok: true, backend_connected: true, source: "engine", validity: "partial", model: MODEL_ID, assay: ASSAY, ...data },
+        {
+          ok: true,
+          backend_connected: true,
+          source: "engine",
+          validity: "partial",
+          model: MODEL_ID,
+          assay: ASSAY,
+          ...data,
+        },
         { headers: getCorsHeaders(request) },
       );
     }
