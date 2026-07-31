@@ -58,7 +58,9 @@ function getWorkflowStatusColor(status: WorkflowExperienceStatus | string) {
   if (status === "current" || status === "next" || status === "ready") return THEME.SKY;
   if (status === "blocked") return THEME.CORAL;
   if (status === "demoOnly" || status === "humanGate") return THEME.APRICOT;
-  return "rgba(226,232,240,0.22)";
+  // Idle/unknown: muted but must stay readable — 0.22 gave only 1.88:1 (audit F3);
+  // 0.62 lifts the status label above the 4.5:1 WCAG AA threshold (~6:1) while still muted.
+  return "rgba(226,232,240,0.62)";
 }
 
 type DrawerTab = "status" | "evidence" | "history";

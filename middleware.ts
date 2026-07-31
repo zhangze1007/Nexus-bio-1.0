@@ -1,5 +1,5 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { checkRateLimit, getRateLimitConfig } from '@/src/utils/rateLimit';
+import { NextResponse, type NextRequest } from "next/server";
+import { checkRateLimit, getRateLimitConfig } from "@/src/utils/rateLimit";
 
 /**
  * Next.js Edge Middleware — API authentication + rate limiting + request IDs.
@@ -32,31 +32,46 @@ function getApiKey(): string | undefined {
 
 /** Routes that require authentication */
 const PROTECTED_ROUTES = [
-  '/api/analyze',
-  '/api/fba',
-  '/api/files',
-  '/api/workbench',
-  '/api/scspatial',
-  '/api/admin',
-  '/api/gdpr',
-  '/api/billing',
-  '/api/health/env',
+  "/api/analyze",
+  "/api/fba",
+  "/api/files",
+  "/api/workbench",
+  "/api/scspatial",
+  "/api/admin",
+  "/api/gdpr",
+  "/api/billing",
+  "/api/health/env",
 ];
 
 /** Routes that require API key auth (same-origin trust NOT sufficient) */
-const HIGH_SECURITY_ROUTES = [
-  '/api/admin',
-  '/api/gdpr',
-  '/api/health/env',
+const HIGH_SECURITY_ROUTES = ["/api/admin", "/api/gdpr", "/api/health/env"];
+
+/**
+ * Public read-only COMPUTE routes: stateless scientific computation that takes its input
+ * in the request body and returns a result, with NO user data and no privileged side
+ * effects. These are POSTed by the in-app tools, so same-origin browser requests are
+ * trusted for ANY method (a POST body here is a computation input, not a state change).
+ * Cross-origin callers still need an API key (they remain in PROTECTED_ROUTES).
+ *
+ * This is DELIBERATELY distinct from user-data / write routes — /api/workbench (a user's
+ * saved project), /api/files (uploads/storage), /api/scspatial/ingest (data upload),
+ * /api/billing — whose WRITES always require an explicit credential, and from
+ * HIGH_SECURITY_ROUTES (admin/gdpr) which never accept same-origin trust. Do NOT add a
+ * write or user-data route to this list.
+ */
+const SAME_ORIGIN_COMPUTE_ROUTES = [
+  "/api/fba", // FBA / FVA / gene-deletion — deterministic metabolic computation (covers /api/fba/stream)
+  "/api/analyze", // AI analysis — same-origin only (NOT fully public); abuse bounded by the 10 req/min rate limit
+  "/api/scspatial/query", // read-only single-cell / spatial query + analysis (NOT /api/scspatial/ingest, which is a write)
 ];
 
 /** Routes that are public (no auth needed) */
 const PUBLIC_ROUTES = [
-  '/api/health',
-  '/api/alphafold',
-  '/api/pubchem',
-  '/api/kegg',
-  '/api/gemini', // legacy alias for analyze
+  "/api/health",
+  "/api/alphafold",
+  "/api/pubchem",
+  "/api/kegg",
+  "/api/gemini", // legacy alias for analyze
 ];
 
 // ── Edge-compatible SHA-256 ───────────────────────────────────────────
@@ -67,10 +82,10 @@ const PUBLIC_ROUTES = [
  */
 async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // ── DB-backed API key validation ──────────────────────────────────────
@@ -86,7 +101,7 @@ async function validateNxbKey(providedKey: string): Promise<boolean> {
   if (!tursoUrl) return false;
 
   try {
-    const { createClient } = await import('@libsql/client');
+    const { createClient } = await import("@libsql/client");
     const client = createClient({
       url: tursoUrl,
       authToken: process.env.TURSO_AUTH_TOKEN,
@@ -95,7 +110,7 @@ async function validateNxbKey(providedKey: string): Promise<boolean> {
     const hash = await sha256Hex(providedKey);
 
     const result = await client.execute({
-      sql: 'SELECT id, expires_at FROM api_keys WHERE key_hash = ?',
+      sql: "SELECT id, expires_at FROM api_keys WHERE key_hash = ?",
       args: [hash],
     });
 
@@ -110,10 +125,14 @@ async function validateNxbKey(providedKey: string): Promise<boolean> {
     }
 
     // Update last_used_at (fire-and-forget, non-blocking)
-    client.execute({
-      sql: 'UPDATE api_keys SET last_used_at = ? WHERE id = ?',
-      args: [new Date().toISOString(), row.id as string],
-    }).catch(() => { /* swallow — auth already succeeded */ });
+    client
+      .execute({
+        sql: "UPDATE api_keys SET last_used_at = ? WHERE id = ?",
+        args: [new Date().toISOString(), row.id as string],
+      })
+      .catch(() => {
+        /* swallow — auth already succeeded */
+      });
 
     return true;
   } catch {
@@ -123,11 +142,11 @@ async function validateNxbKey(providedKey: string): Promise<boolean> {
 
 // ── Auth Check ────────────────────────────────────────────────────────
 function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_ROUTES.some(route => pathname.startsWith(route));
+  return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 }
 
 function isHighSecurityRoute(pathname: string): boolean {
-  return HIGH_SECURITY_ROUTES.some(route => pathname.startsWith(route));
+  return HIGH_SECURITY_ROUTES.some((route) => pathname.startsWith(route));
 }
 
 /**
@@ -141,20 +160,27 @@ function isHighSecurityRoute(pathname: string): boolean {
  * @param highSecurity - If true, skip same-origin trust (admin, GDPR, health/env routes)
  */
 async function isAuthenticated(req: NextRequest, highSecurity = false): Promise<boolean> {
-  // Same-origin requests are trusted for GET/HEAD/OPTIONS only (read-only browser requests)
-  // State-changing methods (POST, PUT, DELETE, PATCH) always require explicit credentials
-  // High-security routes (admin, GDPR, health/env) always require explicit credentials
+  // Same-origin trust (Sec-Fetch-Site is browser-set and cannot be forged cross-origin,
+  // so it is a valid CSRF defense). Reach differs by route class:
+  //   - Read-only methods (GET/HEAD/OPTIONS): trusted for any protected route.
+  //   - Read-only COMPUTE routes (SAME_ORIGIN_COMPUTE_ROUTES, no user data): trusted for
+  //     ANY method — a POST body is just a computation input, not a state change. This is
+  //     what lets anonymous in-app tools (e.g. FBA) run without a key.
+  //   - Everything else (user-data/storage WRITES, e.g. /api/workbench PUT, /api/files):
+  //     the write still requires an explicit credential below.
+  // High-security routes (admin, GDPR, health/env) skip same-origin trust entirely.
   const method = req.method.toUpperCase();
-  const isReadOnly = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
-  if (!highSecurity && isReadOnly) {
-    const secFetchSite = req.headers.get('sec-fetch-site');
-    if (secFetchSite === 'same-origin') return true;
+  const isReadOnly = method === "GET" || method === "HEAD" || method === "OPTIONS";
+  const isComputeRoute = SAME_ORIGIN_COMPUTE_ROUTES.some((route) => req.nextUrl.pathname.startsWith(route));
+  if (!highSecurity && (isReadOnly || isComputeRoute)) {
+    const secFetchSite = req.headers.get("sec-fetch-site");
+    if (secFetchSite === "same-origin") return true;
   }
 
-  const providedKey = req.headers.get('x-api-key');
+  const providedKey = req.headers.get("x-api-key");
 
   // nxb_ prefixed keys: hash and look up in database
-  if (providedKey && providedKey.startsWith('nxb_')) {
+  if (providedKey && providedKey.startsWith("nxb_")) {
     return validateNxbKey(providedKey);
   }
 
@@ -168,8 +194,8 @@ async function isAuthenticated(req: NextRequest, highSecurity = false): Promise<
   if (providedKey === apiKey) return true;
 
   // Check Authorization: Bearer <token>
-  const authHeader = req.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
+  const authHeader = req.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     if (token === apiKey) return true;
   }
@@ -209,19 +235,17 @@ export async function middleware(req: NextRequest) {
     "form-action 'self'",
     "frame-ancestors 'none'",
     "upgrade-insecure-requests",
-  ].join('; ');
+  ].join("; ");
 
   // For page routes, set CSP and pass nonce
-  if (!pathname.startsWith('/api/')) {
+  if (!pathname.startsWith("/api/")) {
     const response = NextResponse.next();
-    response.headers.set('Content-Security-Policy', cspHeader);
-    response.headers.set('x-nonce', nonce);
+    response.headers.set("Content-Security-Policy", cspHeader);
+    response.headers.set("x-nonce", nonce);
     return response;
   }
 
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || req.headers.get('x-real-ip')
-    || '127.0.0.1';
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "127.0.0.1";
   const requestId = generateRequestId();
 
   // ── Rate Limiting (Upstash Redis with in-memory fallback) ──
@@ -232,19 +256,19 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: 'Rate limit exceeded',
+        error: "Rate limit exceeded",
         retryAfterMs: rateLimit.resetMs,
         requestId,
       },
       {
         status: 429,
         headers: {
-          'X-Request-Id': requestId,
-          'X-RateLimit-Limit': String(config.limit),
-          'X-RateLimit-Remaining': '0',
-          'Retry-After': String(Math.ceil(rateLimit.resetMs / 1000)),
+          "X-Request-Id": requestId,
+          "X-RateLimit-Limit": String(config.limit),
+          "X-RateLimit-Remaining": "0",
+          "Retry-After": String(Math.ceil(rateLimit.resetMs / 1000)),
         },
-      }
+      },
     );
   }
 
@@ -253,30 +277,30 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: 'Authentication required',
-        message: 'Provide a valid API key via X-API-Key header or Authorization: Bearer token.',
+        error: "Authentication required",
+        message: "Provide a valid API key via X-API-Key header or Authorization: Bearer token.",
         requestId,
       },
       {
         status: 401,
         headers: {
-          'X-Request-Id': requestId,
-          'WWW-Authenticate': 'Bearer realm="nexus-bio"',
+          "X-Request-Id": requestId,
+          "WWW-Authenticate": 'Bearer realm="nexus-bio"',
         },
-      }
+      },
     );
   }
 
   // ── Pass through with request metadata ──
   const config = getRateLimitConfig(pathname);
   const response = NextResponse.next();
-  response.headers.set('X-Request-Id', requestId);
-  response.headers.set('X-RateLimit-Limit', String(config.limit));
-  response.headers.set('X-RateLimit-Remaining', String(rateLimit.remaining));
+  response.headers.set("X-Request-Id", requestId);
+  response.headers.set("X-RateLimit-Limit", String(config.limit));
+  response.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
 
   return response;
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: "/api/:path*",
 };

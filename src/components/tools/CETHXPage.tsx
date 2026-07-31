@@ -628,8 +628,7 @@ export default React.memo(function CETHXPage() {
               flex: 1,
               position: "relative",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              flexDirection: "column",
               padding: "12px",
               background: THEME.PANEL_INSET,
             }}
@@ -715,7 +714,7 @@ export default React.memo(function CETHXPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    style={{ width: "100%", maxWidth: "600px" }}
+                    style={{ width: "100%", maxWidth: "none" }}
                   >
                     <BreathingWaterfall steps={thermo.steps} />
                   </motion.div>

@@ -58,3 +58,6 @@ test-results/
 
 # Binary executables
 *.exe
+
+# UI audit screenshots (diagnostic, not committed)
+reports/ui-audit/

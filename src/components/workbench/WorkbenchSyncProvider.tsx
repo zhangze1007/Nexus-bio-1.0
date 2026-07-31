@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useWorkbenchStore } from "../../store/workbenchStore";
@@ -17,9 +18,13 @@ export default function WorkbenchSyncProvider() {
   const loadFromServer = useWorkbenchStore((s) => s.loadFromServer);
   const syncToServer = useWorkbenchStore((s) => s.syncToServer);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Workbench persistence is per-user (needs a session). Only sync when authenticated —
+  // anonymous visitors otherwise fire /api/workbench and get a 401 that spams the console
+  // (audit F4). Logged-out users work from local/default state; no server round-trip.
+  const { status } = useSession();
   const isLegacyToolRoute = pathname.startsWith("/tools") && !artifactId;
   const isCanonicalArtifactRoute = Boolean(artifactId && (pathname === "/analyze" || pathname.startsWith("/tools")));
-  const shouldHydrate = isCanonicalArtifactRoute || isLegacyToolRoute;
+  const shouldHydrate = (isCanonicalArtifactRoute || isLegacyToolRoute) && status === "authenticated";
 
   useEffect(() => {
     if (!shouldHydrate) return;

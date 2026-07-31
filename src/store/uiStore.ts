@@ -104,8 +104,12 @@ export const useUIStore = create<UIState>()(
     consoleEntries: [],
     consoleOpen: false,
 
-    // IDE Sidebar — starts expanded (labels visible); user can collapse
-    sidebarCollapsed: false,
+    // IDE Sidebar — starts COLLAPSED (80px icon strip, the "always-visible working
+    // state" per IDESidebar's design). Expanding is a deliberate overlay that dims
+    // content behind a backdrop; defaulting to expanded made every tool page load
+    // dimmed/blurred (audit F2). Collapsed-by-default keeps tool content visible on
+    // load; the user expands on demand to browse labels.
+    sidebarCollapsed: true,
 
     // Copilot slide-over — closed by default
     copilotOpen: false,
